@@ -13,7 +13,7 @@ headers = {
 }
 
 def fetch_latest_draw():
-    print("🔄 正在連線至 lottolyzer.com 抓取最新開獎資料...")
+    print("🔄 正在連線至 lottolyzer.com 抓取今彩539最新開獎資料...")
     response = requests.get(URL, headers=headers)
     
     if response.status_code != 200:
