@@ -179,7 +179,7 @@
             globalBallCount = historicalData[0].numbers.length;
             globalMaxLottoNum = maxNum || 39;
             
-            let successHtml = `<div class="loading-text" style="color:#2563eb; font-weight:bold; padding: 20px;">✅ 成功載入雲端資料！共 ${historicalData.length} 期紀錄。<br>🔍 自動偵測：每期 ${globalBallCount} 支號碼，最大號碼 ${globalMaxLottoNum}。</div>`;
+            let successHtml = `<div class="loading-text" style="color:#2563eb; font-weight:bold; padding: 20px;">✅ 成功載入資料！共 ${historicalData.length} 期紀錄。<br>🔍 自動偵測：每期 ${globalBallCount} 支號碼，最大號碼 ${globalMaxLottoNum}。</div>`;
             
             let recent10 = historicalData.slice(-10).reverse();
             let recentHtml = `
