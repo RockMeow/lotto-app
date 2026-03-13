@@ -1,0 +1,36 @@
+name: 每天自動抓取 Lottolyzer 資料
+
+on:
+  schedule:
+    # 設定每天 UTC 13:30 執行 (台灣時間晚上 21:30)
+    # 這樣可以確保台彩已經開完獎且網站已更新
+    - cron: '45 13 * * *'
+  workflow_dispatch: # 保留手動測試按鈕
+
+jobs:
+  scrape-and-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 下載專案程式碼
+        uses: actions/checkout@v3
+
+      - name: 準備 Python 環境
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: 安裝爬蟲必要套件
+        run: pip install requests beautifulsoup4
+
+      - name: 執行 lottolyzer 爬蟲
+        run: python update_539.py
+
+      - name: 儲存 CSV 變更並上傳回 GitHub
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add 539_history_all_sorted.csv
+          git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 自動抓取今日號碼並更新 CSV" && git push)
