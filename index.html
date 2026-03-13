@@ -137,12 +137,12 @@
         const resultBox = document.getElementById('resultBox');
         
         if (!url || url.includes('請替換成')) {
-            resultBox.innerHTML = `<div class="loading-text">請先從上方選單選擇彩券類型。<br>（若還沒替換網址，請先至程式碼更新連結）</div>`;
+            resultBox.innerHTML = `<div class="loading-text">請先從上方選單選擇彩券類型。</div>`;
             historicalData = [];
             return;
         }
 
-        resultBox.innerHTML = `<div class="loading-text">🔄 正在從雲端抓取最新資料...<br>請稍候...</div>`;
+        resultBox.innerHTML = `<div class="loading-text">🔄 正在抓取最新資料...<br>請稍候...</div>`;
         
         try {
             // 加入時間戳記避免瀏覽器快取舊資料，確保每次都抓到最新開獎
@@ -154,7 +154,7 @@
             const text = await response.text();
             parseCSV(text);
         } catch (error) {
-            resultBox.innerHTML = `<div class="loading-text" style="color:#ef4444; font-weight:bold;">❌ 載入失敗：無法取得雲端資料。<br>請確認網址是否為 Google 試算表的「發布到網路」CSV 連結。<br><br><span style="font-size:12px; font-weight:normal;">錯誤訊息：${error.message}</span></div>`;
+            resultBox.innerHTML = `<div class="loading-text" style="color:#ef4444; font-weight:bold;">❌ 載入失敗：無法取得最新資料。<br><span style="font-size:12px; font-weight:normal;">錯誤訊息：${error.message}</span></div>`;
         }
     }
 
@@ -184,7 +184,7 @@
             let recent10 = historicalData.slice(-10).reverse();
             let recentHtml = `
             <div style="margin-top: 20px; text-align: left; background: var(--card-bg); border-radius: 20px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-                <div style="color: var(--primary-active); font-size: 16px; font-weight: 800; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">📊 雲端最新 10 期開獎紀錄預覽</div>
+                <div style="color: var(--primary-active); font-size: 16px; font-weight: 800; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">📊 最新 10 期開獎紀錄</div>
                 <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 14px; padding: 0 16px;">
             `;
             
@@ -203,7 +203,7 @@
             
             document.getElementById('resultBox').innerHTML = successHtml + recentHtml;
         } else {
-            document.getElementById('resultBox').innerHTML = `<div class="loading-text" style="color:#ef4444; font-weight:bold;">❌ 檔案解析失敗，這可能不是正確的 CSV 格式。<br>請確認是否正確複製了「逗號分隔值 (.csv)」的連結。</div>`;
+            document.getElementById('resultBox').innerHTML = `<div class="loading-text" style="color:#ef4444; font-weight:bold;">❌ 檔案解析失敗。</div>`;
         }
     }
 
