@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>版路分析工具</title>
+	<link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="版路工具">
+    <link rel="apple-touch-icon" href="icon.png">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-active: #2563eb;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --danger-bg: #fee2e2;
+            --warning: #a16207;
+            --warning-bg: #fefce8;
+            --warning-border: #fde047;
+            --success: #166534;
+            --success-bg: #dcfce7;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: var(--bg); color: var(--text-main); -webkit-font-smoothing: antialiased; }
+        .app-container { max-width: 480px; margin: 0 auto; background-color: var(--bg); min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.05); padding-bottom: 40px; }
+        .app-header { background: var(--card-bg); padding: 16px 20px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: center; }
+        .app-header h1 { margin: 0; font-size: 20px; color: var(--text-main); font-weight: 800; letter-spacing: 0.5px; }
+        .content { padding: 20px; }
+        .control-panel { background: var(--card-bg); border-radius: 20px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; padding-left: 4px; }
+        select { width: 100%; appearance: none; -webkit-appearance: none; background-color: #f8fafc; border: 1px solid var(--border); padding: 14px 16px; border-radius: 14px; font-size: 15px; color: var(--text-main); box-sizing: border-box; transition: all 0.2s ease; }
+        select:focus { outline: none; border-color: var(--primary); background-color: #fff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+        select { background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 16px center; background-size: 16px; padding-right: 40px; }
+        
+        .button-group { display: flex; gap: 8px; width: 100%; }
+        .toggle-btn { flex: 1; background-color: #f8fafc; border: 1px solid var(--border); padding: 14px 8px; border-radius: 14px; font-size: 14px; color: var(--text-main); font-weight: 600; cursor: pointer; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; }
+        .toggle-btn:active { transform: scale(0.98); }
+        .toggle-btn.active { background-color: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2); }
+
+        button.start-btn { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-active) 100%); color: white; border: none; padding: 18px; font-size: 17px; font-weight: 700; border-radius: 16px; cursor: pointer; width: 100%; margin-top: 8px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); transition: transform 0.1s, box-shadow 0.1s; -webkit-tap-highlight-color: transparent; }
+        button.start-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2); }
+        button.start-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; transform: none; }
+        .loading-text { text-align: center; color: var(--text-muted); font-size: 14px; line-height: 1.6; padding: 40px 20px; background: var(--card-bg); border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .pred-block { background: var(--card-bg); border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .pred-title { color: var(--primary-active); font-size: 18px; font-weight: 800; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9; }
+        .pattern-container { margin-bottom: 12px; }
+        .pattern-header { background: #f8fafc; border: 1px solid var(--border); border-radius: 14px; padding: 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; transition: background 0.2s; -webkit-tap-highlight-color: transparent; }
+        .pattern-header:active { background: #f1f5f9; }
+        .pattern-header-text { flex: 1; font-size: 14px; font-weight: 600; color: var(--text-main); line-height: 1.5; display: flex; align-items: flex-start; gap: 8px; }
+        .hit-count { background: var(--danger-bg); color: var(--danger); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; white-space: nowrap; flex-shrink: 0; }
+        .due-badge { background: var(--warning-border); color: #854d0e; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; margin-left: 6px; vertical-align: middle; display: inline-block; }
+        .pattern-details { display: none; background: #fcfcfc; border: 1px solid var(--border); border-top: none; border-radius: 0 0 14px 14px; padding: 20px 16px 16px; margin-top: -8px; font-size: 13px; color: #475569; }
+        .detail-item { border-bottom: 1px dashed #cbd5e1; padding-bottom: 14px; margin-bottom: 14px; line-height: 1.6; }
+        .detail-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .date-badge { display: inline-block; background: #e2e8f0; color: #334155; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; margin-right: 6px; }
+        .target-badge { background: var(--success-bg); color: var(--success); }
+        .detail-title { font-weight: 800; color: #94a3b8; margin-bottom: 8px; font-size: 13px; }
+        .highlight-num { color: var(--danger); font-weight: 800; font-size: 15px; }
+        .due-item { background-color: var(--warning-bg); border: 1px solid var(--warning-border); padding: 16px; margin-top: 16px; border-radius: 12px; line-height: 1.6; box-shadow: 0 2px 8px rgba(250, 204, 21, 0.1); }
+        .due-title { font-weight: 800; color: var(--warning); margin-bottom: 8px; font-size: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header class="app-header">
+        <h1>版路分析工具</h1>
+    </header>
+    
+    <div class="content">
+        <div class="control-panel">
+            <div class="form-group">
+                <label>選擇彩券類型:</label>
+                <select id="csvSource" onchange="fetchGoogleCSV()">
+                    <option value="">請選擇彩券...</option>
+                    <option value="https://gist.githubusercontent.com/RockMeow/a5dde71063e85e254dd191984aa5633c/raw/6b30ad5c7409b9da1b012354d4cf326ba72342d8/gistfile1.txt">今彩539</option>
+                    <option value="https://gist.githubusercontent.com/RockMeow/c7b9e02e18d6ba39dd4c33519bcf6710/raw/3a4ad08b049380831ed1adf629eaeb73dd8bf3aa/gistfile1.txt">大樂透</option>
+                    <option value="https://gist.githubusercontent.com/RockMeow/aa562d93b0c772136e9e7d9d879bc176/raw/5adc577f18e0a6f38c8929bbe2ef8a218db3ac12/gistfile1.txt">天天樂</option>
+                    <option value="https://gist.githubusercontent.com/RockMeow/584dd2d87c7bc129fea7fb35b627bc14/raw/802a5812d63f17dfe8c34999fded0d051f851973/gistfile1.txt">六合彩</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>版路功能:</label>
+                <select id="logicType">
+                    <option value="add_sub">加減</option>
+                    <option value="drag">拖牌</option>
+                    <option value="sum_val">合值</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>比對期數:</label>
+                <select id="period">
+                    <option value="1">一期</option>
+                    <option value="6">六期</option>
+                    <option value="12">十二期</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>成立次數:</label>
+                <div class="button-group" id="outCountGroup">
+                    <button type="button" class="toggle-btn active" data-value="1">準5+ (輸出1碼)</button>
+                    <button type="button" class="toggle-btn" data-value="2">準7+ (輸出2碼)</button>
+                </div>
+            </div>
+            <button id="startBtn" class="start-btn" onclick="startAnalysis()">開始分析</button>
+        </div>
+
+        <div id="resultBox">
+            <div class="loading-text">請先從上方選單選擇彩券類型。<br></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let historicalData = [];
+    let globalMaxLottoNum = 39; 
+    let globalBallCount = 5;    
+
+    document.querySelectorAll('#outCountGroup .toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#outCountGroup .toggle-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    function padZero(num) { return num < 10 ? '0' + num : num.toString(); }
+
+    async function fetchGoogleCSV() {
+        const url = document.getElementById('csvSource').value;
+        const resultBox = document.getElementById('resultBox');
+        
+        if (!url || url.includes('請替換成')) {
+            resultBox.innerHTML = `<div class="loading-text">請先從上方選單選擇彩券類型。<br>（若還沒替換網址，請先至程式碼更新連結）</div>`;
+            historicalData = [];
+            return;
+        }
+
+        resultBox.innerHTML = `<div class="loading-text">🔄 正在從雲端抓取最新資料...<br>請稍候...</div>`;
+        
+        try {
+            // 加入時間戳記避免瀏覽器快取舊資料，確保每次都抓到最新開獎
+            const fetchUrl = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+            const response = await fetch(fetchUrl);
+            
+            if (!response.ok) throw new Error(`HTTP 錯誤碼: ${response.status}`);
+            
+            const text = await response.text();
+            parseCSV(text);
+        } catch (error) {
+            resultBox.innerHTML = `<div class="loading-text" style="color:#ef4444; font-weight:bold;">❌ 載入失敗：無法取得雲端資料。<br>請確認網址是否為 Google 試算表的「發布到網路」CSV 連結。<br><br><span style="font-size:12px; font-weight:normal;">錯誤訊息：${error.message}</span></div>`;
+        }
+    }
+
+    function parseCSV(text) {
+        const lines = text.trim().split('\n');
+        historicalData = [];
+        let maxNum = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',').map(item => item.trim()).filter(item => item !== '');
+            if (cols.length >= 2) { 
+                const date = cols[0];
+                const nums = cols.slice(1).map(n => parseInt(n, 10)).filter(n => !isNaN(n));
+                if (nums.length > 0) {
+                    historicalData.push({ date: date, numbers: nums });
+                    nums.forEach(n => { if(n > maxNum) maxNum = n; });
+                }
+            }
+        }
+        
+        if (historicalData.length > 0) {
+            globalBallCount = historicalData[0].numbers.length;
+            globalMaxLottoNum = maxNum || 39;
+            
+            let successHtml = `<div class="loading-text" style="color:#2563eb; font-weight:bold; padding: 20px;">✅ 成功載入雲端資料！共 ${historicalData.length} 期紀錄。<br>🔍 自動偵測：每期 ${globalBallCount} 支號碼，最大號碼 ${globalMaxLottoNum}。</div>`;
+            
+            let recent10 = historicalData.slice(-10).reverse();
+            let recentHtml = `
+            <div style="margin-top: 20px; text-align: left; background: var(--card-bg); border-radius: 20px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <div style="color: var(--primary-active); font-size: 16px; font-weight: 800; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; text-align: center;">📊 雲端最新 10 期開獎紀錄預覽</div>
+                <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 14px; padding: 0 16px;">
+            `;
+            
+            recent10.forEach((item, index) => {
+                let numsStr = item.numbers.map(n => padZero(n)).join(', ');
+                let borderStyle = index === recent10.length - 1 ? '' : 'border-bottom: 1px dashed #cbd5e1;';
+                recentHtml += `
+                    <div style="padding: 12px 0; display: flex; align-items: center; justify-content: space-between; ${borderStyle}">
+                        <span class="date-badge" style="margin: 0;">${item.date}</span>
+                        <span style="font-weight: 700; color: var(--text-main); letter-spacing: 0.5px;">${numsStr}</span>
+                    </div>
+                `;
+            });
+            
+            recentHtml += `</div></div>`;
+            
+            document.getElementById('resultBox').innerHTML = successHtml + recentHtml;
+        } else {
+            document.getElementById('resultBox').innerHTML = `<div class="loading-text" style="color:#ef4444; font-weight:bold;">❌ 檔案解析失敗，這可能不是正確的 CSV 格式。<br>請確認是否正確複製了「逗號分隔值 (.csv)」的連結。</div>`;
+        }
+    }
+
+    function startAnalysis() {
+        if (historicalData.length === 0) { alert('請先選擇彩券類型並等待資料載入！'); return; }
+        
+        const logicText = document.getElementById('logicType').options[document.getElementById('logicType').selectedIndex].text;
+        
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('startBtn').innerText = '分析中...';
+        document.getElementById('resultBox').innerHTML = `<div class="loading-text">正在分析${logicText}版路...<br>請稍候...</div>`;
+
+        setTimeout(() => { runEngine(); }, 100);
+    }
+
+    function runEngine() {
+        const logicType = document.getElementById('logicType').value;
+        const maxT = parseInt(document.getElementById('period').value);
+        const outCount = parseInt(document.querySelector('#outCountGroup .toggle-btn.active').dataset.value);
+        
+        const minHits = outCount === 1 ? 5 : 7;
+        const checkStreak = (len) => {
+            if (outCount === 1) return len >= 5;
+            if (outCount === 2) return len === 7 || len === 9;
+            return false;
+        };
+        
+        const L = historicalData.length - 1; 
+        let results = {}; 
+        
+        let maxOffset = (logicType === 'drag') ? 0 : 15; 
+        let minOffset = (logicType === 'drag') ? 0 : -15; 
+
+        let valCombsAddSub = [];
+        for (let v1 = 0; v1 < globalMaxLottoNum; v1++) {
+            if (outCount === 1) valCombsAddSub.push([v1]);
+            else for (let v2 = v1 + 1; v2 < globalMaxLottoNum; v2++) valCombsAddSub.push([v1, v2]);
+        }
+        
+        let valCombsSum = [];
+        let maxSumLimit = globalMaxLottoNum * 2 + 2;
+        for (let z1 = 10; z1 <= maxSumLimit; z1++) {
+            if (outCount === 1) valCombsSum.push([z1]);
+            else for (let z2 = z1 + 1; z2 <= maxSumLimit; z2++) valCombsSum.push([z1, z2]);
+        }
+
+        let maxLottoNum = globalMaxLottoNum;
+        let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
+
+        for (let T = 1; T <= maxT; T++) {
+            let L_trigger = L - T + 1; 
+            if (L_trigger < 0) continue;
+
+            for (let P1 = 0; P1 < globalBallCount; P1++) {
+                let X = historicalData[L_trigger].numbers[P1]; 
+                
+                let H_list = [];
+                for (let i = 0; i < L_trigger; i++) {
+                    if (historicalData[i].numbers[P1] === X) H_list.push(i);
+                }
+                if (H_list.length < minHits) continue;
+                
+                for (let O = minOffset; O <= maxOffset; O++) {
+                    let L_ref = L_trigger - O;
+                    if (L_ref < 0 || L_ref > L) continue; 
+                    
+                    for (let P2 = 0; P2 < globalBallCount; P2++) {
+                        if (logicType === 'drag' && P2 !== P1) continue;
+
+                        let RefNum = historicalData[L_ref].numbers[P2];
+
+                        if (logicType === 'add_sub' || logicType === 'drag') {
+                            for (let vals of valCombsAddSub) {
+                                let predsAdd = vals.map(v => modNum(RefNum + v));
+                                let hitsArrayAdd = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'add', T, L);
+                                if (checkStreak(hitsArrayAdd.length)) {
+                                    recordResult(results, predsAdd, hitsArrayAdd, P1, X, O, P2, getOpStr(vals, 'add'), T, L_trigger);
+                                }
+                                
+                                let isAllZero = vals.every(v => v === 0);
+                                if (!isAllZero) {
+                                    let predsSub = vals.map(v => modNum(RefNum - v));
+                                    let hitsArraySub = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'sub', T, L);
+                                    if (checkStreak(hitsArraySub.length)) {
+                                        recordResult(results, predsSub, hitsArraySub, P1, X, O, P2, getOpStr(vals, 'sub'), T, L_trigger);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (logicType === 'sum_val') {
+                            for (let vals of valCombsSum) {
+                                let predsSum = vals.map(z => z - RefNum);
+                                if (predsSum.every(p => p >= 1 && p <= globalMaxLottoNum)) {
+                                    let hitsArraySum = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'sum', T, L);
+                                    if (checkStreak(hitsArraySum.length)) {
+                                        recordResult(results, predsSum, hitsArraySum, P1, X, O, P2, getOpStr(vals, 'sum'), T, L_trigger);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        renderResults(results);
+        
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('startBtn').innerText = '開始分析';
+    }
+
+    function getOpStr(vals, op) {
+        if (op === 'add') return vals.map(v => '+' + v).join(', ');
+        if (op === 'sub') return vals.map(v => '-' + v).join(', ');
+        if (op === 'sum') return '合' + vals.join('、');
+    }
+
+    function findActiveStreakExact(H_list, L_trigger, O, P2, vals, op, T, L) {
+        let maxLottoNum = globalMaxLottoNum;
+        let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
+
+        let hitsInfo = [];
+        let pastTriggers = H_list.slice().sort((a, b) => b - a);
+
+        for (let h of pastTriggers) {
+            let h_ref = h - O;
+            if (h_ref < 0 || h_ref > L) break; 
+            
+            let ref_val = historicalData[h_ref].numbers[P2];
+            let preds = [];
+            let isValid = true;
+
+            for(let val of vals) {
+                let p = 0;
+                if (op === 'add') p = modNum(ref_val + val);
+                else if (op === 'sub') p = modNum(ref_val - val);
+                else if (op === 'sum') {
+                    p = val - ref_val;
+                    if (p < 1 || p > maxLottoNum) isValid = false;
+                }
+                if (!isValid) break; 
+                preds.push(p);
+            }
+            if (!isValid) break; 
+            
+            let target_idx = h + T; 
+            if (target_idx > L) break;
+            
+            let targetNums = historicalData[target_idx].numbers;
+            let matchedNums = preds.filter(p => targetNums.includes(p));
+
+            if (matchedNums.length > 0) {
+                hitsInfo.push({
+                    triggerIdx: h,
+                    refIdx: h_ref,
+                    targetIdx: target_idx,
+                    t: T,
+                    refVal: ref_val,
+                    vals: vals,
+                    preds: preds,
+                    matchedNums: matchedNums,
+                    op: op
+                });
+            } else {
+                break; 
+            }
+        }
+        
+        return hitsInfo.reverse();
+    }
+
+    function recordResult(results, preds, hitsArray, P1, X, O, P2, opStr, T, L_trigger) {
+        let hitsCount = hitsArray.length; 
+        let predKey = preds.slice().sort((a,b)=>a-b).map(p=>padZero(p)).join(', ');
+
+        if (!results[predKey]) results[predKey] = { maxHits: 0, patterns: [] };
+        
+        let offsetStr = (O === 0) ? '同期' : (O > 0 ? `上 ${O} 期` : `下 ${Math.abs(O)} 期`);
+        let desc = `開 [${padZero(X)}] 第 ${P1+1} 支，${offsetStr}，第 ${P2+1} 支 ${opStr} ， 下 ${T} 期開`;
+        
+        let exists = results[predKey].patterns.find(p => p.desc === desc);
+        if (!exists) {
+            results[predKey].patterns.push({
+                desc: desc,
+                hitsCount: hitsCount,
+                details: hitsArray,
+                P1: P1, X: X, O: O, P2: P2,
+                T: T, L_trigger: L_trigger
+            });
+        }
+        if (hitsCount > results[predKey].maxHits) {
+            results[predKey].maxHits = hitsCount;
+        }
+    }
+
+    function toggleDetails(id) {
+        const el = document.getElementById(id);
+        const icon = document.getElementById('icon_' + id);
+        if (el.style.display === 'block') {
+            el.style.display = 'none';
+            icon.innerText = '▶';
+        } else {
+            el.style.display = 'block';
+            icon.innerText = '▼';
+        }
+    }
+
+    function renderResults(results) {
+        const resultBox = document.getElementById('resultBox');
+        resultBox.innerHTML = '';
+
+        let sortedKeys = Object.keys(results).sort((a, b) => {
+            if (results[b].maxHits !== results[a].maxHits) return results[b].maxHits - results[a].maxHits;
+            return results[b].patterns.length - results[a].patterns.length;
+        });
+
+        if (sortedKeys.length === 0) {
+            resultBox.innerHTML = `<div class="loading-text">未尋找到符合條件的版路。</div>`;
+            return;
+        }
+
+        let patternIdCounter = 0;
+        let maxLottoNum = globalMaxLottoNum;
+        let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
+
+        sortedKeys.forEach(predKey => {
+            let block = document.createElement('div');
+            block.className = 'pred-block';
+            
+            let title = document.createElement('div');
+            title.className = 'pred-title';
+            title.innerText = `【 ${predKey} 】`;
+            block.appendChild(title);
+
+            let sortedPatterns = results[predKey].patterns.sort((a,b) => b.hitsCount - a.hitsCount);
+
+            sortedPatterns.forEach(p => {
+                let pId = 'pattern_' + patternIdCounter++;
+                
+                let detailsHtml = p.details.map((hit, idx) => {
+                    let refDate = historicalData[hit.refIdx].date;
+                    let refNums = historicalData[hit.refIdx].numbers.map(n => padZero(n)).join(', ');
+                    let triggerDate = historicalData[hit.triggerIdx].date;
+                    let triggerNums = historicalData[hit.triggerIdx].numbers.map(n => padZero(n)).join(', ');
+                    let targetDate = historicalData[hit.targetIdx].date;
+                    let targetNums = historicalData[hit.targetIdx].numbers.map(n => padZero(n)).join(', ');
+                    
+                    let mathStr = hit.vals.map((v, i) => {
+                        let predNum = hit.preds[i];
+                        let isThisNumHit = hit.matchedNums.includes(predNum);
+                        let pStr = isThisNumHit ? `<span class="highlight-num">${padZero(predNum)}</span>` : padZero(predNum);
+                        
+                        if (hit.op === 'add') {
+                            let raw = hit.refVal + v;
+                            return raw > maxLottoNum ? `${padZero(hit.refVal)} + ${v} = ${raw} ➔ ${pStr}` : `${padZero(hit.refVal)} + ${v} = ${pStr}`;
+                        }
+                        if (hit.op === 'sub') {
+                            let raw = hit.refVal - v;
+                            return raw < 1 ? `${padZero(hit.refVal)} - ${v} = ${raw} ➔ ${pStr}` : `${padZero(hit.refVal)} - ${v} = ${pStr}`;
+                        }
+                        if (hit.op === 'sum') return `合${v}(${v} - ${padZero(hit.refVal)} = ${pStr})`;
+                    }).join(' ， ');
+                    
+                    return `
+                    <div class="detail-item">
+                        <div class="detail-title">🔸 歷史連準 第 ${idx+1} 次:</div>
+                        <div><span class="date-badge">${triggerDate}</span> 觸發期開出: (${triggerNums}) 第 ${p.P1+1} 支為 <b>${padZero(p.X)}</b></div>
+                        <div><span class="date-badge">${refDate}</span> 參考期開出: (${refNums}) 第 ${p.P2+1} 支為 <b>${padZero(hit.refVal)}</b> ➔ 計算: ${mathStr}</div>
+                        <div><span class="date-badge target-badge">${targetDate}</span> 下 ${hit.t} 期順利開出: <b>(${targetNums})</b> ✅</div>
+                    </div>`;
+                }).join('');
+
+                let L_ref = p.L_trigger - p.O;
+                let refDate = historicalData[L_ref].date;
+                let refNums = historicalData[L_ref].numbers.map(n => padZero(n)).join(', ');
+                let ref_val = historicalData[L_ref].numbers[p.P2];
+                let triggerDate = historicalData[p.L_trigger].date;
+                let triggerNums = historicalData[p.L_trigger].numbers.map(n => padZero(n)).join(', ');
+
+                let dueMathStr = p.details[0].vals.map((v) => {
+                    let p_num = 0; let raw = 0;
+                    if (p.details[0].op === 'add') {
+                        raw = ref_val + v; p_num = modNum(raw);
+                        return raw > maxLottoNum ? `${padZero(ref_val)} + ${v} = ${raw} ➔ <b>${padZero(p_num)}</b>` : `${padZero(ref_val)} + ${v} = <b>${padZero(p_num)}</b>`;
+                    }
+                    if (p.details[0].op === 'sub') {
+                        raw = ref_val - v; p_num = modNum(raw);
+                        return raw < 1 ? `${padZero(ref_val)} - ${v} = ${raw} ➔ <b>${padZero(p_num)}</b>` : `${padZero(ref_val)} - ${v} = <b>${padZero(p_num)}</b>`;
+                    }
+                    if (p.details[0].op === 'sum') {
+                        p_num = v - ref_val;
+                        return `合${v}(${v} - ${padZero(ref_val)} = <b>${padZero(p_num)}</b>)`;
+                    }
+                }).join(' ， ');
+
+                let dueHtml = `
+                <div class="due-item">
+                    <div class="due-title">🌟 最新一期計算:</div>
+                    <div><span class="date-badge">${triggerDate}</span> 觸發期開出: (${triggerNums}) 第 ${p.P1+1} 支為 <b>${padZero(p.X)}</b></div>
+                    <div><span class="date-badge">${refDate}</span> 參考期開出: (${refNums}) 第 ${p.P2+1} 支為 <b>${padZero(ref_val)}</b></div>
+                    <div style="margin-top: 8px; font-size: 14px; color: #64748b;">➔ 計算: ${dueMathStr}</div>
+                    <div style="margin-top: 6px; font-size: 15px;">本期預測開出：<b class="highlight-num" style="font-size: 18px;">${predKey}</b></div>
+                </div>`;
+
+                let pLine = document.createElement('div');
+                pLine.className = 'pattern-container';
+                pLine.innerHTML = `
+                    <div class="pattern-header" onclick="toggleDetails('${pId}')">
+                        <div class="pattern-header-text">
+                            <span id="icon_${pId}" style="color: #94a3b8; font-size: 12px; margin-top: 2px;">▶</span> 
+                            <span>${p.desc} <span class="due-badge">本期到期</span></span>
+                        </div>
+                        <span class="hit-count">準 ${p.hitsCount} 進 ${p.hitsCount + 1}</span>
+                    </div>
+                    <div class="pattern-details" id="${pId}">
+                        ${detailsHtml}
+                        ${dueHtml}
+                    </div>
+                `;
+                block.appendChild(pLine);
+            });
+
+            resultBox.appendChild(block);
+        });
+    }
+</script>
+
+</body>
+</html>
