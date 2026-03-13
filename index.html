@@ -87,6 +87,9 @@
             justify-content: space-between;
             align-items: center;
             transition: background 0.3s ease, border-color 0.3s ease;
+			display: grid; 
+			grid-template-columns: 1fr auto 1fr; /* 分成三欄：左撐開、中固定、右撐開 */
+			align-items: center;
         }
         
         .app-header h1 { 
@@ -95,6 +98,9 @@
             color: var(--text-main); 
             font-weight: 800; 
             letter-spacing: 0.5px; 
+			grid-column: 2; /* 讓標題佔據中間那一欄 */
+			text-align: center;
+			white-space: nowrap;
         }
 
         /* 🌞/🌙 深色模式切換按鈕 */
@@ -107,6 +113,7 @@
             border-radius: 50%;
             transition: transform 0.2s;
             color: var(--text-main);
+			justify-self: end; /* 讓按鈕靠最後面 */
         }
         .theme-toggle:active { transform: scale(0.8); }
 
@@ -683,7 +690,7 @@
             title.className = 'pred-title';
             // 🎯 修改點 1：標題變成樂透球
             title.innerHTML = `
-                <div style="font-size:14px; color:var(--text-muted); margin-bottom:12px; font-weight:700;">強勢預測號碼</div>
+                <div style="font-size:14px; color:var(--text-muted); margin-bottom:12px; font-weight:700;">本期預測號碼</div>
                 <div>${createLottoBallsHtml(predKey)}</div>
             `;
             block.appendChild(title);
