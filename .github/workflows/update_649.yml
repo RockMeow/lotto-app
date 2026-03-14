@@ -1,8 +1,8 @@
-name: 每日更新-大樂透 (21:00)
+name: 每日更新-大樂透 (23:59)
 
 on:
   schedule:
-    - cron: '0 13 * * *'
+    - cron: '59 15 * * *'
   workflow_dispatch:
 
 jobs:
