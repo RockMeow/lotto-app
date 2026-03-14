@@ -63,7 +63,6 @@
             -webkit-font-smoothing: antialiased; 
             -webkit-tap-highlight-color: transparent; 
             transition: background-color 0.3s ease, color 0.3s ease;
-            padding-bottom: 80px; /* 為底部導航欄留空間 */
         }
         
         .app-container { 
@@ -71,6 +70,7 @@
             margin: 0 auto; 
             background-color: var(--bg); 
             min-height: 100vh; 
+            padding-bottom: 60px; 
             transition: background-color 0.3s ease;
         }
 
@@ -83,8 +83,8 @@
             top: 0; 
             z-index: 1000; 
             border-bottom: 1px solid var(--border);
-            display: grid; 
-            grid-template-columns: 1fr auto 1fr;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
             transition: background 0.3s ease, border-color 0.3s ease;
         }
@@ -95,11 +95,9 @@
             color: var(--text-main); 
             font-weight: 800; 
             letter-spacing: 0.5px; 
-            grid-column: 2;
-            text-align: center;
-            white-space: nowrap;
         }
 
+        /* 🌞/🌙 深色模式切換按鈕 */
         .theme-toggle {
             background: none;
             border: none;
@@ -109,7 +107,6 @@
             border-radius: 50%;
             transition: transform 0.2s;
             color: var(--text-main);
-            justify-self: end;
         }
         .theme-toggle:active { transform: scale(0.8); }
 
@@ -127,7 +124,7 @@
             transition: background-color 0.3s ease;
         }
         .form-group { display: flex; flex-direction: column; }
-        label { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 10px; padding-left: 0; text-align: center; display: block; }
+        label { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 10px; padding-left: 4px; }
 
         select { 
             width: 100%; 
@@ -150,30 +147,6 @@
         }
         select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
 
-        .countdown-box {
-            display: none;
-            margin-top: 12px;
-            padding: 12px 14px;
-            background-color: var(--warning-bg);
-            border: 1.5px solid var(--warning-border);
-            border-radius: 14px;
-            font-size: 14px;
-            color: var(--warning);
-            font-weight: 800;
-            text-align: center;
-            animation: fadeIn 0.4s ease;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.05);
-        }
-        
-        .countdown-hint {
-            font-size: 12px;
-            font-weight: normal;
-            color: var(--warning);
-            opacity: 0.8;
-            margin-top: 6px;
-            display: none;
-        }
-
         .button-group { 
             display: flex; 
             background-color: var(--toggle-bg); 
@@ -187,9 +160,9 @@
             flex: 1; 
             background-color: transparent; 
             border: none; 
-            padding: 14px 2px; 
+            padding: 14px 8px; 
             border-radius: 12px; 
-            font-size: 14px; 
+            font-size: 15px; 
             color: var(--text-muted); 
             font-weight: 700; 
             cursor: pointer; 
@@ -245,10 +218,6 @@
             margin-bottom: 20px; 
             padding-bottom: 16px; 
             border-bottom: 1.5px solid var(--border); 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
             text-align: center;
         }
 
@@ -292,10 +261,11 @@
         .due-item { background-color: var(--warning-bg); border: 1.5px solid var(--warning-border); padding: 18px; margin-top: 20px; border-radius: 16px; line-height: 1.7; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .due-title { font-weight: 900; color: var(--warning); margin-bottom: 10px; font-size: 16px; }
 
+        /* 🎱 立體樂透球專屬樣式 */
         .lotto-ball {
             display: inline-flex;
-            align-items: center;      
-            justify-content: center;   
+            align-items: center;
+            justify-content: center;
             width: 36px;
             height: 36px;
             border-radius: 50%;
@@ -304,59 +274,22 @@
             font-size: 17px;
             margin: 0 4px;
             font-family: Arial, Helvetica, sans-serif;
-            line-height: 1;           
-            text-align: center;       
-            vertical-align: middle;   
             box-shadow: inset -3px -3px 6px rgba(0,0,0,0.25), 0 3px 6px rgba(0,0,0,0.2);
             text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
-            letter-spacing: -0.5px;   
+            letter-spacing: -0.5px;
         }
-        .ball-0 { background: linear-gradient(135deg, #60a5fa, #2563eb); } 
-        .ball-1 { background: linear-gradient(135deg, #34d399, #059669); } 
-        .ball-2 { background: linear-gradient(135deg, #f87171, #dc2626); } 
-        .ball-3 { background: linear-gradient(135deg, #fbbf24, #d97706); } 
-        .ball-4 { background: linear-gradient(135deg, #c084fc, #7e22ce); } 
-
-        /* 📱 底部導航列 */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--header-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0 20px 0; /* 留出 iOS 底部橫條空間 */
-            z-index: 1000;
-        }
-        .nav-item {
-            flex: 1;
-            text-align: center;
-            text-decoration: none;
-            color: var(--text-muted);
-            font-size: 14px;
-            font-weight: 800;
-            padding: 10px;
-            transition: color 0.2s;
-        }
-        .nav-item.active {
-            color: var(--primary);
-        }
-        .nav-icon {
-            font-size: 20px;
-            display: block;
-            margin-bottom: 4px;
-        }
+        .ball-0 { background: linear-gradient(135deg, #60a5fa, #2563eb); } /* 01-09 藍 */
+        .ball-1 { background: linear-gradient(135deg, #34d399, #059669); } /* 10-19 綠 */
+        .ball-2 { background: linear-gradient(135deg, #f87171, #dc2626); } /* 20-29 紅 */
+        .ball-3 { background: linear-gradient(135deg, #fbbf24, #d97706); } /* 30-39 橘 */
+        .ball-4 { background: linear-gradient(135deg, #c084fc, #7e22ce); } /* 40-49 紫 */
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <header class="app-header">
-        <h1>主板路工具</h1>
+        <h1>版路分析工具</h1>
         <button class="theme-toggle" onclick="toggleTheme()" id="themeIcon">🌙</button>
     </header>
     
@@ -371,12 +304,6 @@
                     <option value="./Fan_history_all_sorted.csv">天天樂</option>
                     <option value="./Six_history_all_sorted.csv">六合彩</option>
                 </select>
-                <div id="countdownBox" class="countdown-box">
-                    ⏳ 距離下期開獎：<span id="countdownText">--:--:--</span>
-                    <div id="countdownHint" class="countdown-hint">
-                        (預估為二四六，遇特殊情況可能異動)
-                    </div>
-                </div>
             </div>
             <div class="form-group">
                 <label>版路功能</label>
@@ -408,43 +335,14 @@
             <div class="loading-text">請先從上方選單選擇彩券類型。</div>
         </div>
     </div>
-
-    <div class="bottom-nav">
-        <a href="index.html" class="nav-item active">
-            <span class="nav-icon">📊</span>
-            主版路
-        </a>
-        <a href="diff3.html" class="nav-item">
-            <span class="nav-icon">🎯</span>
-            等差3碼
-        </a>
-    </div>
 </div>
 
 <script>
     let historicalData = [];
     let globalMaxLottoNum = 39; 
     let globalBallCount = 5;    
-    let countdownTimer = null; 
 
-    const drawSchedules = {
-        '539': { days: [1, 2, 3, 4, 5, 6], h: 20, m: 30 }, 
-        '649': { days: [2, 5], h: 20, m: 30 },             
-        'Fan': { days: [0, 1, 2, 3, 4, 5, 6], h: 9, m: 30 }, 
-        'Six': { days: [2, 4, 6], h: 21, m: 30 }           
-    };
-
-    // 初始化深色模式
-    function initTheme() {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-            document.body.setAttribute('data-theme', 'dark');
-            document.getElementById('themeIcon').innerText = '☀️';
-            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0f172a');
-        }
-    }
-    initTheme();
-
+    // 深色模式切換邏輯
     function toggleTheme() {
         const body = document.body;
         const icon = document.getElementById('themeIcon');
@@ -452,15 +350,14 @@
             body.removeAttribute('data-theme');
             icon.innerText = '🌙';
             document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff');
-            localStorage.setItem('theme', 'light');
         } else {
             body.setAttribute('data-theme', 'dark');
             icon.innerText = '☀️';
             document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0f172a');
-            localStorage.setItem('theme', 'dark');
         }
     }
 
+    // 將號碼轉換成立體樂透球 HTML
     function createLottoBallsHtml(numsStr) {
         return numsStr.split(', ').map(numStr => {
             let n = parseInt(numStr, 10);
@@ -479,65 +376,6 @@
 
     function padZero(num) { return num < 10 ? '0' + num : num.toString(); }
 
-    function startCountdown(url) {
-        clearInterval(countdownTimer);
-        const box = document.getElementById('countdownBox');
-        const textEl = document.getElementById('countdownText');
-        const hintEl = document.getElementById('countdownHint');
-        box.style.display = 'none';
-        hintEl.style.display = 'none';
-
-        let type = '';
-        if (url.includes('539')) type = '539';
-        else if (url.includes('649')) type = '649';
-        else if (url.includes('Fan')) type = 'Fan';
-        else if (url.includes('Six')) type = 'Six';
-
-        if (!type || !drawSchedules[type]) return;
-
-        const schedule = drawSchedules[type];
-        
-        if (type === 'Six') {
-            hintEl.style.display = 'block';
-        }
-        
-        function update() {
-            let now = new Date();
-            let nextDraw = null;
-
-            for (let i = 0; i <= 7; i++) {
-                let d = new Date(now);
-                d.setDate(now.getDate() + i);
-                d.setHours(schedule.h, schedule.m, 0, 0);
-                
-                if (i === 0 && now >= d) continue;
-                
-                if (schedule.days.includes(d.getDay())) {
-                    nextDraw = d;
-                    break;
-                }
-            }
-
-            if (!nextDraw) return;
-
-            let diff = nextDraw - now;
-            let days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            let h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-            let m = Math.floor((diff / 1000 / 60) % 60);
-            let s = Math.floor((diff / 1000) % 60);
-
-            let timeStr = "";
-            if (days > 0) timeStr += `${days} 天 `;
-            timeStr += `${padZero(h)} 小時 ${padZero(m)} 分 ${padZero(s)} 秒`;
-
-            textEl.innerText = timeStr;
-            box.style.display = 'block';
-        }
-
-        update(); 
-        countdownTimer = setInterval(update, 1000);
-    }
-
     async function fetchGoogleCSV() {
         const url = document.getElementById('csvSource').value;
         const resultBox = document.getElementById('resultBox');
@@ -545,12 +383,8 @@
         if (!url || url.includes('請替換成')) {
             resultBox.innerHTML = `<div class="loading-text">請先從上方選單選擇彩券類型。</div>`;
             historicalData = [];
-            document.getElementById('countdownBox').style.display = 'none';
-            clearInterval(countdownTimer);
             return;
         }
-
-        startCountdown(url);
 
         resultBox.innerHTML = `<div class="loading-text">🔄 正在抓取最新資料...<br><span style="font-weight:normal; font-size:13px; color:var(--text-muted);">請稍候...</span></div>`;
         
@@ -633,11 +467,10 @@
         const maxT = parseInt(document.getElementById('period').value);
         const outCount = parseInt(document.querySelector('#outCountGroup .toggle-btn.active').dataset.value);
         
-        let minHits = (outCount === 1) ? 5 : 7;
-
+        const minHits = outCount === 1 ? 5 : 7;
         const checkStreak = (len) => {
             if (outCount === 1) return len >= 5;
-            if (outCount === 2) return len >= 7; 
+            if (outCount === 2) return len === 7 || len === 9;
             return false;
         };
         
@@ -648,21 +481,16 @@
         let minOffset = (logicType === 'drag') ? 0 : -15; 
 
         let valCombsAddSub = [];
-        if (outCount === 1) {
-            for (let v1 = 0; v1 < globalMaxLottoNum; v1++) valCombsAddSub.push([v1]);
-        } else if (outCount === 2) {
-            for (let v1 = 0; v1 < globalMaxLottoNum; v1++) {
-                for (let v2 = v1 + 1; v2 < globalMaxLottoNum; v2++) valCombsAddSub.push([v1, v2]);
-            }
+        for (let v1 = 0; v1 < globalMaxLottoNum; v1++) {
+            if (outCount === 1) valCombsAddSub.push([v1]);
+            else for (let v2 = v1 + 1; v2 < globalMaxLottoNum; v2++) valCombsAddSub.push([v1, v2]);
         }
         
         let valCombsSum = [];
         let maxSumLimit = globalMaxLottoNum * 2 + 2;
-        if (outCount === 1 || outCount === 2) {
-            for (let z1 = 10; z1 <= maxSumLimit; z1++) {
-                if (outCount === 1) valCombsSum.push([z1]);
-                else for (let z2 = z1 + 1; z2 <= maxSumLimit; z2++) valCombsSum.push([z1, z2]);
-            }
+        for (let z1 = 10; z1 <= maxSumLimit; z1++) {
+            if (outCount === 1) valCombsSum.push([z1]);
+            else for (let z2 = z1 + 1; z2 <= maxSumLimit; z2++) valCombsSum.push([z1, z2]);
         }
 
         let maxLottoNum = globalMaxLottoNum;
@@ -726,6 +554,7 @@
         }
 
         renderResults(results);
+        
         document.getElementById('startBtn').disabled = false;
         document.getElementById('startBtn').innerText = '開始分析';
     }
@@ -770,9 +599,7 @@
             let targetNums = historicalData[target_idx].numbers;
             let matchedNums = preds.filter(p => targetNums.includes(p));
 
-            let isHit = matchedNums.length === preds.length; 
-
-            if (isHit) {
+            if (matchedNums.length > 0) {
                 hitsInfo.push({
                     triggerIdx: h,
                     refIdx: h_ref,
@@ -854,8 +681,9 @@
             
             let title = document.createElement('div');
             title.className = 'pred-title';
+            // 🎯 修改點 1：標題變成樂透球
             title.innerHTML = `
-                <div style="font-size:14px; color:var(--text-muted); margin-bottom:12px; font-weight:700;">強勢預測號碼</div>
+                <div style="font-size:14px; color:var(--text-muted); margin-bottom:12px; font-weight:700;">本期預測號碼</div>
                 <div>${createLottoBallsHtml(predKey)}</div>
             `;
             block.appendChild(title);
