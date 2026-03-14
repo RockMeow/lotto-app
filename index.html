@@ -142,7 +142,7 @@
             color: var(--text-main); 
             box-sizing: border-box; 
             transition: all 0.2s ease; 
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); 
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); 
             background-repeat: no-repeat; 
             background-position: right 16px center; 
             background-size: 18px; 
@@ -166,7 +166,6 @@
             box-shadow: 0 4px 12px rgba(245, 158, 11, 0.05);
         }
         
-        /* 六合彩專用小提示 */
         .countdown-hint {
             font-size: 12px;
             font-weight: normal;
@@ -385,7 +384,6 @@
     let globalBallCount = 5;    
     let countdownTimer = null; 
 
-    // 🎯 各彩券開獎時間規則設定
     const drawSchedules = {
         '539': { days: [1, 2, 3, 4, 5, 6], h: 20, m: 30 }, 
         '649': { days: [2, 5], h: 20, m: 30 },             
@@ -425,7 +423,6 @@
 
     function padZero(num) { return num < 10 ? '0' + num : num.toString(); }
 
-    // ⏳ 啟動倒數計時功能 (加入六合彩防呆)
     function startCountdown(url) {
         clearInterval(countdownTimer);
         const box = document.getElementById('countdownBox');
@@ -444,7 +441,6 @@
 
         const schedule = drawSchedules[type];
         
-        // 如果是六合彩，把提示字顯示出來
         if (type === 'Six') {
             hintEl.style.display = 'block';
         }
@@ -581,81 +577,66 @@
         const maxT = parseInt(document.getElementById('period').value);
         const outCount = parseInt(document.querySelector('#outCountGroup .toggle-btn.active').dataset.value);
         
-        // 🎯 嚴格保留原有的準5與準7邏輯
-        const minHits = (outCount === 1) ? 5 : (outCount === 2 ? 7 : 2); 
-        
-        const checkStreak = (len) => {
-            if (outCount === 1) return len >= 5;
-            if (outCount === 2) return len >= 7; 
-            if (outCount === 3) return len >= 2; 
-            return false;
-        };
-        
         const L = historicalData.length - 1; 
         let results = {}; 
         
         let maxOffset = (logicType === 'drag') ? 0 : 15; 
         let minOffset = (logicType === 'drag') ? 0 : -15; 
 
-        // 🎯 建立預測組合 (不動原有1碼與2碼邏輯)
-        let valCombsAddSub = [];
-        if (outCount === 1) {
-            for (let v1 = 0; v1 < globalMaxLottoNum; v1++) valCombsAddSub.push([v1]);
-        } else if (outCount === 2) {
-            for (let v1 = 0; v1 < globalMaxLottoNum; v1++) {
-                for (let v2 = v1 + 1; v2 < globalMaxLottoNum; v2++) valCombsAddSub.push([v1, v2]);
-            }
-        } else if (outCount === 3) {
-            // 新增：等差3碼全中邏輯 (-A, 0, +A)
-            for (let A = 1; A <= 15; A++) {
-                valCombsAddSub.push([-A, 0, A]); 
-            }
-        }
-        
-        let valCombsSum = [];
-        let maxSumLimit = globalMaxLottoNum * 2 + 2;
+        // 🟢 獨立判斷：1碼與2碼的原本邏輯
         if (outCount === 1 || outCount === 2) {
+            let minHits = (outCount === 1) ? 5 : 7;
+            const checkStreak = (len) => {
+                if (outCount === 1) return len >= 5;
+                if (outCount === 2) return len >= 7; 
+                return false;
+            };
+
+            let valCombsAddSub = [];
+            if (outCount === 1) {
+                for (let v1 = 0; v1 < globalMaxLottoNum; v1++) valCombsAddSub.push([v1]);
+            } else if (outCount === 2) {
+                for (let v1 = 0; v1 < globalMaxLottoNum; v1++) {
+                    for (let v2 = v1 + 1; v2 < globalMaxLottoNum; v2++) valCombsAddSub.push([v1, v2]);
+                }
+            }
+
+            let valCombsSum = [];
+            let maxSumLimit = globalMaxLottoNum * 2 + 2;
             for (let z1 = 10; z1 <= maxSumLimit; z1++) {
                 if (outCount === 1) valCombsSum.push([z1]);
                 else for (let z2 = z1 + 1; z2 <= maxSumLimit; z2++) valCombsSum.push([z1, z2]);
             }
-        }
 
-        let maxLottoNum = globalMaxLottoNum;
-        let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
+            for (let T = 1; T <= maxT; T++) {
+                let L_trigger = L - T + 1; 
+                if (L_trigger < 0) continue;
 
-        for (let T = 1; T <= maxT; T++) {
-            let L_trigger = L - T + 1; 
-            if (L_trigger < 0) continue;
-
-            for (let P1 = 0; P1 < globalBallCount; P1++) {
-                let X = historicalData[L_trigger].numbers[P1]; 
-                
-                let H_list = [];
-                for (let i = 0; i < L_trigger; i++) {
-                    if (historicalData[i].numbers[P1] === X) H_list.push(i);
-                }
-                if (H_list.length < minHits) continue;
-                
-                for (let O = minOffset; O <= maxOffset; O++) {
-                    let L_ref = L_trigger - O;
-                    if (L_ref < 0 || L_ref > L) continue; 
+                for (let P1 = 0; P1 < globalBallCount; P1++) {
+                    let X = historicalData[L_trigger].numbers[P1]; 
                     
-                    for (let P2 = 0; P2 < globalBallCount; P2++) {
-                        if (logicType === 'drag' && P2 !== P1) continue;
+                    let H_list = [];
+                    for (let i = 0; i < L_trigger; i++) {
+                        if (historicalData[i].numbers[P1] === X) H_list.push(i);
+                    }
+                    if (H_list.length < minHits) continue;
+                    
+                    for (let O = minOffset; O <= maxOffset; O++) {
+                        let L_ref = L_trigger - O;
+                        if (L_ref < 0 || L_ref > L) continue; 
+                        
+                        for (let P2 = 0; P2 < globalBallCount; P2++) {
+                            if (logicType === 'drag' && P2 !== P1) continue;
+                            let RefNum = historicalData[L_ref].numbers[P2];
 
-                        let RefNum = historicalData[L_ref].numbers[P2];
-
-                        if (logicType === 'add_sub' || logicType === 'drag') {
-                            for (let vals of valCombsAddSub) {
-                                let predsAdd = vals.map(v => modNum(RefNum + v));
-                                let hitsArrayAdd = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'add', T, L, outCount);
-                                if (checkStreak(hitsArrayAdd.length)) {
-                                    recordResult(results, predsAdd, hitsArrayAdd, P1, X, O, P2, getOpStr(vals, 'add'), T, L_trigger);
-                                }
-                                
-                                // 3碼(等差)已經涵蓋雙向，所以只在1碼或2碼時跑純減法
-                                if (outCount !== 3) {
+                            if (logicType === 'add_sub' || logicType === 'drag') {
+                                for (let vals of valCombsAddSub) {
+                                    let predsAdd = vals.map(v => modNum(RefNum + v));
+                                    let hitsArrayAdd = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'add', T, L, outCount);
+                                    if (checkStreak(hitsArrayAdd.length)) {
+                                        recordResult(results, predsAdd, hitsArrayAdd, P1, X, O, P2, getOpStr(vals, 'add'), T, L_trigger);
+                                    }
+                                    
                                     let isAllZero = vals.every(v => v === 0);
                                     if (!isAllZero) {
                                         let predsSub = vals.map(v => modNum(RefNum - v));
@@ -666,15 +647,61 @@
                                     }
                                 }
                             }
-                        }
 
-                        if (logicType === 'sum_val' && outCount !== 3) {
-                            for (let vals of valCombsSum) {
-                                let predsSum = vals.map(z => z - RefNum);
-                                if (predsSum.every(p => p >= 1 && p <= globalMaxLottoNum)) {
-                                    let hitsArraySum = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'sum', T, L, outCount);
-                                    if (checkStreak(hitsArraySum.length)) {
-                                        recordResult(results, predsSum, hitsArraySum, P1, X, O, P2, getOpStr(vals, 'sum'), T, L_trigger);
+                            if (logicType === 'sum_val') {
+                                for (let vals of valCombsSum) {
+                                    let predsSum = vals.map(z => z - RefNum);
+                                    if (predsSum.every(p => p >= 1 && p <= globalMaxLottoNum)) {
+                                        let hitsArraySum = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'sum', T, L, outCount);
+                                        if (checkStreak(hitsArraySum.length)) {
+                                            recordResult(results, predsSum, hitsArraySum, P1, X, O, P2, getOpStr(vals, 'sum'), T, L_trigger);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } 
+        
+        // 🔴 獨立判斷：等差3碼全中邏輯
+        else if (outCount === 3) {
+            let minHits = 2; // 3碼全中機率極低，連準2次即顯示
+            
+            let valCombsArithmetic = [];
+            for (let A = 1; A <= 15; A++) {
+                valCombsArithmetic.push([-A, 0, A]); 
+            }
+
+            for (let T = 1; T <= maxT; T++) {
+                let L_trigger = L - T + 1; 
+                if (L_trigger < 0) continue;
+
+                for (let P1 = 0; P1 < globalBallCount; P1++) {
+                    let X = historicalData[L_trigger].numbers[P1]; 
+                    
+                    let H_list = [];
+                    for (let i = 0; i < L_trigger; i++) {
+                        if (historicalData[i].numbers[P1] === X) H_list.push(i);
+                    }
+                    if (H_list.length < minHits) continue;
+                    
+                    for (let O = minOffset; O <= maxOffset; O++) {
+                        let L_ref = L_trigger - O;
+                        if (L_ref < 0 || L_ref > L) continue; 
+                        
+                        for (let P2 = 0; P2 < globalBallCount; P2++) {
+                            if (logicType === 'drag' && P2 !== P1) continue;
+                            let RefNum = historicalData[L_ref].numbers[P2];
+
+                            // 等差3碼只跑加減法邏輯，不跑合值
+                            if (logicType === 'add_sub' || logicType === 'drag') {
+                                for (let vals of valCombsArithmetic) {
+                                    let predsAdd = vals.map(v => modNum(RefNum + v));
+                                    let hitsArrayAdd = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'add', T, L, outCount);
+                                    if (hitsArrayAdd.length >= minHits) {
+                                        recordResult(results, predsAdd, hitsArrayAdd, P1, X, O, P2, getOpStr(vals, 'add'), T, L_trigger);
                                     }
                                 }
                             }
@@ -685,10 +712,12 @@
         }
 
         renderResults(results);
-        
         document.getElementById('startBtn').disabled = false;
         document.getElementById('startBtn').innerText = '開始分析';
     }
+
+    let maxLottoNum = 39;
+    let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
 
     function getOpStr(vals, op) {
         if (op === 'add') return vals.map(v => (v >= 0 ? '+' : '') + v).join(', ');
@@ -697,9 +726,6 @@
     }
 
     function findActiveStreakExact(H_list, L_trigger, O, P2, vals, op, T, L, outCount) {
-        let maxLottoNum = globalMaxLottoNum;
-        let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
-
         let hitsInfo = [];
         let pastTriggers = H_list.slice().sort((a, b) => b - a);
 
@@ -730,7 +756,6 @@
             let targetNums = historicalData[target_idx].numbers;
             let matchedNums = preds.filter(p => targetNums.includes(p));
 
-            // 🎯 嚴格要求：不論1碼、2碼或3碼，都必須「預測的所有號碼」都在當期開出才算連準！
             let isHit = matchedNums.length === preds.length; 
 
             if (isHit) {
@@ -806,8 +831,6 @@
         }
 
         let patternIdCounter = 0;
-        let maxLottoNum = globalMaxLottoNum;
-        let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
 
         sortedKeys.forEach(predKey => {
             let block = document.createElement('div');
@@ -841,7 +864,7 @@
                         
                         if (hit.op === 'add') {
                             let raw = hit.refVal + v;
-                            return raw > maxLottoNum ? `${padZero(hit.refVal)} ${v >= 0 ? '+' : ''}${v} = ${raw} ➔ ${pStr}` : `${padZero(hit.refVal)} ${v >= 0 ? '+' : ''}${v} = ${pStr}`;
+                            return raw > globalMaxLottoNum ? `${padZero(hit.refVal)} ${v >= 0 ? '+' : ''}${v} = ${raw} ➔ ${pStr}` : `${padZero(hit.refVal)} ${v >= 0 ? '+' : ''}${v} = ${pStr}`;
                         }
                         if (hit.op === 'sub') {
                             let raw = hit.refVal - v;
@@ -870,7 +893,7 @@
                     let p_num = 0; let raw = 0;
                     if (p.details[0].op === 'add') {
                         raw = ref_val + v; p_num = modNum(raw);
-                        return raw > maxLottoNum ? `${padZero(ref_val)} ${v >= 0 ? '+' : ''}${v} = ${raw} ➔ <b>${padZero(p_num)}</b>` : `${padZero(ref_val)} ${v >= 0 ? '+' : ''}${v} = <b>${padZero(p_num)}</b>`;
+                        return raw > globalMaxLottoNum ? `${padZero(ref_val)} ${v >= 0 ? '+' : ''}${v} = ${raw} ➔ <b>${padZero(p_num)}</b>` : `${padZero(ref_val)} ${v >= 0 ? '+' : ''}${v} = <b>${padZero(p_num)}</b>`;
                     }
                     if (p.details[0].op === 'sub') {
                         raw = ref_val - v; p_num = modNum(raw);
