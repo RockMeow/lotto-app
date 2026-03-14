@@ -83,13 +83,10 @@
             top: 0; 
             z-index: 1000; 
             border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
+            display: grid; 
+            grid-template-columns: 1fr auto 1fr; /* 分成三欄：左撐開、中固定、右撐開 */
             align-items: center;
             transition: background 0.3s ease, border-color 0.3s ease;
-			display: grid; 
-			grid-template-columns: 1fr auto 1fr; /* 分成三欄：左撐開、中固定、右撐開 */
-			align-items: center;
         }
         
         .app-header h1 { 
@@ -98,9 +95,9 @@
             color: var(--text-main); 
             font-weight: 800; 
             letter-spacing: 0.5px; 
-			grid-column: 2; /* 讓標題佔據中間那一欄 */
-			text-align: center;
-			white-space: nowrap;
+            grid-column: 2; /* 讓標題佔據中間那一欄 */
+            text-align: center;
+            white-space: nowrap;
         }
 
         /* 🌞/🌙 深色模式切換按鈕 */
@@ -113,7 +110,7 @@
             border-radius: 50%;
             transition: transform 0.2s;
             color: var(--text-main);
-			justify-self: end; /* 讓按鈕靠最後面 */
+            justify-self: end; /* 讓按鈕靠最後面 */
         }
         .theme-toggle:active { transform: scale(0.8); }
 
@@ -131,7 +128,7 @@
             transition: background-color 0.3s ease;
         }
         .form-group { display: flex; flex-direction: column; }
-        label { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 10px; padding-left: 4px; }
+        label { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 10px; padding-left: 0; text-align: center; display: block; }
 
         select { 
             width: 100%; 
@@ -167,9 +164,9 @@
             flex: 1; 
             background-color: transparent; 
             border: none; 
-            padding: 14px 8px; 
+            padding: 14px 2px; 
             border-radius: 12px; 
-            font-size: 15px; 
+            font-size: 13px; 
             color: var(--text-muted); 
             font-weight: 700; 
             cursor: pointer; 
@@ -225,6 +222,10 @@
             margin-bottom: 20px; 
             padding-bottom: 16px; 
             border-bottom: 1.5px solid var(--border); 
+            display: flex;
+            flex-direction: column;
+            align-items: center;    /* 水平置中 */
+            justify-content: center; /* 垂直置中 */
             text-align: center;
         }
 
@@ -268,11 +269,11 @@
         .due-item { background-color: var(--warning-bg); border: 1.5px solid var(--warning-border); padding: 18px; margin-top: 20px; border-radius: 16px; line-height: 1.7; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .due-title { font-weight: 900; color: var(--warning); margin-bottom: 10px; font-size: 16px; }
 
-        /* 🎱 立體樂透球專屬樣式 */
+        /* 🎱 立體樂透球 - 修正置中版 */
         .lotto-ball {
             display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            align-items: center;      /* 垂直居中 */
+            justify-content: center;   /* 水平居中 */
             width: 36px;
             height: 36px;
             border-radius: 50%;
@@ -281,9 +282,15 @@
             font-size: 17px;
             margin: 0 4px;
             font-family: Arial, Helvetica, sans-serif;
+            
+            /* 關鍵修正點 */
+            line-height: 1;           /* 消除行高導致的下壓 */
+            text-align: center;       /* 雙重保險 */
+            vertical-align: middle;   /* 修正與文字並排時的基準線偏移 */
+            
             box-shadow: inset -3px -3px 6px rgba(0,0,0,0.25), 0 3px 6px rgba(0,0,0,0.2);
             text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
-            letter-spacing: -0.5px;
+            letter-spacing: -0.5px;   /* 避免數字間距推擠 */
         }
         .ball-0 { background: linear-gradient(135deg, #60a5fa, #2563eb); } /* 01-09 藍 */
         .ball-1 { background: linear-gradient(135deg, #34d399, #059669); } /* 10-19 綠 */
@@ -329,10 +336,11 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>成立次數</label>
+                <label>分析模式 (預測數量)</label>
                 <div class="button-group" id="outCountGroup">
-                    <button type="button" class="toggle-btn active" data-value="1">準5+ (輸出1碼)</button>
-                    <button type="button" class="toggle-btn" data-value="2">準7+ (輸出2碼)</button>
+                    <button type="button" class="toggle-btn active" data-value="1">準5+(1碼)</button>
+                    <button type="button" class="toggle-btn" data-value="2">準7+(2碼)</button>
+                    <button type="button" class="toggle-btn" data-value="3">等差版(3碼)</button>
                 </div>
             </div>
             <button id="startBtn" class="start-btn" onclick="startAnalysis()">開始分析</button>
@@ -478,6 +486,7 @@
         const checkStreak = (len) => {
             if (outCount === 1) return len >= 5;
             if (outCount === 2) return len === 7 || len === 9;
+            if (outCount === 3) return len >= 5; // 🎯 3碼模式，只要歷史命中超過5次就抓出來
             return false;
         };
         
@@ -487,17 +496,28 @@
         let maxOffset = (logicType === 'drag') ? 0 : 15; 
         let minOffset = (logicType === 'drag') ? 0 : -15; 
 
+        // 🎯 核心升級：在這裡加入 3碼(等差) 的陣列組合
         let valCombsAddSub = [];
-        for (let v1 = 0; v1 < globalMaxLottoNum; v1++) {
-            if (outCount === 1) valCombsAddSub.push([v1]);
-            else for (let v2 = v1 + 1; v2 < globalMaxLottoNum; v2++) valCombsAddSub.push([v1, v2]);
+        if (outCount === 1) {
+            for (let v1 = 0; v1 < globalMaxLottoNum; v1++) valCombsAddSub.push([v1]);
+        } else if (outCount === 2) {
+            for (let v1 = 0; v1 < globalMaxLottoNum; v1++) {
+                for (let v2 = v1 + 1; v2 < globalMaxLottoNum; v2++) valCombsAddSub.push([v1, v2]);
+            }
+        } else if (outCount === 3) {
+            // 高手等差邏輯：產生 [-A, 0, A] 的完美等距組合
+            for (let A = 1; A <= 15; A++) {
+                valCombsAddSub.push([-A, 0, A]); 
+            }
         }
         
         let valCombsSum = [];
         let maxSumLimit = globalMaxLottoNum * 2 + 2;
-        for (let z1 = 10; z1 <= maxSumLimit; z1++) {
-            if (outCount === 1) valCombsSum.push([z1]);
-            else for (let z2 = z1 + 1; z2 <= maxSumLimit; z2++) valCombsSum.push([z1, z2]);
+        if (outCount === 1 || outCount === 2) {
+            for (let z1 = 10; z1 <= maxSumLimit; z1++) {
+                if (outCount === 1) valCombsSum.push([z1]);
+                else for (let z2 = z1 + 1; z2 <= maxSumLimit; z2++) valCombsSum.push([z1, z2]);
+            }
         }
 
         let maxLottoNum = globalMaxLottoNum;
@@ -528,27 +548,30 @@
                         if (logicType === 'add_sub' || logicType === 'drag') {
                             for (let vals of valCombsAddSub) {
                                 let predsAdd = vals.map(v => modNum(RefNum + v));
-                                let hitsArrayAdd = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'add', T, L);
+                                let hitsArrayAdd = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'add', T, L, outCount);
                                 if (checkStreak(hitsArrayAdd.length)) {
                                     recordResult(results, predsAdd, hitsArrayAdd, P1, X, O, P2, getOpStr(vals, 'add'), T, L_trigger);
                                 }
                                 
-                                let isAllZero = vals.every(v => v === 0);
-                                if (!isAllZero) {
-                                    let predsSub = vals.map(v => modNum(RefNum - v));
-                                    let hitsArraySub = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'sub', T, L);
-                                    if (checkStreak(hitsArraySub.length)) {
-                                        recordResult(results, predsSub, hitsArraySub, P1, X, O, P2, getOpStr(vals, 'sub'), T, L_trigger);
+                                // 只有 1碼或 2碼 模式才需要算純減法，3碼(等差)本身已經包含正負雙向了
+                                if (outCount !== 3) {
+                                    let isAllZero = vals.every(v => v === 0);
+                                    if (!isAllZero) {
+                                        let predsSub = vals.map(v => modNum(RefNum - v));
+                                        let hitsArraySub = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'sub', T, L, outCount);
+                                        if (checkStreak(hitsArraySub.length)) {
+                                            recordResult(results, predsSub, hitsArraySub, P1, X, O, P2, getOpStr(vals, 'sub'), T, L_trigger);
+                                        }
                                     }
                                 }
                             }
                         }
 
-                        if (logicType === 'sum_val') {
+                        if (logicType === 'sum_val' && outCount !== 3) { // 3碼模式不跑合值
                             for (let vals of valCombsSum) {
                                 let predsSum = vals.map(z => z - RefNum);
                                 if (predsSum.every(p => p >= 1 && p <= globalMaxLottoNum)) {
-                                    let hitsArraySum = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'sum', T, L);
+                                    let hitsArraySum = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'sum', T, L, outCount);
                                     if (checkStreak(hitsArraySum.length)) {
                                         recordResult(results, predsSum, hitsArraySum, P1, X, O, P2, getOpStr(vals, 'sum'), T, L_trigger);
                                     }
@@ -567,12 +590,12 @@
     }
 
     function getOpStr(vals, op) {
-        if (op === 'add') return vals.map(v => '+' + v).join(', ');
+        if (op === 'add') return vals.map(v => (v >= 0 ? '+' : '') + v).join(', ');
         if (op === 'sub') return vals.map(v => '-' + v).join(', ');
         if (op === 'sum') return '合' + vals.join('、');
     }
 
-    function findActiveStreakExact(H_list, L_trigger, O, P2, vals, op, T, L) {
+    function findActiveStreakExact(H_list, L_trigger, O, P2, vals, op, T, L, outCount) {
         let maxLottoNum = globalMaxLottoNum;
         let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
 
@@ -606,7 +629,17 @@
             let targetNums = historicalData[target_idx].numbers;
             let matchedNums = preds.filter(p => targetNums.includes(p));
 
-            if (matchedNums.length > 0) {
+            // 🎯 核心判定修改：
+            let isHit = false;
+            if (outCount === 3) {
+                // 等差3碼模式：只要這3顆中「命中任何 1 顆以上」就算連準不斷！
+                isHit = matchedNums.length >= 1; 
+            } else {
+                // 1碼或2碼模式：必須「全部命中」
+                isHit = matchedNums.length === preds.length; 
+            }
+
+            if (isHit) {
                 hitsInfo.push({
                     triggerIdx: h,
                     refIdx: h_ref,
@@ -688,7 +721,6 @@
             
             let title = document.createElement('div');
             title.className = 'pred-title';
-            // 🎯 修改點 1：標題變成樂透球
             title.innerHTML = `
                 <div style="font-size:14px; color:var(--text-muted); margin-bottom:12px; font-weight:700;">本期預測號碼</div>
                 <div>${createLottoBallsHtml(predKey)}</div>
@@ -715,7 +747,7 @@
                         
                         if (hit.op === 'add') {
                             let raw = hit.refVal + v;
-                            return raw > maxLottoNum ? `${padZero(hit.refVal)} + ${v} = ${raw} ➔ ${pStr}` : `${padZero(hit.refVal)} + ${v} = ${pStr}`;
+                            return raw > maxLottoNum ? `${padZero(hit.refVal)} ${v >= 0 ? '+' : ''}${v} = ${raw} ➔ ${pStr}` : `${padZero(hit.refVal)} ${v >= 0 ? '+' : ''}${v} = ${pStr}`;
                         }
                         if (hit.op === 'sub') {
                             let raw = hit.refVal - v;
@@ -744,7 +776,7 @@
                     let p_num = 0; let raw = 0;
                     if (p.details[0].op === 'add') {
                         raw = ref_val + v; p_num = modNum(raw);
-                        return raw > maxLottoNum ? `${padZero(ref_val)} + ${v} = ${raw} ➔ <b>${padZero(p_num)}</b>` : `${padZero(ref_val)} + ${v} = <b>${padZero(p_num)}</b>`;
+                        return raw > maxLottoNum ? `${padZero(ref_val)} ${v >= 0 ? '+' : ''}${v} = ${raw} ➔ <b>${padZero(p_num)}</b>` : `${padZero(ref_val)} ${v >= 0 ? '+' : ''}${v} = <b>${padZero(p_num)}</b>`;
                     }
                     if (p.details[0].op === 'sub') {
                         raw = ref_val - v; p_num = modNum(raw);

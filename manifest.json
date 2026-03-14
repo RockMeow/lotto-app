@@ -1,6 +1,6 @@
 {
   "name": "版路分析工具",
-  "short_name": "版路分析",
+  "short_name": "版路工具",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f1f5f9",
