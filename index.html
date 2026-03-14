@@ -337,10 +337,7 @@
                     <option value="./649_history_all_sorted.csv">大樂透</option>
                     <option value="./Fan_history_all_sorted.csv">天天樂</option>
                     <option value="./Six_history_all_sorted.csv">六合彩</option>
-                </select>
-                <div id="countdownBox" class="countdown-box">
-                    ⏳ 距離下期開獎：<span id="countdownText">--:--:--</span>
-                </div>			  
+                </select>	  
             </div>
             <div class="form-group">
                 <label>版路功能</label>
@@ -384,17 +381,7 @@
     let historicalData = [];
     let globalMaxLottoNum = 39; 
     let globalBallCount = 5;    
-    let globalBallCount = 5;    
-    let countdownTimer = null; // 計時器全域變數
-
-    // 🎯 各彩券開獎時間規則設定
-    // days: 0=週日, 1=週一, ..., 6=週六
-    const drawSchedules = {
-        '539': { days: [1, 2, 3, 4, 5, 6], h: 20, m: 30 }, // 週一至六 20:30
-        '649': { days: [2, 5], h: 20, m: 30 },             // 週二、五 20:30
-        'Fan': { days: [0, 1, 2, 3, 4, 5, 6], h: 9, m: 30 }, // 每天 09:30
-        'Six': { days: [2, 4, 6], h: 21, m: 30 }           // 週二、四、六 21:30
-    };
+    // 深色模式切換邏輯
     function toggleTheme() {
         const body = document.body;
         const icon = document.getElementById('themeIcon');
@@ -425,74 +412,15 @@
     });
     function padZero(num) { return num < 10 ? '0' + num : num.toString(); }
 
-    // ⏳ 啟動倒數計時功能
-    function startCountdown(url) {
-        clearInterval(countdownTimer);
-        const box = document.getElementById('countdownBox');
-        const textEl = document.getElementById('countdownText');
-        box.style.display = 'none';
-
-        let type = '';
-        if (url.includes('539')) type = '539';
-        else if (url.includes('649')) type = '649';
-        else if (url.includes('Fan')) type = 'Fan';
-        else if (url.includes('Six')) type = 'Six';
-
-        if (!type || !drawSchedules[type]) return;
-
-        const schedule = drawSchedules[type];
-        
-        function update() {
-            let now = new Date();
-            let nextDraw = null;
-
-            // 尋找未來 7 天內最近的開獎日
-            for (let i = 0; i <= 7; i++) {
-                let d = new Date(now);
-                d.setDate(now.getDate() + i);
-                d.setHours(schedule.h, schedule.m, 0, 0);
-                
-                // 如果是今天，且已經過了開獎時間，就跳過找下一天
-                if (i === 0 && now >= d) continue;
-                
-                if (schedule.days.includes(d.getDay())) {
-                    nextDraw = d;
-                    break;
-                }
-            }
-
-            if (!nextDraw) return;
-
-            let diff = nextDraw - now;
-            let days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            let h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-            let m = Math.floor((diff / 1000 / 60) % 60);
-            let s = Math.floor((diff / 1000) % 60);
-
-            let timeStr = "";
-            if (days > 0) timeStr += `${days} 天 `;
-            timeStr += `${padZero(h)} 小時 ${padZero(m)} 分 ${padZero(s)} 秒`;
-
-            textEl.innerText = timeStr;
-            box.style.display = 'block';
-        }
-
-        update(); // 先執行一次避免延遲
-        countdownTimer = setInterval(update, 1000);
-    }
     async function fetchGoogleCSV() {
         const url = document.getElementById('csvSource').value;
         const resultBox = document.getElementById('resultBox');
         if (!url || url.includes('請替換成')) {
             resultBox.innerHTML = `<div class="loading-text">請先從上方選單選擇彩券類型。</div>`;
-            historicalData = [];
-            document.getElementById('countdownBox').style.display = 'none';
-            clearInterval(countdownTimer);							  
+            historicalData = [];					  
             return;
         }
 
-        // 觸發倒數計時
-        startCountdown(url);
         resultBox.innerHTML = `<div class="loading-text">🔄 正在抓取最新資料...<br><span style="font-weight:normal; font-size:13px; color:var(--text-muted);">請稍候...</span></div>`;
         try {
             const fetchUrl = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
