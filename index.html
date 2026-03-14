@@ -84,7 +84,7 @@
             z-index: 1000; 
             border-bottom: 1px solid var(--border);
             display: grid; 
-            grid-template-columns: 1fr auto 1fr;
+            grid-template-columns: 1fr auto 1fr; /* 分成三欄：左撐開、中固定、右撐開 */
             align-items: center;
             transition: background 0.3s ease, border-color 0.3s ease;
         }
@@ -95,11 +95,12 @@
             color: var(--text-main); 
             font-weight: 800; 
             letter-spacing: 0.5px; 
-            grid-column: 2;
+            grid-column: 2; /* 讓標題佔據中間那一欄 */
             text-align: center;
             white-space: nowrap;
         }
 
+        /* 🌞/🌙 深色模式切換按鈕 */
         .theme-toggle {
             background: none;
             border: none;
@@ -109,7 +110,7 @@
             border-radius: 50%;
             transition: transform 0.2s;
             color: var(--text-main);
-            justify-self: end;
+            justify-self: end; /* 讓按鈕靠最後面 */
         }
         .theme-toggle:active { transform: scale(0.8); }
 
@@ -223,8 +224,8 @@
             border-bottom: 1.5px solid var(--border); 
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            align-items: center;    /* 水平置中 */
+            justify-content: center; /* 垂直置中 */
             text-align: center;
         }
 
@@ -268,10 +269,11 @@
         .due-item { background-color: var(--warning-bg); border: 1.5px solid var(--warning-border); padding: 18px; margin-top: 20px; border-radius: 16px; line-height: 1.7; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .due-title { font-weight: 900; color: var(--warning); margin-bottom: 10px; font-size: 16px; }
 
+        /* 🎱 立體樂透球 - 修正置中版 */
         .lotto-ball {
             display: inline-flex;
-            align-items: center;      
-            justify-content: center;   
+            align-items: center;      /* 垂直居中 */
+            justify-content: center;   /* 水平居中 */
             width: 36px;
             height: 36px;
             border-radius: 50%;
@@ -280,18 +282,21 @@
             font-size: 17px;
             margin: 0 4px;
             font-family: Arial, Helvetica, sans-serif;
-            line-height: 1;           
-            text-align: center;       
-            vertical-align: middle;   
+            
+            /* 關鍵修正點 */
+            line-height: 1;           /* 消除行高導致的下壓 */
+            text-align: center;       /* 雙重保險 */
+            vertical-align: middle;   /* 修正與文字並排時的基準線偏移 */
+            
             box-shadow: inset -3px -3px 6px rgba(0,0,0,0.25), 0 3px 6px rgba(0,0,0,0.2);
             text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
-            letter-spacing: -0.5px;   
+            letter-spacing: -0.5px;   /* 避免數字間距推擠 */
         }
-        .ball-0 { background: linear-gradient(135deg, #60a5fa, #2563eb); } 
-        .ball-1 { background: linear-gradient(135deg, #34d399, #059669); } 
-        .ball-2 { background: linear-gradient(135deg, #f87171, #dc2626); } 
-        .ball-3 { background: linear-gradient(135deg, #fbbf24, #d97706); } 
-        .ball-4 { background: linear-gradient(135deg, #c084fc, #7e22ce); } 
+        .ball-0 { background: linear-gradient(135deg, #60a5fa, #2563eb); } /* 01-09 藍 */
+        .ball-1 { background: linear-gradient(135deg, #34d399, #059669); } /* 10-19 綠 */
+        .ball-2 { background: linear-gradient(135deg, #f87171, #dc2626); } /* 20-29 紅 */
+        .ball-3 { background: linear-gradient(135deg, #fbbf24, #d97706); } /* 30-39 橘 */
+        .ball-4 { background: linear-gradient(135deg, #c084fc, #7e22ce); } /* 40-49 紫 */
     </style>
 </head>
 <body>
@@ -325,17 +330,17 @@
             <div class="form-group">
                 <label>比對期數</label>
                 <select id="period">
-                    <option value="1">一期內</option>
-                    <option value="6">六期內</option>
-                    <option value="12">十二期內</option>
+                    <option value="1">一期</option>
+                    <option value="6">六期</option>
+                    <option value="12">十二期</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>連準 (號碼數量)</label>
+                <label>分析模式 (預測數量)</label>
                 <div class="button-group" id="outCountGroup">
-                    <button type="button" class="toggle-btn active" data-value="1">準5以上 (1碼)</button>
-                    <button type="button" class="toggle-btn" data-value="2">準7以上 (2碼)</button>
-                    <button type="button" class="toggle-btn" data-value="3">等差版 (3碼)</button>
+                    <button type="button" class="toggle-btn active" data-value="1">準5+(1碼)</button>
+                    <button type="button" class="toggle-btn" data-value="2">準7+(2碼)</button>
+                    <button type="button" class="toggle-btn" data-value="3">等差版(3碼)</button>
                 </div>
             </div>
             <button id="startBtn" class="start-btn" onclick="startAnalysis()">開始分析</button>
@@ -352,6 +357,7 @@
     let globalMaxLottoNum = 39; 
     let globalBallCount = 5;    
 
+    // 深色模式切換邏輯
     function toggleTheme() {
         const body = document.body;
         const icon = document.getElementById('themeIcon');
@@ -366,6 +372,7 @@
         }
     }
 
+    // 將號碼轉換成立體樂透球 HTML
     function createLottoBallsHtml(numsStr) {
         return numsStr.split(', ').map(numStr => {
             let n = parseInt(numStr, 10);
@@ -475,15 +482,11 @@
         const maxT = parseInt(document.getElementById('period').value);
         const outCount = parseInt(document.querySelector('#outCountGroup .toggle-btn.active').dataset.value);
         
-        // 🎯 調整 3碼全中 的最低連準次數
-        let minHits = 5;
-        if (outCount === 2) minHits = 7;
-        if (outCount === 3) minHits = 2; // 3顆全中機率很低，連準2次就是超強版路
-
+        const minHits = outCount === 1 ? 5 : 7;
         const checkStreak = (len) => {
             if (outCount === 1) return len >= 5;
             if (outCount === 2) return len === 7 || len === 9;
-            if (outCount === 3) return len >= 2; 
+            if (outCount === 3) return len >= 5; // 🎯 3碼模式，只要歷史命中超過5次就抓出來
             return false;
         };
         
@@ -493,6 +496,7 @@
         let maxOffset = (logicType === 'drag') ? 0 : 15; 
         let minOffset = (logicType === 'drag') ? 0 : -15; 
 
+        // 🎯 核心升級：在這裡加入 3碼(等差) 的陣列組合
         let valCombsAddSub = [];
         if (outCount === 1) {
             for (let v1 = 0; v1 < globalMaxLottoNum; v1++) valCombsAddSub.push([v1]);
@@ -501,6 +505,7 @@
                 for (let v2 = v1 + 1; v2 < globalMaxLottoNum; v2++) valCombsAddSub.push([v1, v2]);
             }
         } else if (outCount === 3) {
+            // 高手等差邏輯：產生 [-A, 0, A] 的完美等距組合
             for (let A = 1; A <= 15; A++) {
                 valCombsAddSub.push([-A, 0, A]); 
             }
@@ -548,6 +553,7 @@
                                     recordResult(results, predsAdd, hitsArrayAdd, P1, X, O, P2, getOpStr(vals, 'add'), T, L_trigger);
                                 }
                                 
+                                // 只有 1碼或 2碼 模式才需要算純減法，3碼(等差)本身已經包含正負雙向了
                                 if (outCount !== 3) {
                                     let isAllZero = vals.every(v => v === 0);
                                     if (!isAllZero) {
@@ -561,7 +567,7 @@
                             }
                         }
 
-                        if (logicType === 'sum_val' && outCount !== 3) {
+                        if (logicType === 'sum_val' && outCount !== 3) { // 3碼模式不跑合值
                             for (let vals of valCombsSum) {
                                 let predsSum = vals.map(z => z - RefNum);
                                 if (predsSum.every(p => p >= 1 && p <= globalMaxLottoNum)) {
@@ -623,8 +629,15 @@
             let targetNums = historicalData[target_idx].numbers;
             let matchedNums = preds.filter(p => targetNums.includes(p));
 
-            // 🎯 嚴格判定：不論是1碼、2碼還是3碼，都必須「預測的號碼全部命中」才算連準！
-            let isHit = matchedNums.length === preds.length; 
+            // 🎯 核心判定修改：
+            let isHit = false;
+            if (outCount === 3) {
+                // 等差3碼模式：只要這3顆中「命中任何 1 顆以上」就算連準不斷！
+                isHit = matchedNums.length >= 1; 
+            } else {
+                // 1碼或2碼模式：必須「全部命中」
+                isHit = matchedNums.length === preds.length; 
+            }
 
             if (isHit) {
                 hitsInfo.push({
@@ -747,7 +760,7 @@
                     <div class="detail-item">
                         <div class="detail-title">🔸 歷史連準 第 ${idx+1} 次:</div>
                         <div><span class="date-badge">${triggerDate}</span> 觸發期: (${triggerNums}) 第 ${p.P1+1} 支 <b>${padZero(p.X)}</b></div>
-                        <div><span class="date-badge">${refDate}</span> 參考期: (${refNums}) 第 ${p.P2+1} 支 <b>${padZero(hit.refVal)}</b></br> ➔ ${mathStr}</div>
+                        <div><span class="date-badge">${refDate}</span> 參考期: (${refNums}) 第 ${p.P2+1} 支 <b>${padZero(hit.refVal)}</b> ➔ ${mathStr}</div>
                         <div><span class="date-badge target-badge">${targetDate}</span> 下 ${hit.t} 期開出: <b>(${targetNums})</b> ✅</div>
                     </div>`;
                 }).join('');
