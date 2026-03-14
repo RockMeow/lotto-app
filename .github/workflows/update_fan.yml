@@ -1,8 +1,8 @@
-name: 每日更新-天天樂 (10:00)
+name: 每日更新-天天樂 (12:00)
 
 on:
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '0 4 * * *'
   workflow_dispatch:
 
 jobs:
