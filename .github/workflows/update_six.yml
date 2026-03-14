@@ -1,8 +1,8 @@
-name: 每日更新-六合彩 (22:00)
+name: 每日更新-六合彩 (23:59)
 
 on:
   schedule:
-    - cron: '0 14 * * *'
+    - cron: '59 15 * * *'
   workflow_dispatch:
 
 jobs:
