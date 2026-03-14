@@ -150,6 +150,22 @@
         }
         select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
 
+        /* ⏳ 倒數計時框樣式 */
+        .countdown-box {
+            display: none;
+            margin-top: 12px;
+            padding: 12px 14px;
+            background-color: var(--warning-bg);
+            border: 1.5px solid var(--warning-border);
+            border-radius: 14px;
+            font-size: 14px;
+            color: var(--warning);
+            font-weight: 800;
+            text-align: center;
+            animation: fadeIn 0.4s ease;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.05);
+        }
+
         .button-group { 
             display: flex; 
             background-color: var(--toggle-bg); 
@@ -313,6 +329,9 @@
                     <option value="./Fan_history_all_sorted.csv">天天樂</option>
                     <option value="./Six_history_all_sorted.csv">六合彩</option>
                 </select>
+                <div id="countdownBox" class="countdown-box">
+                    ⏳ 距離下期開獎：<span id="countdownText">--:--:--</span>
+                </div>
             </div>
             <div class="form-group">
                 <label>版路功能</label>
@@ -323,7 +342,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>分析期數</label>
+                <label>比對期數</label>
                 <select id="period">
                     <option value="1">一期內</option>
                     <option value="6">六期內</option>
@@ -331,11 +350,11 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>分析模式 (預測數量)</label>
+                <label>連準 (號碼數量)</label>
                 <div class="button-group" id="outCountGroup">
-                    <button type="button" class="toggle-btn active" data-value="1">準5+(1碼)</button>
-                    <button type="button" class="toggle-btn" data-value="2">準7+(2碼)</button>
-                    <button type="button" class="toggle-btn" data-value="3">等差版(3碼)</button>
+                    <button type="button" class="toggle-btn active" data-value="1">準5以上 (1碼)</button>
+                    <button type="button" class="toggle-btn" data-value="2">準7以上 (2碼)</button>
+                    <button type="button" class="toggle-btn" data-value="3">等差版 (3碼)</button>
                 </div>
             </div>
             <button id="startBtn" class="start-btn" onclick="startAnalysis()">開始分析</button>
@@ -351,6 +370,16 @@
     let historicalData = [];
     let globalMaxLottoNum = 39; 
     let globalBallCount = 5;    
+    let countdownTimer = null; // 計時器全域變數
+
+    // 🎯 各彩券開獎時間規則設定
+    // days: 0=週日, 1=週一, ..., 6=週六
+    const drawSchedules = {
+        '539': { days: [1, 2, 3, 4, 5, 6], h: 20, m: 30 }, // 週一至六 20:30
+        '649': { days: [2, 5], h: 20, m: 30 },             // 週二、五 20:30
+        'Fan': { days: [0, 1, 2, 3, 4, 5, 6], h: 9, m: 30 }, // 每天 09:30
+        'Six': { days: [2, 4, 6], h: 21, m: 30 }           // 週二、四、六 21:30
+    };
 
     function toggleTheme() {
         const body = document.body;
@@ -384,6 +413,62 @@
 
     function padZero(num) { return num < 10 ? '0' + num : num.toString(); }
 
+    // ⏳ 啟動倒數計時功能
+    function startCountdown(url) {
+        clearInterval(countdownTimer);
+        const box = document.getElementById('countdownBox');
+        const textEl = document.getElementById('countdownText');
+        box.style.display = 'none';
+
+        let type = '';
+        if (url.includes('539')) type = '539';
+        else if (url.includes('649')) type = '649';
+        else if (url.includes('Fan')) type = 'Fan';
+        else if (url.includes('Six')) type = 'Six';
+
+        if (!type || !drawSchedules[type]) return;
+
+        const schedule = drawSchedules[type];
+        
+        function update() {
+            let now = new Date();
+            let nextDraw = null;
+
+            // 尋找未來 7 天內最近的開獎日
+            for (let i = 0; i <= 7; i++) {
+                let d = new Date(now);
+                d.setDate(now.getDate() + i);
+                d.setHours(schedule.h, schedule.m, 0, 0);
+                
+                // 如果是今天，且已經過了開獎時間，就跳過找下一天
+                if (i === 0 && now >= d) continue;
+                
+                if (schedule.days.includes(d.getDay())) {
+                    nextDraw = d;
+                    break;
+                }
+            }
+
+            if (!nextDraw) return;
+
+            let diff = nextDraw - now;
+            let days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            let h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            let m = Math.floor((diff / 1000 / 60) % 60);
+            let s = Math.floor((diff / 1000) % 60);
+
+            let timeStr = "";
+            if (days > 0) timeStr += `${days} 天 `;
+            timeStr += `${padZero(h)} 小時 ${padZero(m)} 分 ${padZero(s)} 秒`;
+
+            textEl.innerText = timeStr;
+            box.style.display = 'block';
+        }
+
+        update(); // 先執行一次避免延遲
+        countdownTimer = setInterval(update, 1000);
+    }
+
     async function fetchGoogleCSV() {
         const url = document.getElementById('csvSource').value;
         const resultBox = document.getElementById('resultBox');
@@ -391,8 +476,13 @@
         if (!url || url.includes('請替換成')) {
             resultBox.innerHTML = `<div class="loading-text">請先從上方選單選擇彩券類型。</div>`;
             historicalData = [];
+            document.getElementById('countdownBox').style.display = 'none';
+            clearInterval(countdownTimer);
             return;
         }
+
+        // 觸發倒數計時
+        startCountdown(url);
 
         resultBox.innerHTML = `<div class="loading-text">🔄 正在抓取最新資料...<br><span style="font-weight:normal; font-size:13px; color:var(--text-muted);">請稍候...</span></div>`;
         
@@ -475,10 +565,9 @@
         const maxT = parseInt(document.getElementById('period').value);
         const outCount = parseInt(document.querySelector('#outCountGroup .toggle-btn.active').dataset.value);
         
-        // 🎯 調整 3碼全中 的最低連準次數
         let minHits = 5;
         if (outCount === 2) minHits = 7;
-        if (outCount === 3) minHits = 2; // 3顆全中機率很低，連準2次就是超強版路
+        if (outCount === 3) minHits = 2; 
 
         const checkStreak = (len) => {
             if (outCount === 1) return len >= 5;
@@ -623,7 +712,6 @@
             let targetNums = historicalData[target_idx].numbers;
             let matchedNums = preds.filter(p => targetNums.includes(p));
 
-            // 🎯 嚴格判定：不論是1碼、2碼還是3碼，都必須「預測的號碼全部命中」才算連準！
             let isHit = matchedNums.length === preds.length; 
 
             if (isHit) {
