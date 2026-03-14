@@ -17,7 +17,7 @@ jobs:
           python-version: '3.10'
       - run: pip install requests beautifulsoup4
       - name: 執行 六合彩 爬蟲
-        run: python update_six.py
+        run: python update_Six.py
       - name: 儲存 CSV 變更並上傳
         run: |
           git config --local user.email "action@github.com"
