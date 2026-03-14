@@ -35,6 +35,7 @@
         .pattern-details { display: none; background: var(--detail-bg); border-top: 1.5px solid var(--border); padding: 20px 16px 16px; font-size: 14px; }
         .detail-item { border-bottom: 1.5px dashed var(--border); padding-bottom: 16px; margin-bottom: 16px; line-height: 1.7; }
         .date-badge { display: inline-block; background: var(--border); color: var(--text-main); padding: 4px 10px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-right: 6px; }
+        .target-badge { background: var(--success-bg); color: var(--success); }
         .highlight-num { color: var(--danger); font-weight: 900; font-size: 16px; }
         .due-item { background: var(--warning-bg); border: 1.5px solid var(--warning-border); padding: 18px; margin-top: 20px; border-radius: 16px; line-height: 1.7; }
         .lotto-ball { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; color: white; font-weight: 900; font-size: 17px; margin: 0 4px; line-height: 1; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); }
@@ -69,8 +70,11 @@
                 </div>
             </div>
             
+            <input type="hidden" id="logicType" value="add_sub">
+            <input type="hidden" id="period" value="1">
+
             <div style="background: var(--warning-bg); color: var(--warning); padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 700; text-align: center; border: 1px solid var(--warning-border);">
-                💡 系統將掃描「基準點 ±A」且歷史上曾 3 碼全中過的黃金版路。
+                💡 系統將掃描「基準點 ±A」且歷史上曾 3 碼全中過 2 次以上的黃金版路。
             </div>
 
             <button id="startBtn" class="start-btn" onclick="startAnalysis()">開始掃描 3 碼</button>
@@ -122,7 +126,9 @@
             }
             if (!nextDraw) return;
             let diff = nextDraw - now; let days = Math.floor(diff / (1000 * 60 * 60 * 24)); let h = Math.floor((diff / (1000 * 60 * 60)) % 24); let m = Math.floor((diff / 1000 / 60) % 60); let s = Math.floor((diff / 1000) % 60);
-            textEl.innerText = (days > 0 ? `${days}天 ` : "") + `${padZero(h)}:${padZero(m)}:${padZero(s)}`; box.style.display = 'block';
+            let timeStr = days > 0 ? `${days} 天 ` : "";
+            timeStr += `${padZero(h)}:${padZero(m)}:${padZero(s)}`;
+            textEl.innerText = timeStr; box.style.display = 'block';
         }
         update(); countdownTimer = setInterval(update, 1000);
     }
@@ -148,14 +154,17 @@
 
     function startAnalysis() {
         if (historicalData.length === 0) return alert('請先選擇彩券！');
-        document.getElementById('startBtn').disabled = true; document.getElementById('startBtn').innerText = '深層掃描中...';
-        document.getElementById('resultBox').innerHTML = `<div class="loading-text">正在掃描等差版路...</div>`;
+        document.getElementById('startBtn').disabled = true; document.getElementById('startBtn').innerText = '神機妙算中...';
+        document.getElementById('resultBox').innerHTML = `<div class="loading-text">正在掃描等差版路...<br><span style="font-size:13px; color:var(--text-muted);">需計算龐大組合，請稍候約5秒...</span></div>`;
         setTimeout(() => { runDiff3Engine(); }, 100);
     }
 
     function runDiff3Engine() {
         const L = historicalData.length - 1; let results = {}; 
-        let minHits = 1; // 🎯 只要歷史上曾經 3 碼全中過 1 次 (準1進2) 就抓出來
+        
+        // 🎯 這裡已經改為 2 次全中
+        let minHits = 2; 
+        
         let maxLottoNum = globalMaxLottoNum; let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
 
         let valCombsArithmetic = [];
@@ -222,7 +231,7 @@
     function renderResults(results) {
         const resultBox = document.getElementById('resultBox'); resultBox.innerHTML = '';
         let sortedKeys = Object.keys(results).sort((a, b) => { if (results[b].maxHits !== results[a].maxHits) return results[b].maxHits - results[a].maxHits; return results[b].patterns.length - results[a].patterns.length; });
-        if (sortedKeys.length === 0) { resultBox.innerHTML = `<div class="loading-text">目前未尋找到「3碼全中」的等差版路。</div>`; return; }
+        if (sortedKeys.length === 0) { resultBox.innerHTML = `<div class="loading-text">本期未尋找到符合條件的「3碼全中」等差版路。</div>`; return; }
 
         let patternIdCounter = 0; let modNum = (num) => ((num % globalMaxLottoNum) + globalMaxLottoNum) % globalMaxLottoNum || globalMaxLottoNum;
 
@@ -242,18 +251,40 @@
                     let targetDate = historicalData[hit.targetIdx].date; let targetNums = historicalData[hit.targetIdx].numbers.map(n => padZero(n)).join(', ');
                     let mathStr = hit.vals.map((v, i) => {
                         let predNum = hit.preds[i]; let pStr = `<span class="highlight-num">${padZero(predNum)}</span>`;
-                        let raw = hit.refVal + v; return raw > globalMaxLottoNum || raw < 1 ? `${padZero(hit.refVal)} ${v >= 0 ? '+' : ''}${v} = ${raw} ➔ ${pStr}` : `${padZero(hit.refVal)} ${v >= 0 ? '+' : ''}${v} = ${pStr}`;
+                        let raw = hit.refVal + v;
+                        return raw > globalMaxLottoNum || raw < 1 ? `${padZero(hit.refVal)} ${v >= 0 ? '+' : ''}${v} = ${raw} ➔ ${pStr}` : `${padZero(hit.refVal)} ${v >= 0 ? '+' : ''}${v} = ${pStr}`;
                     }).join(' ， ');
-                    return `<div class="detail-item"><div class="detail-title">🔸 歷史全中 第 ${idx+1} 次:</div><div><span class="date-badge">${triggerDate}</span> 觸發: (${triggerNums}) 第 ${p.P1+1} 支 <b>${padZero(p.X)}</b></div><div><span class="date-badge">${refDate}</span> 基準: (${refNums}) 第 ${p.P2+1} 支 <b>${padZero(hit.refVal)}</b></br> ➔ ${mathStr}</div><div><span class="date-badge target-badge">${targetDate}</span> 下 ${hit.t} 期爆發: <b>(${targetNums})</b> ✅</div></div>`;
+                    
+                    return `<div class="detail-item"><div class="detail-title">🔸 歷史全中 第 ${idx+1} 次:</div>
+                        <div><span class="date-badge">${triggerDate}</span> 觸發: (${triggerNums}) 第 ${p.P1+1} 支 <b>${padZero(p.X)}</b></div>
+                        <div><span class="date-badge">${refDate}</span> 基準: (${refNums}) 第 ${p.P2+1} 支 <b>${padZero(hit.refVal)}</b></br> ➔ ${mathStr}</div>
+                        <div><span class="date-badge target-badge">${targetDate}</span> 下 ${hit.t} 期爆發: <b>(${targetNums})</b> ✅</div></div>`;
                 }).join('');
 
-                let L_ref = p.L_trigger - p.O; let ref_val = historicalData[L_ref].numbers[p.P2];
-                let dueMathStr = p.details[0].vals.map((v) => { let raw = ref_val + v; let p_num = modNum(raw); return raw > globalMaxLottoNum || raw < 1 ? `${padZero(ref_val)} ${v >= 0 ? '+' : ''}${v} = ${raw} ➔ <b>${padZero(p_num)}</b>` : `${padZero(ref_val)} ${v >= 0 ? '+' : ''}${v} = <b>${padZero(p_num)}</b>`; }).join(' ， ');
+                let L_ref = p.L_trigger - p.O;
+                let refDate = historicalData[L_ref].date;
+                let refNums = historicalData[L_ref].numbers.map(n => padZero(n)).join(', ');
+                let ref_val = historicalData[L_ref].numbers[p.P2];
+                let triggerDate = historicalData[p.L_trigger].date;
+                let triggerNums = historicalData[p.L_trigger].numbers.map(n => padZero(n)).join(', ');
 
-                let dueHtml = `<div class="due-item"><div class="due-title">🌟 最新一期計算:</div><div><span class="date-badge">${historicalData[p.L_trigger].date}</span> 觸發: (${historicalData[p.L_trigger].numbers.map(n=>padZero(n)).join(', ')}) 第 ${p.P1+1} 支 <b>${padZero(p.X)}</b></div><div><span class="date-badge">${historicalData[L_ref].date}</span> 基準: (${historicalData[L_ref].numbers.map(n=>padZero(n)).join(', ')}) 第 ${p.P2+1} 支 <b>${padZero(ref_val)}</b></div><div style="margin-top: 8px; font-size: 14px;">➔ 計算: ${dueMathStr}</div><div style="margin-top: 16px; font-size: 15px; font-weight: 800; border-top: 1.5px dashed var(--border); padding-top: 14px;">本期預測開出：<div style="margin-top: 12px; margin-bottom: 4px;">${createLottoBallsHtml(predKey)}</div></div></div>`;
+                let dueMathStr = p.details[0].vals.map((v) => {
+                    let raw = ref_val + v; let p_num = modNum(raw);
+                    return raw > globalMaxLottoNum || raw < 1 ? `${padZero(ref_val)} ${v >= 0 ? '+' : ''}${v} = ${raw} ➔ <b>${padZero(p_num)}</b>` : `${padZero(ref_val)} ${v >= 0 ? '+' : ''}${v} = <b>${padZero(p_num)}</b>`;
+                }).join(' ， ');
 
-                let pLine = document.createElement('div'); pLine.className = 'pattern-container';
-                pLine.innerHTML = `<div class="pattern-header" onclick="toggleDetails('${pId}')"><div class="pattern-header-text"><span id="icon_${pId}" style="color: var(--border); font-size: 14px; margin-top: 2px; transition: transform 0.2s; display: inline-block;">❯</span><span>${p.desc}</span></div><span class="hit-count" style="background:var(--warning-bg); color:var(--warning); border:1px solid var(--warning-border);">全中 ${p.hitsCount} 次</span></div><div class="pattern-details" id="${pId}">${detailsHtml}${dueHtml}</div>`;
+                let dueHtml = `<div class="due-item"><div class="due-title">🌟 最新一期計算:</div>
+                    <div><span class="date-badge">${triggerDate}</span> 觸發: (${triggerNums}) 第 ${p.P1+1} 支 <b>${padZero(p.X)}</b></div>
+                    <div><span class="date-badge">${refDate}</span> 基準: (${refNums}) 第 ${p.P2+1} 支 <b>${padZero(ref_val)}</b></div>
+                    <div style="margin-top: 8px; font-size: 14px; color: var(--text-muted);">➔ 計算: ${dueMathStr}</div>
+                    <div style="margin-top: 16px; font-size: 15px; font-weight: 800; border-top: 1.5px dashed var(--border); padding-top: 14px;">本期預測開出：<div style="margin-top: 12px; margin-bottom: 4px;">${createLottoBallsHtml(predKey)}</div></div></div>`;
+
+                let pLine = document.createElement('div');
+                pLine.className = 'pattern-container';
+                pLine.innerHTML = `<div class="pattern-header" onclick="toggleDetails('${pId}')">
+                    <div class="pattern-header-text"><span id="icon_${pId}" style="color: var(--border); font-size: 14px; margin-top: 2px; transition: transform 0.2s; display: inline-block;">❯</span><span>${p.desc}</span></div>
+                    <span class="hit-count" style="background:var(--warning-bg); color:var(--warning); border:1px solid var(--warning-border);">3碼全中 ${p.hitsCount} 次</span></div>
+                    <div class="pattern-details" id="${pId}">${detailsHtml}${dueHtml}</div>`;
                 block.appendChild(pLine);
             });
             resultBox.appendChild(block);
