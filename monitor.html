@@ -284,8 +284,8 @@
 
         return `
             <div class="pred-block">
-                <div class="pred-title">🔮 明日綜合預測推薦</div>
-                <div style="font-size:12px; text-align:center; color:var(--warning); margin-bottom:15px; opacity:0.8;">★ 代表被多個版路同時看好</div>
+                <div class="pred-title">明日預測號碼</div>
+                <div style="font-size:12px; text-align:center; color:var(--warning); margin-bottom:15px; opacity:0.8;">★ 代表被多個版路帶出</div>
                 <div class="balls-wrap">${ballsHtml}</div>
             </div>
         `;
@@ -342,14 +342,14 @@
                         <div class="trigger-card">
                             <div class="card-header">
                                 <div>
-                                    <div class="t-info">${draw.date} 觸發 ${i===0?'<span style="background:var(--warning-bg); color:var(--warning); padding:2px 4px; border-radius:4px; font-size:10px; margin-left:4px;">最新</span>':''}</div>
-                                    <div class="t-num">開出號碼 ${padZero(n)}</div>
+                                    <div class="t-info">${draw.date} ${i===0?'<span style="background:var(--warning-bg); color:var(--warning); padding:2px 4px; border-radius:4px; font-size:10px; margin-left:4px;">最新</span>':''}</div>
+                                    <div class="t-num">號碼 ${padZero(n)}</div>
                                 </div>
                                 <div class="rate-badge">${p.rate}%</div>
                             </div>
-                            <div style="font-size:12px; font-weight:bold; margin-bottom:8px; color:var(--text-main);">預測帶號：</div>
+                            <div style="font-size:12px; font-weight:bold; margin-bottom:8px; color:var(--text-main);">拖牌號碼：</div>
                             <div style="display:flex; gap:6px; margin-bottom:15px;">${ballsHtml}</div>
-                            <div style="font-size:12px; font-weight:bold; margin-bottom:8px; color:var(--text-main);">追蹤過程：</div>
+                            <div style="font-size:12px; font-weight:bold; margin-bottom:8px; color:var(--text-main);">三期內：</div>
                             <div>${processHtml}</div>
                         </div>
                     `;
