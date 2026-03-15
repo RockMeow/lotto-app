@@ -144,6 +144,9 @@
     <a href="monitor.html" class="nav-item active">
         <span class="nav-icon">🎯</span>拖牌
     </a>
+    <a href="backtest.html" class="nav-item">
+        <span class="nav-icon">🔄</span>版路回測
+    </a>
 </div>
 
 <script>
@@ -180,7 +183,7 @@
             resultBox.innerHTML = `<div class="loading-text">請先從上方選單選擇彩券類型。</div>`;
             return;
         }
-        resultBox.innerHTML = `<div class="loading-text">🔄 正在載入並分析 2026 版路...</div>`;
+        resultBox.innerHTML = `<div class="loading-text">🔄 正在載入數據...</div>`;
         try {
             const fetchUrl = url + '?t=' + new Date().getTime();
             const response = await fetch(fetchUrl);
@@ -284,7 +287,7 @@
 
         return `
             <div class="pred-block">
-                <div class="pred-title">明日預測號碼</div>
+                <div class="pred-title">三期內綜合拖牌號碼</div>
                 <div style="font-size:12px; text-align:center; color:var(--warning); margin-bottom:15px; opacity:0.8;">★ 代表被多個版路帶出</div>
                 <div class="balls-wrap">${ballsHtml}</div>
             </div>
