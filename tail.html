@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>階梯尾數大師 - 自動抓牌系統</title>
+    <title>版路分析工具 - 尾數系統</title>
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#ffffff">
     <style>
@@ -87,33 +87,33 @@
 
 <div class="app-container">
     <header class="app-header">
-        <h1>階梯尾數大師 🕵️‍♂️</h1>
+        <h1>版路分析工具 - 尾數系統</h1>
         <button class="theme-toggle" onclick="toggleTheme()" id="themeIcon">🌙</button>
     </header>
     
     <div class="content">
         <div class="control-panel">
             <div class="form-group">
-                <label>選擇彩券庫</label>
+                <label>選擇彩券類型</label>
                 <select id="csvSource">
                     <option value="./539_history_all_sorted.csv">今彩539</option>
                     <option value="./Fan_history_all_sorted.csv">天天樂</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>歷史連準門檻 (大師標準是 3 次)</label>
+                <label>歷史連準門檻</label>
                 <select id="minHits">
-                    <option value="2">連準 2 次 (尋找初成形的版路)</option>
-                    <option value="3" selected>連準 3 次 (經典大師版路)</option>
-                    <option value="4">連準 4 次 (神級極端版路)</option>
+                    <option value="2">連準 2 次</option>
+                    <option value="3" selected>連準 3 次</option>
+                    <option value="4">連準 4 次</option>
                 </select>
             </div>
-            <button id="startBtn" class="start-btn" onclick="fetchAndAnalyze()">🔍 掃描隱藏公式</button>
+            <button id="startBtn" class="start-btn" onclick="fetchAndAnalyze()">🔍 掃描尾數公式</button>
         </div>
 
         <div id="resultBox">
             <div style="text-align:center; color:var(--text-muted); padding: 40px 20px; font-weight: 600; line-height: 1.6;">
-                點擊上方按鈕，系統將自動擷取最新開獎紀錄，並暴力破解出目前正在運行的「階梯減法/加法」尾數公式。
+                點擊上方按鈕，系統將自動擷取最新開獎紀錄，並搜尋出目前正在運行的尾數公式。
             </div>
         </div>
     </div>
@@ -121,8 +121,7 @@
 
 <div class="bottom-nav">
     <a href="index.html" class="nav-item">📊 主版路</a>
-    <a href="symmetric.html" class="nav-item">🎯 對稱雷達</a>
-    <a href="tail_master.html" class="nav-item active">🕵️‍♂️ 階梯尾數</a>
+    <a href="tail.html" class="nav-item active">🕵️‍♂️ 尾數版路</a>
 </div>
 
 <script>
@@ -160,8 +159,8 @@
         const resultBox = document.getElementById('resultBox');
         
         btn.disabled = true;
-        btn.innerText = '破解公式中...';
-        resultBox.innerHTML = `<div style="text-align:center; color:var(--primary); padding: 40px; font-weight: 700;">🔄 正在進行百萬次陣列窮舉掃描...</div>`;
+        btn.innerText = '搜尋公式中...';
+        resultBox.innerHTML = `<div style="text-align:center; color:var(--primary); padding: 40px; font-weight: 700;">🔄 正在進行掃描...</div>`;
         
         try {
             const fetchUrl = url + '?t=' + new Date().getTime();
@@ -263,12 +262,12 @@
                         let predTail = (X - curVarNum % 10 + 10) % 10;
                         
                         results.push({
-                            title: `🕵️‍♂️ 發現神祕基數 [${X}]`,
+                            title: `🕵️‍♂️ 發現公式 [${X}]`,
                             tPos: tPos + 1,
                             tVal: tVal,
                             vPos: vPos + 1,
                             hitCount: hitCount,
-                            formulaStr: `神祕基數 <span class="formula-highlight">[${X}]</span> － 下1期第 ${vPos+1} 顆球`,
+                            formulaStr: `公式 <span class="formula-highlight">[${X}]</span> － 下1期第 ${vPos+1} 顆球`,
                             predTail: predTail,
                             history: patternHistory.reverse()
                         });
