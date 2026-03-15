@@ -158,14 +158,15 @@
             width: 100%; 
             box-sizing: border-box;
             transition: background-color 0.3s ease;
+            gap: 4px;
         }
         .toggle-btn { 
             flex: 1; 
             background-color: transparent; 
             border: none; 
-            padding: 14px 2px; 
+            padding: 12px 2px; 
             border-radius: 12px; 
-            font-size: 13px; 
+            font-size: 12px; 
             color: var(--text-muted); 
             font-weight: 700; 
             cursor: pointer; 
@@ -266,7 +267,7 @@
             display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 10px; border-bottom: 1px dashed var(--border); padding-bottom: 8px; font-weight: 700;
         }
 
-		/* 📱 底部導航列 */
+        /* 📱 底部導航列 */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: var(--header-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -276,7 +277,7 @@
         .nav-item { flex: 1; text-align: center; text-decoration: none; color: var(--text-muted); font-size: 14px; font-weight: 800; padding: 10px; transition: color 0.2s; }
         .nav-item.active { color: var(--primary); }
         .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
-	</style>
+    </style>
 </head>
 <body>
 <div class="app-container">
@@ -294,7 +295,7 @@
                     <option value="./649_history_all_sorted.csv">大樂透</option>
                     <option value="./Fan_history_all_sorted.csv">天天樂</option>
                     <option value="./Six_history_all_sorted.csv">六合彩</option>
-                </select>	  
+                </select>     
             </div>
             <div class="form-group">
                 <label>測試版路功能</label>
@@ -313,10 +314,11 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>連準次數條件</label>
+                <label>分析模式 (預測數量)</label>
                 <div class="button-group" id="outCountGroup">
-                    <button type="button" class="toggle-btn active" data-value="1">準5以上</button>
-                    <button type="button" class="toggle-btn" data-value="2">準7以上</button>
+                    <button type="button" class="toggle-btn active" data-value="1">準5 (1碼)</button>
+                    <button type="button" class="toggle-btn" data-value="2">準7 (2碼)</button>
+                    <button type="button" class="toggle-btn" data-value="3">等差版 (3碼)</button>
                 </div>
             </div>
             <div class="form-group">
@@ -407,7 +409,7 @@
         const resultBox = document.getElementById('resultBox');
         if (!url || url.includes('請替換成')) {
             resultBox.innerHTML = `<div class="loading-text">請先從上方選單選擇彩券類型。</div>`;
-            historicalData = [];					  
+            historicalData = [];                      
             return;
         }
 
@@ -455,7 +457,6 @@
         startBtn.disabled = true;
         startBtn.innerText = '回測計算中...';
         
-        // 延遲執行核心邏輯，讓 UI 有時間更新
         setTimeout(() => { runBacktest(); }, 100);
     }
 
@@ -492,7 +493,10 @@
             let targetNums = historicalData[target_idx].numbers;
             let matchedNums = preds.filter(p => targetNums.includes(p));
             
-            if (matchedNums.length > 0) {
+            // diff3 (等差版) 需要比對所有 3 顆號碼都全中才算一次 hit
+            let isHit = (vals.length === 3) ? (matchedNums.length === preds.length) : (matchedNums.length > 0);
+
+            if (isHit) {
                 hitsCount++;
             } else {
                 break; 
@@ -507,16 +511,27 @@
         let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
         
         let valCombsAddSub = [];
-        for (let v1 = 0; v1 < globalMaxLottoNum; v1++) {
-            if (outCount === 1) valCombsAddSub.push([v1]);
-            else for (let v2 = v1 + 1; v2 < globalMaxLottoNum; v2++) valCombsAddSub.push([v1, v2]);
+        if (outCount === 1) {
+            for (let v1 = 0; v1 < globalMaxLottoNum; v1++) valCombsAddSub.push([v1]);
+        } else if (outCount === 2) {
+            for (let v1 = 0; v1 < globalMaxLottoNum; v1++) {
+                for (let v2 = v1 + 1; v2 < globalMaxLottoNum; v2++) valCombsAddSub.push([v1, v2]);
+            }
+        } else if (outCount === 3) {
+            // 等差版邏輯 (3碼)
+            for (let A = 1; A <= 15; A++) {
+                valCombsAddSub.push([-A, 0, A]); 
+            }
         }
         
         let valCombsSum = [];
         let maxSumLimit = globalMaxLottoNum * 2 + 2;
-        for (let z1 = 10; z1 <= maxSumLimit; z1++) {
-            if (outCount === 1) valCombsSum.push([z1]);
-            else for (let z2 = z1 + 1; z2 <= maxSumLimit; z2++) valCombsSum.push([z1, z2]);
+        // 等差版不適用 sum_val 組合推算
+        if (outCount === 1 || outCount === 2) {
+            for (let z1 = 10; z1 <= maxSumLimit; z1++) {
+                if (outCount === 1) valCombsSum.push([z1]);
+                else for (let z2 = z1 + 1; z2 <= maxSumLimit; z2++) valCombsSum.push([z1, z2]);
+            }
         }
 
         let maxOffset = (logicType === 'drag') ? 0 : 15; 
@@ -527,6 +542,7 @@
         const checkStreak = (len) => {
             if (outCount === 1) return len >= 5;
             if (outCount === 2) return len === 7 || len === 9;
+            if (outCount === 3) return len >= 1; // 等差版: 準1以上即成立
             return false;
         };
 
@@ -537,6 +553,7 @@
             for (let P1 = 0; P1 < globalBallCount; P1++) {
                 let X = historicalData[L_trigger].numbers[P1]; 
                 let H_list = [];
+                // ✅ 已修正: 把 <= 改成了 <，排除當前觸發期算進歷史
                 for (let i = 0; i < L_trigger; i++) {
                     if (historicalData[i].numbers[P1] === X) H_list.push(i);
                 }
@@ -558,18 +575,21 @@
                                     predsAdd.forEach(p => predictedSet.add(p));
                                 }
                                 
-                                let isAllZero = vals.every(v => v === 0);
-                                if (!isAllZero) {
-                                    let predsSub = vals.map(v => modNum(RefNum - v));
-                                    let streakLenSub = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'sub', T, simL);
-                                    if (checkStreak(streakLenSub)) {
-                                        predsSub.forEach(p => predictedSet.add(p));
+                                // 等差版只驗證 add (其包含了加減)，避開重複運算
+                                if (outCount !== 3) {
+                                    let isAllZero = vals.every(v => v === 0);
+                                    if (!isAllZero) {
+                                        let predsSub = vals.map(v => modNum(RefNum - v));
+                                        let streakLenSub = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'sub', T, simL);
+                                        if (checkStreak(streakLenSub)) {
+                                            predsSub.forEach(p => predictedSet.add(p));
+                                        }
                                     }
                                 }
                             }
                         }
                         
-                        if (logicType === 'sum_val') {
+                        if (logicType === 'sum_val' && outCount !== 3) {
                             for (let vals of valCombsSum) {
                                 let predsSum = vals.map(z => z - RefNum);
                                 if (predsSum.every(p => p >= 1 && p <= globalMaxLottoNum)) {
@@ -592,7 +612,10 @@
         const maxT = parseInt(document.getElementById('period').value);
         const outCount = parseInt(document.querySelector('#outCountGroup .toggle-btn.active').dataset.value);
         const testCount = parseInt(document.getElementById('testCount').value);
-        const minHits = outCount === 1 ? 5 : 7;
+        
+        let minHits = 5;
+        if (outCount === 2) minHits = 7;
+        if (outCount === 3) minHits = 1; // 修正等差版所需最少歷史次數
         
         let resultBox = document.getElementById('resultBox');
         let startBtn = document.getElementById('startBtn');
@@ -609,12 +632,10 @@
         let totalHits = 0;
         let totalPreds = 0;
 
-        // 迴圈跑歷史期數 (從最舊的開始測試，跑到最新)
         for (let i = testCount - 1; i >= 0; i--) {
-            let targetIdx = L_total - i; // 目標開獎期 (我們要預測的)
-            let simL = targetIdx - 1;    // 模擬當時擁有的最新資料索引
+            let targetIdx = L_total - i; 
+            let simL = targetIdx - 1;    
             
-            // 更新 UI 狀態 (為避免畫面凍結，每一期用 setTimeout 卡一下)
             resultBox.innerHTML = `<div class="loading-text">🔄 正在模擬歷史第 ${testCount - i} / ${testCount} 期...<br><span style="font-size:13px; color:var(--text-muted); display:block; margin-top:8px;">這需要進行大量推算，請耐心稍候。</span></div>`;
             await new Promise(r => setTimeout(r, 60)); 
 
@@ -643,7 +664,6 @@
         const resultBox = document.getElementById('resultBox');
         let html = '';
 
-        // 統計總結區塊
         let hitRate = totalPreds > 0 ? ((totalHits / totalPreds) * 100).toFixed(1) : 0;
         let avgPreds = (totalPreds / testCount).toFixed(1);
 
@@ -671,7 +691,6 @@
         </div>
         `;
 
-        // 將結果倒序顯示 (最新的放在最上面)
         resultsList.reverse().forEach((res, idx) => {
             let hitBadgeHtml = res.hitsCount > 0 
                 ? `<span class="date-badge target-badge">中 ${res.hitsCount} 碼</span>`
@@ -699,7 +718,6 @@
 
         resultBox.innerHTML = html;
         
-        // 自動捲動到結果區塊
         window.scrollTo({
             top: resultBox.offsetTop - 80,
             behavior: 'smooth'
