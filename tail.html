@@ -103,12 +103,7 @@
             <div class="form-group">
                 <label>歷史連準門檻</label>
                 <select id="minHits">
-                    <option value="2">連準 2 次</option>
-                    <option value="3" selected>連準 3 次</option>
-                    <option value="4">連準 4 次</option>
-                    <option value="5">連準 5 次</option>
-                    <option value="6">連準 6 次</option>
-                    <option value="7">連準 7 次</option>
+                    <option value="6" selected>連準 6 次</option>
                 </select>
             </div>
             <button id="startBtn" class="start-btn" onclick="fetchAndAnalyze()">🔍 掃描尾數公式</button>
@@ -291,7 +286,7 @@
         // 依據連準次數排序
         results.sort((a, b) => b.hitCount - a.hitCount);
         
-        let html = `<div style="margin-bottom: 16px; font-size: 15px; font-weight: 800; color: var(--success); text-align: center;">🎉 破解成功！抓到 ${results.length} 組隱藏版路</div>`;
+        let html = `<div style="margin-bottom: 16px; font-size: 15px; font-weight: 800; color: var(--success); text-align: center;">🎉 搜尋成功！找到 ${results.length} 組尾數版路</div>`;
         
         results.forEach(res => {
             let historyHtml = res.history.map((h, idx) => `
@@ -303,15 +298,15 @@
 
             html += `
             <div class="pred-block">
-                <div class="pred-title">⚡ 連過 ${res.hitCount} 關！即將進 ${res.hitCount + 1}</div>
+                <div class="pred-title">⚡ 準 ${res.hitCount} 進 ${res.hitCount + 1}</div>
                 
                 <div class="formula-box">
                     <div><b>📍 觸發條件:</b> 上上期第 ${res.tPos+1} 顆 開出 【${padZero(res.tVal)}】</div>
-                    <div style="margin-top:8px;"><b>⚙️ 破解公式:</b> ${res.formulaStr}</div>
+                    <div style="margin-top:8px;"><b>⚙️ 計算公式:</b> ${res.formulaStr}</div>
                 </div>
 
                 <div style="margin-top: 20px;">
-                    <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;"><b>🎯 最新狀態推算 (本期必買尾數)：</b></div>
+                    <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;"><b>🎯 最新狀態推算 (本期預測尾數)：</b></div>
                     <div style="background: var(--success-bg); padding: 12px; border-radius: 12px; border: 1.5px solid var(--success);">
                         <div style="font-size: 16px; font-weight: 900; color: var(--success); margin-bottom: 10px; text-align: center;">預測開出： ${res.predTail} 尾</div>
                         <div style="text-align: center;">${createTailBallsHtml(res.predTail)}</div>
@@ -319,7 +314,7 @@
                 </div>
 
                 <div style="margin-top: 20px; font-size: 14px;">
-                    <div style="font-weight: 800; margin-bottom: 8px; color: var(--text-main);">📜 歷史驗證軌跡：</div>
+                    <div style="font-weight: 800; margin-bottom: 8px; color: var(--text-main);">📜 歷史命中紀錄：</div>
                     <div style="background: var(--detail-bg); padding: 12px 16px; border-radius: 12px;">
                         ${historyHtml}
                     </div>
