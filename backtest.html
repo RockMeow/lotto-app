@@ -551,8 +551,16 @@
             let pNums = predsArr.map(p => padZero(p)).join(', ');
             let key = desc + pNums;
             if (!patternMap.has(key)) {
-                // 增加 t: T 紀錄，用於後續統計
-                patternMap.set(key, { desc: desc, preds: pNums, streak: streakLen, t: T });
+                // 擴增紀錄所需的細節欄位，供最終統計特徵使用
+                patternMap.set(key, { 
+                    desc: desc, 
+                    preds: pNums, 
+                    streak: streakLen, 
+                    t: T,
+                    p1: P1 + 1, // 第幾支
+                    o: offsetStr, // 上下幾期字串
+                    op: opStr // 運算值字串
+                });
             }
         };
 
@@ -686,7 +694,6 @@
             });
         }
 
-        // 傳遞 outCount 以利統計特徵
         renderBacktestResults(backtestResults, totalHits, totalPreds, testCount, outCount);
         
         startBtn.disabled = false;
@@ -700,6 +707,9 @@
         // 計算特徵統計
         let statsT = {};
         let statsStreak = {};
+        let statsP1 = {};
+        let statsO = {};
+        let statsOp = {};
 
         resultsList.forEach(res => {
             if (res.patterns && res.patterns.length > 0) {
@@ -708,15 +718,25 @@
                     let matchCount = pNumsArr.filter(n => res.actual.includes(n)).length;
                     let isPatternHit = (outCount === 3) ? (matchCount === 3) : (matchCount > 0);
                     if (isPatternHit) {
-                        statsT[p.t] = (statsT[p.t] || 0) + 1;
-                        statsStreak[p.streak] = (statsStreak[p.streak] || 0) + 1;
+                        if(p.t !== undefined) statsT[p.t] = (statsT[p.t] || 0) + 1;
+                        if(p.streak !== undefined) statsStreak[p.streak] = (statsStreak[p.streak] || 0) + 1;
+                        if(p.p1 !== undefined) statsP1[p.p1] = (statsP1[p.p1] || 0) + 1;
+                        if(p.o !== undefined) statsO[p.o] = (statsO[p.o] || 0) + 1;
+                        if(p.op !== undefined) statsOp[p.op] = (statsOp[p.op] || 0) + 1;
                     }
                 });
             }
         });
 
-        let statsTHtml = Object.keys(statsT).sort((a,b)=>a-b).map(k => `下 ${k} 期 <span style="color:var(--danger);font-weight:bold;">(${statsT[k]}次)</span>`).join('、') || '無';
-        let statsStreakHtml = Object.keys(statsStreak).sort((a,b)=>a-b).map(k => `準 ${k} 次 <span style="color:var(--danger);font-weight:bold;">(${statsStreak[k]}次)</span>`).join('、') || '無';
+        // 將統計資料格式化輸出的輔助函式 (數字類型排序與字串類型排序)
+        const formatStatNum = (obj, prefix = '', suffix = '') => Object.keys(obj).sort((a,b)=>parseInt(a)-parseInt(b)).map(k => `${prefix}${k}${suffix} <span style="color:var(--danger);font-weight:bold;">(${obj[k]}次)</span>`).join('、') || '無';
+        const formatStatStr = (obj) => Object.keys(obj).sort((a,b)=>a.localeCompare(b, 'zh-TW', {numeric: true})).map(k => `${k} <span style="color:var(--danger);font-weight:bold;">(${obj[k]}次)</span>`).join('、') || '無';
+
+        let statsTHtml = formatStatNum(statsT, '下 ', ' 期');
+        let statsStreakHtml = formatStatNum(statsStreak, '準 ', ' 次');
+        let statsP1Html = formatStatNum(statsP1, '第 ', ' 支');
+        let statsOHtml = formatStatStr(statsO);
+        let statsOpHtml = formatStatStr(statsOp);
 
         let hitRate = totalPreds > 0 ? ((totalHits / totalPreds) * 100).toFixed(1) : 0;
         let avgPreds = (totalPreds / testCount).toFixed(1);
@@ -744,7 +764,10 @@
                 
                 <div style="border-top: 1.5px dashed var(--border); margin-top: 14px; padding-top: 14px; font-size: 14px; background: var(--detail-bg); padding-bottom: 8px; border-radius: 8px; padding-left: 10px; padding-right: 10px;">
                     <div style="margin-bottom: 8px; font-weight: 800; color: var(--text-main);">🏆 命中版路特徵分佈：</div>
-                    <div style="color: var(--text-muted); margin-bottom: 6px;">📍 觸發期數：${statsTHtml}</div>
+                    <div style="color: var(--text-muted); margin-bottom: 6px;">📍 觸發位置：${statsP1Html}</div>
+                    <div style="color: var(--text-muted); margin-bottom: 6px;">📍 參考期距：${statsOHtml}</div>
+                    <div style="color: var(--text-muted); margin-bottom: 6px;">📍 運算規則：${statsOpHtml}</div>
+                    <div style="color: var(--text-muted); margin-bottom: 6px;">📍 預測期距：${statsTHtml}</div>
                     <div style="color: var(--text-muted);">🔥 連莊次數：${statsStreakHtml}</div>
                 </div>
             </div>
