@@ -665,6 +665,23 @@
             let preds = simResult.uniquePreds;
             let hits = preds.filter(p => actualNums.includes(p));
 
+            // 🏆 嚴格判定：若是 3 碼模式，必須至少有一個版路的 3 個號碼全中，才算中獎
+            if (outCount === 3) {
+                let exactMatch = false;
+                for (let p of simResult.patterns) {
+                    let pNumsArr = p.preds.split(', ').map(n => parseInt(n, 10));
+                    let matchCount = pNumsArr.filter(n => actualNums.includes(n)).length;
+                    if (matchCount === 3) {
+                        exactMatch = true;
+                        break;
+                    }
+                }
+                // 若沒有任何一個版路 3 碼全中，則強制歸零（當作沒中）
+                if (!exactMatch) {
+                    hits = [];
+                }
+            }
+
             totalHits += hits.length;
             totalPreds += preds.length;
 
@@ -722,7 +739,6 @@
             // 生成版路詳情區塊
             let patternHtml = '';
             if (res.patterns && res.patterns.length > 0) {
-                // 將版路依連莊次數從大到小排序
                 res.patterns.sort((a, b) => b.streak - a.streak);
                 
                 patternHtml += `<div style="margin-top: 14px; font-size: 13px; color: var(--text-muted); background: var(--bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">`;
