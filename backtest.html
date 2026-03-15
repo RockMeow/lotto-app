@@ -551,7 +551,8 @@
             let pNums = predsArr.map(p => padZero(p)).join(', ');
             let key = desc + pNums;
             if (!patternMap.has(key)) {
-                patternMap.set(key, { desc: desc, preds: pNums, streak: streakLen });
+                // 增加 t: T 紀錄，用於後續統計
+                patternMap.set(key, { desc: desc, preds: pNums, streak: streakLen, t: T });
             }
         };
 
@@ -685,15 +686,37 @@
             });
         }
 
-        renderBacktestResults(backtestResults, totalHits, totalPreds, testCount);
+        // 傳遞 outCount 以利統計特徵
+        renderBacktestResults(backtestResults, totalHits, totalPreds, testCount, outCount);
         
         startBtn.disabled = false;
         startBtn.innerText = '開始回測';
     }
 
-    function renderBacktestResults(resultsList, totalHits, totalPreds, testCount) {
+    function renderBacktestResults(resultsList, totalHits, totalPreds, testCount, outCount) {
         const resultBox = document.getElementById('resultBox');
         let html = '';
+
+        // 計算特徵統計
+        let statsT = {};
+        let statsStreak = {};
+
+        resultsList.forEach(res => {
+            if (res.patterns && res.patterns.length > 0) {
+                res.patterns.forEach(p => {
+                    let pNumsArr = p.preds.split(', ').map(n => parseInt(n, 10));
+                    let matchCount = pNumsArr.filter(n => res.actual.includes(n)).length;
+                    let isPatternHit = (outCount === 3) ? (matchCount === 3) : (matchCount > 0);
+                    if (isPatternHit) {
+                        statsT[p.t] = (statsT[p.t] || 0) + 1;
+                        statsStreak[p.streak] = (statsStreak[p.streak] || 0) + 1;
+                    }
+                });
+            }
+        });
+
+        let statsTHtml = Object.keys(statsT).sort((a,b)=>a-b).map(k => `下 ${k} 期 <span style="color:var(--danger);font-weight:bold;">(${statsT[k]}次)</span>`).join('、') || '無';
+        let statsStreakHtml = Object.keys(statsStreak).sort((a,b)=>a-b).map(k => `準 ${k} 次 <span style="color:var(--danger);font-weight:bold;">(${statsStreak[k]}次)</span>`).join('、') || '無';
 
         let hitRate = totalPreds > 0 ? ((totalHits / totalPreds) * 100).toFixed(1) : 0;
         let avgPreds = (totalPreds / testCount).toFixed(1);
@@ -718,6 +741,12 @@
                     <span>整體命中率</span>
                     <span style="color:var(--danger); font-size:22px; font-weight:900;">${hitRate}%</span>
                 </div>
+                
+                <div style="border-top: 1.5px dashed var(--border); margin-top: 14px; padding-top: 14px; font-size: 14px; background: var(--detail-bg); padding-bottom: 8px; border-radius: 8px; padding-left: 10px; padding-right: 10px;">
+                    <div style="margin-bottom: 8px; font-weight: 800; color: var(--text-main);">🏆 命中版路特徵分佈：</div>
+                    <div style="color: var(--text-muted); margin-bottom: 6px;">📍 觸發期數：${statsTHtml}</div>
+                    <div style="color: var(--text-muted);">🔥 連莊次數：${statsStreakHtml}</div>
+                </div>
             </div>
         </div>
         `;
@@ -737,10 +766,9 @@
                 res.patterns.forEach((p, pIdx) => {
                     let isLast = pIdx === res.patterns.length - 1;
                     
-                    // 🎯 判斷此單一版路是否為命中狀態
                     let pNumsArr = p.preds.split(', ').map(n => parseInt(n, 10));
                     let matchCount = pNumsArr.filter(n => res.actual.includes(n)).length;
-                    let isPatternHit = (pNumsArr.length === 3) ? (matchCount === 3) : (matchCount > 0);
+                    let isPatternHit = (outCount === 3) ? (matchCount === 3) : (matchCount > 0);
 
                     if (isPatternHit) {
                         let bottomMargin = isLast ? 'margin-bottom: 6px;' : 'margin-bottom: 8px;';
