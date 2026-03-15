@@ -197,23 +197,23 @@
         globalMaxLottoNum = maxNum || 39;
     }
 
-    // 🧠 核心：大師階梯公式暴力破解器
+// 🔍 專攻「大師神祕基數」的暴力破解器
     function runMasterEngine() {
         const minHits = parseInt(document.getElementById('minHits').value);
         const L = historicalData.length;
         let results = [];
 
-        // 預測下一期 L，所以觸發點必須在 L-2，變數在 L-1
+        // 觸發點在 L-2 (上上期)
         let triggerIdx = L - 2; 
         if (triggerIdx < 0) return;
 
         let triggerDraw = historicalData[triggerIdx].numbers;
         
-        // 1. 掃描 L-2 這期開出的所有 5 顆球，把它們當作「潛在的觸發條件」
+        // 1. 遍歷上上期開出的 5 顆球 (觸發條件)
         for (let tPos = 0; tPos < triggerDraw.length; tPos++) {
             let tVal = triggerDraw[tPos];
             
-            // 找出歷史上所有符合「第 tPos 顆球 ＝ tVal」的期數索引
+            // 找出歷史上所有「同位置開出同號碼」的期數
             let triggers = [];
             for (let i = 0; i <= triggerIdx; i++) {
                 if (historicalData[i].numbers[tPos] === tVal) {
@@ -222,78 +222,60 @@
             }
             if (triggers.length < minHits + 1) continue;
 
-            // 2. 測試 L-1 期 (下1期) 的所有 5 顆球位置，當作算式變數
-            for (let vPos = 0; vPos < triggerDraw.length; vPos++) {
+            // 2. 鎖定「下 1 期」的 5 個球位作為變數
+            for (let vPos = 0; vPos < 5; vPos++) {
                 
-                // 3. 測試所有數學組合 (尾數 0~9 的加法與減法)
-                for (let C = 0; C < 10; C++) {
-                    let ops = ['+', '-'];
-                    for (let op of ops) {
+                // 3. 暴力破解「神祕基數 X」 (從 0 掃到 49)
+                // 公式：(基數 X - 下1期球數) 的尾數 = 下2期開出的尾數
+                for (let X = 0; X <= 49; X++) {
+                    
+                    let hitCount = 0;
+                    let patternHistory = [];
+                    
+                    for (let k = triggers.length - 2; k >= 0; k--) {
+                        let pastT = triggers[k];
+                        if (pastT + 2 >= L) continue; 
                         
-                        let hitCount = 0;
-                        let patternHistory = [];
+                        let pastVarNum = historicalData[pastT + 1].numbers[vPos];
+                        let calcTail = (X - pastVarNum % 10 + 10) % 10; // 確保正數
                         
-                        // 往回檢查歷史，看這個公式是不是連續命中
-                        for (let k = triggers.length - 2; k >= 0; k--) {
-                            let pastT = triggers[k];
-                            if (pastT + 2 >= L) continue; 
-                            
-                            let pastVarNum = historicalData[pastT + 1].numbers[vPos];
-                            let pastVarTail = pastVarNum % 10;
-                            
-                            let calcTail = 0;
-                            if (op === '+') calcTail = (pastVarTail + C) % 10;
-                            if (op === '-') calcTail = (C - pastVarTail + 10) % 10;
-                            
-                            let actualTails = historicalData[pastT + 2].numbers.map(n => n % 10);
-                            
-                            if (actualTails.includes(calcTail)) {
-                                hitCount++;
-                                let hitNums = historicalData[pastT + 2].numbers.filter(n => n % 10 === calcTail);
-                                patternHistory.push({
-                                    tDate: historicalData[pastT].date,
-                                    vDate: historicalData[pastT+1].date,
-                                    vNum: pastVarNum,
-                                    calcTail: calcTail,
-                                    targetDate: historicalData[pastT+2].date,
-                                    hitNums: hitNums
-                                });
-                            } else {
-                                break; // 只要斷掉一次，這個公式就出局
-                            }
-                        }
+                        let actualTails = historicalData[pastT + 2].numbers.map(n => n % 10);
                         
-                        // 如果這個公式存活下來，就用它來預測最新一期！
-                        if (hitCount >= minHits) {
-                            let curVarNum = historicalData[triggerIdx + 1].numbers[vPos];
-                            let curVarTail = curVarNum % 10;
-                            
-                            let predTail = 0;
-                            if (op === '+') predTail = (curVarTail + C) % 10;
-                            if (op === '-') predTail = (C - curVarTail + 10) % 10;
-                            
-                            // 偽裝成大師的神祕基數 (例如 C=4 變成 34)
-                            let magicC = (op === '-') ? (C + 30) : C; 
-                            
-                            let formulaStr = "";
-                            if (op === '+') formulaStr = `下1期第${vPos+1}顆尾數 <span style="color:var(--danger)">＋ ${C}</span> = 下2期尾數`;
-                            if (op === '-') formulaStr = `大師神祕基數 <span style="color:var(--danger)">[${magicC}] － 下1期第${vPos+1}顆</span> = 下2期尾數`;
-
-                            results.push({
-                                tPos: tPos,
-                                tVal: tVal,
-                                vPos: vPos,
-                                hitCount: hitCount,
-                                formulaStr: formulaStr,
-                                predTail: predTail,
-                                history: patternHistory.reverse()
+                        if (actualTails.includes(calcTail)) {
+                            hitCount++;
+                            let hitNums = historicalData[pastT + 2].numbers.filter(n => n % 10 === calcTail);
+                            patternHistory.push({
+                                tDate: historicalData[pastT].date,
+                                vDate: historicalData[pastT+1].date,
+                                vNum: pastVarNum,
+                                calcTail: calcTail,
+                                targetDate: historicalData[pastT+2].date,
+                                hitNums: hitNums
                             });
+                        } else {
+                            break; 
                         }
+                    }
+                    
+                    // 符合「大師連準次數」才報牌
+                    if (hitCount >= minHits) {
+                        let curVarNum = historicalData[triggerIdx + 1].numbers[vPos];
+                        let predTail = (X - curVarNum % 10 + 10) % 10;
+                        
+                        results.push({
+                            title: `🕵️‍♂️ 發現神祕基數 [${X}]`,
+                            tPos: tPos + 1,
+                            tVal: tVal,
+                            vPos: vPos + 1,
+                            hitCount: hitCount,
+                            formulaStr: `神祕基數 <span class="formula-highlight">[${X}]</span> － 下1期第 ${vPos+1} 顆球`,
+                            predTail: predTail,
+                            history: patternHistory.reverse()
+                        });
                     }
                 }
             }
         }
-
         renderResults(results);
     }
 
