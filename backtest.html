@@ -354,7 +354,6 @@
     let globalMaxLottoNum = 39; 
     let globalBallCount = 5;    
 
-    // 深色模式切換邏輯
     function toggleTheme() {
         const body = document.body;
         const icon = document.getElementById('themeIcon');
@@ -369,10 +368,8 @@
         }
     }
 
-    // 基本補零
     function padZero(num) { return num < 10 ? '0' + num : num.toString(); }
 
-    // 產生一般樂透球 HTML
     function createLottoBallsHtml(numsArr) {
         if (!numsArr || numsArr.length === 0) return '<span style="color:var(--text-muted); font-size: 14px; font-weight: normal;">無開獎資料</span>';
         return numsArr.map(n => {
@@ -382,7 +379,6 @@
         }).join('');
     }
 
-    // 產生回測結果樂透球 HTML (有命中的上色，沒命中的變灰)
     function createResultBallsHtml(predNumsArr, actualNumsArr) {
         if (!predNumsArr || predNumsArr.length === 0) return '<span style="color:var(--text-muted); font-size: 14px; font-weight: normal;">當期無符合條件之推薦號碼</span>';
         return predNumsArr.map(n => {
@@ -460,14 +456,12 @@
         setTimeout(() => { runBacktest(); }, 100);
     }
 
-    // 格式化版路邏輯文字，供顯示版路詳情使用
     function getOpStr(vals, op) {
         if (op === 'add') return vals.map(v => (v >= 0 ? '+' : '') + v).join(', ');
         if (op === 'sub') return vals.map(v => '-' + v).join(', ');
         if (op === 'sum') return '合' + vals.join('、');
     }
 
-    // 尋找符合條件的版路連莊 (為回測適配)
     function findActiveStreakExact(H_list, L_trigger, O, P2, vals, op, T, L_sim) {
         let maxLottoNum = globalMaxLottoNum;
         let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
@@ -511,7 +505,6 @@
         return hitsCount;
     }
 
-    // 針對特定的模擬最新期數 (simL) 取得該期推薦的所有號碼與版路詳情
     function getPredictionsForSimL(simL, logicType, maxT, outCount, minHits) {
         let maxLottoNum = globalMaxLottoNum;
         let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
@@ -542,7 +535,7 @@
         let minOffset = (logicType === 'drag') ? 0 : -15; 
 
         let predictedSet = new Set();
-        let patternMap = new Map(); // 用來記錄觸發的版路並去重
+        let patternMap = new Map();
 
         const checkStreak = (len) => {
             if (outCount === 1) return len >= 5;
@@ -665,7 +658,6 @@
             let preds = simResult.uniquePreds;
             let hits = preds.filter(p => actualNums.includes(p));
 
-            // 🏆 嚴格判定：若是 3 碼模式，必須至少有一個版路的 3 個號碼全中，才算中獎
             if (outCount === 3) {
                 let exactMatch = false;
                 for (let p of simResult.patterns) {
@@ -676,7 +668,6 @@
                         break;
                     }
                 }
-                // 若沒有任何一個版路 3 碼全中，則強制歸零（當作沒中）
                 if (!exactMatch) {
                     hits = [];
                 }
@@ -736,7 +727,6 @@
                 ? `<span class="date-badge target-badge">中 ${res.hitsCount} 碼</span>`
                 : `<span class="date-badge miss-badge">未中</span>`;
 
-            // 生成版路詳情區塊
             let patternHtml = '';
             if (res.patterns && res.patterns.length > 0) {
                 res.patterns.sort((a, b) => b.streak - a.streak);
@@ -746,8 +736,19 @@
                 
                 res.patterns.forEach((p, pIdx) => {
                     let isLast = pIdx === res.patterns.length - 1;
-                    let borderStyle = isLast ? '' : 'border-bottom: 1px dashed var(--border); margin-bottom: 6px; padding-bottom: 6px;';
-                    patternHtml += `<div style="line-height: 1.5; ${borderStyle}">🔸 ${p.desc} ➔ 推 <span style="font-weight:700; color:var(--primary);">${p.preds}</span> <span class="date-badge" style="margin-left:4px; font-size:11px; padding:2px 6px;">連準 ${p.streak} 次</span></div>`;
+                    
+                    // 🎯 判斷此單一版路是否為命中狀態
+                    let pNumsArr = p.preds.split(', ').map(n => parseInt(n, 10));
+                    let matchCount = pNumsArr.filter(n => res.actual.includes(n)).length;
+                    let isPatternHit = (pNumsArr.length === 3) ? (matchCount === 3) : (matchCount > 0);
+
+                    if (isPatternHit) {
+                        let bottomMargin = isLast ? 'margin-bottom: 6px;' : 'margin-bottom: 8px;';
+                        patternHtml += `<div style="line-height: 1.5; padding: 8px 10px; background: var(--success-bg); border: 1.5px solid var(--success); border-radius: 8px; ${bottomMargin}"><span style="font-weight:900; color:var(--success);">🎯 命中:</span> ${p.desc} ➔ 推 <span style="font-weight:700; color:var(--primary);">${p.preds}</span> <span class="date-badge" style="margin-left:4px; font-size:11px; padding:2px 6px;">連準 ${p.streak} 次</span></div>`;
+                    } else {
+                        let borderStyle = isLast ? '' : 'border-bottom: 1px dashed var(--border); margin-bottom: 6px; padding-bottom: 6px;';
+                        patternHtml += `<div style="line-height: 1.5; ${borderStyle}">🔸 ${p.desc} ➔ 推 <span style="font-weight:700; color:var(--primary);">${p.preds}</span> <span class="date-badge" style="margin-left:4px; font-size:11px; padding:2px 6px;">連準 ${p.streak} 次</span></div>`;
+                    }
                 });
                 patternHtml += `</div>`;
             }
