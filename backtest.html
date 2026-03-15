@@ -460,6 +460,13 @@
         setTimeout(() => { runBacktest(); }, 100);
     }
 
+    // 格式化版路邏輯文字，供顯示版路詳情使用
+    function getOpStr(vals, op) {
+        if (op === 'add') return vals.map(v => (v >= 0 ? '+' : '') + v).join(', ');
+        if (op === 'sub') return vals.map(v => '-' + v).join(', ');
+        if (op === 'sum') return '合' + vals.join('、');
+    }
+
     // 尋找符合條件的版路連莊 (為回測適配)
     function findActiveStreakExact(H_list, L_trigger, O, P2, vals, op, T, L_sim) {
         let maxLottoNum = globalMaxLottoNum;
@@ -493,7 +500,6 @@
             let targetNums = historicalData[target_idx].numbers;
             let matchedNums = preds.filter(p => targetNums.includes(p));
             
-            // diff3 (等差版) 需要比對所有 3 顆號碼都全中才算一次 hit
             let isHit = (vals.length === 3) ? (matchedNums.length === preds.length) : (matchedNums.length > 0);
 
             if (isHit) {
@@ -505,7 +511,7 @@
         return hitsCount;
     }
 
-    // 針對特定的模擬最新期數 (simL) 取得該期推薦的所有號碼
+    // 針對特定的模擬最新期數 (simL) 取得該期推薦的所有號碼與版路詳情
     function getPredictionsForSimL(simL, logicType, maxT, outCount, minHits) {
         let maxLottoNum = globalMaxLottoNum;
         let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
@@ -518,7 +524,6 @@
                 for (let v2 = v1 + 1; v2 < globalMaxLottoNum; v2++) valCombsAddSub.push([v1, v2]);
             }
         } else if (outCount === 3) {
-            // 等差版邏輯 (3碼)
             for (let A = 1; A <= 15; A++) {
                 valCombsAddSub.push([-A, 0, A]); 
             }
@@ -526,7 +531,6 @@
         
         let valCombsSum = [];
         let maxSumLimit = globalMaxLottoNum * 2 + 2;
-        // 等差版不適用 sum_val 組合推算
         if (outCount === 1 || outCount === 2) {
             for (let z1 = 10; z1 <= maxSumLimit; z1++) {
                 if (outCount === 1) valCombsSum.push([z1]);
@@ -538,12 +542,24 @@
         let minOffset = (logicType === 'drag') ? 0 : -15; 
 
         let predictedSet = new Set();
-        
+        let patternMap = new Map(); // 用來記錄觸發的版路並去重
+
         const checkStreak = (len) => {
             if (outCount === 1) return len >= 5;
             if (outCount === 2) return len === 7 || len === 9;
-            if (outCount === 3) return len >= 1; // 等差版: 準1以上即成立
+            if (outCount === 3) return len >= 1;
             return false;
+        };
+
+        const recordPattern = (streakLen, vals, op, O, P1, X, P2, T, predsArr) => {
+            let opStr = getOpStr(vals, op);
+            let offsetStr = (O === 0) ? '同期' : (O > 0 ? `上 ${O} 期` : `下 ${Math.abs(O)} 期`);
+            let desc = `開 [${padZero(X)}] 第 ${P1+1} 支，${offsetStr}，第 ${P2+1} 支 ${opStr} ， 下 ${T} 期開`;
+            let pNums = predsArr.map(p => padZero(p)).join(', ');
+            let key = desc + pNums;
+            if (!patternMap.has(key)) {
+                patternMap.set(key, { desc: desc, preds: pNums, streak: streakLen });
+            }
         };
 
         for (let T = 1; T <= maxT; T++) {
@@ -553,7 +569,6 @@
             for (let P1 = 0; P1 < globalBallCount; P1++) {
                 let X = historicalData[L_trigger].numbers[P1]; 
                 let H_list = [];
-                // ✅ 已修正: 把 <= 改成了 <，排除當前觸發期算進歷史
                 for (let i = 0; i < L_trigger; i++) {
                     if (historicalData[i].numbers[P1] === X) H_list.push(i);
                 }
@@ -573,9 +588,9 @@
                                 let streakLenAdd = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'add', T, simL);
                                 if (checkStreak(streakLenAdd)) {
                                     predsAdd.forEach(p => predictedSet.add(p));
+                                    recordPattern(streakLenAdd, vals, 'add', O, P1, X, P2, T, predsAdd);
                                 }
                                 
-                                // 等差版只驗證 add (其包含了加減)，避開重複運算
                                 if (outCount !== 3) {
                                     let isAllZero = vals.every(v => v === 0);
                                     if (!isAllZero) {
@@ -583,6 +598,7 @@
                                         let streakLenSub = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'sub', T, simL);
                                         if (checkStreak(streakLenSub)) {
                                             predsSub.forEach(p => predictedSet.add(p));
+                                            recordPattern(streakLenSub, vals, 'sub', O, P1, X, P2, T, predsSub);
                                         }
                                     }
                                 }
@@ -596,6 +612,7 @@
                                     let streakLenSum = findActiveStreakExact(H_list, L_trigger, O, P2, vals, 'sum', T, simL);
                                     if (checkStreak(streakLenSum)) {
                                         predsSum.forEach(p => predictedSet.add(p));
+                                        recordPattern(streakLenSum, vals, 'sum', O, P1, X, P2, T, predsSum);
                                     }
                                 }
                             }
@@ -604,7 +621,11 @@
                 }
             }
         }
-        return Array.from(predictedSet).sort((a,b)=>a-b);
+        
+        return {
+            uniquePreds: Array.from(predictedSet).sort((a,b)=>a-b),
+            patterns: Array.from(patternMap.values())
+        };
     }
 
     async function runBacktest() {
@@ -615,7 +636,7 @@
         
         let minHits = 5;
         if (outCount === 2) minHits = 7;
-        if (outCount === 3) minHits = 1; // 修正等差版所需最少歷史次數
+        if (outCount === 3) minHits = 1; 
         
         let resultBox = document.getElementById('resultBox');
         let startBtn = document.getElementById('startBtn');
@@ -640,7 +661,8 @@
             await new Promise(r => setTimeout(r, 60)); 
 
             let actualNums = historicalData[targetIdx].numbers;
-            let preds = getPredictionsForSimL(simL, logicType, maxT, outCount, minHits);
+            let simResult = getPredictionsForSimL(simL, logicType, maxT, outCount, minHits);
+            let preds = simResult.uniquePreds;
             let hits = preds.filter(p => actualNums.includes(p));
 
             totalHits += hits.length;
@@ -650,7 +672,8 @@
                 date: historicalData[targetIdx].date,
                 actual: actualNums,
                 predicted: preds,
-                hitsCount: hits.length
+                hitsCount: hits.length,
+                patterns: simResult.patterns
             });
         }
 
@@ -696,6 +719,23 @@
                 ? `<span class="date-badge target-badge">中 ${res.hitsCount} 碼</span>`
                 : `<span class="date-badge miss-badge">未中</span>`;
 
+            // 生成版路詳情區塊
+            let patternHtml = '';
+            if (res.patterns && res.patterns.length > 0) {
+                // 將版路依連莊次數從大到小排序
+                res.patterns.sort((a, b) => b.streak - a.streak);
+                
+                patternHtml += `<div style="margin-top: 14px; font-size: 13px; color: var(--text-muted); background: var(--bg); padding: 12px; border-radius: 12px; border: 1px solid var(--border);">`;
+                patternHtml += `<div style="font-weight: 800; margin-bottom: 8px; color: var(--text-main);">💡 觸發版路詳情：</div>`;
+                
+                res.patterns.forEach((p, pIdx) => {
+                    let isLast = pIdx === res.patterns.length - 1;
+                    let borderStyle = isLast ? '' : 'border-bottom: 1px dashed var(--border); margin-bottom: 6px; padding-bottom: 6px;';
+                    patternHtml += `<div style="line-height: 1.5; ${borderStyle}">🔸 ${p.desc} ➔ 推 <span style="font-weight:700; color:var(--primary);">${p.preds}</span> <span class="date-badge" style="margin-left:4px; font-size:11px; padding:2px 6px;">連準 ${p.streak} 次</span></div>`;
+                });
+                patternHtml += `</div>`;
+            }
+
             html += `
             <div class="due-item">
                 <div class="due-title">
@@ -711,6 +751,7 @@
                 <div style="border-top: 1.5px dashed var(--border); padding-top: 12px;">
                     <span class="date-badge" style="background:var(--card-bg); border: 1px solid var(--border);">系統推薦</span><br>
                     <div style="margin-top:8px;">${createResultBallsHtml(res.predicted, res.actual)}</div>
+                    ${patternHtml}
                 </div>
             </div>
             `;
