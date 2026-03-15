@@ -462,6 +462,20 @@
         if (op === 'sum') return '合' + vals.join('、');
     }
 
+    function getOpIntervalStr(vals, op) {
+        const getRange = (v) => {
+            let sign = '';
+            if (op === 'add') sign = v > 0 ? '+' : (v < 0 ? '-' : '');
+            if (op === 'sub') sign = '-';
+            let abs = Math.abs(v);
+            let lower = Math.floor(abs / 10) * 10;
+            let upper = lower + 9;
+            return `${sign}${lower}~${upper}`;
+        };
+        if (op === 'add' || op === 'sub') return vals.map(v => getRange(v)).join(', ');
+        if (op === 'sum') return '合' + vals.map(v => getRange(v)).join('、');
+    }
+
     function findActiveStreakExact(H_list, L_trigger, O, P2, vals, op, T, L_sim) {
         let maxLottoNum = globalMaxLottoNum;
         let modNum = (num) => ((num % maxLottoNum) + maxLottoNum) % maxLottoNum || maxLottoNum;
@@ -546,20 +560,20 @@
 
         const recordPattern = (streakLen, vals, op, O, P1, X, P2, T, predsArr) => {
             let opStr = getOpStr(vals, op);
+            let opIntervalStr = getOpIntervalStr(vals, op);
             let offsetStr = (O === 0) ? '同期' : (O > 0 ? `上 ${O} 期` : `下 ${Math.abs(O)} 期`);
             let desc = `開 [${padZero(X)}] 第 ${P1+1} 支，${offsetStr}，第 ${P2+1} 支 ${opStr} ， 下 ${T} 期開`;
             let pNums = predsArr.map(p => padZero(p)).join(', ');
             let key = desc + pNums;
             if (!patternMap.has(key)) {
-                // 擴增紀錄所需的細節欄位，供最終統計特徵使用
                 patternMap.set(key, { 
                     desc: desc, 
                     preds: pNums, 
                     streak: streakLen, 
                     t: T,
-                    p1: P1 + 1, // 第幾支
-                    o: offsetStr, // 上下幾期字串
-                    op: opStr // 運算值字串
+                    p1: P1 + 1,
+                    o: offsetStr,
+                    op: opIntervalStr // 統計改抓區間
                 });
             }
         };
@@ -704,7 +718,6 @@
         const resultBox = document.getElementById('resultBox');
         let html = '';
 
-        // 計算特徵統計
         let statsT = {};
         let statsStreak = {};
         let statsP1 = {};
@@ -728,7 +741,6 @@
             }
         });
 
-        // 將統計資料格式化輸出的輔助函式 (數字類型排序與字串類型排序)
         const formatStatNum = (obj, prefix = '', suffix = '') => Object.keys(obj).sort((a,b)=>parseInt(a)-parseInt(b)).map(k => `${prefix}${k}${suffix} <span style="color:var(--danger);font-weight:bold;">(${obj[k]}次)</span>`).join('、') || '無';
         const formatStatStr = (obj) => Object.keys(obj).sort((a,b)=>a.localeCompare(b, 'zh-TW', {numeric: true})).map(k => `${k} <span style="color:var(--danger);font-weight:bold;">(${obj[k]}次)</span>`).join('、') || '無';
 
