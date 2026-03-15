@@ -129,6 +129,14 @@
                     <option value="./Six_history_all_sorted.csv">六合彩</option>
                 </select>   
             </div>
+            
+            <div class="form-group" style="margin-top: 16px;">
+                <label>拖牌數量</label>
+                <select id="dragCount" onchange="if(document.getElementById('csvSource').value) fetchGoogleCSV()">
+                    <option value="2">2 碼</option>
+                    <option value="3" selected>3 碼</option>
+                </select>   
+            </div>
         </div>
 
         <div id="resultBox">
@@ -209,7 +217,9 @@
         }
         const data2026 = data.slice(startIdx);
         
-        const patterns = getPatterns(data2026);
+        // 取得使用者選擇的拖牌數量 (2碼或3碼)
+        const dragCount = parseInt(document.getElementById('dragCount').value, 10);
+        const patterns = getPatterns(data2026, dragCount);
         
         const resultBox = document.getElementById('resultBox');
         resultBox.innerHTML = '';
@@ -220,7 +230,7 @@
         resultBox.innerHTML = predHtml + detailsHtml;
     }
 
-    function getPatterns(data) {
+    function getPatterns(data, dragCount) {
         const patterns = {};
         for (let n = 1; n <= 49; n++) { // 支援最大 49 球彩種
             const occs = [];
@@ -236,16 +246,17 @@
                 seen.forEach(num => followers[num] = (followers[num] || 0) + 1);
             });
 
-            const top3 = Object.entries(followers).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>parseInt(e[0]));
+            // 根據選擇的 dragCount 動態取前 N 名
+            const topN = Object.entries(followers).sort((a,b)=>b[1]-a[1]).slice(0, dragCount).map(e=>parseInt(e[0]));
             let hits = 0;
             occs.forEach(idx => {
                 let ok = false;
                 for (let s = 1; s <= WINDOW; s++) {
-                    if (data[idx+s] && top3.some(t => data[idx+s].nums.includes(t))) ok = true;
+                    if (data[idx+s] && topN.some(t => data[idx+s].nums.includes(t))) ok = true;
                 }
                 if (ok) hits++;
             });
-            patterns[n] = { top3, rate: (hits/occs.length*100).toFixed(1) };
+            patterns[n] = { topN, rate: (hits/occs.length*100).toFixed(1) };
         }
         return patterns;
     }
@@ -263,9 +274,9 @@
                 const p = patterns[n];
                 if (p && p.rate >= 70) {
                     const checkRange = data.slice(triggerIdx + 1);
-                    const alreadyHit = checkRange.some(d => p.top3.some(target => d.nums.includes(target)));
+                    const alreadyHit = checkRange.some(d => p.topN.some(target => d.nums.includes(target)));
                     if (!alreadyHit) {
-                        p.top3.forEach(target => {
+                        p.topN.forEach(target => {
                             if (!poolMap.has(target)) poolMap.set(target, { num: target, resonance: 0, maxRate: parseFloat(p.rate) });
                             poolMap.get(target).resonance += 1;
                             poolMap.get(target).maxRate = Math.max(poolMap.get(target).maxRate, parseFloat(p.rate));
@@ -317,7 +328,7 @@
                             continue;
                         }
 
-                        const hits = p.top3.filter(num => targetDraw.nums.includes(num));
+                        const hits = p.topN.filter(num => targetDraw.nums.includes(num));
                         if (hits.length > 0) {
                             processHtml += `
                                 <div class="process-item">
@@ -333,7 +344,7 @@
                         }
                     }
 
-                    const ballsHtml = p.top3.map(num => {
+                    const ballsHtml = p.topN.map(num => {
                         let isHitAnywhere = false;
                         for(let s=1; s<=WINDOW; s++) {
                             if(data[triggerIdx+s] && data[triggerIdx+s].nums.includes(num)) isHitAnywhere = true;
