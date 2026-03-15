@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>階梯尾數大師 - 自動抓牌系統</title>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-active: #7c3aed;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --danger-bg: #fee2e2;
+            --success: #10b981;
+            --success-bg: #d1fae5;
+            --header-bg: rgba(255, 255, 255, 0.85);
+            --select-bg: #f8fafc;
+            --detail-bg: #f8fafc;
+        }
+
+        [data-theme="dark"] {
+            --primary: #a78bfa;
+            --primary-active: #8b5cf6;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --danger: #f87171;
+            --danger-bg: rgba(239, 68, 68, 0.15);
+            --success: #34d399;
+            --success-bg: rgba(16, 185, 129, 0.15);
+            --header-bg: rgba(30, 41, 59, 0.85);
+            --select-bg: #0f172a;
+            --detail-bg: #1e293b;
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; background-color: var(--bg); color: var(--text-main); transition: 0.3s; }
+        .app-container { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 60px; }
+        
+        .app-header { background: var(--header-bg); backdrop-filter: blur(12px); padding: 18px 20px; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .app-header h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 0.5px; }
+        .theme-toggle { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-main); }
+        
+        .content { padding: 16px; }
+        .control-panel { background: var(--card-bg); border-radius: 24px; padding: 24px 20px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); margin-bottom: 24px; }
+        
+        .form-group { margin-bottom: 16px; }
+        label { font-size: 14px; font-weight: 700; display: block; margin-bottom: 8px; color: var(--text-main); }
+        select { width: 100%; appearance: none; background-color: var(--select-bg); border: 1.5px solid var(--border); padding: 16px; border-radius: 16px; font-size: 15px; font-weight: 600; color: var(--text-main); }
+        select:focus { outline: none; border-color: var(--primary); }
+
+        button.start-btn { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-active) 100%); color: white; border: none; padding: 18px; font-size: 18px; font-weight: 800; border-radius: 16px; cursor: pointer; width: 100%; box-shadow: 0 8px 20px rgba(139, 92, 246, 0.25); transition: transform 0.1s; }
+        button.start-btn:active { transform: scale(0.96); }
+        button.start-btn:disabled { background: var(--border); box-shadow: none; color: var(--text-muted); }
+
+        .pred-block { background: var(--card-bg); border-radius: 24px; padding: 20px; margin-bottom: 20px; border: 1.5px solid var(--primary); box-shadow: 0 8px 25px rgba(139, 92, 246, 0.1); }
+        .pred-title { font-size: 18px; font-weight: 900; color: var(--primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; border-bottom: 1.5px dashed var(--border); padding-bottom: 12px; }
+        
+        .formula-box { background: var(--detail-bg); padding: 14px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid var(--primary); font-size: 14px; line-height: 1.6; }
+        .formula-highlight { color: var(--danger); font-weight: 900; font-size: 15px; }
+        
+        .history-item { padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+        .history-item:last-child { border-bottom: none; }
+        .date-badge { background: var(--border); color: var(--text-main); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 12px; }
+        .hit-badge { background: var(--success-bg); color: var(--success); padding: 2px 8px; border-radius: 6px; font-weight: 800; }
+
+        .lotto-ball { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; color: white; font-weight: 900; font-size: 15px; margin: 2px; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.2); }
+        .ball-0 { background: linear-gradient(135deg, #60a5fa, #2563eb); } 
+        .ball-1 { background: linear-gradient(135deg, #34d399, #059669); } 
+        .ball-2 { background: linear-gradient(135deg, #f87171, #dc2626); } 
+        .ball-3 { background: linear-gradient(135deg, #fbbf24, #d97706); } 
+        .ball-4 { background: linear-gradient(135deg, #c084fc, #7e22ce); } 
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--header-bg); backdrop-filter: blur(12px); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0 20px 0; z-index: 1000; }
+        .nav-item { flex: 1; text-align: center; text-decoration: none; color: var(--text-muted); font-size: 13px; font-weight: 800; padding: 8px; }
+        .nav-item.active { color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header class="app-header">
+        <h1>階梯尾數大師 🕵️‍♂️</h1>
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeIcon">🌙</button>
+    </header>
+    
+    <div class="content">
+        <div class="control-panel">
+            <div class="form-group">
+                <label>選擇彩券庫</label>
+                <select id="csvSource">
+                    <option value="./539_history_all_sorted.csv">今彩539</option>
+                    <option value="./Fan_history_all_sorted.csv">天天樂</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>歷史連準門檻 (大師標準是 3 次)</label>
+                <select id="minHits">
+                    <option value="2">連準 2 次 (尋找初成形的版路)</option>
+                    <option value="3" selected>連準 3 次 (經典大師版路)</option>
+                    <option value="4">連準 4 次 (神級極端版路)</option>
+                </select>
+            </div>
+            <button id="startBtn" class="start-btn" onclick="fetchAndAnalyze()">🔍 掃描隱藏公式</button>
+        </div>
+
+        <div id="resultBox">
+            <div style="text-align:center; color:var(--text-muted); padding: 40px 20px; font-weight: 600; line-height: 1.6;">
+                點擊上方按鈕，系統將自動擷取最新開獎紀錄，並暴力破解出目前正在運行的「階梯減法/加法」尾數公式。
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <a href="index.html" class="nav-item">📊 主版路</a>
+    <a href="symmetric.html" class="nav-item">🎯 對稱雷達</a>
+    <a href="tail_master.html" class="nav-item active">🕵️‍♂️ 階梯尾數</a>
+</div>
+
+<script>
+    let historicalData = [];
+    let globalMaxLottoNum = 39; 
+
+    function toggleTheme() {
+        const body = document.body;
+        if (body.getAttribute('data-theme') === 'dark') {
+            body.removeAttribute('data-theme');
+            document.getElementById('themeIcon').innerText = '🌙';
+        } else {
+            body.setAttribute('data-theme', 'dark');
+            document.getElementById('themeIcon').innerText = '☀️';
+        }
+    }
+
+    function padZero(num) { return num < 10 ? '0' + num : num.toString(); }
+
+    function createTailBallsHtml(tail) {
+        let balls = [];
+        for(let i=1; i<=globalMaxLottoNum; i++) {
+            if(i % 10 === tail) balls.push(i);
+        }
+        return balls.map(n => {
+            let colorIdx = Math.floor(n / 10);
+            if(colorIdx > 4) colorIdx = 4;
+            return `<span class="lotto-ball ball-${colorIdx}">${padZero(n)}</span>`;
+        }).join('');
+    }
+
+    async function fetchAndAnalyze() {
+        const url = document.getElementById('csvSource').value;
+        const btn = document.getElementById('startBtn');
+        const resultBox = document.getElementById('resultBox');
+        
+        btn.disabled = true;
+        btn.innerText = '破解公式中...';
+        resultBox.innerHTML = `<div style="text-align:center; color:var(--primary); padding: 40px; font-weight: 700;">🔄 正在進行百萬次陣列窮舉掃描...</div>`;
+        
+        try {
+            const fetchUrl = url + '?t=' + new Date().getTime();
+            const response = await fetch(fetchUrl);
+            const text = await response.text();
+            
+            parseCSV(text);
+            runMasterEngine();
+            
+        } catch (error) {
+            resultBox.innerHTML = `<div style="text-align:center; color:var(--danger); padding: 40px;">❌ 資料載入失敗</div>`;
+        }
+        
+        btn.disabled = false;
+        btn.innerText = '🔍 重新掃描';
+    }
+
+    function parseCSV(text) {
+        const lines = text.trim().split('\n');
+        historicalData = [];
+        let maxNum = 0;
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',').map(item => item.trim()).filter(item => item !== '');
+            if (cols.length >= 2) { 
+                const date = cols[0];
+                const nums = cols.slice(1).map(n => parseInt(n, 10)).filter(n => !isNaN(n));
+                if (nums.length > 0) {
+                    historicalData.push({ date: date, numbers: nums });
+                    nums.forEach(n => { if(n > maxNum) maxNum = n; });
+                }
+            }
+        }
+        globalMaxLottoNum = maxNum || 39;
+    }
+
+    // 🧠 核心：大師階梯公式暴力破解器
+    function runMasterEngine() {
+        const minHits = parseInt(document.getElementById('minHits').value);
+        const L = historicalData.length;
+        let results = [];
+
+        // 預測下一期 L，所以觸發點必須在 L-2，變數在 L-1
+        let triggerIdx = L - 2; 
+        if (triggerIdx < 0) return;
+
+        let triggerDraw = historicalData[triggerIdx].numbers;
+        
+        // 1. 掃描 L-2 這期開出的所有 5 顆球，把它們當作「潛在的觸發條件」
+        for (let tPos = 0; tPos < triggerDraw.length; tPos++) {
+            let tVal = triggerDraw[tPos];
+            
+            // 找出歷史上所有符合「第 tPos 顆球 ＝ tVal」的期數索引
+            let triggers = [];
+            for (let i = 0; i <= triggerIdx; i++) {
+                if (historicalData[i].numbers[tPos] === tVal) {
+                    triggers.push(i);
+                }
+            }
+            if (triggers.length < minHits + 1) continue;
+
+            // 2. 測試 L-1 期 (下1期) 的所有 5 顆球位置，當作算式變數
+            for (let vPos = 0; vPos < triggerDraw.length; vPos++) {
+                
+                // 3. 測試所有數學組合 (尾數 0~9 的加法與減法)
+                for (let C = 0; C < 10; C++) {
+                    let ops = ['+', '-'];
+                    for (let op of ops) {
+                        
+                        let hitCount = 0;
+                        let patternHistory = [];
+                        
+                        // 往回檢查歷史，看這個公式是不是連續命中
+                        for (let k = triggers.length - 2; k >= 0; k--) {
+                            let pastT = triggers[k];
+                            if (pastT + 2 >= L) continue; 
+                            
+                            let pastVarNum = historicalData[pastT + 1].numbers[vPos];
+                            let pastVarTail = pastVarNum % 10;
+                            
+                            let calcTail = 0;
+                            if (op === '+') calcTail = (pastVarTail + C) % 10;
+                            if (op === '-') calcTail = (C - pastVarTail + 10) % 10;
+                            
+                            let actualTails = historicalData[pastT + 2].numbers.map(n => n % 10);
+                            
+                            if (actualTails.includes(calcTail)) {
+                                hitCount++;
+                                let hitNums = historicalData[pastT + 2].numbers.filter(n => n % 10 === calcTail);
+                                patternHistory.push({
+                                    tDate: historicalData[pastT].date,
+                                    vDate: historicalData[pastT+1].date,
+                                    vNum: pastVarNum,
+                                    calcTail: calcTail,
+                                    targetDate: historicalData[pastT+2].date,
+                                    hitNums: hitNums
+                                });
+                            } else {
+                                break; // 只要斷掉一次，這個公式就出局
+                            }
+                        }
+                        
+                        // 如果這個公式存活下來，就用它來預測最新一期！
+                        if (hitCount >= minHits) {
+                            let curVarNum = historicalData[triggerIdx + 1].numbers[vPos];
+                            let curVarTail = curVarNum % 10;
+                            
+                            let predTail = 0;
+                            if (op === '+') predTail = (curVarTail + C) % 10;
+                            if (op === '-') predTail = (C - curVarTail + 10) % 10;
+                            
+                            // 偽裝成大師的神祕基數 (例如 C=4 變成 34)
+                            let magicC = (op === '-') ? (C + 30) : C; 
+                            
+                            let formulaStr = "";
+                            if (op === '+') formulaStr = `下1期第${vPos+1}顆尾數 <span style="color:var(--danger)">＋ ${C}</span> = 下2期尾數`;
+                            if (op === '-') formulaStr = `大師神祕基數 <span style="color:var(--danger)">[${magicC}] － 下1期第${vPos+1}顆</span> = 下2期尾數`;
+
+                            results.push({
+                                tPos: tPos,
+                                tVal: tVal,
+                                vPos: vPos,
+                                hitCount: hitCount,
+                                formulaStr: formulaStr,
+                                predTail: predTail,
+                                history: patternHistory.reverse()
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        renderResults(results);
+    }
+
+    function renderResults(results) {
+        const box = document.getElementById('resultBox');
+        if (results.length === 0) {
+            box.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 40px; font-weight: 600;">🕵️‍♂️ 掃描完畢，當下沒有正在運行的連準階梯版路。過幾天再來測測看吧！</div>`;
+            return;
+        }
+
+        // 依據連準次數排序
+        results.sort((a, b) => b.hitCount - a.hitCount);
+        
+        let html = `<div style="margin-bottom: 16px; font-size: 15px; font-weight: 800; color: var(--success); text-align: center;">🎉 破解成功！抓到 ${results.length} 組隱藏版路</div>`;
+        
+        results.forEach(res => {
+            let historyHtml = res.history.map((h, idx) => `
+                <div class="history-item">
+                    <b>第 ${idx+1} 關:</b> [${h.tDate}] 觸發 ➔ [${h.vDate}] 變數球 <b>${padZero(h.vNum)}</b><br>
+                    ➔ 套用公式算出 <b>${h.calcTail} 尾</b> ➔ [${h.targetDate}] 成功開出 <span class="hit-badge">${h.hitNums.map(n=>padZero(n)).join(',')}</span>
+                </div>
+            `).join('');
+
+            html += `
+            <div class="pred-block">
+                <div class="pred-title">⚡ 連過 ${res.hitCount} 關！即將進 ${res.hitCount + 1}</div>
+                
+                <div class="formula-box">
+                    <div><b>📍 觸發條件:</b> 上上期第 ${res.tPos+1} 顆 開出 【${padZero(res.tVal)}】</div>
+                    <div style="margin-top:8px;"><b>⚙️ 破解公式:</b> ${res.formulaStr}</div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;"><b>🎯 最新狀態推算 (本期必買尾數)：</b></div>
+                    <div style="background: var(--success-bg); padding: 12px; border-radius: 12px; border: 1.5px solid var(--success);">
+                        <div style="font-size: 16px; font-weight: 900; color: var(--success); margin-bottom: 10px; text-align: center;">預測開出： ${res.predTail} 尾</div>
+                        <div style="text-align: center;">${createTailBallsHtml(res.predTail)}</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; font-size: 14px;">
+                    <div style="font-weight: 800; margin-bottom: 8px; color: var(--text-main);">📜 歷史驗證軌跡：</div>
+                    <div style="background: var(--detail-bg); padding: 12px 16px; border-radius: 12px;">
+                        ${historyHtml}
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        box.innerHTML = html;
+    }
+</script>
+
+</body>
+</html>
