@@ -537,7 +537,7 @@
             for (let P1 = 0; P1 < globalBallCount; P1++) {
                 let X = historicalData[L_trigger].numbers[P1]; 
                 let H_list = [];
-                for (let i = 0; i <= L_trigger; i++) {
+                for (let i = 0; i < L_trigger; i++) {
                     if (historicalData[i].numbers[P1] === X) H_list.push(i);
                 }
                 if (H_list.length < minHits) continue;
