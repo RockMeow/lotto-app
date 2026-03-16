@@ -195,7 +195,7 @@
         }
     }
 
-    function processCSV(text) {
+function processCSV(text) {
         const lines = text.trim().split('\n');
         let data = lines.slice(1).map(l => {
             const p = l.split(',');
@@ -209,26 +209,43 @@
         }
         const data2026 = data.slice(startIdx);
         
-        const patterns = getPatterns(data2026);
+        // 【關鍵修復 1】針對每一期「獨立」計算當下的歷史版路，嚴格避免未來數據洩漏
+        const lastIdx = data2026.length - 1;
+        const triggerPatterns = {};
+        for (let i = 2; i >= 0; i--) {
+            const triggerIdx = lastIdx - i;
+            if (triggerIdx >= 0) {
+                // 只裁切到「觸發當期」的資料來計算版路模型
+                const historySlice = data2026.slice(0, triggerIdx + 1);
+                triggerPatterns[triggerIdx] = getPatterns(historySlice);
+            }
+        }
         
         const resultBox = document.getElementById('resultBox');
         resultBox.innerHTML = '';
         
-        const predHtml = buildPredictionHtml(data2026, patterns);
-        const detailsHtml = buildDetailsHtml(data2026, patterns);
+        // 將獨立計算好的版路字典傳入渲染函數
+        const predHtml = buildPredictionHtml(data2026, triggerPatterns);
+        const detailsHtml = buildDetailsHtml(data2026, triggerPatterns);
         
         resultBox.innerHTML = predHtml + detailsHtml;
     }
 
     function getPatterns(data) {
         const patterns = {};
-        for (let n = 1; n <= 49; n++) { // 支援最大 49 球彩種
+        for (let n = 1; n <= 49; n++) {
             const occs = [];
             data.forEach((d, i) => { if (d.nums.includes(n)) occs.push(i); });
             if (occs.length < 3) continue;
 
             const followers = {};
+            let validOccs = 0; // 新增：只計算已有未來結果的期數作為分母
+
             occs.forEach(idx => {
+                // 【關鍵修復 2】如果是資料的最後一期（觸發當期），因為未來尚未發生，不計入拖牌統計
+                if (idx === data.length - 1) return;
+                
+                validOccs++;
                 const seen = new Set();
                 for (let s = 1; s <= WINDOW; s++) {
                     if (data[idx+s]) data[idx+s].nums.forEach(num => seen.add(num));
@@ -236,27 +253,34 @@
                 seen.forEach(num => followers[num] = (followers[num] || 0) + 1);
             });
 
+            if (validOccs === 0) continue;
+
             const top3 = Object.entries(followers).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>parseInt(e[0]));
+            
             let hits = 0;
             occs.forEach(idx => {
+                if (idx === data.length - 1) return; // 同樣不計入勝率計算
                 let ok = false;
                 for (let s = 1; s <= WINDOW; s++) {
                     if (data[idx+s] && top3.some(t => data[idx+s].nums.includes(t))) ok = true;
                 }
                 if (ok) hits++;
             });
-            patterns[n] = { top3, rate: (hits/occs.length*100).toFixed(1) };
+            patterns[n] = { top3, rate: (hits/validOccs*100).toFixed(1) };
         }
         return patterns;
     }
 
-    function buildPredictionHtml(data, patterns) {
+    function buildPredictionHtml(data, triggerPatterns) {
         const lastIdx = data.length - 1;
         let poolMap = new Map(); 
 
         for (let i = 2; i >= 0; i--) {
             const triggerIdx = lastIdx - i;
             if (triggerIdx < 0) continue;
+            
+            // 【關鍵修復 3】取出當時專屬的獨立版路
+            const patterns = triggerPatterns[triggerIdx];
             
             const draw = data[triggerIdx];
             draw.nums.forEach(n => {
@@ -294,13 +318,16 @@
         `;
     }
 
-    function buildDetailsHtml(data, patterns) {
+    function buildDetailsHtml(data, triggerPatterns) {
         const lastIdx = data.length - 1;
         let html = '';
 
         for (let i = 2; i >= 0; i--) {
             const triggerIdx = lastIdx - i;
             if (triggerIdx < 0) continue;
+            
+            // 【關鍵修復 4】取出當時專屬的獨立版路
+            const patterns = triggerPatterns[triggerIdx];
             
             const draw = data[triggerIdx];
             draw.nums.forEach(n => {
