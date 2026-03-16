@@ -296,9 +296,9 @@
             font-size: 17px;
             margin: 0 4px;
             font-family: Arial, Helvetica, sans-serif;
-            line-height: 1;           
-            text-align: center;       
-            vertical-align: middle;   
+            line-height: 1;            
+            text-align: center;        
+            vertical-align: middle;    
             box-shadow: inset -3px -3px 6px rgba(0,0,0,0.25), 0 3px 6px rgba(0,0,0,0.2);
             text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
             letter-spacing: -0.5px;   
@@ -309,7 +309,7 @@
         .ball-3 { background: linear-gradient(135deg, #fbbf24, #d97706); } 
         .ball-4 { background: linear-gradient(135deg, #c084fc, #7e22ce); } 
     
-		/* 📱 底部導航列 */
+        /* 📱 底部導航列 */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: var(--header-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -319,7 +319,7 @@
         .nav-item { flex: 1; text-align: center; text-decoration: none; color: var(--text-muted); font-size: 14px; font-weight: 800; padding: 10px; transition: color 0.2s; }
         .nav-item.active { color: var(--primary); }
         .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
-	</style>
+    </style>
 </head>
 <body>
 <div class="app-container">
@@ -337,7 +337,7 @@
                     <option value="./649_history_all_sorted.csv">大樂透</option>
                     <option value="./Fan_history_all_sorted.csv">天天樂</option>
                     <option value="./Six_history_all_sorted.csv">六合彩</option>
-                </select>	  
+                </select>   
             </div>
             <div class="form-group">
                 <label>版路功能</label>
@@ -376,7 +376,7 @@
     <a href="monitor.html" class="nav-item">
         <span class="nav-icon">🎯</span>拖牌
     </a>
-		<a href="backtest.html" class="nav-item">
+        <a href="backtest.html" class="nav-item">
             <span class="nav-icon">🔄</span>版路回測
     </a>
     </div>
@@ -420,7 +420,7 @@
         const resultBox = document.getElementById('resultBox');
         if (!url || url.includes('請替換成')) {
             resultBox.innerHTML = `<div class="loading-text">請先從上方選單選擇彩券類型。</div>`;
-            historicalData = [];					  
+            historicalData = [];                    
             return;
         }
 
@@ -534,6 +534,9 @@
                                 if (checkStreak(hitsArrayAdd.length)) {
                                     recordResult(results, predsAdd, hitsArrayAdd, P1, X, O, P2, getOpStr(vals, 'add'), T, L_trigger);
                                 }
+                                
+                                // === 已依照需求將減法計算區塊註解，預設不顯示 ===
+                                /*
                                 let isAllZero = vals.every(v => v === 0);
                                 if (!isAllZero) {
                                     let predsSub = vals.map(v => modNum(RefNum - v));
@@ -542,6 +545,8 @@
                                         recordResult(results, predsSub, hitsArraySub, P1, X, O, P2, getOpStr(vals, 'sub'), T, L_trigger);
                                     }
                                 }
+                                */
+                                // =========================================
                             }
                         }
                         if (logicType === 'sum_val') {
