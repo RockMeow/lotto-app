@@ -552,7 +552,7 @@
 
         const checkStreak = (len) => {
             if (outCount === 1) return len >= 5;
-            if (outCount === 2) return len === 7 || len === 9;
+            if (outCount === 2) return len === 7 || len >= 9;
             if (outCount === 3) return len >= 1;
             return false;
         };
