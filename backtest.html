@@ -605,7 +605,9 @@
                                     predsAdd.forEach(p => predictedSet.add(p));
                                     recordPattern(streakLenAdd, vals, 'add', O, P1, X, P2, T, predsAdd);
                                 }
-                                
+								
+                                // === 已依照需求將減法計算區塊註解，預設不顯示 ===
+                                /*
                                 if (outCount !== 3) {
                                     let isAllZero = vals.every(v => v === 0);
                                     if (!isAllZero) {
@@ -617,6 +619,8 @@
                                         }
                                     }
                                 }
+                                */
+                                // =========================================
                             }
                         }
                         
