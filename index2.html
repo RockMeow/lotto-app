@@ -267,6 +267,11 @@
         
         .due-item { background-color: var(--warning-bg); border: 1.5px solid var(--warning-border); padding: 18px; margin-top: 20px; border-radius: 16px; line-height: 1.7; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .due-title { font-weight: 900; color: var(--warning); margin-bottom: 10px; font-size: 16px; }
+        
+        .calc-box {
+            background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--primary);
+            padding: 10px 14px; margin-bottom: 16px; border-radius: 0 8px 8px 0; font-size: 13px; color: var(--text-main); line-height: 1.6;
+        }
 
         .lotto-ball {
             display: inline-flex;
@@ -293,7 +298,6 @@
         .ball-3 { background: linear-gradient(135deg, #fbbf24, #d97706); } 
         .ball-4 { background: linear-gradient(135deg, #c084fc, #7e22ce); } 
     
-        /* 📱 底部導航列 */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: var(--header-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -326,8 +330,8 @@
             <div class="form-group">
                 <label>版路功能</label>
                 <select id="logicType">
-                    <option value="auto_pattern">👑 自動等差合數 (準4進5限定)</option>
-                    <option value="add_sub">加減</option>
+                    <option value="auto_pattern">👑 數學反推等差引擎 (準4進5限定)</option>
+                    <option value="add_sub">傳統加減</option>
                     <option value="drag">拖牌</option>
                     <option value="sum_val">合值</option>
                 </select>
@@ -443,32 +447,44 @@
 
     function startAnalysis() {
         if (historicalData.length === 0) { alert('請先選擇彩券類型並等待資料載入！'); return; }
-        const logicText = document.getElementById('logicType').options[document.getElementById('logicType').selectedIndex].text;
         document.getElementById('startBtn').disabled = true;
         document.getElementById('startBtn').innerText = '分析中...';
-        document.getElementById('resultBox').innerHTML = `<div class="loading-text">正在全自動掃描最強版路...<br><span style="font-weight:normal; font-size:13px; color:var(--text-muted);">請稍候...</span></div>`;
+        document.getElementById('resultBox').innerHTML = `<div class="loading-text">正在進行嚴謹的數學反推計算...<br><span style="font-weight:normal; font-size:13px; color:var(--text-muted);">這不是盲測，正在尋找真正的等差規律...</span></div>`;
         
         setTimeout(() => { 
             const logicType = document.getElementById('logicType').value;
             if (logicType === 'auto_pattern') {
                 runAutoPatternEngine();
             } else {
-                // 保留舊有的版路演算法 (若您還需要切換回舊版)
-                document.getElementById('resultBox').innerHTML = `<div class="loading-text">此演示版本主要優化了「自動等差合數版路」，請選擇該功能。</div>`;
+                document.getElementById('resultBox').innerHTML = `<div class="loading-text">此演示版本主要優化了「數學反推等差引擎」，請選擇該功能。</div>`;
                 document.getElementById('startBtn').disabled = false;
                 document.getElementById('startBtn').innerText = '開始分析';
             }
         }, 100);
     }
 
-    // 🏆 全新：自動等差合數 (準4進5) 引擎
+    // 🏆 全新：數學反推等差引擎 (不盲測，完全依靠 S1 和 S2 算出公差 D)
     function runAutoPatternEngine() {
         let results = {};
         const total_rows = historicalData.length;
         const maxT = parseInt(document.getElementById('period').value);
         let modNum = (num) => ((num % globalMaxLottoNum) + globalMaxLottoNum) % globalMaxLottoNum || globalMaxLottoNum;
 
-        // 遍歷觸發號碼 1 到 39 (針對第1顆)
+        // 輔助函式：取得實際開出號碼與參考號碼之間所有「可能的數學合數」
+        // (支援直接相減，以及跨過 39 的週期相減)
+        let getPossibleSums = (drawNums, refNum) => {
+            let sums = [];
+            drawNums.forEach(hit => {
+                sums.push(hit - refNum);
+                sums.push(hit - refNum + globalMaxLottoNum);
+                sums.push(hit - refNum - globalMaxLottoNum);
+            });
+            // 去除重複並排序
+            return [...new Set(sums)].sort((a,b) => a - b);
+        };
+
+        let seenPatterns = new Set(); // 避免相同數學算式重複儲存
+
         for (let v = 1; v <= globalMaxLottoNum; v++) {
             let triggers = [];
             for (let i = 0; i < total_rows; i++) {
@@ -478,20 +494,16 @@
             }
             if (triggers.length < 5) continue;
             
-            // 取最後5次觸發 (準4進5)
             let last5 = triggers.slice(-5);
             let t1 = last5[0], t2 = last5[1], t3 = last5[2], t4 = last5[3], t5 = last5[4];
 
-            // 往上推的期數 (A = 1 到 10)
             for (let A = 1; A <= 10; A++) {
                 if (t1 - A < 0) continue;
                 
-                // 往下推的期數 (C = 1 到 maxT)
                 for (let C = 1; C <= maxT; C++) {
                     if (t4 + C >= total_rows) continue;
-                    if (t5 + C < total_rows) continue; // 確保第5次是"未開出"的未來期數
+                    if (t5 + C < total_rows) continue; // 確保第5次是未來的
                     
-                    // 參考號碼的位置 (第 1 顆 到 第 5 顆)
                     for (let pos = 0; pos < globalBallCount; pos++) {
                         let r1 = historicalData[t1 - A].numbers[pos];
                         let r2 = historicalData[t2 - A].numbers[pos];
@@ -504,64 +516,74 @@
                         let draw3 = historicalData[t3 + C].numbers;
                         let draw4 = historicalData[t4 + C].numbers;
 
-                        // 每次合數的差距 (-5 到 5) -> 0代表固定合數，其他代表等差
-                        for (let D = -5; D <= 5; D++) {
-                            for (let hit1 of draw1) {
-                                let S1 = hit1 - r1; 
+                        // 🔍 步驟 1：取得 S1 和 S2 所有可能的「數學合數」
+                        let S1_candidates = getPossibleSums(draw1, r1);
+                        let S2_candidates = getPossibleSums(draw2, r2);
+                        let S3_candidates = getPossibleSums(draw3, r3);
+                        let S4_candidates = getPossibleSums(draw4, r4);
+
+                        // 🔍 步驟 2：不再盲測 D！而是利用 S1 和 S2 反推 D
+                        for (let s1 of S1_candidates) {
+                            for (let s2 of S2_candidates) {
+                                // 數學推導：公差 D = S2 - S1
+                                let D = s2 - s1;
                                 
-                                let S2 = S1 + D;
-                                let hit2 = modNum(r2 + S2);
-                                if (!draw2.includes(hit2)) continue;
+                                // 限制一下公差不要太離譜，維持合理的板路
+                                if (Math.abs(D) > 20) continue;
 
-                                let S3 = S2 + D;
-                                let hit3 = modNum(r3 + S3);
-                                if (!draw3.includes(hit3)) continue;
+                                // 🔍 步驟 3：驗證推算出來的 D，是否完美符合 S3 和 S4
+                                let expected_s3 = s2 + D;
+                                if (!S3_candidates.includes(expected_s3)) continue;
 
-                                let S4 = S3 + D;
-                                let hit4 = modNum(r4 + S4);
-                                if (!draw4.includes(hit4)) continue;
+                                let expected_s4 = expected_s3 + D;
+                                if (!S4_candidates.includes(expected_s4)) continue;
 
-                                // 找到完美版路！
-                                let S5 = S4 + D;
-                                let hit5 = modNum(r5 + S5);
+                                // 🎯 步驟 4：恭喜！找到純數學推算成立的完美等差數列
+                                let s5 = expected_s4 + D;
+                                let hit5 = modNum(r5 + s5);
                                 
-                                if (hit5 >= 1 && hit5 <= globalMaxLottoNum) {
-                                    let predKey = padZero(hit5);
-                                    let desc = `開 [${padZero(v)}] 第 1 支，上推 ${A} 期 第 ${pos+1} 支，初始合 ${S1} (${D===0?'固定':'每次加'+D})，下 ${C} 期開`;
-                                    
-                                    if (!results[predKey]) results[predKey] = { patterns: [] };
-                                    
-                                    let details = [];
-                                    let currentSum = S1;
-                                    for(let i=0; i<4; i++) {
-                                        let triggerIdx = last5[i];
-                                        let refIdx = triggerIdx - A;
-                                        let targetIdx = triggerIdx + C;
-                                        let hitNum = modNum(historicalData[refIdx].numbers[pos] + currentSum);
-                                        
-                                        details.push({
-                                            triggerIdx: triggerIdx,
-                                            refIdx: refIdx,
-                                            targetIdx: targetIdx,
-                                            t: C,
-                                            refVal: historicalData[refIdx].numbers[pos],
-                                            sumVal: currentSum,
-                                            predNum: hitNum,
-                                            delta: D
-                                        });
-                                        currentSum += D;
-                                    }
+                                // 避免重複記錄完全相同的數學邏輯
+                                let patKey = `${v}_${A}_${C}_${pos}_${s1}_${D}`;
+                                if (seenPatterns.has(patKey)) continue;
+                                seenPatterns.add(patKey);
 
-                                    results[predKey].patterns.push({
-                                        desc: desc,
-                                        P1: 0, X: v, O: A, P2: pos,
-                                        t5_trigger: t5,
-                                        t5_refVal: r5,
-                                        t5_sumVal: S5,
-                                        t5_pred: hit5,
-                                        details: details
+                                let predKey = padZero(hit5);
+                                let dStr = D === 0 ? '固定不變' : (D > 0 ? `每次 +${D}` : `每次 ${D}`);
+                                let desc = `開 [${padZero(v)}] 第 1 支，推上 ${A} 期 第 ${pos+1} 支，下 ${C} 期開出`;
+                                
+                                if (!results[predKey]) results[predKey] = { patterns: [] };
+                                
+                                let details = [];
+                                let currentSum = s1;
+                                for(let i=0; i<4; i++) {
+                                    let triggerIdx = last5[i];
+                                    let refIdx = triggerIdx - A;
+                                    let targetIdx = triggerIdx + C;
+                                    let rVal = historicalData[refIdx].numbers[pos];
+                                    let hitNum = modNum(rVal + currentSum);
+                                    
+                                    details.push({
+                                        triggerIdx: triggerIdx,
+                                        refIdx: refIdx,
+                                        targetIdx: targetIdx,
+                                        t: C,
+                                        refVal: rVal,
+                                        sumVal: currentSum,
+                                        predNum: hitNum
                                     });
+                                    currentSum += D;
                                 }
+
+                                results[predKey].patterns.push({
+                                    desc: desc,
+                                    calcLogic: `首期合數 [${s1}]，次期合數 [${s2}] ➔ 數學反推公差為：<b>${dStr}</b>`,
+                                    P1: 0, X: v, O: A, P2: pos, D: D,
+                                    t5_trigger: t5,
+                                    t5_refVal: r5,
+                                    t5_sumVal: s5,
+                                    t5_pred: hit5,
+                                    details: details
+                                });
                             }
                         }
                     }
@@ -594,7 +616,7 @@
         let sortedKeys = Object.keys(results).sort((a, b) => results[b].patterns.length - results[a].patterns.length);
         
         if (sortedKeys.length === 0) {
-            resultBox.innerHTML = `<div class="loading-text">目前盤面未尋找到剛好「準4進5」的版路。</div>`;
+            resultBox.innerHTML = `<div class="loading-text">目前盤面未尋找到符合數學推導的準4進5版路。</div>`;
             return;
         }
 
@@ -606,7 +628,7 @@
             let title = document.createElement('div');
             title.className = 'pred-title';
             title.innerHTML = `
-                <div style="font-size:14px; color:var(--text-muted); margin-bottom:12px; font-weight:700;">準4進5 強勢獨支</div>
+                <div style="font-size:14px; color:var(--text-muted); margin-bottom:12px; font-weight:700;">嚴謹推算・強勢預測</div>
                 <div>${createLottoBallsHtml(predKey)}</div>
             `;
             block.appendChild(title);
@@ -622,14 +644,15 @@
                     let targetDate = historicalData[hit.targetIdx].date;
                     let targetNums = historicalData[hit.targetIdx].numbers.map(n => padZero(n)).join(', ');
                     
-                    let mathStr = `${padZero(hit.refVal)} + (${hit.sumVal}) = <span class="highlight-num">${padZero(hit.predNum)}</span>`;
+                    let mathSign = hit.sumVal >= 0 ? '+' : '';
+                    let mathStr = `${padZero(hit.refVal)} ${mathSign} (${hit.sumVal}) = <span class="highlight-num">${padZero(hit.predNum)}</span>`;
                     
                     return `
                     <div class="detail-item">
-                        <div class="detail-title">🔸 歷史連準 第 ${idx+1} 次:</div>
+                        <div class="detail-title">🔸 歷史驗證 第 ${idx+1} 次:</div>
                         <div><span class="date-badge">${triggerDate}</span> 觸發: (${triggerNums}) 第1顆 <b>${padZero(p.X)}</b></div>
-                        <div><span class="date-badge">${refDate}</span> 參考: (${refNums}) 第${p.P2+1}顆 <b>${padZero(hit.refVal)}</b></br> ➔ 邏輯計算: ${mathStr}</div>
-                        <div><span class="date-badge target-badge">${targetDate}</span> 目標開出: <b>(${targetNums})</b> ✅</div>
+                        <div><span class="date-badge">${refDate}</span> 參考: (${refNums}) 第${p.P2+1}顆 <b>${padZero(hit.refVal)}</b></br> ➔ 算式: ${mathStr}</div>
+                        <div><span class="date-badge target-badge">${targetDate}</span> 實際開出: <b>(${targetNums})</b> ✅</div>
                     </div>`;
                 }).join('');
 
@@ -637,16 +660,17 @@
                 let refNumsT5 = historicalData[p.t5_trigger - p.O].numbers.map(n => padZero(n)).join(', ');
                 let triggerDateT5 = historicalData[p.t5_trigger].date;
                 let triggerNumsT5 = historicalData[p.t5_trigger].numbers.map(n => padZero(n)).join(', ');
-                let dueMathStr = `${padZero(p.t5_refVal)} + (${p.t5_sumVal}) = <b>${padZero(p.t5_pred)}</b>`;
+                let dueMathSign = p.t5_sumVal >= 0 ? '+' : '';
+                let dueMathStr = `${padZero(p.t5_refVal)} ${dueMathSign} (${p.t5_sumVal}) = <b>${padZero(p.t5_pred)}</b>`;
 
                 let dueHtml = `
                 <div class="due-item">
-                    <div class="due-title">🌟 最新進5期計算:</div>
+                    <div class="due-title">🌟 最新預測 (第5期):</div>
                     <div><span class="date-badge">${triggerDateT5}</span> 觸發: (${triggerNumsT5}) 第1顆 <b>${padZero(p.X)}</b></div>
                     <div><span class="date-badge">${refDateT5}</span> 參考: (${refNumsT5}) 第${p.P2+1}顆 <b>${padZero(p.t5_refVal)}</b></div>
-                    <div style="margin-top: 8px; font-size: 14px; color: var(--text-muted);">➔ 邏輯計算: ${dueMathStr}</div>
+                    <div style="margin-top: 8px; font-size: 14px; color: var(--text-muted);">➔ 套用規律: ${dueMathStr}</div>
                     <div style="margin-top: 16px; font-size: 15px; font-weight: 800; border-top: 1.5px dashed var(--border); padding-top: 14px;">
-                        本期預測開出：
+                        目標預測開出：
                         <div style="margin-top: 12px; margin-bottom: 4px;">${createLottoBallsHtml(predKey)}</div>
                     </div>
                 </div>`;
@@ -662,6 +686,10 @@
                         <span class="hit-count">進 5 期</span>
                     </div>
                     <div class="pattern-details" id="${pId}">
+                        <div class="calc-box">
+                            💡 <b>數學反推邏輯</b>：<br>
+                            ${p.calcLogic}
+                        </div>
                         ${detailsHtml}
                         ${dueHtml}
                     </div>
