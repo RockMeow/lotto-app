@@ -407,10 +407,8 @@
                 if (!line) continue;
                 
                 const parts = line.split(',');
-                // 確保是有資料的行
                 if (parts.length >= 6 && !isNaN(parseInt(parts[1], 10))) {
                     let dateStr = parts[0].trim();
-                    // 若日期格式包含年份(YYYY/MM/DD)，擷取 MM/DD
                     if (dateStr.length > 5 && dateStr.includes('/')) {
                         let dParts = dateStr.split('/');
                         dateStr = dParts[dParts.length - 2].padStart(2, '0') + '/' + dParts[dParts.length - 1].padStart(2, '0');
@@ -430,17 +428,15 @@
                 }
             }
             
-            // 從 01/01 切割到最新，保證回測只跑 2026 年的資料
             draws = allDraws.slice(startIndex);
 
             // 自動設定推演日期 (取最後一期日期 + 1 天)
             if (draws.length > 0) {
                 let lastDateStr = draws[draws.length - 1].date;
                 let parts = lastDateStr.split('/');
-                let currentYear = new Date().getFullYear(); // 用使用者系統當前年份當基準去推算日期遞增
+                let currentYear = 2026; // 固定 2026 方便推算日曆星期幾
                 let lastDate = new Date(currentYear, parseInt(parts[0], 10) - 1, parseInt(parts[1], 10));
                 
-                // 加一天
                 lastDate.setDate(lastDate.getDate() + 1);
                 
                 // 遇到星期日(0) 今彩539不開獎，自動跳到星期一
@@ -492,13 +488,24 @@
             let runningBalance = 0;
             let maxDrawdown = 0;
             
+            // 每週結算暫存變數
+            let weeklyCost = 0;
+            let weeklyPayout = 0;
+            
             let tbody = document.getElementById('results-body');
             let cardsHtml = '';
 
-            for (let draw of draws) {
+            for (let i = 0; i < draws.length; i++) {
+                let draw = draws[i];
                 let dateStr = draw.date;
                 let actualNumsSet = new Set(draw.nums);
                 let actualNumsStr = draw.nums.map(n => n.toString().padStart(2, '0')).join(', ');
+                
+                // 計算星期幾 (固定用 2026 年去算)
+                let dateParts = dateStr.split('/');
+                let drawDateObj = new Date(2026, parseInt(dateParts[0], 10) - 1, parseInt(dateParts[1], 10));
+                let isSaturday = drawDateObj.getDay() === 6;
+                let isLastDraw = (i === draws.length - 1);
                 
                 // 1. 每日加入預測號碼 (自動公式推算)
                 let newNums = generatePrediction(dateStr);
@@ -521,7 +528,9 @@
                 // 3. 成本計算 (考慮退水)
                 let dailyNominalCost = (c2 * cost2) + (c3 * cost3);
                 let dailyActualCost = dailyNominalCost * (1 - rebate);
+                
                 totalActualCost += dailyActualCost;
+                weeklyCost += dailyActualCost;
                 
                 // 4. 對獎計算
                 let match = poolArr.filter(x => actualNumsSet.has(x));
@@ -546,6 +555,8 @@
                 }
                 
                 totalPayout += dailyPayout;
+                weeklyPayout += dailyPayout;
+                
                 runningBalance += (dailyPayout - dailyActualCost);
                 if (runningBalance < maxDrawdown) maxDrawdown = runningBalance;
                 
@@ -574,6 +585,34 @@
                 
                 cardsHtml = cardHtml + cardsHtml; 
                 
+                // ★ 新增：遇到星期六或最後一期時，印出「本週結算交割」卡片
+                if (isSaturday || isLastDraw) {
+                    let weeklyNet = weeklyPayout - weeklyCost;
+                    let weeklyColor = weeklyNet >= 0 ? 'profit' : 'loss';
+                    let sign = weeklyNet >= 0 ? '+' : '';
+                    let title = isSaturday ? '💰 每週日結算交割 (本週累計)' : '💰 結算交割 (當期未滿週累計)';
+                    
+                    let settlementHtml = `
+                    <div class="history-card" style="background: var(--warning-bg); border: 1.5px solid var(--warning-border); text-align: center; padding: 16px; margin-bottom: 16px;">
+                        <div style="color: var(--warning); font-weight: 900; font-size: 16px; letter-spacing: 1px;">
+                            ${title}
+                        </div>
+                        <div style="margin-top: 10px; font-size: 14px; color: var(--text-main); font-weight: 700;">
+                            下注成本: <span class="loss">-${weeklyCost.toFixed(1)}</span> &nbsp;|&nbsp; 總中獎: <span class="profit">+${weeklyPayout.toFixed(1)}</span>
+                        </div>
+                        <div style="margin-top: 12px; font-size: 18px; font-weight: 900; border-top: 1px dashed var(--warning-border); padding-top: 12px;">
+                            地下實際輸贏: <span class="${weeklyColor}" style="font-size: 20px;">${sign}${weeklyNet.toFixed(1)} 元</span>
+                        </div>
+                    </div>`;
+                    
+                    // 因為是倒序 (最新在最上面)，結算卡片會插在星期六卡片的「上方」
+                    cardsHtml = settlementHtml + cardsHtml;
+                    
+                    // 歸零，準備計算下一週
+                    weeklyCost = 0;
+                    weeklyPayout = 0;
+                }
+
                 // 6. 號碼壽命/中獎淘汰機制
                 let groupsToRemove = [];
                 for (let g of activeGroups) {
