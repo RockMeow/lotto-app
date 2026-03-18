@@ -241,20 +241,6 @@
         .mult-badge { background: var(--warning); color: white; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; }
         .action-box { background: var(--toggle-bg); padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 13px; line-height: 1.5; border-left: 4px solid var(--border); }
 
-        .matrix-list {
-            background: var(--toggle-bg);
-            padding: 12px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 13px;
-            line-height: 1.8;
-            color: var(--text-main);
-            overflow-x: auto;
-            white-space: nowrap;
-            margin-top: 10px;
-            border: 1px solid var(--border);
-        }
-
         /* 📱 底部導航列 */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto;
@@ -287,7 +273,7 @@
                 <label style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: block;">版路功能</label>
                 <select id="logicType" onchange="toggleLogicUI(); runBacktest();" style="border-color: var(--primary);">
                     <option value="pool9">九碼 (二/三星連碰)</option>
-                    <option value="matrix10" selected>動態十組 4x4 (二星柱碰凹牌)</option>
+                    <option value="matrix10" selected>十組 4x4 (二星柱碰)</option>
                 </select>
 
                 <div class="setting-row">
@@ -330,7 +316,7 @@
                 <div id="pool9-pred-ui" style="display: none;">
                     <div class="detail-item">
                         <div class="detail-title" style="color: var(--warning);">當日獨立版路 (推算)</div>
-                        <div id="pred-result-p9" style="color: var(--danger); font-weight: 900; font-size: 18px; text-align: center; letter-spacing: 2px;">--</div>
+                        <div id="pred-result" style="color: var(--danger); font-weight: 900; font-size: 18px; text-align: center; letter-spacing: 2px;">--</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-title" style="color: var(--warning);">🔥 今日下注號碼池 (含未開出)</div>
@@ -338,7 +324,7 @@
                     </div>
                     <div class="setting-row" style="margin-bottom: 8px;">
                         <span class="detail-title" style="margin:0; color: var(--warning);">總計碰數 (二 / 三)</span>
-                        <span id="next-combos-p9" style="font-weight: 800; color: var(--text-main); font-size: 16px;">--</span>
+                        <span id="next-combos" style="font-weight: 800; color: var(--text-main); font-size: 16px;">--</span>
                     </div>
                 </div>
 
@@ -347,14 +333,8 @@
                         <span class="detail-title" style="margin:0; color: var(--warning);">目前循環狀態</span>
                         <span id="pred-cycle-status" style="font-weight: 900; color: var(--danger); font-size: 16px;">--</span>
                     </div>
-                    <div class="detail-item" style="border-bottom:none;">
-                        <div class="detail-title" style="color: var(--warning);">🔥 今日動態 10 組 4x4 下注單</div>
-                        <div id="matrix-display" class="matrix-list">
-                            -- <br> 等待產生...
-                        </div>
-                    </div>
                     <div class="setting-row" style="margin-bottom: 8px;">
-                        <span class="detail-title" style="margin:0; color: var(--warning);">當前剩餘組數 / 碰數</span>
+                        <span class="detail-title" style="margin:0; color: var(--warning);">剩餘對碰組數</span>
                         <span id="pred-remaining-groups" style="font-weight: 800; color: var(--text-main); font-size: 16px;">--</span>
                     </div>
                 </div>
@@ -366,7 +346,7 @@
             </div>
 
             <div class="pred-block">
-                <div class="pred-title">💰 歷史回測總結 (2026年)</div>
+                <div class="pred-title">💰 歷史回測總結 (2026年迄今)</div>
                 <div class="setting-row" style="margin-bottom: 12px;">
                     <span class="detail-title" style="margin:0;">總實付成本</span>
                     <span id="summary-cost" class="loss" style="font-size: 16px;">0.0 元</span>
@@ -400,16 +380,36 @@
     </div>
 
     <script>
+        // 共用歷史資料變數
         let draws = []; 
+
+        // ---------------------------------
+        // [版路 A] 累積九碼大本營連碰 全域變數
+        // ---------------------------------
         let finalActiveGroups = [];
 
-        // 矩陣 10 組全域變數
+        // ---------------------------------
+        // [版路 B] 10組 4x4 矩陣凹牌 全域變數
+        // ---------------------------------
+        const defaultMatrix = [
+            {A: [11,8,36,27], B: [25,23,15,21]},
+            {A: [8,11,15,21], B: [23,25,27,36]},
+            {A: [8,36,4,12], B: [1,31,27,22]},
+            {A: [11,1,32,34], B: [29,8,12,16]},
+            {A: [1,8,11,12], B: [16,29,32,34]},
+            {A: [8,32,11,12], B: [16,34,23,15]},
+            {A: [8,11,12,15], B: [16,23,32,34]},
+            {A: [8,36,32,12], B: [16,27,29,3]},
+            {A: [3,8,12,16], B: [27,29,32,36]},
+            {A: [1,4,8,12], B: [22,27,31,36]}
+        ];
         let activeMatrix = [];
         let cycleDayCount = 1;
         let cycleMultiplier = 1;
         let cycleCumCost = 0;
         let cycleCumPayout = 0;
 
+        // 主題與版面切換邏輯
         function toggleTheme() {
             const body = document.body;
             const currentTheme = body.getAttribute('data-theme');
@@ -428,7 +428,7 @@
                 
                 document.getElementById('pool9-pred-ui').style.display = 'block';
                 document.getElementById('matrix10-pred-ui').style.display = 'none';
-                document.getElementById('cost2').value = 5; 
+                document.getElementById('cost2').value = 5; // 九碼建議參數
             } else {
                 document.getElementById('row-cost3').style.display = 'none';
                 document.getElementById('row-odds3').style.display = 'none';
@@ -436,10 +436,11 @@
                 
                 document.getElementById('pool9-pred-ui').style.display = 'none';
                 document.getElementById('matrix10-pred-ui').style.display = 'block';
-                document.getElementById('cost2').value = 1; 
+                document.getElementById('cost2').value = 1; // 矩陣凹牌建議參數
             }
         }
 
+        // CSV 讀取與資料清洗
         async function fetchCSV() {
             const url = document.getElementById('csvSource').value;
             const runBtn = document.getElementById('runBtn');
@@ -458,7 +459,7 @@
                 runBtn.disabled = false;
                 runBtn.textContent = '重新計算回測';
                 
-                runBacktest(); 
+                runBacktest(); // 載入完畢自動回測
             } catch (error) {
                 console.error(error);
                 tbody.innerHTML = `<div class="loading-text" style="color:var(--danger);">檔案載入失敗！</div>`;
@@ -486,6 +487,7 @@
                 }
             }
             
+            // 從 2026 起點 (尋找最後一個 01/01)
             let startIndex = 0;
             for (let i = allDraws.length - 1; i >= 0; i--) {
                 if (allDraws[i].date === '01/01') {
@@ -495,16 +497,14 @@
             }
             draws = allDraws.slice(startIndex);
 
+            // 設定推演日期
             if (draws.length > 0) {
                 let lastDateStr = draws[draws.length - 1].date;
                 let parts = lastDateStr.split('/');
-                let currentYear = 2026; 
-                let lastDate = new Date(currentYear, parseInt(parts[0], 10) - 1, parseInt(parts[1], 10));
+                let lastDate = new Date(2026, parseInt(parts[0], 10) - 1, parseInt(parts[1], 10));
                 
                 lastDate.setDate(lastDate.getDate() + 1);
-                if (lastDate.getDay() === 0) {
-                    lastDate.setDate(lastDate.getDate() + 1);
-                }
+                if (lastDate.getDay() === 0) lastDate.setDate(lastDate.getDate() + 1);
 
                 let nextMonth = String(lastDate.getMonth() + 1).padStart(2, '0');
                 let nextDay = String(lastDate.getDate()).padStart(2, '0');
@@ -512,6 +512,7 @@
             }
         }
 
+        // 數學工具函數
         function generatePrediction(dateStr) {
             let parts = dateStr.split('/');
             let d = parseInt(parts[1], 10);
@@ -534,65 +535,7 @@
             return factorial(n) / (factorial(r) * factorial(n - r));
         }
 
-        // ==========================================
-        // ★ 動態產生 10組 4x4 矩陣核心邏輯
-        // ==========================================
-        function createMatrixFromPool(poolArray) {
-            // 如果號碼太少，就自己跟自己搭配湊齊
-            let nums = [...poolArray];
-            if (nums.length < 8) {
-                while (nums.length < 8) {
-                    let randNum = Math.floor(Math.random() * 39) + 1;
-                    if (!nums.includes(randNum)) nums.push(randNum);
-                }
-            }
-            
-            // 選出 5 個不同的 8 碼大本營
-            let pools8 = [
-                nums.slice(0, 8),
-                [...nums.slice(0, 7), nums[nums.length-1] || nums[7]],
-                [...nums.slice(0, 6), ...(nums.slice(nums.length-2) || nums.slice(6,8))],
-                [...nums.slice(0, 5), ...(nums.slice(nums.length-3) || nums.slice(5,8))],
-                [...nums.slice(0, 4), ...(nums.slice(nums.length-4) || nums.slice(4,8))]
-            ];
-
-            let matrix10 = [];
-            for (let i = 0; i < 5; i++) {
-                let p8 = pools8[i];
-                let shifted = [...p8.slice(i), ...p8.slice(0, i)]; // 增加變化性
-                
-                let A = shifted.slice(0, 2);
-                let B = shifted.slice(2, 4);
-                let C = shifted.slice(4, 6);
-                let D = shifted.slice(6, 8);
-                
-                // 第一單 (A+C) x (B+D)
-                matrix10.push({
-                    A: [...A, ...C],
-                    B: [...B, ...D]
-                });
-                
-                // 第二單 (A+D) x (B+C)
-                matrix10.push({
-                    A: [...A, ...D],
-                    B: [...B, ...C]
-                });
-            }
-            return matrix10;
-        }
-
-        // 格式化 4x4 陣列為文字
-        function formatMatrixHTML(matrixArr) {
-            if (!matrixArr || matrixArr.length === 0) return "-- <br>等待產生...";
-            let html = '';
-            matrixArr.forEach((g, index) => {
-                let strA = g.A.map(n => String(n).padStart(2, '0')).join(',');
-                let strB = g.B.map(n => String(n).padStart(2, '0')).join(',');
-                html += `${String(index + 1).padStart(2,'0')}. [ ${strA} ]  x  [ ${strB} ]<br>`;
-            });
-            return html;
-        }
-
+        // 選擇分支執行
         function runBacktest() {
             if (draws.length === 0) return;
             const logic = document.getElementById('logicType').value;
@@ -613,9 +556,9 @@
             }
         }
 
-        // ==========================================
+        // =========================================================================
         // 版路功能 A：累積九碼大本營連碰
-        // ==========================================
+        // =========================================================================
         function runBacktestPool9() {
             const cost2 = parseFloat(document.getElementById('cost2').value);
             const cost3 = parseFloat(document.getElementById('cost3').value);
@@ -706,6 +649,7 @@
                 
                 cardsHtml = cardHtml + cardsHtml; 
                 
+                // 每週六自動安插週結算卡片
                 if (isSaturday || isLastDraw) {
                     let weeklyNet = weeklyPayout - weeklyCost;
                     let weeklyColor = weeklyNet >= 0 ? 'profit' : 'loss';
@@ -718,13 +662,14 @@
                             下注成本: <span class="loss">-${weeklyCost.toFixed(1)}</span> &nbsp;|&nbsp; 總中獎: <span class="profit">+${weeklyPayout.toFixed(1)}</span>
                         </div>
                         <div style="margin-top: 14px; font-size: 18px; font-weight: 900; border-top: 1px dashed var(--warning-border); padding-top: 14px;">
-                            當週實際損益: <span class="${weeklyColor}" style="font-size: 20px;">${sign}${weeklyNet.toFixed(1)} 元</span>
+                            地下實際輸贏: <span class="${weeklyColor}" style="font-size: 20px;">${sign}${weeklyNet.toFixed(1)} 元</span>
                         </div>
                     </div>`;
                     cardsHtml = settlementHtml + cardsHtml;
                     weeklyCost = 0; weeklyPayout = 0;
                 }
 
+                // 號碼淘汰機制
                 let groupsToRemove = [];
                 for (let g of activeGroups) {
                     g.age++;
@@ -753,7 +698,7 @@
             if(!/^\d{2}\/\d{2}$/.test(dateStr)) { alert("請輸入正確日期格式，例如：03/18"); return; }
 
             let newNums = generatePrediction(dateStr);
-            document.getElementById('pred-result-p9').innerText = newNums.map(n => n.toString().padStart(2, '0')).join(', ');
+            document.getElementById('pred-result').innerText = newNums.map(n => n.toString().padStart(2, '0')).join(', ');
 
             let nextGroups = JSON.parse(JSON.stringify(finalActiveGroups));
             nextGroups.push({ date: dateStr, nums: newNums, age: 0 });
@@ -766,7 +711,7 @@
 
             let c2 = nCr(poolArr.length, 2);
             let c3 = nCr(poolArr.length, 3);
-            document.getElementById('next-combos-p9').innerText = `${c2} / ${c3}`;
+            document.getElementById('next-combos').innerText = `${c2} / ${c3}`;
 
             const cost2 = parseFloat(document.getElementById('cost2').value);
             const cost3 = parseFloat(document.getElementById('cost3').value);
@@ -777,16 +722,12 @@
             document.getElementById('next-cost').innerText = `-${dailyActualCost.toFixed(1)} 元`;
         }
 
-        // ==========================================
-        // 版路功能 B：動態10組 4x4 矩陣凹牌
-        // ==========================================
-        function resetMatrixCycle(currentPoolArr = null) {
-            // 動態從當下的 9 碼中產生 10 組矩陣，若尚未產生則給空陣列
-            if (currentPoolArr && currentPoolArr.length >= 8) {
-                activeMatrix = createMatrixFromPool(currentPoolArr);
-            } else {
-                activeMatrix = [];
-            }
+
+        // =========================================================================
+        // 版路功能 B：10組 4x4 矩陣凹牌
+        // =========================================================================
+        function resetMatrixCycle() {
+            activeMatrix = JSON.parse(JSON.stringify(defaultMatrix));
             cycleDayCount = 1;
             cycleMultiplier = 1;
             cycleCumCost = 0;
@@ -799,12 +740,7 @@
             const odds2 = parseFloat(document.getElementById('odds2').value);
             const multStep = parseFloat(document.getElementById('multStep').value);
             
-            let tmpActiveGroups = [];
-            activeMatrix = [];
-            cycleDayCount = 1;
-            cycleMultiplier = 1;
-            cycleCumCost = 0;
-            cycleCumPayout = 0;
+            resetMatrixCycle();
             
             let totalActualCost = 0, totalPayout = 0, overallNet = 0, maxDrawdown = 0;
             let weeklyCost = 0, weeklyPayout = 0;
@@ -822,20 +758,6 @@
                 let drawDateObj = new Date(2026, parseInt(dateParts[0], 10) - 1, parseInt(dateParts[1], 10));
                 let isSaturday = drawDateObj.getDay() === 6;
                 let isLastDraw = (i === draws.length - 1);
-                
-                // 更新底層號碼池 (維持近 3 天)
-                let newNums = generatePrediction(dateStr);
-                tmpActiveGroups.push({ date: dateStr, nums: newNums, age: 0 });
-                if (tmpActiveGroups.length > 3) tmpActiveGroups.shift();
-                
-                let poolNums = new Set();
-                for (let g of tmpActiveGroups) { for (let n of g.nums) poolNums.add(n); }
-                let poolArr = [...poolNums].sort((a,b) => a-b);
-
-                // 若是循環第一天，動態產生新的 10 組矩陣
-                if (cycleDayCount === 1 || activeMatrix.length === 0) {
-                    activeMatrix = createMatrixFromPool(poolArr);
-                }
                 
                 // 1. 當日成本結算
                 let currentGroupsCount = activeMatrix.length;
@@ -886,13 +808,9 @@
                 if (cycleNet > 0) {
                     actionHtml = `<div class="action-box" style="border-left-color: var(--success);">
                                     <span style="color: var(--success); font-weight:900;">✅ 循環獲利達標 (+${cycleNet.toFixed(1)}元)</span><br>
-                                    整組作廢，下期根據最新號碼產生全新 10 組。
+                                    整組作廢，下期重新從 10 組開始。
                                   </div>`;
-                    cycleDayCount = 1;
-                    cycleMultiplier = 1;
-                    cycleCumCost = 0;
-                    cycleCumPayout = 0;
-                    activeMatrix = []; // 等待隔天重新生成
+                    resetMatrixCycle();
                 } else {
                     if (groupsToRemove.length > 0) {
                         actionHtml = `<div class="action-box" style="border-left-color: var(--warning);">
@@ -908,10 +826,7 @@
 
                     if (activeMatrix.length === 0) {
                         actionHtml += `<div style="color: var(--danger); font-weight: 900; margin-top: 8px;">🚨 剩餘組數歸零但仍虧損！強制作廢，認賠重新循環。</div>`;
-                        cycleDayCount = 1;
-                        cycleMultiplier = 1;
-                        cycleCumCost = 0;
-                        cycleCumPayout = 0;
+                        resetMatrixCycle();
                     } else {
                         cycleMultiplier += multStep;
                         cycleDayCount += 1;
@@ -972,9 +887,6 @@
             
             tbody.innerHTML = cardsHtml;
             
-            // 將最新的號碼池存下來給今日預測用
-            finalActiveGroups = JSON.parse(JSON.stringify(tmpActiveGroups));
-            
             document.getElementById('summary-cost').innerText = `-${totalActualCost.toFixed(1)} 元`;
             document.getElementById('summary-payout').innerText = `+${totalPayout.toFixed(1)} 元`;
             
@@ -990,25 +902,7 @@
             let dateStr = document.getElementById('predict-date').value.trim();
             if(!/^\d{2}\/\d{2}$/.test(dateStr)) { alert("請輸入正確日期格式，例如：03/18"); return; }
 
-            // 產生今日最新基礎號碼
-            let newNums = generatePrediction(dateStr);
-            let nextGroups = JSON.parse(JSON.stringify(finalActiveGroups));
-            nextGroups.push({ date: dateStr, nums: newNums, age: 0 });
-            if (nextGroups.length > 3) nextGroups.shift();
-
-            let poolNums = new Set();
-            for (let g of nextGroups) { for (let n of g.nums) poolNums.add(n); }
-            let poolArr = [...poolNums].sort((a,b) => a-b);
-
-            // 如果 activeMatrix 為空，代表前一天已經結算作廢，今天需要「產生全新的10組」
-            let displayMatrix = activeMatrix;
-            if (displayMatrix.length === 0) {
-                displayMatrix = createMatrixFromPool(poolArr);
-            }
-
-            document.getElementById('matrix-display').innerHTML = formatMatrixHTML(displayMatrix);
-
-            let currentGroupsCount = displayMatrix.length;
+            let currentGroupsCount = activeMatrix.length;
             let dailyCombos = currentGroupsCount * 16;
             const cost2 = parseFloat(document.getElementById('cost2').value);
             const rebate = parseFloat(document.getElementById('rebate').value) / 100;
@@ -1016,8 +910,8 @@
             let dailyNominalCost = dailyCombos * cost2 * cycleMultiplier;
             let dailyActualCost = dailyNominalCost * (1 - rebate);
 
-            document.getElementById('pred-cycle-status').innerText = `第 ${cycleDayCount} 天 (下注倍數 ${cycleMultiplier}x)`;
-            document.getElementById('pred-remaining-groups').innerText = `${currentGroupsCount} 組 / ${dailyCombos} 碰`;
+            document.getElementById('pred-cycle-status').innerText = `第 ${cycleDayCount} 天 (倍數 ${cycleMultiplier}x)`;
+            document.getElementById('pred-remaining-groups').innerText = `${currentGroupsCount} 組 (${dailyCombos} 碰)`;
             document.getElementById('next-cost').innerText = `-${dailyActualCost.toFixed(1)} 元`;
         }
 
