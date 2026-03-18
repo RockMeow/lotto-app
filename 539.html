@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>版路回測與預測系統</title>
+    <title>539版路回測與預測系統</title>
     <meta name="theme-color" content="#ffffff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -252,13 +252,13 @@
 
     <div class="app-container">
         <header class="app-header">
-            <h1>版路回測系統</h1>
+            <h1>539版路回測與預測系統</h1>
             <button class="theme-toggle" onclick="toggleTheme()" id="themeIcon">🌙</button>
         </header>
 
         <div class="content">
             <div class="control-panel">
-                <div class="pred-title" style="border:none; padding:0; margin-bottom:15px; color: var(--text-main);">⚙️ 選擇彩券與盤口</div>
+                <div class="pred-title" style="border:none; padding:0; margin-bottom:15px; color: var(--text-main);">⚙️ 選擇彩券</div>
                 
                 <label style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: block;">選擇彩券類型</label>
                 <select id="csvSource" onchange="fetchCSV()">
@@ -292,7 +292,7 @@
                 <div class="pred-title" style="color: var(--warning); border-bottom-color: var(--warning-border);">🔮 今日預測與下注清單</div>
                 
                 <div class="setting-row">
-                    <label style="color: var(--warning); font-size: 15px;">欲推演日期 (自動讀取+1)</label>
+                    <label style="color: var(--warning); font-size: 15px;">欲推算日期 (自動讀取+1)</label>
                     <input type="text" id="predict-date" value="" placeholder="MM/DD" class="styled-input" style="width: 100px; text-align: center; border-color: var(--warning-border); color: var(--warning);">
                 </div>
                 <button class="start-btn" style="background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); margin-bottom: 20px;" onclick="showPrediction()">產生今日預測</button>
@@ -302,7 +302,7 @@
                     <div id="pred-result" style="color: var(--danger); font-weight: 900; font-size: 18px; text-align: center; letter-spacing: 2px;">--</div>
                 </div>
                 <div class="detail-item">
-                    <div class="detail-title" style="color: var(--warning);">🔥 今日滿載號碼池 (含未開出)</div>
+                    <div class="detail-title" style="color: var(--warning);">🔥 今日下注號碼池 (含未開出)</div>
                     <div id="next-pool" style="color: var(--danger); font-size: 20px; font-weight: 900; letter-spacing: 2px; text-align: center; word-break: break-all;">--</div>
                 </div>
                 <div class="setting-row" style="margin-bottom: 8px;">
@@ -316,7 +316,7 @@
             </div>
 
             <div class="pred-block">
-                <div class="pred-title">💰 歷史回測總結 (2026年迄今)</div>
+                <div class="pred-title">💰 歷史回測總結 (2026年)</div>
                 <div class="setting-row" style="margin-bottom: 12px;">
                     <span class="detail-title" style="margin:0;">總實付成本</span>
                     <span id="summary-cost" class="loss" style="font-size: 16px;">0.0 元</span>
@@ -344,14 +344,8 @@
     </div>
 
     <div class="bottom-nav">
-        <a href="index.html" class="nav-item">
-            <span class="nav-icon">📊</span>主版路
-        </a>
-        <a href="monitor.html" class="nav-item">
-            <span class="nav-icon">🎯</span>拖牌
-        </a>
-        <a href="backtest.html" class="nav-item active">
-            <span class="nav-icon">🔄</span>版路回測
+        <a href="539.html" class="nav-item active">
+            <span class="nav-icon"></span>539
         </a>
     </div>
 
@@ -601,7 +595,7 @@
                             下注成本: <span class="loss">-${weeklyCost.toFixed(1)}</span> &nbsp;|&nbsp; 總中獎: <span class="profit">+${weeklyPayout.toFixed(1)}</span>
                         </div>
                         <div style="margin-top: 12px; font-size: 18px; font-weight: 900; border-top: 1px dashed var(--warning-border); padding-top: 12px;">
-                            地下實際輸贏: <span class="${weeklyColor}" style="font-size: 20px;">${sign}${weeklyNet.toFixed(1)} 元</span>
+                            當週實際輸贏: <span class="${weeklyColor}" style="font-size: 20px;">${sign}${weeklyNet.toFixed(1)} 元</span>
                         </div>
                     </div>`;
                     
