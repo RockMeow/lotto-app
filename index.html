@@ -3,13 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>版路回測與預測系統</title>
-    <link rel="manifest" href="./manifest.json">
+    <title>539 專業版路回測系統</title>
     <meta name="theme-color" content="#ffffff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="版路工具">
-    <link rel="apple-touch-icon" href="icon.png">
     <style>
         :root {
             --primary: #3b82f6;
@@ -31,7 +28,6 @@
             --toggle-bg: #f1f5f9;
         }
 
-        /* 🌙 深色模式變數 */
         [data-theme="dark"] {
             --primary: #60a5fa;
             --primary-active: #3b82f6;
@@ -134,7 +130,6 @@
             text-align: center;
         }
 
-        /* 下拉選單樣式 */
         select { 
             width: 100%; 
             appearance: none; 
@@ -239,6 +234,10 @@
         .loss { color: var(--danger); font-weight: 800; }
         .neutral { color: var(--text-muted); font-weight: 700; }
 
+        .cycle-badge { background: var(--primary); color: white; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; margin-right: 6px; }
+        .mult-badge { background: var(--warning); color: white; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; }
+        .action-box { background: var(--toggle-bg); padding: 12px; border-radius: 8px; margin-top: 12px; font-size: 13px; line-height: 1.5; border-left: 4px solid var(--border); }
+
         /* 📱 底部導航列 */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto;
@@ -255,25 +254,31 @@
 
     <div class="app-container">
         <header class="app-header">
-            <h1>版路回測與預測系統</h1>
+            <h1>專業版路回測系統</h1>
             <button class="theme-toggle" onclick="toggleTheme()" id="themeIcon">🌙</button>
         </header>
 
         <div class="content">
             <div class="control-panel">
-                <div class="pred-title" style="border:none; padding:0; margin-bottom:15px; color: var(--text-main);">⚙️ 選擇彩券</div>
+                <div class="pred-title" style="border:none; padding:0; margin-bottom:15px; color: var(--text-main);">⚙️ 選擇彩券與版路</div>
                 
                 <label style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: block;">選擇彩券類型</label>
                 <select id="csvSource" onchange="fetchCSV()">
                     <option value="./539_history_all_sorted.csv" selected>今彩539</option>
                 </select>
 
+                <label style="font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: block;">📊 版路功能切換</label>
+                <select id="logicType" onchange="toggleLogicUI(); runBacktest();" style="border-color: var(--primary);">
+                    <option value="pool9">累積九碼 (二/三星大本營連碰)</option>
+                    <option value="matrix10" selected>10組 4x4 (二星進階凹牌矩陣)</option>
+                </select>
+
                 <div class="setting-row">
-                    <label>二星每碰成本 (元)</label>
+                    <label>二星每碰本金 (元)</label>
                     <input type="number" id="cost2" value="5" class="styled-input">
                 </div>
-                <div class="setting-row">
-                    <label>三星每碰成本 (元)</label>
+                <div class="setting-row" id="row-cost3" style="display: none;">
+                    <label>三星每碰本金 (元)</label>
                     <input type="number" id="cost3" value="1" class="styled-input">
                 </div>
                 <div class="setting-row">
@@ -284,10 +289,15 @@
                     <label>二星賠率 (倍)</label>
                     <input type="number" id="odds2" value="53" class="styled-input">
                 </div>
-                <div class="setting-row">
+                <div class="setting-row" id="row-odds3" style="display: none;">
                     <label>三星賠率 (倍)</label>
                     <input type="number" id="odds3" value="570" class="styled-input">
                 </div>
+                <div class="setting-row" id="row-multStep">
+                    <label style="color: var(--danger);">失敗時倍數增加級距</label>
+                    <input type="number" id="multStep" value="1" class="styled-input" style="border-color: var(--danger);">
+                </div>
+                
                 <button id="runBtn" class="start-btn" onclick="runBacktest()">重新計算回測</button>
             </div>
 
@@ -295,31 +305,45 @@
                 <div class="pred-title" style="color: var(--warning); border-bottom-color: var(--warning-border);">🔮 今日預測與下注清單</div>
                 
                 <div class="setting-row">
-                    <label style="color: var(--warning); font-size: 15px;">欲推算日期 (自動讀取)</label>
+                    <label style="color: var(--warning); font-size: 15px;">欲推演日期 (自動讀取+1)</label>
                     <input type="text" id="predict-date" value="" placeholder="MM/DD" class="styled-input" style="width: 100px; text-align: center; border-color: var(--warning-border); color: var(--warning);">
                 </div>
                 <button class="start-btn" style="background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); margin-bottom: 20px;" onclick="showPrediction()">產生今日預測</button>
                 
-                <div class="detail-item">
-                    <div class="detail-title" style="color: var(--warning);">當日獨立版路 (推算)</div>
-                    <div id="pred-result" style="color: var(--danger); font-weight: 900; font-size: 18px; text-align: center; letter-spacing: 2px;">--</div>
+                <div id="pool9-pred-ui" style="display: none;">
+                    <div class="detail-item">
+                        <div class="detail-title" style="color: var(--warning);">當日獨立版路 (推算)</div>
+                        <div id="pred-result" style="color: var(--danger); font-weight: 900; font-size: 18px; text-align: center; letter-spacing: 2px;">--</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-title" style="color: var(--warning);">🔥 今日滿載號碼池 (含未開出)</div>
+                        <div id="next-pool" style="color: var(--danger); font-size: 20px; font-weight: 900; letter-spacing: 2px; text-align: center; word-break: break-all;">--</div>
+                    </div>
+                    <div class="setting-row" style="margin-bottom: 8px;">
+                        <span class="detail-title" style="margin:0; color: var(--warning);">總計碰數 (二 / 三)</span>
+                        <span id="next-combos" style="font-weight: 800; color: var(--text-main); font-size: 16px;">--</span>
+                    </div>
                 </div>
-                <div class="detail-item">
-                    <div class="detail-title" style="color: var(--warning);">🔥 今日下注號碼池 (含未開出)</div>
-                    <div id="next-pool" style="color: var(--danger); font-size: 20px; font-weight: 900; letter-spacing: 2px; text-align: center; word-break: break-all;">--</div>
+
+                <div id="matrix10-pred-ui">
+                    <div class="setting-row" style="margin-top: 5px;">
+                        <span class="detail-title" style="margin:0; color: var(--warning);">目前循環狀態</span>
+                        <span id="pred-cycle-status" style="font-weight: 900; color: var(--danger); font-size: 16px;">--</span>
+                    </div>
+                    <div class="setting-row" style="margin-bottom: 8px;">
+                        <span class="detail-title" style="margin:0; color: var(--warning);">剩餘對碰組數</span>
+                        <span id="pred-remaining-groups" style="font-weight: 800; color: var(--text-main); font-size: 16px;">--</span>
+                    </div>
                 </div>
-                <div class="setting-row" style="margin-bottom: 8px;">
-                    <span class="detail-title" style="margin:0; color: var(--warning);">總計碰數 (二 / 三)</span>
-                    <span id="next-combos" style="font-weight: 800; color: var(--text-main); font-size: 16px;">--</span>
-                </div>
-                <div class="setting-row" style="margin-bottom: 0;">
+
+                <div class="setting-row" style="margin-bottom: 0; margin-top: 10px; border-top: 1px dashed var(--warning-border); padding-top: 15px;">
                     <span class="detail-title" style="margin:0; color: var(--warning);">退水後實付成本</span>
                     <span id="next-cost" class="loss" style="font-size: 18px;">--</span>
                 </div>
             </div>
 
             <div class="pred-block">
-                <div class="pred-title">💰 歷史回測總結 (2026年)</div>
+                <div class="pred-title">💰 歷史回測總結 (2026年迄今)</div>
                 <div class="setting-row" style="margin-bottom: 12px;">
                     <span class="detail-title" style="margin:0;">總實付成本</span>
                     <span id="summary-cost" class="loss" style="font-size: 16px;">0.0 元</span>
@@ -347,16 +371,48 @@
     </div>
 
     <div class="bottom-nav">
-        <a href="index.html" class="nav-item active">
-            <span class="nav-icon"></span>版路回測與預測系統
+        <a href="index.html" class="nav-item">
+            <span class="nav-icon">📊</span>主版路
+        </a>
+        <a href="monitor.html" class="nav-item">
+            <span class="nav-icon">🎯</span>拖牌
+        </a>
+        <a href="backtest.html" class="nav-item active">
+            <span class="nav-icon">🔄</span>版路回測
         </a>
     </div>
 
     <script>
-        let draws = []; // 儲存解析後的歷史數據
-        let finalActiveGroups = []; // 儲存回測結束後的存活號碼池
+        // 共用歷史資料變數
+        let draws = []; 
 
-        // 主題切換邏輯
+        // ---------------------------------
+        // [版路 A] 累積九碼大本營連碰 全域變數
+        // ---------------------------------
+        let finalActiveGroups = [];
+
+        // ---------------------------------
+        // [版路 B] 10組 4x4 矩陣凹牌 全域變數
+        // ---------------------------------
+        const defaultMatrix = [
+            {A: [11,8,36,27], B: [25,23,15,21]},
+            {A: [8,11,15,21], B: [23,25,27,36]},
+            {A: [8,36,4,12], B: [1,31,27,22]},
+            {A: [11,1,32,34], B: [29,8,12,16]},
+            {A: [1,8,11,12], B: [16,29,32,34]},
+            {A: [8,32,11,12], B: [16,34,23,15]},
+            {A: [8,11,12,15], B: [16,23,32,34]},
+            {A: [8,36,32,12], B: [16,27,29,3]},
+            {A: [3,8,12,16], B: [27,29,32,36]},
+            {A: [1,4,8,12], B: [22,27,31,36]}
+        ];
+        let activeMatrix = [];
+        let cycleDayCount = 1;
+        let cycleMultiplier = 1;
+        let cycleCumCost = 0;
+        let cycleCumPayout = 0;
+
+        // 主題與版面切換邏輯
         function toggleTheme() {
             const body = document.body;
             const currentTheme = body.getAttribute('data-theme');
@@ -366,7 +422,28 @@
             localStorage.setItem('theme', newTheme);
         }
 
-        // 非同步讀取 CSV
+        function toggleLogicUI() {
+            const logic = document.getElementById('logicType').value;
+            if (logic === 'pool9') {
+                document.getElementById('row-cost3').style.display = 'flex';
+                document.getElementById('row-odds3').style.display = 'flex';
+                document.getElementById('row-multStep').style.display = 'none';
+                
+                document.getElementById('pool9-pred-ui').style.display = 'block';
+                document.getElementById('matrix10-pred-ui').style.display = 'none';
+                document.getElementById('cost2').value = 5; // 九碼建議參數
+            } else {
+                document.getElementById('row-cost3').style.display = 'none';
+                document.getElementById('row-odds3').style.display = 'none';
+                document.getElementById('row-multStep').style.display = 'flex';
+                
+                document.getElementById('pool9-pred-ui').style.display = 'none';
+                document.getElementById('matrix10-pred-ui').style.display = 'block';
+                document.getElementById('cost2').value = 1; // 矩陣凹牌建議參數
+            }
+        }
+
+        // CSV 讀取與資料清洗
         async function fetchCSV() {
             const url = document.getElementById('csvSource').value;
             const runBtn = document.getElementById('runBtn');
@@ -382,7 +459,6 @@
                 const csvText = await response.text();
                 
                 parseCSV(csvText);
-                
                 runBtn.disabled = false;
                 runBtn.textContent = '重新計算回測';
                 
@@ -394,7 +470,6 @@
             }
         }
 
-        // 解析 CSV (並強制切出 2026 年起的資料)
         function parseCSV(csvText) {
             let allDraws = [];
             const lines = csvText.trim().split('\n');
@@ -410,13 +485,12 @@
                         let dParts = dateStr.split('/');
                         dateStr = dParts[dParts.length - 2].padStart(2, '0') + '/' + dParts[dParts.length - 1].padStart(2, '0');
                     }
-                    
                     let nums = parts.slice(1, 6).map(n => parseInt(n, 10));
                     allDraws.push({ date: dateStr, nums: nums });
                 }
             }
             
-            // 尋找最後一個 '01/01' 作為 2026 年起點
+            // 從 2026 起點 (尋找最後一個 01/01)
             let startIndex = 0;
             for (let i = allDraws.length - 1; i >= 0; i--) {
                 if (allDraws[i].date === '01/01') {
@@ -424,22 +498,16 @@
                     break;
                 }
             }
-            
             draws = allDraws.slice(startIndex);
 
-            // 自動設定推演日期 (取最後一期日期 + 1 天)
+            // 設定推演日期
             if (draws.length > 0) {
                 let lastDateStr = draws[draws.length - 1].date;
                 let parts = lastDateStr.split('/');
-                let currentYear = 2026; // 固定 2026 方便推算日曆星期幾
-                let lastDate = new Date(currentYear, parseInt(parts[0], 10) - 1, parseInt(parts[1], 10));
+                let lastDate = new Date(2026, parseInt(parts[0], 10) - 1, parseInt(parts[1], 10));
                 
                 lastDate.setDate(lastDate.getDate() + 1);
-                
-                // 遇到星期日(0) 今彩539不開獎，自動跳到星期一
-                if (lastDate.getDay() === 0) {
-                    lastDate.setDate(lastDate.getDate() + 1);
-                }
+                if (lastDate.getDay() === 0) lastDate.setDate(lastDate.getDate() + 1);
 
                 let nextMonth = String(lastDate.getMonth() + 1).padStart(2, '0');
                 let nextDay = String(lastDate.getDate()).padStart(2, '0');
@@ -447,17 +515,16 @@
             }
         }
 
-        // 基準日版路公式推算 [D-6, D, D+6]
+        // 數學工具函數
         function generatePrediction(dateStr) {
             let parts = dateStr.split('/');
             let d = parseInt(parts[1], 10);
             if (d - 6 > 0 && d + 6 <= 39) return [d-6, d, d+6];
             else if (d - 6 <= 0) return [d, d+6, d+12];
             else if (d + 6 > 39) return [d-12, d-6, d];
-            return [d-6, d, d+6]; // fallback
+            return [d-6, d, d+6]; 
         }
 
-        // 組合數學公式 C(n, r)
         function factorial(n) {
             if (n < 0) return 0;
             if (n === 0 || n === 1) return 1;
@@ -465,14 +532,37 @@
             for(let i=2; i<=n; i++) r *= i;
             return r;
         }
+
         function nCr(n, r) {
             if (n < r) return 0;
             return factorial(n) / (factorial(r) * factorial(n - r));
         }
 
+        // 選擇分支執行
         function runBacktest() {
             if (draws.length === 0) return;
+            const logic = document.getElementById('logicType').value;
+            if (logic === 'pool9') {
+                runBacktestPool9();
+            } else {
+                runBacktestMatrix10();
+            }
+        }
 
+        function showPrediction() {
+            if (draws.length === 0) return;
+            const logic = document.getElementById('logicType').value;
+            if (logic === 'pool9') {
+                showPredictionPool9();
+            } else {
+                showPredictionMatrix10();
+            }
+        }
+
+        // =========================================================================
+        // 版路功能 A：累積九碼大本營連碰
+        // =========================================================================
+        function runBacktestPool9() {
             const cost2 = parseFloat(document.getElementById('cost2').value);
             const cost3 = parseFloat(document.getElementById('cost3').value);
             const rebate = parseFloat(document.getElementById('rebate').value) / 100;
@@ -480,14 +570,8 @@
             const odds3 = parseFloat(document.getElementById('odds3').value);
             
             let activeGroups = [];
-            let totalActualCost = 0;
-            let totalPayout = 0;
-            let runningBalance = 0;
-            let maxDrawdown = 0;
-            
-            // 每週結算暫存變數
-            let weeklyCost = 0;
-            let weeklyPayout = 0;
+            let totalActualCost = 0, totalPayout = 0, runningBalance = 0, maxDrawdown = 0;
+            let weeklyCost = 0, weeklyPayout = 0;
             
             let tbody = document.getElementById('results-body');
             let cardsHtml = '';
@@ -498,53 +582,40 @@
                 let actualNumsSet = new Set(draw.nums);
                 let actualNumsStr = draw.nums.map(n => n.toString().padStart(2, '0')).join(', ');
                 
-                // 計算星期幾 (固定用 2026 年去算)
                 let dateParts = dateStr.split('/');
                 let drawDateObj = new Date(2026, parseInt(dateParts[0], 10) - 1, parseInt(dateParts[1], 10));
                 let isSaturday = drawDateObj.getDay() === 6;
                 let isLastDraw = (i === draws.length - 1);
                 
-                // 1. 每日加入預測號碼 (自動公式推算)
                 let newNums = generatePrediction(dateStr);
                 activeGroups.push({ date: dateStr, nums: newNums, age: 0 });
                 if (activeGroups.length > 3) activeGroups.shift();
                 
-                // 2. 混合號碼大本營
                 let poolNums = new Set();
-                for (let g of activeGroups) {
-                    for (let n of g.nums) poolNums.add(n);
-                }
-                
+                for (let g of activeGroups) { for (let n of g.nums) poolNums.add(n); }
                 let poolArr = [...poolNums].sort((a,b) => a-b);
                 let poolStr = poolArr.join(', ');
                 
-                let nNums = poolNums.size;
-                let c2 = nCr(nNums, 2);
-                let c3 = nCr(nNums, 3);
+                let c2 = nCr(poolArr.length, 2);
+                let c3 = nCr(poolArr.length, 3);
                 
-                // 3. 成本計算 (考慮退水)
                 let dailyNominalCost = (c2 * cost2) + (c3 * cost3);
                 let dailyActualCost = dailyNominalCost * (1 - rebate);
                 
                 totalActualCost += dailyActualCost;
                 weeklyCost += dailyActualCost;
                 
-                // 4. 對獎計算
                 let match = poolArr.filter(x => actualNumsSet.has(x));
                 let hitCount = match.length;
-                
                 let dailyPayout = 0;
                 let isHit = false;
                 let hitResultHtml = `<span class="neutral">槓龜</span>`;
                 
                 if (hitCount >= 2) {
                     isHit = true;
-                    let winC2 = nCr(hitCount, 2);
-                    dailyPayout += winC2 * (cost2 * odds2);
-                    
+                    dailyPayout += nCr(hitCount, 2) * (cost2 * odds2);
                     if (hitCount >= 3) {
-                        let winC3 = nCr(hitCount, 3);
-                        dailyPayout += winC3 * (cost3 * odds3);
+                        dailyPayout += nCr(hitCount, 3) * (cost3 * odds3);
                         hitResultHtml = `<span class="profit">🎯 中${hitCount}顆 (${match.join(',')})</span>`;
                     } else {
                         hitResultHtml = `<span class="profit">🎯 中2顆 (${match.join(',')})</span>`;
@@ -557,7 +628,6 @@
                 runningBalance += (dailyPayout - dailyActualCost);
                 if (runningBalance < maxDrawdown) maxDrawdown = runningBalance;
                 
-                // 5. 輸出手機版卡片 HTML (倒序排列)
                 let netColor = runningBalance >= 0 ? 'profit' : 'loss';
                 let dailyResultHtml = isHit ? `<span class="profit">+${dailyPayout.toFixed(1)}</span>` : `<span class="loss">-${dailyActualCost.toFixed(1)}</span>`;
 
@@ -573,7 +643,7 @@
                             <span>成本: -${dailyActualCost.toFixed(1)}</span>
                         </div>
                         <div style="margin-top: 6px;">池: <span class="pool-nums">${poolStr}</span> <span style="font-size: 11px;">(${c2}/${c3}碰)</span></div>
-                        <div class="history-card-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--toggle-bg);">
+                        <div class="history-card-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">
                             ${hitResultHtml}
                             <span style="font-weight: 800; color: var(--text-main);">總淨利: <span class="${netColor}">${runningBalance.toFixed(1)}</span></span>
                         </div>
@@ -582,97 +652,66 @@
                 
                 cardsHtml = cardHtml + cardsHtml; 
                 
-                // ★ 新增：遇到星期六或最後一期時，印出「本週結算交割」卡片
+                // 每週六自動安插週結算卡片
                 if (isSaturday || isLastDraw) {
                     let weeklyNet = weeklyPayout - weeklyCost;
                     let weeklyColor = weeklyNet >= 0 ? 'profit' : 'loss';
                     let sign = weeklyNet >= 0 ? '+' : '';
-                    let title = isSaturday ? '💰 每週日結算交割 (本週累計)' : '💰 結算交割 (當期未滿週累計)';
-                    
+                    let title = isSaturday ? '💰 每週日結算交割 (當週累計)' : '💰 結算交割 (當期未滿週累計)';
                     let settlementHtml = `
-                    <div class="history-card" style="background: var(--warning-bg); border: 1.5px solid var(--warning-border); text-align: center; padding: 16px; margin-bottom: 16px;">
-                        <div style="color: var(--warning); font-weight: 900; font-size: 16px; letter-spacing: 1px;">
-                            ${title}
-                        </div>
-                        <div style="margin-top: 10px; font-size: 14px; color: var(--text-main); font-weight: 700;">
+                    <div class="history-card" style="background: var(--warning-bg); border: 1.5px solid var(--warning-border); text-align: center; padding: 18px 16px; margin-bottom: 16px;">
+                        <div style="color: var(--warning); font-weight: 900; font-size: 16px; letter-spacing: 1px;">${title}</div>
+                        <div style="margin-top: 12px; font-size: 14px; color: var(--text-main); font-weight: 700;">
                             下注成本: <span class="loss">-${weeklyCost.toFixed(1)}</span> &nbsp;|&nbsp; 總中獎: <span class="profit">+${weeklyPayout.toFixed(1)}</span>
                         </div>
-                        <div style="margin-top: 12px; font-size: 18px; font-weight: 900; border-top: 1px dashed var(--warning-border); padding-top: 12px;">
-                            當週實際輸贏: <span class="${weeklyColor}" style="font-size: 20px;">${sign}${weeklyNet.toFixed(1)} 元</span>
+                        <div style="margin-top: 14px; font-size: 18px; font-weight: 900; border-top: 1px dashed var(--warning-border); padding-top: 14px;">
+                            地下實際輸贏: <span class="${weeklyColor}" style="font-size: 20px;">${sign}${weeklyNet.toFixed(1)} 元</span>
                         </div>
                     </div>`;
-                    
-                    // 因為是倒序 (最新在最上面)，結算卡片會插在星期六卡片的「上方」
                     cardsHtml = settlementHtml + cardsHtml;
-                    
-                    // 歸零，準備計算下一週
-                    weeklyCost = 0;
-                    weeklyPayout = 0;
+                    weeklyCost = 0; weeklyPayout = 0;
                 }
 
-                // 6. 號碼壽命/中獎淘汰機制
+                // 號碼淘汰機制
                 let groupsToRemove = [];
                 for (let g of activeGroups) {
                     g.age++;
                     let gMatch = g.nums.filter(x => actualNumsSet.has(x));
-                    if (g.age >= 6 || gMatch.length >= 2) {
-                        groupsToRemove.push(g);
-                    }
+                    if (g.age >= 6 || gMatch.length >= 2) groupsToRemove.push(g);
                 }
                 activeGroups = activeGroups.filter(g => !groupsToRemove.includes(g));
             }
             
-            // 填入所有歷史卡片
             tbody.innerHTML = cardsHtml;
-            
-            // 儲存結算後的存活號碼池
             finalActiveGroups = JSON.parse(JSON.stringify(activeGroups));
             
-            // 7. 更新左側總結算面板
             document.getElementById('summary-cost').innerText = `-${totalActualCost.toFixed(1)} 元`;
             document.getElementById('summary-payout').innerText = `+${totalPayout.toFixed(1)} 元`;
-            
             let netEl = document.getElementById('summary-net');
             let netVal = totalPayout - totalActualCost;
             netEl.innerText = (netVal >= 0 ? '+' : '') + netVal.toFixed(1) + ' 元';
             netEl.className = netVal >= 0 ? 'val profit' : 'val loss';
-            
             document.getElementById('summary-drawdown').innerText = `${maxDrawdown.toFixed(1)} 元`;
             
-            // 自動跑一次當前日期的預測
-            showPrediction();
+            showPredictionPool9();
         }
 
-        // 預測功能：產生今日組合與成本
-        function showPrediction() {
-            if (draws.length === 0) return;
-
+        function showPredictionPool9() {
             let dateStr = document.getElementById('predict-date').value.trim();
-            if(!/^\d{2}\/\d{2}$/.test(dateStr)) {
-                alert("請輸入正確日期格式，例如：03/18");
-                return;
-            }
+            if(!/^\d{2}\/\d{2}$/.test(dateStr)) { alert("請輸入正確日期格式，例如：03/18"); return; }
 
-            // 1. 本日單獨版路預測 (自動計算)
             let newNums = generatePrediction(dateStr);
-            let numStr = newNums.map(n => n.toString().padStart(2, '0')).join(', ');
-            document.getElementById('pred-result').innerText = numStr;
+            document.getElementById('pred-result').innerText = newNums.map(n => n.toString().padStart(2, '0')).join(', ');
 
-            // 2. 與歷史遺留號碼池合併
             let nextGroups = JSON.parse(JSON.stringify(finalActiveGroups));
             nextGroups.push({ date: dateStr, nums: newNums, age: 0 });
             if (nextGroups.length > 3) nextGroups.shift();
 
             let poolNums = new Set();
-            for (let g of nextGroups) {
-                for (let n of g.nums) poolNums.add(n);
-            }
+            for (let g of nextGroups) { for (let n of g.nums) poolNums.add(n); }
             let poolArr = [...poolNums].sort((a,b) => a-b);
-            let poolStr = poolArr.map(n => n.toString().padStart(2, '0')).join(', ');
-            
-            document.getElementById('next-pool').innerText = poolArr.length > 0 ? poolStr : '--';
+            document.getElementById('next-pool').innerText = poolArr.length > 0 ? poolArr.map(n => n.toString().padStart(2, '0')).join(', ') : '--';
 
-            // 3. 計算碰數與成本
             let c2 = nCr(poolArr.length, 2);
             let c3 = nCr(poolArr.length, 3);
             document.getElementById('next-combos').innerText = `${c2} / ${c3}`;
@@ -683,17 +722,209 @@
             
             let dailyNominalCost = (c2 * cost2) + (c3 * cost3);
             let dailyActualCost = dailyNominalCost * (1 - rebate);
-            
             document.getElementById('next-cost').innerText = `-${dailyActualCost.toFixed(1)} 元`;
         }
 
-        // 初始化：自動讀取深淺色偏好，並自動觸發 CSV 載入與回測
+
+        // =========================================================================
+        // 版路功能 B：10組 4x4 矩陣凹牌
+        // =========================================================================
+        function resetMatrixCycle() {
+            activeMatrix = JSON.parse(JSON.stringify(defaultMatrix));
+            cycleDayCount = 1;
+            cycleMultiplier = 1;
+            cycleCumCost = 0;
+            cycleCumPayout = 0;
+        }
+
+        function runBacktestMatrix10() {
+            const cost2 = parseFloat(document.getElementById('cost2').value);
+            const rebate = parseFloat(document.getElementById('rebate').value) / 100;
+            const odds2 = parseFloat(document.getElementById('odds2').value);
+            const multStep = parseFloat(document.getElementById('multStep').value);
+            
+            resetMatrixCycle();
+            
+            let totalActualCost = 0, totalPayout = 0, overallNet = 0, maxDrawdown = 0;
+            let weeklyCost = 0, weeklyPayout = 0;
+            
+            let tbody = document.getElementById('results-body');
+            let cardsHtml = '';
+
+            for (let i = 0; i < draws.length; i++) {
+                let draw = draws[i];
+                let dateStr = draw.date;
+                let actualNumsSet = new Set(draw.nums);
+                let actualNumsStr = draw.nums.map(n => n.toString().padStart(2, '0')).join(', ');
+                
+                let dateParts = dateStr.split('/');
+                let drawDateObj = new Date(2026, parseInt(dateParts[0], 10) - 1, parseInt(dateParts[1], 10));
+                let isSaturday = drawDateObj.getDay() === 6;
+                let isLastDraw = (i === draws.length - 1);
+                
+                // 1. 當日成本結算
+                let currentGroupsCount = activeMatrix.length;
+                let dailyCombos = currentGroupsCount * 16;
+                let dailyNominalCost = dailyCombos * cost2 * cycleMultiplier;
+                let dailyActualCost = dailyNominalCost * (1 - rebate);
+                
+                cycleCumCost += dailyActualCost;
+                totalActualCost += dailyActualCost;
+                weeklyCost += dailyActualCost;
+                
+                // 2. 對獎與扣除邏輯
+                let dailyPayout = 0;
+                let dailyHitCombos = 0;
+                let groupsToRemove = [];
+                
+                for (let j = 0; j < activeMatrix.length; j++) {
+                    let g = activeMatrix[j];
+                    let matchA = g.A.filter(n => actualNumsSet.has(n));
+                    let matchB = g.B.filter(n => actualNumsSet.has(n));
+                    let hits = matchA.length * matchB.length;
+                    
+                    if (hits > 0) {
+                        dailyHitCombos += hits;
+                        dailyPayout += hits * cost2 * odds2 * cycleMultiplier;
+                        groupsToRemove.push(j);
+                    }
+                }
+                
+                cycleCumPayout += dailyPayout;
+                totalPayout += dailyPayout;
+                weeklyPayout += dailyPayout;
+                
+                let cycleNet = cycleCumPayout - cycleCumCost;
+                overallNet += (dailyPayout - dailyActualCost);
+                if (overallNet < maxDrawdown) maxDrawdown = overallNet;
+                
+                let isHit = dailyHitCombos > 0;
+                let hitResultHtml = isHit ? `<span class="profit">🎯 中${dailyHitCombos}碰</span>` : `<span class="neutral">槓龜</span>`;
+                let dailyResultHtml = isHit ? `<span class="profit">+${dailyPayout.toFixed(1)}</span>` : `<span class="loss">-${dailyActualCost.toFixed(1)}</span>`;
+                let overallNetColor = overallNet >= 0 ? 'profit' : 'loss';
+
+                // 3. 判斷循環操作
+                let actionHtml = '';
+                let displayCycleDay = cycleDayCount;
+                let displayMult = cycleMultiplier;
+                
+                if (cycleNet > 0) {
+                    actionHtml = `<div class="action-box" style="border-left-color: var(--success);">
+                                    <span style="color: var(--success); font-weight:900;">✅ 循環獲利達標 (+${cycleNet.toFixed(1)}元)</span><br>
+                                    整組作廢，下期重新從 10 組開始。
+                                  </div>`;
+                    resetMatrixCycle();
+                } else {
+                    if (groupsToRemove.length > 0) {
+                        actionHtml = `<div class="action-box" style="border-left-color: var(--warning);">
+                                        <span style="color: var(--warning); font-weight:800;">⚠️ 尚未獲利回本 (目前累計 ${cycleNet.toFixed(1)}元)</span><br>
+                                        依規則剔除本期中獎的 ${groupsToRemove.length} 組。
+                                      </div>`;
+                        activeMatrix = activeMatrix.filter((_, index) => !groupsToRemove.includes(index));
+                    } else {
+                        actionHtml = `<div class="action-box" style="border-left-color: var(--text-muted);">
+                                        <span style="color: var(--text-muted); font-weight:800;">📉 本期無中獎 (目前累計 ${cycleNet.toFixed(1)}元)</span>
+                                      </div>`;
+                    }
+
+                    if (activeMatrix.length === 0) {
+                        actionHtml += `<div style="color: var(--danger); font-weight: 900; margin-top: 8px;">🚨 剩餘組數歸零但仍虧損！強制作廢，認賠重新循環。</div>`;
+                        resetMatrixCycle();
+                    } else {
+                        cycleMultiplier += multStep;
+                        cycleDayCount += 1;
+                        actionHtml += `<div style="color: var(--primary); font-weight: 800; margin-top: 8px; font-size: 14px;">➔ 下期剩餘 ${activeMatrix.length} 組，倍數提升至 ${cycleMultiplier}x</div>`;
+                    }
+                }
+
+                // 4. 輸出 HTML (倒序)
+                let cardHtml = `
+                <div class="history-card">
+                    <div class="history-card-header">
+                        <span class="history-card-date">${dateStr}</span>
+                        ${dailyResultHtml}
+                    </div>
+                    <div class="history-card-body">
+                        <div style="margin-bottom: 10px;">
+                            <span class="cycle-badge">循環第 ${displayCycleDay} 天</span>
+                            <span class="mult-badge">當期倍數 ${displayMult}x</span>
+                        </div>
+                        <div class="history-card-row">
+                            <span><span style="color:var(--text-main); font-weight:700;">開獎:</span> ${actualNumsStr}</span>
+                            <span>成本: -${dailyActualCost.toFixed(1)}</span>
+                        </div>
+                        <div style="margin-top: 6px;">
+                            下注狀態: <span style="font-weight: 700; color: var(--text-main);">${currentGroupsCount}</span> 組 (${dailyCombos} 碰)
+                        </div>
+                        <div class="history-card-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">
+                            ${hitResultHtml}
+                            <span style="font-weight: 800; color: var(--text-main);">總淨利: <span class="${overallNetColor}">${overallNet.toFixed(1)}</span></span>
+                        </div>
+                        ${actionHtml}
+                    </div>
+                </div>`;
+                
+                cardsHtml = cardHtml + cardsHtml; 
+                
+                // 週結算
+                if (isSaturday || isLastDraw) {
+                    let weeklyNet = weeklyPayout - weeklyCost;
+                    let weeklyColor = weeklyNet >= 0 ? 'profit' : 'loss';
+                    let sign = weeklyNet >= 0 ? '+' : '';
+                    let title = isSaturday ? '💰 每週日結算交割 (當週累計)' : '💰 結算交割 (當期未滿週累計)';
+                    
+                    let settlementHtml = `
+                    <div class="history-card" style="background: var(--warning-bg); border: 1.5px solid var(--warning-border); text-align: center; padding: 18px 16px; margin-bottom: 16px;">
+                        <div style="color: var(--warning); font-weight: 900; font-size: 16px; letter-spacing: 1px;">${title}</div>
+                        <div style="margin-top: 12px; font-size: 14px; color: var(--text-main); font-weight: 700;">
+                            下注成本: <span class="loss">-${weeklyCost.toFixed(1)}</span> &nbsp;|&nbsp; 總中獎: <span class="profit">+${weeklyPayout.toFixed(1)}</span>
+                        </div>
+                        <div style="margin-top: 14px; font-size: 18px; font-weight: 900; border-top: 1px dashed var(--warning-border); padding-top: 14px;">
+                            地下實際輸贏: <span class="${weeklyColor}" style="font-size: 20px;">${sign}${weeklyNet.toFixed(1)} 元</span>
+                        </div>
+                    </div>`;
+                    cardsHtml = settlementHtml + cardsHtml;
+                    weeklyCost = 0; weeklyPayout = 0;
+                }
+            }
+            
+            tbody.innerHTML = cardsHtml;
+            
+            document.getElementById('summary-cost').innerText = `-${totalActualCost.toFixed(1)} 元`;
+            document.getElementById('summary-payout').innerText = `+${totalPayout.toFixed(1)} 元`;
+            
+            let netEl = document.getElementById('summary-net');
+            netEl.innerText = (overallNet >= 0 ? '+' : '') + overallNet.toFixed(1) + ' 元';
+            netEl.className = overallNet >= 0 ? 'val profit' : 'val loss';
+            document.getElementById('summary-drawdown').innerText = `${maxDrawdown.toFixed(1)} 元`;
+            
+            showPredictionMatrix10();
+        }
+
+        function showPredictionMatrix10() {
+            let dateStr = document.getElementById('predict-date').value.trim();
+            if(!/^\d{2}\/\d{2}$/.test(dateStr)) { alert("請輸入正確日期格式，例如：03/18"); return; }
+
+            let currentGroupsCount = activeMatrix.length;
+            let dailyCombos = currentGroupsCount * 16;
+            const cost2 = parseFloat(document.getElementById('cost2').value);
+            const rebate = parseFloat(document.getElementById('rebate').value) / 100;
+            
+            let dailyNominalCost = dailyCombos * cost2 * cycleMultiplier;
+            let dailyActualCost = dailyNominalCost * (1 - rebate);
+
+            document.getElementById('pred-cycle-status').innerText = `第 ${cycleDayCount} 天 (倍數 ${cycleMultiplier}x)`;
+            document.getElementById('pred-remaining-groups').innerText = `${currentGroupsCount} 組 (${dailyCombos} 碰)`;
+            document.getElementById('next-cost').innerText = `-${dailyActualCost.toFixed(1)} 元`;
+        }
+
+        // 初始化
         window.onload = () => {
             if(localStorage.getItem('theme') === 'dark') {
                 document.body.setAttribute('data-theme', 'dark');
                 document.getElementById('themeIcon').textContent = '☀️';
             }
-            // 進入頁面後自動載入資料並執行回測
+            toggleLogicUI();
             fetchCSV();
         };
     </script>
