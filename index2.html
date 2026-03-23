@@ -241,8 +241,8 @@
                             <option value="5">指定 下 5 期</option>
                             <option value="6">指定 下 6 期</option>
                             <option value="7">指定 下 7 期</option>
-							<option value="8">指定 下 8 期</option>
-							<option value="9">指定 下 9 期</option>
+                            <option value="8">指定 下 8 期</option>
+                            <option value="9">指定 下 9 期</option>
                             <option value="10">指定 下 10 期</option>
                         </select>
                     </div>
@@ -273,7 +273,7 @@
         <a href="index2.html" class="nav-item active">
             <span class="nav-icon"></span>版路拖牌系統
         </a>
-		
+        
     </div>
 
     <script>
@@ -334,7 +334,7 @@
                 })
                 .finally(() => {
                     document.getElementById('loadingDiv').style.display = 'none';
-                    document.getElementById('loadingDiv').innerText = '🔄 系統正在掃描最新聽牌狀態，請稍候...'; // 復原文字
+                    document.getElementById('loadingDiv').innerText = '請稍候...'; // 復原文字
                 });
         }
 
@@ -518,6 +518,42 @@
                             }
                         }
                         if (bestPair && bestPair.rate >= 0.40) { 
+                            // 計算哪一期命中最高 與 命中分佈過程
+                            if (trackMode === 'window' && offset > 1) {
+                                let offsetCounts = Array(offset).fill(0);
+                                let yHitCounts = Array(offset).fill(0);
+                                let zHitCounts = Array(offset).fill(0);
+                                
+                                for (let idx of triggerIndices) {
+                                    for (let w = 1; w <= offset; w++) {
+                                        if (idx + w < data.length) {
+                                            let hasY = data[idx + w].nums.includes(bestPair.y);
+                                            let hasZ = data[idx + w].nums.includes(bestPair.z);
+                                            if (hasY || hasZ) {
+                                                offsetCounts[w-1]++;
+                                                if(hasY) yHitCounts[w-1]++;
+                                                if(hasZ) zHitCounts[w-1]++;
+                                                break; // 只計算該週期內的第一個命中
+                                            }
+                                        }
+                                    }
+                                }
+                                let maxCount = Math.max(...offsetCounts);
+                                let bestW = offsetCounts.indexOf(maxCount) + 1;
+                                bestPair.bestHitOffset = `第 ${bestW} 期 (${maxCount}次)`;
+                                
+                                let distArr = [];
+                                for(let w = 0; w < offset; w++) {
+                                    if(offsetCounts[w] > 0) {
+                                        let yStr = yHitCounts[w] > 0 ? `${bestPair.y < 10 ? '0'+bestPair.y : bestPair.y}(${yHitCounts[w]})` : '';
+                                        let zStr = zHitCounts[w] > 0 ? `${bestPair.z < 10 ? '0'+bestPair.z : bestPair.z}(${zHitCounts[w]})` : '';
+                                        let details = [yStr, zStr].filter(Boolean).join(', ');
+                                        distArr.push(`第${w+1}期 [${details}]`);
+                                    }
+                                }
+                                bestPair.hitDistribution = distArr.join(' | ');
+                            }
+
                             let st = getListenStatus(data, triggerIndices, bestPair, offset, trackMode);
                             bestPair.status = st.statusText; bestPair.isActive = st.isActiveFlag;
                             results.push(bestPair);
@@ -574,6 +610,42 @@
                         }
                     }
                     if (bestPair && bestPair.rate >= 0.50) { 
+                        // 計算哪一期命中最高 與 命中分佈過程
+                        if (trackMode === 'window' && offset > 1) {
+                            let offsetCounts = Array(offset).fill(0);
+                            let yHitCounts = Array(offset).fill(0);
+                            let zHitCounts = Array(offset).fill(0);
+                            
+                            for (let idx of triggerIndices) {
+                                for (let w = 1; w <= offset; w++) {
+                                    if (idx + w < data.length) {
+                                        let hasY = data[idx + w].nums.includes(bestPair.y);
+                                        let hasZ = data[idx + w].nums.includes(bestPair.z);
+                                        if (hasY || hasZ) {
+                                            offsetCounts[w-1]++;
+                                            if(hasY) yHitCounts[w-1]++;
+                                            if(hasZ) zHitCounts[w-1]++;
+                                            break; // 只計算該週期內的第一個命中
+                                        }
+                                    }
+                                }
+                            }
+                            let maxCount = Math.max(...offsetCounts);
+                            let bestW = offsetCounts.indexOf(maxCount) + 1;
+                            bestPair.bestHitOffset = `第 ${bestW} 期 (${maxCount}次)`;
+                            
+                            let distArr = [];
+                            for(let w = 0; w < offset; w++) {
+                                if(offsetCounts[w] > 0) {
+                                    let yStr = yHitCounts[w] > 0 ? `${bestPair.y < 10 ? '0'+bestPair.y : bestPair.y}(${yHitCounts[w]})` : '';
+                                    let zStr = zHitCounts[w] > 0 ? `${bestPair.z < 10 ? '0'+bestPair.z : bestPair.z}(${zHitCounts[w]})` : '';
+                                    let details = [yStr, zStr].filter(Boolean).join(', ');
+                                    distArr.push(`第${w+1}期 [${details}]`);
+                                }
+                            }
+                            bestPair.hitDistribution = distArr.join(' | ');
+                        }
+
                         let st = getListenStatus(data, triggerIndices, bestPair, offset, trackMode);
                         bestPair.status = st.statusText; bestPair.isActive = st.isActiveFlag;
                         results.push(bestPair);
@@ -672,7 +744,9 @@
                         </div>
                         <div class="history-card-row" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border);">
                             <span class="neutral">歷史過盤: ${r.hits} / ${r.total} 次</span>
+                            ${r.bestHitOffset ? `<span class="neutral" style="font-size: 13px; color: var(--primary);">最高落點: ${r.bestHitOffset}</span>` : ''}
                         </div>
+                        ${r.hitDistribution ? `<div style="margin-top: 8px; font-size: 12px; color: var(--text-muted); background: var(--select-bg); border: 1px solid var(--border); padding: 8px 10px; border-radius: 8px; line-height: 1.6;">🎯 <b>命中過程細節：</b><br>${r.hitDistribution}</div>` : ''}
                     </div>
                 </div>`;
             });
