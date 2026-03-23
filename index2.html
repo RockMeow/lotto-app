@@ -189,7 +189,7 @@
             <div class="control-panel">
                 <div class="pred-title">設定掃描條件</div>
 
-                <label>🎰 選擇彩券類型</label>
+                <label>選擇彩券類型</label>
                 <select id="csvSource" onchange="fetchGoogleCSV()">
                     <option value="">請選擇彩券...</option>
                     <option value="./539_history_all_sorted.csv">今彩539</option>
@@ -198,10 +198,10 @@
                     <option value="./Six_history_all_sorted.csv">六合彩</option>
                 </select>
                 
-                <label>📁 或手動載入數據 (CSV)</label>
+                <label>或手動載入數據 (CSV)</label>
                 <input type="file" id="csvFileInput" accept=".csv">
 
-                <label>📅 時間範圍過濾</label>
+                <label>時間範圍過濾</label>
                 <select id="timeRange">
                     <option value="all">不限 (全部歷史數據)</option>
                     <option value="2025-01">2025 年 01 月起</option>
@@ -210,7 +210,7 @@
                     <option value="2026-01">2026 年 01 月起 (今年)</option>
                 </select>
 
-                <label>🔍 拖牌分析類型</label>
+                <label>拖牌分析類型</label>
                 <select id="analysisType" onchange="toggleOptions()">
                     <option value="pos">1. 定位拖牌 (2中1)</option>
                     <option value="unpos">2. 不定位拖牌 (2中1)</option>
@@ -218,7 +218,7 @@
                 </select>
 
                 <div id="colPosition">
-                    <label>📍 觸發位置 (僅定位適用)</label>
+                    <label>觸發位置 (僅定位適用)</label>
                     <select id="targetPosition">
                         <option value="all">自動掃描全部 (第1~5顆)</option>
                         <option value="1">指定 第 1 顆落球</option>
@@ -231,7 +231,7 @@
 
                 <div style="display:flex; gap:10px;">
                     <div style="flex:1;">
-                        <label>🎯 目標期數</label>
+                        <label>目標期數</label>
                         <select id="targetOffset">
                             <option value="auto">自動 (下 1~5 期)</option>
                             <option value="1">指定 下 1 期</option>
@@ -247,7 +247,7 @@
                         </select>
                     </div>
                     <div style="flex:1;">
-                        <label>📏 追號模式</label>
+                        <label>追號模式</label>
                         <select id="trackMode">
                             <option value="window">N期內累積 (易過盤)</option>
                             <option value="fixed">固定期數 (單押一期)</option>
