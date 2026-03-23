@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>版路拖牌工具</title>
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-active: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --danger-bg: #fee2e2;
+            --warning: #b45309;
+            --warning-bg: #fffbeb;
+            --warning-border: #fde68a;
+            --success: #15803d;
+            --success-bg: #dcfce7;
+            --header-bg: rgba(255, 255, 255, 0.85);
+            --select-bg: #f8fafc;
+            --toggle-bg: #f1f5f9;
+        }
+
+        /* 🌙 深色模式變數 */
+        [data-theme="dark"] {
+            --primary: #60a5fa;
+            --primary-active: #3b82f6;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --danger: #f87171;
+            --danger-bg: rgba(239, 68, 68, 0.15);
+            --warning: #fbbf24;
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --warning-border: #92400e;
+            --success: #4ade80;
+            --success-bg: rgba(34, 197, 94, 0.15);
+            --header-bg: rgba(30, 41, 59, 0.85);
+            --select-bg: #0f172a;
+            --toggle-bg: #0f172a;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: var(--bg); 
+            color: var(--text-main); 
+            -webkit-font-smoothing: antialiased; 
+            -webkit-tap-highlight-color: transparent; 
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .app-container { 
+            max-width: 480px; 
+            margin: 0 auto; 
+            background-color: var(--bg); 
+            min-height: 100vh; 
+            padding-bottom: 80px; 
+            transition: background-color 0.3s ease;
+        }
+
+        .app-header { 
+            background: var(--header-bg); 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px); 
+            padding: 18px 20px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            border-bottom: 1px solid var(--border);
+            display: grid; 
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .app-header h1 { 
+            margin: 0; 
+            font-size: 18px; 
+            color: var(--text-main); 
+            font-weight: 800; 
+            letter-spacing: 0.5px; 
+            grid-column: 2;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .theme-toggle {
+            background: none; border: none; font-size: 22px; cursor: pointer; padding: 4px; 
+            border-radius: 50%; transition: transform 0.2s; color: var(--text-main); justify-self: end;
+        }
+        .theme-toggle:active { transform: scale(0.8); }
+
+        .content { padding: 16px; }
+
+        .control-panel, .pred-block { 
+            background: var(--card-bg); border-radius: 24px; padding: 24px 20px; 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; 
+            margin-bottom: 20px; transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .pred-title { 
+            color: var(--primary); font-size: 18px; font-weight: 900; margin-bottom: 20px; 
+            padding-bottom: 16px; border-bottom: 1.5px solid var(--border); text-align: center;
+        }
+
+        label { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: block; }
+
+        select, input[type="file"] { 
+            width: 100%; appearance: none; -webkit-appearance: none; 
+            background-color: var(--select-bg); border: 1.5px solid var(--border); 
+            padding: 14px 18px; border-radius: 14px; font-size: 15px; font-weight: 600;
+            color: var(--text-main); box-sizing: border-box; transition: all 0.2s ease; 
+            margin-bottom: 16px;
+        }
+        
+        select {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); 
+            background-repeat: no-repeat; background-position: right 16px center; 
+            background-size: 18px; padding-right: 44px; 
+        }
+        
+        select:focus, input[type="file"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+        input[type="file"] { padding: 12px; font-weight: 500; font-size: 14px; }
+
+        button.start-btn { 
+            background: linear-gradient(135deg, var(--danger) 0%, #c0392b 100%); 
+            color: white; border: none; padding: 16px; font-size: 16px; font-weight: 800; 
+            border-radius: 14px; cursor: pointer; width: 100%; margin-top: 10px; 
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.25); transition: transform 0.15s, box-shadow 0.15s; 
+        }
+        button.start-btn:active { transform: scale(0.96); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); }
+
+        .loading-text { 
+            text-align: center; color: var(--danger); font-size: 16px; padding: 30px 20px; 
+            background: var(--card-bg); border-radius: 20px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); 
+            font-weight: 800; display: none; margin-bottom: 20px;
+        }
+
+        .history-card {
+            background: var(--card-bg); border-radius: 18px; padding: 18px; margin-bottom: 16px; 
+            border: 1.5px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .history-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1.5px dashed var(--border); padding-bottom: 12px; }
+        .history-card-date { color: var(--text-main); font-size: 18px; font-weight: 900; }
+        .history-card-body { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+        .history-card-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+        .pool-nums { color: var(--danger); font-weight: 800; font-size: 20px; letter-spacing: 1px; }
+        
+        .profit { color: var(--success); font-weight: 900; font-size: 18px; }
+        .loss { color: var(--warning); font-weight: 800; }
+        .neutral { color: var(--text-muted); font-weight: 700; }
+
+        .cycle-badge { padding: 4px 10px; border-radius: 8px; font-size: 13px; font-weight: 800; margin-right: 8px; color: white; }
+        .mult-badge { background: var(--toggle-bg); color: var(--text-muted); padding: 4px 10px; border-radius: 8px; font-size: 13px; font-weight: 800; border: 1px solid var(--border); }
+
+        /* 📱 底部導航列 */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto;
+            background: var(--header-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border); display: flex; justify-content: space-around;
+            padding: 10px 0 20px 0; z-index: 1000; transition: background 0.3s ease, border-color 0.3s ease;
+        }
+        .nav-item { flex: 1; text-align: center; text-decoration: none; color: var(--text-muted); font-size: 14px; font-weight: 800; padding: 10px; transition: color 0.2s; }
+        .nav-item.active { color: var(--danger); }
+        .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="app-header">
+            <h1>版路拖牌工具</h1>
+            <button class="theme-toggle" onclick="toggleTheme()" id="themeIcon">🌙</button>
+        </header>
+
+        <div class="content">
+            <div class="control-panel">
+                <div class="pred-title">設定掃描條件</div>
+
+                <label>🎰 選擇彩券類型</label>
+                <select id="csvSource" onchange="fetchGoogleCSV()">
+                    <option value="">請選擇彩券...</option>
+                    <option value="./539_history_all_sorted.csv">今彩539</option>
+                    <option value="./649_history_all_sorted.csv">大樂透</option>
+                    <option value="./Fan_history_all_sorted.csv">天天樂</option>
+                    <option value="./Six_history_all_sorted.csv">六合彩</option>
+                </select>
+                
+                <label>📁 或手動載入數據 (CSV)</label>
+                <input type="file" id="csvFileInput" accept=".csv">
+
+                <label>📅 時間範圍過濾</label>
+                <select id="timeRange">
+                    <option value="all">不限 (全部歷史數據)</option>
+                    <option value="2025-01">2025 年 01 月起</option>
+                    <option value="2025-07">2025 年 07 月起 (近大半年)</option>
+                    <option value="2025-10" selected>2025 年 10 月起 (近半年 - 推薦)</option>
+                    <option value="2026-01">2026 年 01 月起 (今年)</option>
+                </select>
+
+                <label>🔍 拖牌分析類型</label>
+                <select id="analysisType" onchange="toggleOptions()">
+                    <option value="pos">1. 定位拖牌 (2中1)</option>
+                    <option value="unpos">2. 不定位拖牌 (2中1)</option>
+                    <option value="tail">3. 尾數拖牌預測</option>
+                </select>
+
+                <div id="colPosition">
+                    <label>📍 觸發位置 (僅定位適用)</label>
+                    <select id="targetPosition">
+                        <option value="all">自動掃描全部 (第1~5顆)</option>
+                        <option value="1">指定 第 1 顆落球</option>
+                        <option value="2">指定 第 2 顆落球</option>
+                        <option value="3">指定 第 3 顆落球</option>
+                        <option value="4">指定 第 4 顆落球</option>
+                        <option value="5">指定 第 5 顆落球</option>
+                    </select>
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;">
+                        <label>🎯 目標期數</label>
+                        <select id="targetOffset">
+                            <option value="auto">自動 (下 1~5 期)</option>
+                            <option value="1">指定 下 1 期</option>
+                            <option value="2">指定 下 2 期</option>
+                            <option value="3">指定 下 3 期</option>
+                            <option value="4">指定 下 4 期</option>
+                            <option value="5">指定 下 5 期</option>
+                            <option value="6">指定 下 6 期</option>
+                            <option value="7">指定 下 7 期</option>
+							<option value="8">指定 下 8 期</option>
+							<option value="9">指定 下 9 期</option>
+                            <option value="10">指定 下 10 期</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <label>📏 追號模式</label>
+                        <select id="trackMode">
+                            <option value="window">N期內累積 (易過盤)</option>
+                            <option value="fixed">固定期數 (單押一期)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="start-btn" onclick="startAnalysis()">開始掃描</button>
+            </div>
+
+            <div class="loading-text" id="loadingDiv">請稍候...</div>
+
+            <div id="resultsArea" style="margin-top: 10px;">
+                </div>
+
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <span class="nav-icon">⚙</span>版路回測與預測系統
+        </a>
+        <a href="index2.html" class="nav-item active">
+            <span class="nav-icon"></span>版路拖牌系統
+        </a>
+		
+    </div>
+
+    <script>
+        let globalData = [];
+
+        // 主題切換邏輯
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            document.getElementById('themeIcon').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+            localStorage.setItem('theme', newTheme);
+        }
+
+        window.onload = () => {
+            if(localStorage.getItem('theme') === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                document.getElementById('themeIcon').textContent = '☀️';
+            }
+        };
+
+        // UI 連動
+        function toggleOptions() {
+            const type = document.getElementById('analysisType').value;
+            document.getElementById('colPosition').style.display = (type === 'pos') ? 'block' : 'none';
+            
+            const trackMode = document.getElementById('trackMode');
+            if(type === 'tail') {
+                trackMode.value = 'fixed';
+                trackMode.disabled = true;
+                trackMode.style.opacity = '0.5';
+            } else {
+                trackMode.disabled = false;
+                trackMode.style.opacity = '1';
+            }
+        }
+
+        // 讀取伺服器同目錄下的 CSV 檔案
+        function fetchGoogleCSV() {
+            const url = document.getElementById('csvSource').value;
+            if (!url) return;
+            
+            document.getElementById('loadingDiv').style.display = 'block';
+            document.getElementById('loadingDiv').innerText = '🔄 正在讀取歷史數據，請稍候...';
+            
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) throw new Error('檔案不存在或網路連線異常');
+                    return response.text();
+                })
+                .then(text => {
+                    parseCSV(text);
+                    alert(`✅ 成功載入 ${globalData.length} 筆資料！`);
+                })
+                .catch(error => {
+                    alert('讀取失敗：' + error.message + '\n(請確認檔案是否存在於同一資料夾下)');
+                })
+                .finally(() => {
+                    document.getElementById('loadingDiv').style.display = 'none';
+                    document.getElementById('loadingDiv').innerText = '🔄 系統正在掃描最新聽牌狀態，請稍候...'; // 復原文字
+                });
+        }
+
+        // CSV 處理
+        function parseCSV(text) {
+            const lines = text.split(/\r?\n/);
+            let parsed = [];
+            let curYear = 2026; 
+            
+            let lastValidLine = lines[lines.length-1].trim() ? lines[lines.length-1] : lines[lines.length-2];
+            let prevMonth = 3;
+            if(lastValidLine && lastValidLine.includes(',')) {
+                let parts = lastValidLine.split(',');
+                if(parts[0].includes('/')) prevMonth = parseInt(parts[0].split('/')[0]);
+            }
+
+            for (let i = lines.length - 1; i >= 0; i--) {
+                const line = lines[i].trim();
+                if (!line || line.startsWith('Date') || line.startsWith('日期')) continue;
+                const parts = line.split(',');
+                if(parts.length < 6) continue;
+                
+                const month = parseInt(parts[0].split('/')[0]);
+                if (!isNaN(month) && !isNaN(prevMonth)) {
+                    if (prevMonth <= 3 && month >= 10) curYear--;
+                    prevMonth = month;
+                }
+                
+                parsed.unshift({
+                    date: parts[0],
+                    year: curYear,
+                    month: month,
+                    nums: [parseInt(parts[1]), parseInt(parts[2]), parseInt(parts[3]), parseInt(parts[4]), parseInt(parts[5])]
+                });
+            }
+            globalData = parsed;
+        }
+
+        document.getElementById('csvFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                parseCSV(e.target.result);
+                alert(`✅ 成功載入 ${globalData.length} 筆資料！`);
+            };
+            reader.readAsText(file);
+        });
+
+        // 啟動分析
+        function startAnalysis() {
+            if (globalData.length === 0) {
+                const fileInput = document.getElementById('csvFileInput');
+                if (fileInput && fileInput.files.length > 0) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) { parseCSV(e.target.result); executeComputation(); };
+                    reader.readAsText(fileInput.files[0]);
+                    return;
+                } else {
+                    alert("⚠️ 請先選擇彩券類型或手動載入 CSV 數據檔！");
+                    return;
+                }
+            }
+            executeComputation();
+        }
+
+        function executeComputation() {
+            document.getElementById('loadingDiv').style.display = 'block';
+            document.getElementById('resultsArea').innerHTML = '';
+
+            setTimeout(() => {
+                try {
+                    const type = document.getElementById('analysisType').value;
+                    const timeFilter = document.getElementById('timeRange').value;
+                    const targetPos = document.getElementById('targetPosition').value;
+                    const targetOffset = document.getElementById('targetOffset').value;
+                    const trackMode = document.getElementById('trackMode').value;
+
+                    let filteredData = globalData;
+                    if (timeFilter !== 'all') {
+                        const [fYear, fMonth] = timeFilter.split('-').map(Number);
+                        filteredData = globalData.filter(d => (d.year > fYear) || (d.year === fYear && d.month >= fMonth));
+                    }
+
+                    if(filteredData.length < 10) {
+                        alert("過濾後的資料筆數太少，請放寬時間範圍！");
+                        document.getElementById('loadingDiv').style.display = 'none';
+                        return;
+                    }
+
+                    let resultsHTML = "";
+                    if (type === 'pos') resultsHTML = analyzePosition(filteredData, targetPos, targetOffset, trackMode);
+                    else if (type === 'unpos') resultsHTML = analyzeUnposition(filteredData, targetOffset, trackMode);
+                    else if (type === 'tail') resultsHTML = analyzeTails(filteredData, targetOffset);
+
+                    let summaryHtml = `<div class="pred-title" style="color: var(--text-main); font-size: 16px;">掃描結果 (基於 ${filteredData.length} 期)</div>`;
+                    document.getElementById('resultsArea').innerHTML = summaryHtml + resultsHTML;
+                } catch (error) {
+                    alert("運算發生錯誤：" + error.message);
+                }
+                document.getElementById('loadingDiv').style.display = 'none';
+            }, 150);
+        }
+
+        // 狀態判斷
+        function getListenStatus(data, triggerIndices, bestPair, offset, trackMode) {
+            let latest_idx = triggerIndices[triggerIndices.length - 1];
+            let draws_passed = data.length - 1 - latest_idx;
+            let currentStatusText = '➖ 尚未觸發';
+            let isActiveFlag = 0;
+
+            if (trackMode === 'fixed') {
+                let distance = data.length - latest_idx;
+                if (distance === offset) {
+                    currentStatusText = '🔥 明日到期'; isActiveFlag = 2;
+                } else if (distance < offset) {
+                    currentStatusText = `⏳ 倒數 ${offset - distance} 期`; isActiveFlag = 1;
+                }
+            } else {
+                if (draws_passed < offset) {
+                    let hitAlready = false;
+                    for(let w = latest_idx + 1; w < data.length; w++) {
+                        if (data[w].nums.includes(bestPair.y) || data[w].nums.includes(bestPair.z)) { hitAlready = true; break; }
+                    }
+                    if (hitAlready) {
+                        currentStatusText = '✅ 已提前開出';
+                    } else {
+                        let rem = offset - draws_passed;
+                        currentStatusText = `🚨 聽牌中 (剩 ${rem} 期)`; isActiveFlag = 2;
+                    }
+                }
+            }
+            return { statusText: currentStatusText, isActiveFlag: isActiveFlag };
+        }
+
+        // 核心演算法
+        function analyzePosition(data, posSetting, offsetSetting, trackMode) {
+            let results = [];
+            let positionsToScan = posSetting === 'all' ? [0, 1, 2, 3, 4] : [parseInt(posSetting) - 1];
+            let offsetsToScan = offsetSetting === 'auto' ? [1, 2, 3, 4, 5] : [parseInt(offsetSetting)];
+            let minTriggers = data.length > 500 ? 15 : 4; 
+
+            for (let p of positionsToScan) {
+                for (let x = 1; x <= 39; x++) {
+                    let triggerIndices = [];
+                    for (let i = 0; i < data.length; i++) { if (data[i].nums[p] === x) triggerIndices.push(i); }
+                    if (triggerIndices.length < minTriggers) continue;
+
+                    for (let offset of offsetsToScan) {
+                        let targetSets = [];
+                        for (let idx of triggerIndices) {
+                            if (trackMode === 'fixed') {
+                                if (idx + offset < data.length) targetSets.push(data[idx + offset].nums);
+                            } else {
+                                if (idx + 1 < data.length) {
+                                    let maxScan = Math.min(idx + offset, data.length - 1);
+                                    let combined = [];
+                                    for (let w = idx + 1; w <= maxScan; w++) combined.push(...data[w].nums);
+                                    targetSets.push(combined);
+                                }
+                            }
+                        }
+                        let validTriggers = targetSets.length;
+                        if (validTriggers < minTriggers) continue;
+
+                        let bestPair = null;
+                        for (let y = 1; y <= 38; y++) {
+                            for (let z = y + 1; z <= 39; z++) {
+                                let hits = 0;
+                                for (let i = 0; i < validTriggers; i++) { if (targetSets[i].includes(y) || targetSets[i].includes(z)) hits++; }
+                                let rate = hits / validTriggers;
+                                if (!bestPair || rate > bestPair.rate || (rate === bestPair.rate && hits > bestPair.hits)) {
+                                    bestPair = {
+                                        condition: `第 ${p+1} 顆 開 ${x < 10 ? '0'+x : x}`,
+                                        target: `${y < 10 ? '0'+y : y} 或 ${z < 10 ? '0'+z : z}`,
+                                        y: y, z: z,
+                                        offsetText: trackMode === 'fixed' ? `固定下 ${offset} 期` : `下 ${offset} 期內`,
+                                        hits: hits, total: validTriggers, rate: rate
+                                    };
+                                }
+                            }
+                        }
+                        if (bestPair && bestPair.rate >= 0.40) { 
+                            let st = getListenStatus(data, triggerIndices, bestPair, offset, trackMode);
+                            bestPair.status = st.statusText; bestPair.isActive = st.isActiveFlag;
+                            results.push(bestPair);
+                        }
+                    }
+                }
+            }
+            return renderCards(results);
+        }
+
+        function analyzeUnposition(data, offsetSetting, trackMode) {
+            let results = [];
+            let offsetsToScan = offsetSetting === 'auto' ? [1, 2, 3, 4, 5] : [parseInt(offsetSetting)];
+            let minTriggers = data.length > 500 ? 50 : 10;
+
+            for (let x = 1; x <= 39; x++) {
+                let triggerIndices = [];
+                for (let i = 0; i < data.length; i++) { if (data[i].nums.includes(x)) triggerIndices.push(i); }
+                if (triggerIndices.length < minTriggers) continue;
+
+                for (let offset of offsetsToScan) {
+                    let targetSets = [];
+                    for (let idx of triggerIndices) {
+                        if (trackMode === 'fixed') {
+                            if (idx + offset < data.length) targetSets.push(data[idx + offset].nums);
+                        } else {
+                            if (idx + 1 < data.length) {
+                                let maxScan = Math.min(idx + offset, data.length - 1);
+                                let combined = [];
+                                for (let w = idx + 1; w <= maxScan; w++) combined.push(...data[w].nums);
+                                targetSets.push(combined);
+                            }
+                        }
+                    }
+                    let validTriggers = targetSets.length;
+                    if (validTriggers < minTriggers) continue;
+
+                    let bestPair = null;
+                    for (let y = 1; y <= 38; y++) {
+                        for (let z = y + 1; z <= 39; z++) {
+                            if (x===y || x===z) continue; 
+                            let hits = 0;
+                            for (let i = 0; i < validTriggers; i++) { if (targetSets[i].includes(y) || targetSets[i].includes(z)) hits++; }
+                            let rate = hits / validTriggers;
+                            if (!bestPair || rate > bestPair.rate || (rate === bestPair.rate && hits > bestPair.hits)) {
+                                bestPair = {
+                                    condition: `不定位 包含 ${x < 10 ? '0'+x : x}`,
+                                    target: `${y < 10 ? '0'+y : y} 或 ${z < 10 ? '0'+z : z}`,
+                                    y: y, z: z,
+                                    offsetText: trackMode === 'fixed' ? `固定下 ${offset} 期` : `下 ${offset} 期內`,
+                                    hits: hits, total: validTriggers, rate: rate
+                                };
+                            }
+                        }
+                    }
+                    if (bestPair && bestPair.rate >= 0.50) { 
+                        let st = getListenStatus(data, triggerIndices, bestPair, offset, trackMode);
+                        bestPair.status = st.statusText; bestPair.isActive = st.isActiveFlag;
+                        results.push(bestPair);
+                    }
+                }
+            }
+            return renderCards(results);
+        }
+
+        function analyzeTails(data, offsetSetting) {
+            let results = [];
+            let offsetsToScan = offsetSetting === 'auto' ? [1, 2, 3] : [parseInt(offsetSetting)];
+
+            for (let tail = 0; tail <= 9; tail++) {
+                let triggerIndices = [];
+                for (let i = 0; i < data.length; i++) { if (data[i].nums.some(n => n % 10 === tail)) triggerIndices.push(i); }
+
+                for (let offset of offsetsToScan) {
+                    let targetTailsForTriggers = [];
+                    for (let idx of triggerIndices) {
+                        if (idx + offset < data.length) targetTailsForTriggers.push(data[idx + offset].nums.map(n => n % 10));
+                    }
+                    let validTriggers = targetTailsForTriggers.length;
+                    if (validTriggers > 10) {
+                        let bestTail = null;
+                        for (let targetTail = 0; targetTail <= 9; targetTail++) {
+                            let hits = 0;
+                            for (let i = 0; i < validTriggers; i++) { if (targetTailsForTriggers[i].includes(targetTail)) hits++; }
+                            let rate = hits / validTriggers;
+                            if (!bestTail || rate > bestTail.rate) {
+                                bestTail = {
+                                    condition: `當期包含 【${tail} 尾】`,
+                                    target: `帶出 【${targetTail} 尾】`,
+                                    offsetText: `固定下 ${offset} 期`,
+                                    hits: hits, total: validTriggers, rate: rate
+                                };
+                            }
+                        }
+                        if (bestTail && bestTail.rate > 0.45) {
+                            let latest_idx = triggerIndices[triggerIndices.length - 1];
+                            let distance = data.length - latest_idx;
+                            let stText = '➖ 尚未觸發'; let stFlag = 0;
+                            if (distance === offset) { stText = '🔥 明日到期'; stFlag = 2; }
+                            else if (distance < offset) { stText = `⏳ 倒數 ${offset - distance} 期`; stFlag = 1; }
+                            
+                            bestTail.status = stText; bestTail.isActive = stFlag;
+                            results.push(bestTail);
+                        }
+                    }
+                }
+            }
+            return renderCards(results);
+        }
+
+        // 卡片渲染引擎
+        function renderCards(results) {
+            if (results.length === 0) return "<div class='loading-text' style='display:block; color:var(--text-muted);'>⚠️ 目前資料範圍內無符合門檻的神牌。</div>";
+            
+            // 排序：聽牌優先 -> 勝率高優先 -> 過盤次數多
+            results.sort((a, b) => {
+                if (b.isActive !== a.isActive) return b.isActive - a.isActive;
+                if (b.rate !== a.rate) return b.rate - a.rate;
+                return b.hits - a.hits;
+            });
+            
+            results = results.slice(0, 35);
+
+            let html = "";
+            results.forEach((r, idx) => {
+                let ratePct = (r.rate * 100).toFixed(1);
+                
+                // 決定徽章顏色
+                let badgeStyle = "background: var(--text-muted);";
+                if (r.isActive === 2) badgeStyle = "background: var(--danger); box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);";
+                else if (r.isActive === 1) badgeStyle = "background: var(--warning);";
+                
+                let rateClass = r.rate >= 0.8 ? 'profit' : (r.rate >= 0.6 ? 'profit' : 'neutral');
+                if (r.rate >= 0.8) rateClass = 'profit'; // 保持綠色
+                
+                html += `
+                <div class="history-card">
+                    <div class="history-card-header">
+                        <span class="history-card-date">🏆 排行 #${idx + 1}</span>
+                        <span class="${rateClass}">${ratePct}%</span>
+                    </div>
+                    <div class="history-card-body">
+                        <div style="margin-bottom: 12px;">
+                            <span class="cycle-badge" style="${badgeStyle}">${r.status}</span>
+                            <span class="mult-badge">${r.offsetText}</span>
+                        </div>
+                        <div class="history-card-row" style="font-size: 15px; margin-bottom: 8px;">
+                            <span><span style="font-weight:800; color:var(--text-main);">觸發:</span> ${r.condition}</span>
+                        </div>
+                        <div style="font-size: 16px; margin-top: 10px;">
+                            <span style="font-weight:800; color:var(--text-main);">目標:</span> <span class="pool-nums">${r.target}</span>
+                        </div>
+                        <div class="history-card-row" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border);">
+                            <span class="neutral">歷史過盤: ${r.hits} / ${r.total} 次</span>
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            return html;
+        }
+
+    </script>
+</body>
+</html>
