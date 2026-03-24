@@ -206,7 +206,7 @@
                     <option value="all">不限 (全部歷史數據)</option>
                     <option value="2025-01">2025 年 01 月起</option>
                     <option value="2025-07">2025 年 07 月起 (近大半年)</option>
-                    <option value="2025-10" selected>2025 年 10 月起 (近半年 - 推薦)</option>
+                    <option value="2025-10" selected>2025 年 10 月起 (近半年)</option>
                     <option value="2026-01">2026 年 01 月起 (今年)</option>
                 </select>
 
@@ -220,7 +220,7 @@
                 <div id="colPosition">
                     <label>觸發位置 (僅定位適用)</label>
                     <select id="targetPosition">
-                        <option value="all">自動掃描全部 (第1~5顆)</option>
+                        <option value="all">自動掃描全部</option>
                         <option value="1">指定 第 1 顆落球</option>
                         <option value="2">指定 第 2 顆落球</option>
                         <option value="3">指定 第 3 顆落球</option>
@@ -233,7 +233,7 @@
                     <div style="flex:1;">
                         <label>目標期數</label>
                         <select id="targetOffset">
-                            <option value="auto">自動 (下 1~5 期)</option>
+                            <option value="auto">下 1~5 期</option>
                             <option value="1">指定 下 1 期</option>
                             <option value="2">指定 下 2 期</option>
                             <option value="3">指定 下 3 期</option>
@@ -249,8 +249,8 @@
                     <div style="flex:1;">
                         <label>追號模式</label>
                         <select id="trackMode">
-                            <option value="window">N期內累積 (易過盤)</option>
-                            <option value="fixed">固定期數 (單押一期)</option>
+                            <option value="window">N期內</option>
+                            <option value="fixed">固定期數</option>
                         </select>
                     </div>
                 </div>
@@ -271,7 +271,7 @@
             <span class="nav-icon">⚙</span>版路回測與預測系統
         </a>
         <a href="index2.html" class="nav-item active">
-            <span class="nav-icon"></span>版路拖牌系統
+            <span class="nav-icon">⚙</span>版路拖牌系統
         </a>
         
     </div>
@@ -728,7 +728,7 @@
                 html += `
                 <div class="history-card">
                     <div class="history-card-header">
-                        <span class="history-card-date">🏆 排行 #${idx + 1}</span>
+                        <span class="history-card-date">#${idx + 1}</span>
                         <span class="${rateClass}">${ratePct}%</span>
                     </div>
                     <div class="history-card-body">
@@ -743,10 +743,10 @@
                             <span style="font-weight:800; color:var(--text-main);">目標:</span> <span class="pool-nums">${r.target}</span>
                         </div>
                         <div class="history-card-row" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border);">
-                            <span class="neutral">歷史過盤: ${r.hits} / ${r.total} 次</span>
+                            <span class="neutral">歷史命中: ${r.hits} / ${r.total} 次</span>
                             ${r.bestHitOffset ? `<span class="neutral" style="font-size: 13px; color: var(--primary);">最高落點: ${r.bestHitOffset}</span>` : ''}
                         </div>
-                        ${r.hitDistribution ? `<div style="margin-top: 8px; font-size: 12px; color: var(--text-muted); background: var(--select-bg); border: 1px solid var(--border); padding: 8px 10px; border-radius: 8px; line-height: 1.6;">🎯 <b>命中過程細節：</b><br>${r.hitDistribution}</div>` : ''}
+                        ${r.hitDistribution ? `<div style="margin-top: 8px; font-size: 12px; color: var(--text-muted); background: var(--select-bg); border: 1px solid var(--border); padding: 8px 10px; border-radius: 8px; line-height: 1.6;"><b>命中過程：</b><br>${r.hitDistribution}</div>` : ''}
                     </div>
                 </div>`;
             });
