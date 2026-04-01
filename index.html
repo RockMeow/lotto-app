@@ -56,10 +56,10 @@
         details.resting-details[open] summary::before { transform: rotate(90deg); }
         details.resting-details[open] summary { margin-bottom: 15px; border-bottom: 1px dashed #ced6e0; padding-bottom: 10px; }
 
-        /* --- 新增：手機版響應式設定 --- */
+        /* --- 手機版響應式設定 --- */
         @media (max-width: 768px) {
             body { flex-direction: column; height: auto; min-height: 100vh; padding: 10px; }
-            .container { flex: none; height: 60vh; min-height: 450px; } /* 在手機上改為上下區塊，並各自維持獨立滾動 */
+            .container { flex: none; height: 85vh; min-height: 450px; } 
             .controls-grid { grid-template-columns: 1fr; gap: 5px; }
             .controls-grid label { text-align: left; margin-top: 10px; }
             .range-inputs { flex-wrap: wrap; }
@@ -70,11 +70,12 @@
 </head>
 <body>
 
+    <textarea id="dataInput" style="display: none;"></textarea>
+
     <div class="container">
-        <h2>歷史開獎數據</h2>
-        <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <label style="font-weight: bold; font-size: 14px; color: #2c3e50;">選擇彩券類型：</label>
-            <select id="csvSource" onchange="fetchGoogleCSV()" style="padding: 6px; border-radius: 4px; border: 1px solid #bdc3c7; font-family: inherit; max-width: 100%;">
+        <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: #ecf0f1; padding: 15px; border-radius: 8px; border-left: 5px solid #3498db;">
+            <label style="font-weight: bold; font-size: 15px; color: #2c3e50;">選擇彩券類型：</label>
+            <select id="csvSource" onchange="fetchGoogleCSV()" style="padding: 8px; border-radius: 4px; border: 1px solid #bdc3c7; font-family: inherit; flex: 1; min-width: 200px; font-weight: bold; color: #2980b9;">
                 <option value="">請選擇彩券...</option>
                 <option value="./Fan_history_all_sorted.csv">天天樂</option>
                 <option value="./Ghana_history_all_sorted.csv">迦納彩</option> 
@@ -83,10 +84,7 @@
                 <option value="./Six_history_all_sorted.csv">六合彩</option>
             </select>
         </div>
-        <textarea id="dataInput" placeholder="請從上方選擇彩券類型，歷史數據將自動載入於此..."></textarea>
-    </div>
 
-    <div class="container">
         <h2>參數設定</h2>
         <div class="controls-panel">
             <div class="controls-grid">
@@ -121,13 +119,13 @@
                 <label style="color:#e74c3c;">最少中幾球：</label>
                 <div class="range-inputs">
                     <input type="number" id="minMatches" value="2" min="1" max="5">
-                    <span style="font-size:12px; color:#e67e22; margin-left:10px;">(設3球以上自動突破空檔限制)</span>
+                    <span style="font-size:12px; color:#e67e22; margin-left:10px;"></span>
                 </div>
 
                 <label style="color:#27ae60;">最少連莊數：</label>
                 <div class="range-inputs">
                     <input type="number" id="minCycles" value="2" min="1" max="20">
-                    <span style="font-size:12px; color:#7f8c8d; margin-left:10px;">(至少需歷史命中過幾輪，過濾1輪巧合)</span>
+                    <span style="font-size:12px; color:#7f8c8d; margin-left:10px;"></span>
                 </div>
             </div>
             <button id="startBtn" onclick="initMining()">搜尋</button>
@@ -141,12 +139,12 @@
 
         <h2>搜尋結果</h2>
         <div class="results" id="outputArea">
-            <p style="color:#7f8c8d; text-align:center; margin-top:50px;"></p>
+            <p style="color:#7f8c8d; text-align:center; margin-top:50px;">請從上方選擇彩券並設定條件，系統將自動為您搜尋版路。</p>
         </div>
     </div>
 
 <script>
-    // --- 新增的讀取 CSV 函式 ---
+    // --- 讀取 CSV 函式 ---
     function fetchGoogleCSV() {
         const select = document.getElementById('csvSource');
         const url = select.value;
@@ -157,7 +155,10 @@
             return;
         }
         
+        // 由於文字框被隱藏了，我們可以用按鈕文字或 alert 來提示載入中（這裡選擇靜默背景載入以保持乾淨）
         textarea.value = '檔案載入中，請稍候...';
+        document.getElementById('startBtn').innerText = "數據載入中...";
+        document.getElementById('startBtn').disabled = true;
         
         fetch(url)
             .then(response => {
@@ -166,9 +167,13 @@
             })
             .then(text => {
                 textarea.value = text;
+                document.getElementById('startBtn').innerText = "搜尋";
+                document.getElementById('startBtn').disabled = false;
             })
             .catch(error => {
-                textarea.value = '載入失敗！\n1. 請確認檔案 (' + url + ') 是否存在。\n2. 檔案必須與此網頁放在同一個資料夾。\n\n錯誤詳情：' + error;
+                textarea.value = '';
+                document.getElementById('startBtn').innerText = "載入失敗";
+                alert('載入失敗！\n1. 請確認檔案 (' + url + ') 是否存在。\n2. 檔案必須與此網頁放在同一個資料夾。\n\n錯誤詳情：' + error);
             });
     }
     // ---------------------------
@@ -433,7 +438,7 @@
         let overallPct = ((g_completedTasks + currentPct) / g_totalTasks * 100).toFixed(1);
         
         document.getElementById('progressBar').style.width = overallPct + '%';
-        document.getElementById('progressText').innerText = `總進度: ${overallPct}% | 累計尋獲: ${g_foundCount} 組版路`;
+        document.getElementById('progressText').innerText = `總進度: ${overallPct}% | 累計搜尋: ${g_foundCount} 組版路`;
 
         if (isDone) {
             g_completedTasks++;
