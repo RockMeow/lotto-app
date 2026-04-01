@@ -73,63 +73,69 @@
     <textarea id="dataInput" style="display: none;"></textarea>
 
     <div class="container">
-        <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: #ecf0f1; padding: 15px; border-radius: 8px; border-left: 5px solid #3498db;">
-            <label style="font-weight: bold; font-size: 15px; color: #2c3e50;">選擇彩券類型：</label>
-            <select id="csvSource" onchange="fetchGoogleCSV()" style="padding: 8px; border-radius: 4px; border: 1px solid #bdc3c7; font-family: inherit; flex: 1; min-width: 200px; font-weight: bold; color: #2980b9;">
-                <option value="">請選擇彩券...</option>
-                <option value="./Fan_history_all_sorted.csv">天天樂</option>
-                <option value="./Ghana_history_all_sorted.csv">迦納彩</option> 
-                <option value="./539_history_all_sorted.csv">今彩539</option>
-                <option value="./649_history_all_sorted.csv">大樂透</option>
-                <option value="./Six_history_all_sorted.csv">六合彩</option>
-            </select>
-        </div>
+        <details id="settingsWrapper" open>
+            <summary style="font-weight: bold; font-size: 16px; color: #3498db; cursor: pointer; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #bdc3c7; outline: none;">
+                ⚙️ 展開 / 收合設定面板
+            </summary>
 
-        <h2>參數設定</h2>
-        <div class="controls-panel">
-            <div class="controls-grid">
-                <label>起始日期：</label>
-                <div class="range-inputs">
-                    <input type="text" class="date-input" id="startMin" value="01/01" placeholder="起"> 
-                    <span class="range-separator">~</span> 
-                    <input type="text" class="date-input" id="startMax" value="04/01" placeholder="迄">
-                </div>
-                
-                <label>組合球數：</label>
-                <div class="range-inputs">
-                    <input type="number" id="comboMin" value="8" min="1" max="10"> 
-                    <span class="range-separator">~</span> 
-                    <input type="number" id="comboMax" value="8" min="1" max="10">
-                </div>
-
-                <label>幾期內開：</label>
-                <div class="range-inputs">
-                    <input type="number" id="winMin" value="3" min="1"> 
-                    <span class="range-separator">~</span> 
-                    <input type="number" id="winMax" value="3" min="1">
-                </div>
-
-                <label>間隔幾期：</label>
-                <div class="range-inputs">
-                    <input type="number" id="skipMin" value="1" min="0"> 
-                    <span class="range-separator">~</span> 
-                    <input type="number" id="skipMax" value="2" min="0">
-                </div>
-
-                <label style="color:#e74c3c;">最少中幾球：</label>
-                <div class="range-inputs">
-                    <input type="number" id="minMatches" value="2" min="1" max="5">
-                    <span style="font-size:12px; color:#e67e22; margin-left:10px;"></span>
-                </div>
-
-                <label style="color:#27ae60;">最少連莊數：</label>
-                <div class="range-inputs">
-                    <input type="number" id="minCycles" value="2" min="1" max="20">
-                    <span style="font-size:12px; color:#7f8c8d; margin-left:10px;"></span>
-                </div>
+            <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: #ecf0f1; padding: 15px; border-radius: 8px; border-left: 5px solid #3498db;">
+                <label style="font-weight: bold; font-size: 15px; color: #2c3e50;">選擇彩券類型：</label>
+                <select id="csvSource" onchange="fetchGoogleCSV()" style="padding: 8px; border-radius: 4px; border: 1px solid #bdc3c7; font-family: inherit; flex: 1; min-width: 200px; font-weight: bold; color: #2980b9;">
+                    <option value="">請選擇彩券...</option>
+                    <option value="./Fan_history_all_sorted.csv">天天樂</option>
+                    <option value="./Ghana_history_all_sorted.csv">迦納彩</option> 
+                    <option value="./539_history_all_sorted.csv">今彩539</option>
+                    <option value="./649_history_all_sorted.csv">大樂透</option>
+                    <option value="./Six_history_all_sorted.csv">六合彩</option>
+                </select>
             </div>
-            <button id="startBtn" onclick="initMining()">搜尋</button>
-        </div>
+
+            <h2>參數設定</h2>
+            <div class="controls-panel">
+                <div class="controls-grid">
+                    <label>起始日期：</label>
+                    <div class="range-inputs">
+                        <input type="text" class="date-input" id="startMin" value="01/01" placeholder="起"> 
+                        <span class="range-separator">~</span> 
+                        <input type="text" class="date-input" id="startMax" value="04/01" placeholder="迄">
+                    </div>
+                    
+                    <label>組合球數：</label>
+                    <div class="range-inputs">
+                        <input type="number" id="comboMin" value="8" min="1" max="10"> 
+                        <span class="range-separator">~</span> 
+                        <input type="number" id="comboMax" value="8" min="1" max="10">
+                    </div>
+
+                    <label>幾期內開：</label>
+                    <div class="range-inputs">
+                        <input type="number" id="winMin" value="3" min="1"> 
+                        <span class="range-separator">~</span> 
+                        <input type="number" id="winMax" value="3" min="1">
+                    </div>
+
+                    <label>間隔幾期：</label>
+                    <div class="range-inputs">
+                        <input type="number" id="skipMin" value="1" min="0"> 
+                        <span class="range-separator">~</span> 
+                        <input type="number" id="skipMax" value="2" min="0">
+                    </div>
+
+                    <label style="color:#e74c3c;">最少中幾球：</label>
+                    <div class="range-inputs">
+                        <input type="number" id="minMatches" value="2" min="1" max="5">
+                        <span style="font-size:12px; color:#e67e22; margin-left:10px;">(設3球以上自動突破空檔限制)</span>
+                    </div>
+
+                    <label style="color:#27ae60;">最少連莊數：</label>
+                    <div class="range-inputs">
+                        <input type="number" id="minCycles" value="2" min="1" max="20">
+                        <span style="font-size:12px; color:#7f8c8d; margin-left:10px;">(至少需歷史命中過幾輪，過濾1輪巧合)</span>
+                    </div>
+                </div>
+                <button id="startBtn" onclick="initMining()">搜尋</button>
+            </div>
+        </details>
         
         <div id="progressBox" class="progress-container">
             <div class="progress-text" id="progressText">搜尋中...</div>
@@ -268,6 +274,9 @@
     }
 
     function initMining() {
+        // --- 核心修改：開始搜尋時，自動摺疊設定面板 ---
+        document.getElementById('settingsWrapper').open = false; 
+
         document.getElementById('startBtn').disabled = true;
         document.getElementById('progressBox').style.display = "block";
         document.getElementById('outputArea').innerHTML = "";
@@ -277,6 +286,7 @@
             document.getElementById('outputArea').innerHTML = `<p style="color:red; text-align:center;">❌ 尚未載入數據，請先從上方選擇彩券！</p>`;
             document.getElementById('progressBox').style.display = "none";
             document.getElementById('startBtn').disabled = false;
+            document.getElementById('settingsWrapper').open = true; // 若有錯誤，自動打開讓使用者修改
             return;
         }
 
@@ -299,6 +309,7 @@
             document.getElementById('outputArea').innerHTML = `<p style="color:red; text-align:center;">❌ 找不到您輸入的起始日期，請確認格式 (例如: 02/05)</p>`;
             document.getElementById('progressBox').style.display = "none";
             document.getElementById('startBtn').disabled = false;
+            document.getElementById('settingsWrapper').open = true; // 若有錯誤，自動打開讓使用者修改
             return;
         }
 
