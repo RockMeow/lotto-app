@@ -348,6 +348,9 @@
     let g_autoExpandCount = 0;
     let g_poolSize = 39; 
 
+    // --- 新增：進度通知紀錄 ---
+    let g_lastNotifiedPct = -1;
+
     // Web Worker 實例
     let g_worker = null;
 
@@ -390,6 +393,12 @@
     }
 
     function initMining() {
+        // --- 要求通知權限 ---
+        if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+            Notification.requestPermission();
+        }
+        g_lastNotifiedPct = -1;
+
         document.getElementById('settingsWrapper').open = false; 
 
         document.getElementById('startBtn').disabled = true;
@@ -459,6 +468,18 @@
         
         document.getElementById('progressBar').style.width = overallPct + '%';
         document.getElementById('progressText').innerText = `總進度: ${overallPct}% | 累計搜尋: ${g_foundCount} 組版路`;
+
+        // --- 新增：進度推播通知 (每 20% 通知一次避免洗版) ---
+        let currentIntPct = Math.floor(overallPct);
+        if (currentIntPct > 0 && currentIntPct % 20 === 0 && currentIntPct !== g_lastNotifiedPct && currentIntPct < 100) {
+            g_lastNotifiedPct = currentIntPct;
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("⏳ 版路掃描進度", {
+                    body: `目前總進度：${overallPct}%\n已尋獲：${g_foundCount} 組版路`,
+                    tag: "scan-progress" // 使用相同的 tag 可以覆蓋上一個通知，不會堆滿通知列
+                });
+            }
+        }
     }
 
     function nextTask() {
@@ -540,6 +561,14 @@
             html += `</div></details>`;
         }
         outputArea.innerHTML = html;
+
+        // --- 新增：掃描完成通知 ---
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("✅ 掃描完成！", {
+                body: `共搜尋出 ${g_foundCount.toLocaleString()} 組版路！\n請返回網頁查看結果。`,
+                tag: "scan-progress" // 覆蓋掉最後一個進度通知
+            });
+        }
     }
 </script>
 </body>
