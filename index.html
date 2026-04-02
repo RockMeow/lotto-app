@@ -97,7 +97,7 @@
                     <div class="range-inputs">
                         <input type="text" class="date-input" id="startMin" value="01/01" placeholder="起"> 
                         <span class="range-separator">~</span> 
-                        <input type="text" class="date-input" id="startMax" value="04/01" placeholder="迄">
+                        <input type="text" class="date-input" id="startMax" placeholder="迄">
                     </div>
                     
                     <label>組合球數：</label>
@@ -158,6 +158,7 @@
         
         if (!url) {
             textarea.value = '';
+            document.getElementById('startMax').value = '';
             return;
         }
         
@@ -175,9 +176,21 @@
                 textarea.value = text;
                 document.getElementById('startBtn').innerText = "搜尋";
                 document.getElementById('startBtn').disabled = false;
+                
+                // --- 自動抓取最新一期日期並填入 ---
+                const lines = text.trim().split('\n');
+                if (lines.length > 0) {
+                    let lastLine = lines[lines.length - 1];
+                    let parts = lastLine.split(',');
+                    if (parts.length > 0) {
+                        let latestDate = parts[0].trim();
+                        document.getElementById('startMax').value = latestDate;
+                    }
+                }
             })
             .catch(error => {
                 textarea.value = '';
+                document.getElementById('startMax').value = '';
                 document.getElementById('startBtn').innerText = "載入失敗";
                 alert('載入失敗！\n1. 請確認檔案 (' + url + ') 是否存在。\n2. 檔案必須與此網頁放在同一個資料夾。\n\n錯誤詳情：' + error);
             });
@@ -274,7 +287,6 @@
     }
 
     function initMining() {
-        // --- 核心修改：開始搜尋時，自動摺疊設定面板 ---
         document.getElementById('settingsWrapper').open = false; 
 
         document.getElementById('startBtn').disabled = true;
