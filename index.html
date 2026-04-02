@@ -93,7 +93,7 @@
             <h2>參數設定</h2>
             <div class="controls-panel">
                 <div class="controls-grid">
-                    <label>起始日期：</label>
+                    <label>起迄日期：</label>
                     <div class="range-inputs">
                         <input type="text" class="date-input" id="startMin" value="01/01" placeholder="起"> 
                         <span class="range-separator">~</span> 
@@ -427,7 +427,7 @@
         g_tasks = buildTaskQueue(skipR.min, skipR.max);
         
         if (!g_tasks) {
-            document.getElementById('outputArea').innerHTML = `<p style="color:red; text-align:center;">❌ 找不到您輸入的起始日期，請確認格式</p>`;
+            document.getElementById('outputArea').innerHTML = `<p style="color:red; text-align:center;">❌ 找不到您輸入的日期，請確認格式</p>`;
             document.getElementById('progressBox').style.display = "none";
             document.getElementById('startBtn').disabled = false;
             document.getElementById('settingsWrapper').open = true; 
@@ -474,7 +474,7 @@
         if (currentIntPct > 0 && currentIntPct % 20 === 0 && currentIntPct !== g_lastNotifiedPct && currentIntPct < 100) {
             g_lastNotifiedPct = currentIntPct;
             if ("Notification" in window && Notification.permission === "granted") {
-                new Notification("⏳ 版路掃描進度", {
+                new Notification("版路搜尋進度", {
                     body: `目前進度：${overallPct}%\n已搜尋：${g_foundCount} 組版路`,
                     tag: "scan-progress" // 使用相同的 tag 可以覆蓋上一個通知，不會堆滿通知列
                 });
@@ -502,7 +502,7 @@
         g_currentTask = g_tasks.shift();
         
         document.getElementById('progressTaskText').innerText = 
-            `背景運算中 [${g_completedTasks + 1}/${g_totalTasks}]：起始日期 ${g_currentTask.startDateStr} | 找 ${g_currentTask.comboSize} 球 | ${g_currentTask.windowSize} 期內開 | 間隔 ${g_currentTask.skipSize} 期`;
+            `背景搜尋中 [${g_completedTasks + 1}/${g_totalTasks}]：起始日期 ${g_currentTask.startDateStr} | 找 ${g_currentTask.comboSize} 球 | ${g_currentTask.windowSize} 期內開 | 間隔 ${g_currentTask.skipSize} 期`;
 
         // 將任務丟給 Worker 在背景全速執行
         g_worker.postMessage({
@@ -539,7 +539,7 @@
         }
 
         let html = `<p style="color:#27ae60; text-align:center; font-weight:bold; font-size:16px;">
-            掃描完成！<br>共搜尋出 ${g_foundCount.toLocaleString()} 組版路！
+            搜尋完成！<br>共搜尋出 ${g_foundCount.toLocaleString()} 組版路！
         </p>`;
         
         html += `<h3 style="color:#e84118; margin-top:0; border-bottom:2px solid #e84118; padding-bottom:5px;">下一期聽牌</h3>`;
@@ -564,7 +564,7 @@
 
         // --- 新增：掃描完成通知 ---
         if ("Notification" in window && Notification.permission === "granted") {
-            new Notification("✅ 掃描完成！", {
+            new Notification("✅ 搜尋完成！", {
                 body: `共搜尋出 ${g_foundCount.toLocaleString()} 組版路！\n請返回網頁查看結果。`,
                 tag: "scan-progress" // 覆蓋掉最後一個進度通知
             });
