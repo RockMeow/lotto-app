@@ -467,7 +467,7 @@
         let overallPct = ((g_completedTasks + currentPct) / g_totalTasks * 100).toFixed(1);
         
         document.getElementById('progressBar').style.width = overallPct + '%';
-        document.getElementById('progressText').innerText = `總進度: ${overallPct}% | 累計搜尋: ${g_foundCount} 組版路`;
+        document.getElementById('progressText').innerText = `進度: ${overallPct}% | 累計搜尋: ${g_foundCount} 組版路`;
 
         // --- 新增：進度推播通知 (每 20% 通知一次避免洗版) ---
         let currentIntPct = Math.floor(overallPct);
@@ -475,7 +475,7 @@
             g_lastNotifiedPct = currentIntPct;
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification("⏳ 版路掃描進度", {
-                    body: `目前總進度：${overallPct}%\n已尋獲：${g_foundCount} 組版路`,
+                    body: `目前進度：${overallPct}%\n已搜尋：${g_foundCount} 組版路`,
                     tag: "scan-progress" // 使用相同的 tag 可以覆蓋上一個通知，不會堆滿通知列
                 });
             }
@@ -502,7 +502,7 @@
         g_currentTask = g_tasks.shift();
         
         document.getElementById('progressTaskText').innerText = 
-            `背景運算中 [${g_completedTasks + 1}/${g_totalTasks}]：起點 ${g_currentTask.startDateStr} | 找 ${g_currentTask.comboSize} 球 | ${g_currentTask.windowSize} 期內開 | 間隔 ${g_currentTask.skipSize} 期`;
+            `背景運算中 [${g_completedTasks + 1}/${g_totalTasks}]：起始日期 ${g_currentTask.startDateStr} | 找 ${g_currentTask.comboSize} 球 | ${g_currentTask.windowSize} 期內開 | 間隔 ${g_currentTask.skipSize} 期`;
 
         // 將任務丟給 Worker 在背景全速執行
         g_worker.postMessage({
