@@ -149,8 +149,127 @@
         </div>
     </div>
 
+<script id="workerScript" type="javascript/worker">
+    function* getCombinationsGenerator(n, k) {
+        let combo = Array.from({length: k}, (_, i) => i + 1);
+        yield [...combo];
+        while (true) {
+            let i; for (i = k - 1; i >= 0; i--) { if (combo[i] !== i + n - k + 1) break; }
+            if (i < 0) break;
+            combo[i]++;
+            for (let j = i + 1; j < k; j++) { combo[j] = combo[j - 1] + 1; }
+            yield [...combo];
+        }
+    }
+
+    self.onmessage = function(e) {
+        const { task, data, poolSize, minMatches, minCycles } = e.data;
+        let comboGen = getCombinationsGenerator(poolSize, task.comboSize);
+        
+        let processedInTask = 0;
+        let waitingPatterns = [];
+        let restingPatterns = [];
+
+        while (true) {
+            let next = comboGen.next();
+            if (next.done) break;
+            let combo = next.value;
+            processedInTask++;
+            
+            let currentIndex = task.startIdx;
+            let isValid = true;
+            let hitIndices = []; 
+
+            while (currentIndex < data.length) {
+                let windowData = data.slice(currentIndex, currentIndex + task.windowSize);
+                if (windowData.length === 0) break;
+
+                let hitDraw = null;
+                for (let draw of windowData) {
+                    let matchCount = 0;
+                    for(let i=0; i<task.comboSize; i++) { if(draw.boolMap[combo[i]]) matchCount++; }
+                    if (matchCount >= minMatches) { hitDraw = draw; break; }
+                }
+
+                if (hitDraw) {
+                    hitIndices.push(hitDraw);
+                } else if (windowData.length === task.windowSize) {
+                    isValid = false; break;
+                }
+
+                currentIndex += (task.windowSize + task.skipSize);
+            }
+
+            if (isValid && hitIndices.length >= minCycles) {
+                let historyLog = [];
+                for (let c = 0; c < hitIndices.length; c++) {
+                    let draw = hitIndices[c];
+                    let ballsHtml = draw.nums.map(n => {
+                        let nStr = n.toString().padStart(2, '0');
+                        return combo.includes(n) ? '<span class="ball hit">' + nStr + '</span>' : '<span class="ball">' + nStr + '</span>';
+                    }).join('');
+                    historyLog.push(
+                        '<div class="history-line">' +
+                            '<span class="cycle-badge">第 ' + (c+1) + ' 次</span>' +
+                            '<span class="date-text">' + draw.date + '</span>' +
+                            '<div class="balls-container">' + ballsHtml + '</div>' +
+                        '</div>'
+                    );
+                }
+
+                let nextDrawOffset = data.length - task.startIdx;
+                let cycleLength = task.windowSize + task.skipSize;
+                let posInCycle = nextDrawOffset % cycleLength;
+                
+                let isWaiting = false; let statusHtml = "";
+                if (posInCycle < task.windowSize) {
+                    let hitAlready = false;
+                    if (posInCycle > 0) {
+                        let currentWindowHistory = data.slice(data.length - posInCycle, data.length);
+                        for (let draw of currentWindowHistory) {
+                            let matchCount = 0;
+                            for(let i=0; i<task.comboSize; i++) { if(draw.boolMap[combo[i]]) matchCount++; }
+                            if (matchCount >= minMatches) { hitAlready = true; break; }
+                        }
+                    }
+                    if (hitAlready) {
+                        statusHtml = '<div class="status-badge resting">本輪已提早達標</div>';
+                    } else {
+                        isWaiting = true; let remaining = task.windowSize - posInCycle;
+                        statusHtml = '<div class="status-badge waiting">下期聽牌 (剩 ' + remaining + ' 期)</div>';
+                    }
+                } else {
+                    let remainingSkip = task.skipSize - (posInCycle - task.windowSize);
+                    statusHtml = '<div class="status-badge resting">休息空檔 (還需間隔 ' + remainingSkip + ' 期)</div>';
+                }
+
+                let patternObj = { 
+                    combo: combo, history: historyLog, status: statusHtml, 
+                    taskInfo: task, hits: hitIndices.length 
+                };
+                
+                // 防爆限制
+                if (isWaiting && waitingPatterns.length < 500) waitingPatterns.push(patternObj);
+                else if (!isWaiting && restingPatterns.length < 200) restingPatterns.push(patternObj);
+            }
+
+            // 定期回報進度給主執行緒 (每掃描 10 萬種組合回報一次，保持順暢)
+            if (processedInTask % 100000 === 0) {
+                self.postMessage({ type: 'progress', processed: processedInTask });
+            }
+        }
+
+        // 任務完成，回傳結果
+        self.postMessage({
+            type: 'done',
+            waiting: waitingPatterns,
+            resting: restingPatterns,
+            processed: processedInTask
+        });
+    };
+</script>
+
 <script>
-    // --- 讀取 CSV 函式 ---
     function fetchGoogleCSV() {
         const select = document.getElementById('csvSource');
         const url = select.value;
@@ -162,7 +281,6 @@
             return;
         }
         
-        // 由於文字框被隱藏了，我們可以用按鈕文字或 alert 來提示載入中（這裡選擇靜默背景載入以保持乾淨）
         textarea.value = '檔案載入中，請稍候...';
         document.getElementById('startBtn').innerText = "數據載入中...";
         document.getElementById('startBtn').disabled = true;
@@ -177,7 +295,6 @@
                 document.getElementById('startBtn').innerText = "搜尋";
                 document.getElementById('startBtn').disabled = false;
                 
-                // --- 自動抓取最新一期日期並填入 ---
                 const lines = text.trim().split('\n');
                 if (lines.length > 0) {
                     let lastLine = lines[lines.length - 1];
@@ -195,24 +312,11 @@
                 alert('載入失敗！\n1. 請確認檔案 (' + url + ') 是否存在。\n2. 檔案必須與此網頁放在同一個資料夾。\n\n錯誤詳情：' + error);
             });
     }
-    // ---------------------------
 
     function calcTotalCombos(n, k) {
         if(k === 0 || k === n) return 1; if(k > n) return 0;
         let res = 1; for (let i = 1; i <= k; i++) { res = res * (n - i + 1) / i; }
         return Math.round(res);
-    }
-
-    function* getCombinationsGenerator(n, k) {
-        let combo = Array.from({length: k}, (_, i) => i + 1);
-        yield [...combo];
-        while (true) {
-            let i; for (i = k - 1; i >= 0; i--) { if (combo[i] !== i + n - k + 1) break; }
-            if (i < 0) break;
-            combo[i]++;
-            for (let j = i + 1; j < k; j++) { combo[j] = combo[j - 1] + 1; }
-            yield [...combo];
-        }
     }
 
     function parseData(rawText) {
@@ -223,7 +327,7 @@
             const parts = line.split(','); const date = parts[0].trim();
             let nums = parts.slice(1).map(n => parseInt(n.trim(), 10));
             nums.sort((a, b) => a - b);
-            let boolMap = new Array(50).fill(false); // 擴充上限以相容大樂透/六合彩 (最高49號)
+            let boolMap = new Array(50).fill(false); 
             for(let n of nums) boolMap[n] = true;
             data.push({ date, nums, boolMap });
         }
@@ -233,20 +337,20 @@
     // 全域變數
     let g_data = [];
     let g_minMatches = 2;
-    let g_minCycles = 2; // 新增全域變數
+    let g_minCycles = 2; 
     let g_tasks = [];
     let g_currentTask = null;
-    let g_comboGen = null;
-    let g_combosInTask = 0, g_processedInTask = 0;
     
     let g_totalTasks = 0, g_completedTasks = 0;
     let g_foundCount = 0;
     let g_waitingPatterns = [];
     let g_restingPatterns = [];
     let g_autoExpandCount = 0;
-    let g_poolSize = 39; // 預設號碼池上限
+    let g_poolSize = 39; 
 
-    // 解析使用者輸入，若第二欄空白則與第一欄相同
+    // Web Worker 實例
+    let g_worker = null;
+
     function getRange(idMin, idMax) {
         let minVal = document.getElementById(idMin).value.trim();
         let maxVal = document.getElementById(idMax).value.trim();
@@ -260,14 +364,13 @@
         let idx1 = g_data.findIndex(d => d.date === dateRange.min);
         let idx2 = g_data.findIndex(d => d.date === dateRange.max);
         
-        if (idx1 === -1 || idx2 === -1) return null; // 日期錯誤
+        if (idx1 === -1 || idx2 === -1) return null; 
         let startIdxMin = Math.min(idx1, idx2);
         let startIdxMax = Math.max(idx1, idx2);
 
         let comboR = getRange('comboMin', 'comboMax');
         let winR = getRange('winMin', 'winMax');
 
-        // 生成所有參數的交錯組合任務
         for(let c = parseInt(comboR.min); c <= parseInt(comboR.max); c++) {
             for(let w = parseInt(winR.min); w <= parseInt(winR.max); w++) {
                 for(let s = parseInt(skipMin); s <= parseInt(skipMax); s++) {
@@ -298,30 +401,27 @@
             document.getElementById('outputArea').innerHTML = `<p style="color:red; text-align:center;">❌ 尚未載入數據，請先從上方選擇彩券！</p>`;
             document.getElementById('progressBox').style.display = "none";
             document.getElementById('startBtn').disabled = false;
-            document.getElementById('settingsWrapper').open = true; // 若有錯誤，自動打開讓使用者修改
+            document.getElementById('settingsWrapper').open = true; 
             return;
         }
 
-        // 動態偵測彩券最大號碼 (今彩39, 大樂透49等)
         let maxNum = 0;
         for(let d of g_data) {
-            for(let n of d.nums) {
-                if(n > maxNum) maxNum = n;
-            }
+            for(let n of d.nums) { if(n > maxNum) maxNum = n; }
         }
         g_poolSize = maxNum;
 
         g_minMatches = parseInt(document.getElementById('minMatches').value);
-        g_minCycles = parseInt(document.getElementById('minCycles').value); // 讀取最少連莊數
+        g_minCycles = parseInt(document.getElementById('minCycles').value);
         
         let skipR = getRange('skipMin', 'skipMax');
         g_tasks = buildTaskQueue(skipR.min, skipR.max);
         
         if (!g_tasks) {
-            document.getElementById('outputArea').innerHTML = `<p style="color:red; text-align:center;">❌ 找不到您輸入的起始日期，請確認格式 (例如: 02/05)</p>`;
+            document.getElementById('outputArea').innerHTML = `<p style="color:red; text-align:center;">❌ 找不到您輸入的起始日期，請確認格式</p>`;
             document.getElementById('progressBox').style.display = "none";
             document.getElementById('startBtn').disabled = false;
-            document.getElementById('settingsWrapper').open = true; // 若有錯誤，自動打開讓使用者修改
+            document.getElementById('settingsWrapper').open = true; 
             return;
         }
 
@@ -332,143 +432,65 @@
         g_restingPatterns = [];
         g_autoExpandCount = 0;
 
+        // 初始化 Web Worker
+        if (g_worker) g_worker.terminate();
+        const workerBlob = new Blob([document.getElementById('workerScript').textContent], {type: 'application/javascript'});
+        g_worker = new Worker(URL.createObjectURL(workerBlob));
+        
+        g_worker.onmessage = function(e) {
+            if (e.data.type === 'progress') {
+                updateProgress(e.data.processed);
+            } else if (e.data.type === 'done') {
+                g_waitingPatterns = g_waitingPatterns.concat(e.data.waiting);
+                g_restingPatterns = g_restingPatterns.concat(e.data.resting);
+                g_foundCount += (e.data.waiting.length + e.data.resting.length);
+                g_completedTasks++;
+                nextTask();
+            }
+        };
+
         nextTask();
+    }
+
+    function updateProgress(processedInTask) {
+        let combosInTask = calcTotalCombos(g_poolSize, g_currentTask.comboSize);
+        let currentPct = (processedInTask / combosInTask);
+        let overallPct = ((g_completedTasks + currentPct) / g_totalTasks * 100).toFixed(1);
+        
+        document.getElementById('progressBar').style.width = overallPct + '%';
+        document.getElementById('progressText').innerText = `總進度: ${overallPct}% | 累計搜尋: ${g_foundCount} 組版路`;
     }
 
     function nextTask() {
         if (g_tasks.length === 0) {
-            // 自動無限突破引擎 (當條件極嚴苛且找不到版路時)
             if (g_minMatches >= 3 && g_foundCount === 0 && g_autoExpandCount < 20) {
                 g_autoExpandCount++;
                 let skipR = getRange('skipMin', 'skipMax');
                 let newSkip = parseInt(skipR.max) + g_autoExpandCount;
-                
-                // 動態加載新任務：針對新的空檔期再測一遍
                 let newTasks = buildTaskQueue(newSkip, newSkip);
                 g_tasks = g_tasks.concat(newTasks);
                 g_totalTasks += newTasks.length;
                 nextTask();
                 return;
             }
+            if (g_worker) { g_worker.terminate(); g_worker = null; }
             renderResults();
             return;
         }
 
         g_currentTask = g_tasks.shift();
-        g_combosInTask = calcTotalCombos(g_poolSize, g_currentTask.comboSize);
-        g_processedInTask = 0;
-        g_comboGen = getCombinationsGenerator(g_poolSize, g_currentTask.comboSize);
-
-        document.getElementById('progressTaskText').innerText = 
-            `搜尋中 [${g_completedTasks + 1}/${g_totalTasks}]：起始日期 ${g_currentTask.startDateStr} | 找 ${g_currentTask.comboSize} 球 | ${g_currentTask.windowSize} 期內開 | 間隔 ${g_currentTask.skipSize} 期`;
-
-        requestAnimationFrame(processBatch);
-    }
-
-    function processBatch() {
-        const startTime = performance.now();
-        let isDone = false;
-
-        while (performance.now() - startTime < 45) {
-            let next = g_comboGen.next();
-            if (next.done) { isDone = true; break; }
-            let combo = next.value;
-            g_processedInTask++;
-            
-            let currentIndex = g_currentTask.startIdx;
-            let isValid = true;
-            let hitIndices = []; 
-
-            while (currentIndex < g_data.length) {
-                let windowData = g_data.slice(currentIndex, currentIndex + g_currentTask.windowSize);
-                if (windowData.length === 0) break;
-
-                let hitDraw = null;
-                for (let draw of windowData) {
-                    let matchCount = 0;
-                    for(let i=0; i<g_currentTask.comboSize; i++) { if(draw.boolMap[combo[i]]) matchCount++; }
-                    if (matchCount >= g_minMatches) { hitDraw = draw; break; }
-                }
-
-                if (hitDraw) {
-                    hitIndices.push(hitDraw);
-                } else if (windowData.length === g_currentTask.windowSize) {
-                    isValid = false; break;
-                }
-
-                currentIndex += (g_currentTask.windowSize + g_currentTask.skipSize);
-            }
-
-            // 【核心修正點】：必須滿足 isValid (沒破版) 且 歷史命中次數 >= 使用者設定的最少連莊數
-            if (isValid && hitIndices.length >= g_minCycles) {
-                g_foundCount++;
-                let historyLog = [];
-                for (let c = 0; c < hitIndices.length; c++) {
-                    let draw = hitIndices[c];
-                    let ballsHtml = draw.nums.map(n => {
-                        let nStr = n.toString().padStart(2, '0');
-                        return combo.includes(n) ? `<span class="ball hit">${nStr}</span>` : `<span class="ball">${nStr}</span>`;
-                    }).join('');
-                    historyLog.push(`
-                        <div class="history-line">
-                            <span class="cycle-badge">第 ${c+1} 次</span>
-                            <span class="date-text">${draw.date}</span>
-                            <div class="balls-container">${ballsHtml}</div>
-                        </div>
-                    `);
-                }
-
-                // 推算下一期狀態
-                let nextDrawOffset = g_data.length - g_currentTask.startIdx;
-                let cycleLength = g_currentTask.windowSize + g_currentTask.skipSize;
-                let posInCycle = nextDrawOffset % cycleLength;
-                
-                let isWaiting = false; let statusHtml = "";
-                if (posInCycle < g_currentTask.windowSize) {
-                    let hitAlready = false;
-                    if (posInCycle > 0) {
-                        let currentWindowHistory = g_data.slice(g_data.length - posInCycle, g_data.length);
-                        for (let draw of currentWindowHistory) {
-                            let matchCount = 0;
-                            for(let i=0; i<g_currentTask.comboSize; i++) { if(draw.boolMap[combo[i]]) matchCount++; }
-                            if (matchCount >= g_minMatches) { hitAlready = true; break; }
-                        }
-                    }
-                    if (hitAlready) {
-                        statusHtml = `<div class="status-badge resting">本輪已提早達標</div>`;
-                    } else {
-                        isWaiting = true; let remaining = g_currentTask.windowSize - posInCycle;
-                        statusHtml = `<div class="status-badge waiting">下期聽牌 (剩 ${remaining} 期)</div>`;
-                    }
-                } else {
-                    let remainingSkip = g_currentTask.skipSize - (posInCycle - g_currentTask.windowSize);
-                    statusHtml = `<div class="status-badge resting">休息空檔 (還需間隔 ${remainingSkip} 期)</div>`;
-                }
-
-                let patternObj = { 
-                    combo: combo, history: historyLog, status: statusHtml, 
-                    taskInfo: g_currentTask, hits: hitIndices.length 
-                };
-                
-                // 防爆限制
-                if (isWaiting && g_waitingPatterns.length < 500) g_waitingPatterns.push(patternObj);
-                else if (!isWaiting && g_restingPatterns.length < 200) g_restingPatterns.push(patternObj);
-            }
-        }
-
-        // 更新進度
-        let currentPct = (g_processedInTask / g_combosInTask);
-        let overallPct = ((g_completedTasks + currentPct) / g_totalTasks * 100).toFixed(1);
         
-        document.getElementById('progressBar').style.width = overallPct + '%';
-        document.getElementById('progressText').innerText = `進度: ${overallPct}% | 累計搜尋: ${g_foundCount} 組版路`;
+        document.getElementById('progressTaskText').innerText = 
+            `背景運算中 [${g_completedTasks + 1}/${g_totalTasks}]：起點 ${g_currentTask.startDateStr} | 找 ${g_currentTask.comboSize} 球 | ${g_currentTask.windowSize} 期內開 | 間隔 ${g_currentTask.skipSize} 期`;
 
-        if (isDone) {
-            g_completedTasks++;
-            nextTask();
-        } else {
-            requestAnimationFrame(processBatch);
-        }
+        // 將任務丟給 Worker 在背景全速執行
+        g_worker.postMessage({
+            task: g_currentTask,
+            data: g_data,
+            poolSize: g_poolSize,
+            minMatches: g_minMatches,
+            minCycles: g_minCycles
+        });
     }
 
     function renderResults() {
@@ -503,7 +525,6 @@
         if (g_waitingPatterns.length === 0) {
             html += `<p style="color:#7f8c8d; text-align:center; padding: 20px 0;">在您設定的所有參數中，目前沒有「下期進場」的版路。</p>`;
         } else {
-            // 根據歷史命中次數由高到低排序，讓最強的版路排最上面
             g_waitingPatterns.sort((a, b) => b.hits - a.hits);
             for(let p of g_waitingPatterns) html += buildHTML(p);
         }
