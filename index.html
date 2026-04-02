@@ -253,7 +253,7 @@
                 else if (!isWaiting && restingPatterns.length < 200) restingPatterns.push(patternObj);
             }
 
-            // 定期回報進度給主執行緒 (每掃描 10 萬種組合回報一次，保持順暢)
+            // 定期回報進度給主執行緒 (每搜尋 10 萬種組合回報一次，保持順暢)
             if (processedInTask % 100000 === 0) {
                 self.postMessage({ type: 'progress', processed: processedInTask });
             }
@@ -562,7 +562,7 @@
         }
         outputArea.innerHTML = html;
 
-        // --- 新增：掃描完成通知 ---
+        // --- 新增：搜尋完成通知 ---
         if ("Notification" in window && Notification.permission === "granted") {
             new Notification("✅ 搜尋完成！", {
                 body: `共搜尋出 ${g_foundCount.toLocaleString()} 組版路！\n請返回網頁查看結果。`,
