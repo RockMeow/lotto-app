@@ -456,12 +456,12 @@
             }
         }
 
-        // 更新總進度
+        // 更新進度
         let currentPct = (g_processedInTask / g_combosInTask);
         let overallPct = ((g_completedTasks + currentPct) / g_totalTasks * 100).toFixed(1);
         
         document.getElementById('progressBar').style.width = overallPct + '%';
-        document.getElementById('progressText').innerText = `總進度: ${overallPct}% | 累計搜尋: ${g_foundCount} 組版路`;
+        document.getElementById('progressText').innerText = `進度: ${overallPct}% | 累計搜尋: ${g_foundCount} 組版路`;
 
         if (isDone) {
             g_completedTasks++;
