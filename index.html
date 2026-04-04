@@ -519,6 +519,25 @@
         document.getElementById('progressBox').style.display = "none";
         document.getElementById('startBtn').disabled = false;
 
+        // --- 新增：計算上一期有幾組版路命中 ---
+        let lastDrawHitCount = 0;
+        let lastDrawDateStr = "";
+        if (g_data.length > 0) {
+            let lastDraw = g_data[g_data.length - 1];
+            lastDrawDateStr = lastDraw.date;
+            let allPatterns = g_waitingPatterns.concat(g_restingPatterns);
+            for(let p of allPatterns) {
+                let matchCount = 0;
+                for(let i=0; i<p.combo.length; i++) {
+                    if(lastDraw.boolMap[p.combo[i]]) matchCount++;
+                }
+                if(matchCount >= g_minMatches) {
+                    lastDrawHitCount++;
+                }
+            }
+        }
+        // ----------------------------------------
+
         function buildHTML(item) {
             let formattedCombo = item.combo.map(n => n.toString().padStart(2, '0')).join(', ');
             let t = item.taskInfo;
@@ -539,7 +558,8 @@
         }
 
         let html = `<p style="color:#27ae60; text-align:center; font-weight:bold; font-size:16px;">
-            搜尋完成！<br>共搜尋出 ${g_foundCount.toLocaleString()} 組版路！
+            搜尋完成！<br>共搜尋出 ${g_foundCount.toLocaleString()} 組版路！<br>
+            <span style="color:#e67e22; font-size:15px; margin-top:5px; display:inline-block;">上一期 (${lastDrawDateStr}) 共有 ${lastDrawHitCount} 組版路命中！</span>
         </p>`;
         
         html += `<h3 style="color:#e84118; margin-top:0; border-bottom:2px solid #e84118; padding-bottom:5px;">下一期聽牌</h3>`;
