@@ -519,9 +519,11 @@
         document.getElementById('progressBox').style.display = "none";
         document.getElementById('startBtn').disabled = false;
 
-        // --- 新增：計算上一期有幾組版路命中 ---
+        // --- 新增：計算並儲存上一期命中的版路 ---
         let lastDrawHitCount = 0;
         let lastDrawDateStr = "";
+        let lastDrawHitPatterns = [];
+        
         if (g_data.length > 0) {
             let lastDraw = g_data[g_data.length - 1];
             lastDrawDateStr = lastDraw.date;
@@ -533,6 +535,7 @@
                 }
                 if(matchCount >= g_minMatches) {
                     lastDrawHitCount++;
+                    lastDrawHitPatterns.push(p);
                 }
             }
         }
@@ -562,6 +565,19 @@
             <span style="color:#e67e22; font-size:15px; margin-top:5px; display:inline-block;">上一期 (${lastDrawDateStr}) 共有 ${lastDrawHitCount} 組版路命中！</span>
         </p>`;
         
+        // --- 新增：上一期命中版路顯示區塊 ---
+        if (lastDrawHitPatterns.length > 0) {
+            html += `
+            <details class="resting-details" style="margin-bottom: 25px; border: 2px solid #e67e22; box-shadow: 0 2px 8px rgba(230, 126, 34, 0.2);">
+                <summary style="color: #d35400;">🏆 上一期 (${lastDrawDateStr}) 命中版路清單 - 共 ${lastDrawHitCount} 組</summary>
+                <div style="margin-top:15px;">
+            `;
+            lastDrawHitPatterns.sort((a, b) => b.hits - a.hits);
+            for(let p of lastDrawHitPatterns) html += buildHTML(p);
+            html += `</div></details>`;
+        }
+        // ------------------------------------
+
         html += `<h3 style="color:#e84118; margin-top:0; border-bottom:2px solid #e84118; padding-bottom:5px;">下一期聽牌</h3>`;
         if (g_waitingPatterns.length === 0) {
             html += `<p style="color:#7f8c8d; text-align:center; padding: 20px 0;">在您設定的所有參數中，目前沒有「下期進場」的版路。</p>`;
