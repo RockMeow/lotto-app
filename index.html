@@ -75,7 +75,7 @@
     <div class="container">
         <details id="settingsWrapper" open>
             <summary style="font-weight: bold; font-size: 16px; color: #3498db; cursor: pointer; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #bdc3c7; outline: none;">
-                展開 / 收合設定面板
+                展開 / 收合
             </summary>
 
             <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: #ecf0f1; padding: 15px; border-radius: 8px; border-left: 5px solid #3498db;">
@@ -407,7 +407,7 @@
         
         g_data = parseData(document.getElementById('dataInput').value);
         if(g_data.length === 0) {
-            document.getElementById('outputArea').innerHTML = `<p style="color:red; text-align:center;">❌ 尚未載入數據，請先從上方選擇彩券！</p>`;
+            document.getElementById('outputArea').innerHTML = `<p style="color:red; text-align:center;">尚未載入數據，請先從上方選擇彩券！</p>`;
             document.getElementById('progressBox').style.display = "none";
             document.getElementById('startBtn').disabled = false;
             document.getElementById('settingsWrapper').open = true; 
@@ -427,7 +427,7 @@
         g_tasks = buildTaskQueue(skipR.min, skipR.max);
         
         if (!g_tasks) {
-            document.getElementById('outputArea').innerHTML = `<p style="color:red; text-align:center;">❌ 找不到您輸入的日期，請確認格式</p>`;
+            document.getElementById('outputArea').innerHTML = `<p style="color:red; text-align:center;">找不到您輸入的日期，請確認格式</p>`;
             document.getElementById('progressBox').style.display = "none";
             document.getElementById('startBtn').disabled = false;
             document.getElementById('settingsWrapper').open = true; 
@@ -600,7 +600,7 @@
 
         // --- 新增：搜尋完成通知 ---
         if ("Notification" in window && Notification.permission === "granted") {
-            new Notification("✅ 搜尋完成！", {
+            new Notification("搜尋完成！", {
                 body: `共搜尋出 ${g_foundCount.toLocaleString()} 組版路！\n請返回網頁查看結果。`,
                 tag: "scan-progress" // 覆蓋掉最後一個進度通知
             });
