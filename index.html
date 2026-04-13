@@ -77,7 +77,7 @@
 
     <div class="form-row">
         <div class="form-group">
-            <label>成立次數 <label style="display:inline; font-weight:normal; color:#007aff; cursor:pointer; font-size:0.75rem;"><input type="checkbox" id="exactMatch" style="vertical-align: middle; margin-left:8px;"> 僅顯示剛好</label></label>
+            <label>成立次數 <label style="display:inline; font-weight:normal; color:#007aff; cursor:pointer; font-size:0.75rem;"><input type="checkbox" id="exactMatch" style="vertical-align: middle; margin-left:8px;"> 僅顯示</label></label>
             <select id="minConsecutive">
                 <option value="3">準 3 進 4</option>
                 <option value="4">準 4 進 5</option>
@@ -136,6 +136,15 @@
         } catch (e) { alert("讀取 CSV 失敗，請確認檔案位置。"); return false; }
     }
 
+    function calculateConsecutive(targets, conditionFn) {
+        let count = 0;
+        for (let i = 0; i < targets.length; i++) {
+            if (conditionFn(targets[i], i)) count++;
+            else break;
+        }
+        return count;
+    }
+
     async function runSearch() {
         if (!lotteryData && !await loadData()) return;
 
@@ -161,16 +170,16 @@
         const N = lotteryData.length;
         let results = [];
         let completed = 0;
-        let lastYieldTime = Date.now(); 
+        let lastYieldTime = Date.now(); // 效能優化：防卡死計時器
 
         for (let pos = 0; pos < 5; pos++) {
             for (let A = 1; A <= maxNum; A++) {
                 completed++;
+                // 提高 UI 更新頻率，讓進度條跑得更平順
                 if (completed % 5 === 0 || completed === totalSteps) {
                     progBar.style.width = ((completed / totalSteps) * 100) + "%";
                     status.innerText = `分析中... ${Math.floor((completed / totalSteps) * 100)}%`;
-                    await new Promise(r => setTimeout(r, 0)); 
-                    lastYieldTime = Date.now();
+                    await new Promise(r => setTimeout(r, 0)); // 強制渲染，避免卡 97%
                 }
 
                 let allIdx = [];
@@ -183,72 +192,57 @@
                     let pendingTriggers = allIdx.filter(idx => idx + g >= N);
 
                     for (let triggerIdx of pendingTriggers) {
-                        
-                        if (Date.now() - lastYieldTime > 30) {
-                            await new Promise(r => setTimeout(r, 0));
-                            lastYieldTime = Date.now();
-                        }
-
                         let historyTriggers = allIdx.filter(idx => idx < triggerIdx && idx + g < N);
                         if (historyTriggers.length < minHits) continue;
                         historyTriggers.reverse(); 
 
+                        // 效能優化 1：提早抽出 targets 陣列，避免深層重複運算
                         let targets = historyTriggers.map(idx => lotteryData[idx + g].nums);
 
                         for (let C = -3; C <= 3; C++) {
+                            // 效能優化：若運算超過 40 毫秒，強制暫停 0 毫秒釋放記憶體與畫面渲染，保證 100% 順暢
+                            if (Date.now() - lastYieldTime > 40) {
+                                await new Promise(r => setTimeout(r, 0));
+                                lastYieldTime = Date.now();
+                            }
+
                             if (triggerIdx + C < 0 || triggerIdx + C >= N) continue; 
 
                             for (let D = 0; D < 5; D++) {
+                                // 效能優化 2：提早抽出 baseNums
                                 let baseNums = historyTriggers.map(idx => lotteryData[idx + C].nums[D]);
                                 let currentBase = lotteryData[triggerIdx + C].nums[D];
 
                                 if (patternType === '拖牌') {
                                     if (!isTwoCode) {
                                         for (let T = 1; T <= maxNum; T++) {
-                                            let c = 0;
-                                            for (let i = 0; i < targets.length; i++) { if (targets[i].includes(T)) c++; else break; }
-                                            if (exactMatch ? c === minHits : c >= minHits) {
-                                                save(results, triggerIdx, pos, A, C, D, T, 0, g, c, currentBase, '拖牌', historyTriggers);
-                                                // 【核心修正】：記憶體保護鎖，超過15000筆自動淘汰劣質資料，鎖死記憶體上限
-                                                if (results.length > 15000) { results.sort((a, b) => b.hits - a.hits); results.length = 10000; }
-                                            }
+                                            let c = calculateConsecutive(targets, (t) => t.includes(T));
+                                            if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, T, 0, g, c, currentBase, '拖牌', historyTriggers);
                                         }
                                     } else {
                                         for (let T1 = 1; T1 <= maxNum; T1++) {
                                             for (let T2 = T1 + 1; T2 <= maxNum; T2++) {
-                                                let c = 0;
-                                                for (let i = 0; i < targets.length; i++) { if (targets[i].includes(T1) || targets[i].includes(T2)) c++; else break; }
-                                                if (exactMatch ? c === minHits : c >= minHits) {
-                                                    save(results, triggerIdx, pos, A, C, D, T1, T2, g, c, currentBase, '拖牌', historyTriggers);
-                                                    if (results.length > 15000) { results.sort((a, b) => b.hits - a.hits); results.length = 10000; }
-                                                }
+                                                let c = calculateConsecutive(targets, (t) => t.includes(T1) || t.includes(T2));
+                                                if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, T1, T2, g, c, currentBase, '拖牌', historyTriggers);
                                             }
                                         }
                                     }
                                 } else {
                                     for (let v1 = 1; v1 <= maxNum - 1; v1++) {
                                         if (!isTwoCode) {
-                                            let c = 0;
-                                            for (let i = 0; i < targets.length; i++) {
-                                                let p = (patternType === '加減') ? wrapNum(baseNums[i] + v1) : wrapNum(v1 - baseNums[i]);
-                                                if (targets[i].includes(p)) c++; else break;
-                                            }
-                                            if (exactMatch ? c === minHits : c >= minHits) {
-                                                save(results, triggerIdx, pos, A, C, D, v1, 0, g, c, currentBase, patternType, historyTriggers);
-                                                if (results.length > 15000) { results.sort((a, b) => b.hits - a.hits); results.length = 10000; }
-                                            }
+                                            let c = calculateConsecutive(targets, (t, i) => {
+                                                let p = (patternType==='加減')?wrapNum(baseNums[i]+v1):wrapNum(v1-baseNums[i]);
+                                                return t.includes(p);
+                                            });
+                                            if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, 0, g, c, currentBase, patternType, historyTriggers);
                                         } else {
                                             for (let v2 = v1 + 1; v2 <= maxNum; v2++) {
-                                                let c = 0;
-                                                for (let i = 0; i < targets.length; i++) {
-                                                    let p1 = (patternType === '加減') ? wrapNum(baseNums[i] + v1) : wrapNum(v1 - baseNums[i]);
-                                                    let p2 = (patternType === '加減') ? wrapNum(baseNums[i] + v2) : wrapNum(v2 - baseNums[i]);
-                                                    if (targets[i].includes(p1) || targets[i].includes(p2)) c++; else break;
-                                                }
-                                                if (exactMatch ? c === minHits : c >= minHits) {
-                                                    save(results, triggerIdx, pos, A, C, D, v1, v2, g, c, currentBase, patternType, historyTriggers);
-                                                    if (results.length > 15000) { results.sort((a, b) => b.hits - a.hits); results.length = 10000; }
-                                                }
+                                                let c = calculateConsecutive(targets, (t, i) => {
+                                                    let p1 = (patternType==='加減')?wrapNum(baseNums[i]+v1):wrapNum(v1-baseNums[i]);
+                                                    let p2 = (patternType==='加減')?wrapNum(baseNums[i]+v2):wrapNum(v2-baseNums[i]);
+                                                    return t.includes(p1) || t.includes(p2);
+                                                });
+                                                if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, v2, g, c, currentBase, patternType, historyTriggers);
                                             }
                                         }
                                     }
@@ -263,7 +257,7 @@
 
         btn.disabled = false;
         document.getElementById('progressBox').style.display = "none";
-        status.innerText = `完成分析。已保留最強 ${results.length} 組版路。`;
+        status.innerText = `完成分析。找到 ${results.length} 組版路。`;
 
         // 將計算結果存入全域變數並排序，然後顯示第一頁
         globalResults = results;
@@ -272,6 +266,7 @@
         renderPage();
     }
 
+    // 效能優化 3：直接接收算好的 historyTriggers，移除耗時的底層全域陣列再掃描
     function save(arr, tIdx, pos, A, C, D, v1, v2, G, c, curBase, type, historyTriggers) {
         let history = [];
         let hTriggers = historyTriggers.slice(0, c).reverse();
@@ -301,6 +296,7 @@
         }
     }
 
+    // 原本的 render 改為 renderPage 支援分頁功能
     function renderPage() {
         const output = document.getElementById('outputArea');
         output.innerHTML = ""; 
@@ -320,9 +316,10 @@
             else if (r.type === '加減') { predNums = [wrapNum(r.curBase+r.v1), r.v2>0?wrapNum(r.curBase+r.v2):0].filter(v=>v>0); }
             else { predNums = [wrapNum(r.v1-r.curBase), r.v2>0?wrapNum(r.v2-r.curBase):0].filter(v=>v>0); }
 
+            if (!stats[r.G]) stats[r.G] = {};
             predNums.forEach(n => {
-                if (!stats[n]) stats[n] = 0;
-                stats[n] += 1; 
+                if (!stats[r.G][n]) stats[r.G][n] = 0;
+                stats[r.G][n] += 1; 
             });
         });
 
@@ -334,27 +331,28 @@
 
         let sHtml = `
             <div class="card-header" style="border-bottom: 1px solid #ffe8e6; padding-bottom: 8px; margin-bottom: 10px;">
-                <span class="trigger-tag" style="color:#ff3b30; font-size:1rem;">多重版路重合統計 (整體高機率號碼)</span>
+                <span class="trigger-tag" style="color:#ff3b30; font-size:1rem;">多重版路重合統計 (高機率號碼)</span>
             </div>
             <div style="font-size: 0.85rem; color: #333; line-height: 1.8;">
         `;
 
-        let sortedNums = Object.entries(stats).sort((a, b) => b[1] - a[1]);
-        let highestCount = sortedNums.length > 0 ? sortedNums[0][1] : 0;
-        
-        if (sortedNums.length > 0) {
-            sHtml += `<div style="margin-bottom: 10px;">`;
-            sortedNums.slice(0, 20).forEach(([n, count]) => {
-                let isTop = count >= highestCount && count > 1; 
-                let style = isTop ? `color:#fff; background:#ff3b30; padding:2px 6px; border-radius:4px; font-weight:bold;` : `color:#ff3b30; font-weight:bold;`;
-                sHtml += `<span style="display:inline-block; margin-right: 12px; margin-bottom: 4px;">
-                            <span style="${style}">${n.padStart(2,'0')}</span> 
-                            <span style="color:#8e8e93; font-size:0.75rem;">(${count}組版路)</span>
-                          </span>`;
-            });
-            sHtml += `</div>`;
-        }
-        
+        Object.keys(stats).sort((a,b)=>a-b).forEach(g => {
+            let sortedNums = Object.entries(stats[g]).sort((a, b) => b[1] - a[1]);
+            let highestCount = sortedNums.length > 0 ? sortedNums[0][1] : 0;
+            
+            if (sortedNums.length > 0) {
+                sHtml += `<div style="margin-bottom: 10px;"><strong style="color:#1c1c1e;">下 ${g} 期預測統計：</strong><br>`;
+                sortedNums.slice(0, 15).forEach(([n, count]) => {
+                    let isTop = count >= highestCount && count > 1; 
+                    let style = isTop ? `color:#fff; background:#ff3b30; padding:2px 6px; border-radius:4px; font-weight:bold;` : `color:#ff3b30; font-weight:bold;`;
+                    sHtml += `<span style="display:inline-block; margin-right: 12px; margin-bottom: 4px;">
+                                <span style="${style}">${n.padStart(2,'0')}</span> 
+                                <span style="color:#8e8e93; font-size:0.75rem;">(${count}組版路)</span>
+                              </span>`;
+                });
+                sHtml += `</div>`;
+            }
+        });
         sHtml += `</div>`;
         summaryCard.innerHTML = sHtml;
         output.appendChild(summaryCard);
@@ -436,9 +434,9 @@
             pageControls.style.border = '1px solid #e5e5ea';
 
             pageControls.innerHTML = `
-                <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''} style="width: auto; padding: 10px 20px; font-size: 0.9rem; background-color: ${currentPage === 1 ? '#aeaeb2' : '#007aff'}; color: #fff; border: none; border-radius: 8px; cursor: ${currentPage === 1 ? 'not-allowed' : 'pointer'};">上一頁</button>
+                <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''} style="width: auto; padding: 10px 20px; font-size: 0.9rem; background-color: ${currentPage === 1 ? '#aeaeb2' : '#007aff'}; border-radius: 8px;">上一頁</button>
                 <span style="font-size: 0.95rem; font-weight: bold; color: #333;">第 ${currentPage} 頁 / 共 ${totalPages} 頁</span>
-                <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''} style="width: auto; padding: 10px 20px; font-size: 0.9rem; background-color: ${currentPage === totalPages ? '#aeaeb2' : '#007aff'}; color: #fff; border: none; border-radius: 8px; cursor: ${currentPage === totalPages ? 'not-allowed' : 'pointer'};">下一頁</button>
+                <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''} style="width: auto; padding: 10px 20px; font-size: 0.9rem; background-color: ${currentPage === totalPages ? '#aeaeb2' : '#007aff'}; border-radius: 8px;">下一頁</button>
             `;
             output.appendChild(pageControls);
         }
