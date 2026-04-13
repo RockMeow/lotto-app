@@ -77,7 +77,7 @@
 
     <div class="form-row">
         <div class="form-group">
-            <label>成立次數</label>
+            <label>成立次數 <label style="display:inline; font-weight:normal; color:#007aff; cursor:pointer; font-size:0.75rem;"><input type="checkbox" id="exactMatch" style="vertical-align: middle; margin-left:8px;"> 僅顯示</label></label>
             <select id="minConsecutive">
                 <option value="3">準 3 進 4</option>
                 <option value="4">準 4 進 5</option>
@@ -93,8 +93,8 @@
         <div class="form-group">
             <label>預測碼數</label>
             <select id="codeCount">
-                <option value="1">單碼 (1顆)</option>
-                <option value="2">雙碼 (2顆)</option>
+                <option value="1">1 顆</option>
+                <option value="2">2 顆</option>
             </select>
         </div>
     </div>
@@ -155,6 +155,7 @@
 
         const maxG = parseInt(document.getElementById('periodG').value);
         const minHits = parseInt(document.getElementById('minConsecutive').value);
+        const exactMatch = document.getElementById('exactMatch').checked;
         const isTwoCode = (document.getElementById('codeCount').value === '2');
         const patternType = document.getElementById('patternType').value;
 
@@ -200,13 +201,13 @@
                                     if (!isTwoCode) {
                                         for (let T = 1; T <= maxNum; T++) {
                                             let c = calculateConsecutive(targets, (t) => t.includes(T));
-                                            if (c >= minHits) save(results, triggerIdx, pos, A, C, D, T, 0, g, c, currentBase, '拖牌');
+                                            if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, T, 0, g, c, currentBase, '拖牌');
                                         }
                                     } else {
                                         for (let T1 = 1; T1 <= maxNum; T1++) {
                                             for (let T2 = T1 + 1; T2 <= maxNum; T2++) {
                                                 let c = calculateConsecutive(targets, (t) => t.includes(T1) || t.includes(T2));
-                                                if (c >= minHits) save(results, triggerIdx, pos, A, C, D, T1, T2, g, c, currentBase, '拖牌');
+                                                if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, T1, T2, g, c, currentBase, '拖牌');
                                             }
                                         }
                                     }
@@ -217,7 +218,7 @@
                                                 let p = (patternType==='加減')?wrapNum(baseNums[i]+v1):wrapNum(v1-baseNums[i]);
                                                 return t.includes(p);
                                             });
-                                            if (c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, 0, g, c, currentBase, patternType);
+                                            if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, 0, g, c, currentBase, patternType);
                                         } else {
                                             for (let v2 = v1 + 1; v2 <= maxNum; v2++) {
                                                 let c = calculateConsecutive(targets, (t, i) => {
@@ -225,7 +226,7 @@
                                                     let p2 = (patternType==='加減')?wrapNum(baseNums[i]+v2):wrapNum(v2-baseNums[i]);
                                                     return t.includes(p1) || t.includes(p2);
                                                 });
-                                                if (c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, v2, g, c, currentBase, patternType);
+                                                if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, v2, g, c, currentBase, patternType);
                                             }
                                         }
                                     }
@@ -272,7 +273,7 @@
         }
 
         // ==========================================
-        // 新增：版路共伴重合驗證 (統計熱門預測號碼)
+        // 版路共伴重合驗證 (統計熱門預測號碼)
         // ==========================================
         let stats = {};
         results.forEach(r => {
@@ -284,7 +285,7 @@
             if (!stats[r.G]) stats[r.G] = {};
             predNums.forEach(n => {
                 if (!stats[r.G][n]) stats[r.G][n] = 0;
-                stats[r.G][n] += 1; // 累加被多少個版路預測到
+                stats[r.G][n] += 1; 
             });
         });
 
@@ -296,21 +297,18 @@
 
         let sHtml = `
             <div class="card-header" style="border-bottom: 1px solid #ffe8e6; padding-bottom: 8px; margin-bottom: 10px;">
-                <span class="trigger-tag" style="color:#ff3b30; font-size:1rem;">🔥 多重版路重合統計 (高機率號碼)</span>
+                <span class="trigger-tag" style="color:#ff3b30; font-size:1rem;">多重版路重合統計 (高機率號碼)</span>
             </div>
             <div style="font-size: 0.85rem; color: #333; line-height: 1.8;">
         `;
 
         Object.keys(stats).sort((a,b)=>a-b).forEach(g => {
-            // 將號碼依照被預測的次數(版路數)由高到低排序
             let sortedNums = Object.entries(stats[g]).sort((a, b) => b[1] - a[1]);
             let highestCount = sortedNums.length > 0 ? sortedNums[0][1] : 0;
             
             if (sortedNums.length > 0) {
                 sHtml += `<div style="margin-bottom: 10px;"><strong style="color:#1c1c1e;">下 ${g} 期預測統計：</strong><br>`;
-                // 取出前 15 個最多版路指向的號碼顯示
                 sortedNums.slice(0, 15).forEach(([n, count]) => {
-                    // 如果是最高票且有 2 個版路以上支持，就標註紅底白字
                     let isTop = count >= highestCount && count > 1; 
                     let style = isTop ? `color:#fff; background:#ff3b30; padding:2px 6px; border-radius:4px; font-weight:bold;` : `color:#ff3b30; font-weight:bold;`;
                     sHtml += `<span style="display:inline-block; margin-right: 12px; margin-bottom: 4px;">
@@ -324,7 +322,6 @@
         sHtml += `</div>`;
         summaryCard.innerHTML = sHtml;
         output.appendChild(summaryCard);
-        // ==========================================
         
         // 將個別版路結果依據連準期數由高至低排序
         results.sort((a, b) => b.hits - a.hits);
