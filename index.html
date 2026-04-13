@@ -2,610 +2,308 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>自動版路搜尋系統</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>版路分析工具</title>
     <style>
-        body { font-family: "Microsoft JhengHei", Arial, sans-serif; background-color: #121e27; color: #333; margin: 0; padding: 20px; display: flex; gap: 20px; height: 100vh; box-sizing: border-box; }
-        .container { flex: 1; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
-        h2 { margin-top: 0; color: #2980b9; font-size: 1.3rem; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-        textarea { width: 100%; flex: 1; padding: 10px; font-family: monospace; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; resize: none; box-sizing: border-box; margin-bottom: 15px; background-color: #f8f9fa; }
+        body { font-family: -apple-system, sans-serif; background-color: #f2f2f7; color: #1c1c1e; margin: 0; padding: 15px; box-sizing: border-box; }
+        .container { max-width: 800px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 15px; }
+        h1 { font-size: 1.3rem; text-align: center; margin: 0 0 20px 0; padding-bottom: 10px; border-bottom: 1px solid #e5e5ea; }
         
-        /* 網格設定區塊 */
-        .controls-panel { background: #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        .controls-grid { display: grid; grid-template-columns: 110px 1fr; gap: 10px 15px; align-items: center; margin-bottom: 15px;}
-        .controls-grid label { font-size: 14px; font-weight: bold; color: #2c3e50; text-align: right; }
-        .range-inputs { display: flex; align-items: center; gap: 8px; }
-        .range-inputs input { width: 55px; padding: 6px; border: 1px solid #bdc3c7; border-radius: 4px; text-align: center; font-family: monospace; }
-        .range-inputs input.date-input { width: 70px; }
-        .range-separator { color: #7f8c8d; font-weight: bold; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 0.8rem; font-weight: 600; color: #8e8e93; margin-bottom: 4px; }
+        select { padding: 10px; border: 1px solid #d1d1d6; border-radius: 8px; font-size: 0.95rem; background: #fff; }
         
-        button { width: 100%; background-color: #e74c3c; color: white; border: none; padding: 14px; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; letter-spacing: 1px; transition: 0.3s; box-shadow: 0 4px 6px rgba(231, 76, 60, 0.3); }
-        button:hover { background-color: #c0392b; transform: translateY(-1px); }
-        button:disabled { background-color: #95a5a6; cursor: not-allowed; transform: none; box-shadow: none; }
-        
-        /* 進度條設計 */
-        .progress-container { display: none; margin-bottom: 15px; background: #ffffff; border: 2px solid #3498db; border-radius: 8px; padding: 15px; text-align: center; }
-        .progress-bar-bg { background: #dfe4ea; height: 12px; border-radius: 6px; overflow: hidden; margin-top: 10px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
-        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #2ed573, #2bcbba); width: 0%; transition: width 0.1s linear; }
-        .progress-text { font-weight: bold; color: #2c3e50; font-size: 15px; }
-        .progress-task { color: #e67e22; font-size: 13px; margin-top: 8px; font-weight: bold; background: #fff3e0; padding: 4px; border-radius: 4px; }
+        button { width: 100%; padding: 14px; font-size: 1rem; font-weight: bold; color: #fff; background-color: #007aff; border: none; border-radius: 10px; cursor: pointer; }
+        button:disabled { background-color: #aeaeb2; }
 
-        .results { flex: 1; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 5px; background: #f1f2f6; }
-        .result-item { background: #ffffff; border: 1px solid #dcdde1; margin-bottom: 15px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .combo-header { display: flex; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #eccc68; }
-        .combo-title { font-size: 16px; font-weight: bold; color: #2f3542; letter-spacing: 1px; margin: 0; }
-        .rule-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-left: 10px; }
-        .rule-tag { font-size: 12px; color: #0984e3; font-weight: bold; background: #dfe6e9; padding: 3px 6px; border-radius: 4px; }
-        
-        .status-badge { font-size: 13px; font-weight: bold; padding: 5px 10px; border-radius: 4px; margin-left: auto; }
-        .status-badge.waiting { background-color: #ff4757; color: white; box-shadow: 0 0 5px rgba(255, 71, 87, 0.4); }
-        .status-badge.resting { background-color: #f1f2f6; color: #747d8c; border: 1px solid #ced6e0; }
+        #progressBox { display: none; margin: 15px 0; background: #e5e5ea; border-radius: 4px; height: 6px; overflow: hidden; }
+        #progressBar { height: 100%; width: 0%; background: #34c759; transition: width 0.1s; }
 
-        .combo-history { display: flex; flex-direction: column; gap: 8px; margin-top: 10px;}
-        .history-line { display: flex; align-items: center; background: #f8f9fa; padding: 6px 10px; border-radius: 6px; flex-wrap: wrap; gap: 6px; }
-        .cycle-badge { background: #57606f; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; margin-right: 12px; font-weight: bold; min-width: 45px; text-align: center; }
-        .date-text { font-weight: bold; color: #2f3542; margin-right: 15px; font-family: monospace; font-size: 15px; }
-        .balls-container { display: flex; gap: 6px; flex-wrap: wrap; }
-        .ball { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background-color: #dfe4ea; color: #747d8c; font-size: 14px; font-weight: bold; font-family: monospace; border: 1px solid #ced6e0; }
-        .ball.hit { background-color: #ff4757; color: white; border-color: #ff4757; box-shadow: 0 0 8px rgba(255, 71, 87, 0.6); transform: scale(1.1); }
+        .result-card { margin-top: 20px; border: 1px solid #e5e5ea; border-radius: 10px; padding: 12px; background: #fdfdfd; }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .trigger-tag { color: #ff3b30; font-weight: bold; font-size: 0.9rem; }
+        .status-badge { background: #ff9500; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; }
         
-        details.resting-details { background: #ffffff; border: 1px solid #dcdde1; border-radius: 8px; padding: 10px 15px; margin-top: 20px; }
-        details.resting-details summary { font-weight: bold; font-size: 16px; color: #747d8c; cursor: pointer; display: flex; align-items: center; }
-        details.resting-details summary::-webkit-details-marker { display: none; }
-        details.resting-details summary::before { content: '►'; margin-right: 10px; transition: 0.3s; }
-        details.resting-details[open] summary::before { transform: rotate(90deg); }
-        details.resting-details[open] summary { margin-bottom: 15px; border-bottom: 1px dashed #ced6e0; padding-bottom: 10px; }
+        .formula-box { background: #f2f2f7; padding: 10px; border-radius: 6px; font-size: 0.85rem; line-height: 1.5; color: #3a3a3c; border-left: 4px solid #007aff; margin: 8px 0; }
+        .pred-box { text-align: center; margin: 10px 0; padding: 10px; background: #fff1f0; border-radius: 6px; border: 1px solid #ffccc7; }
+        .pred-label { font-size: 0.8rem; color: #f5222d; margin-bottom: 4px; display: block; }
+        .pred-num { color: #ff4d4f; font-weight: bold; font-size: 1.3rem; letter-spacing: 1px; }
 
-        /* --- 手機版響應式設定 --- */
-        @media (max-width: 768px) {
-            body { flex-direction: column; height: auto; min-height: 100vh; padding: 10px; }
-            .container { flex: none; height: 85vh; min-height: 450px; } 
-            .controls-grid { grid-template-columns: 1fr; gap: 5px; }
-            .controls-grid label { text-align: left; margin-top: 10px; }
-            .range-inputs { flex-wrap: wrap; }
-            .combo-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .status-badge { margin-left: 0; }
-        }
+        .history-wrap { overflow-x: auto; margin-top: 10px; border: 1px solid #eee; border-radius: 4px; }
+        table { width: 100%; min-width: 450px; border-collapse: collapse; font-size: 0.75rem; }
+        th { background: #f9f9f9; padding: 6px; border-bottom: 1px solid #eee; color: #8e8e93; }
+        td { padding: 6px; border-bottom: 1px solid #eee; text-align: center; }
+        .ball { display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 50%; background: #eee; margin: 0 1px; font-size: 0.7rem; color: #555; }
+        .ball.hit { background: #ff3b30; color: #fff; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <textarea id="dataInput" style="display: none;"></textarea>
+<div class="container">
+    <h1>版路分析工具</h1>
 
-    <div class="container">
-        <details id="settingsWrapper" open>
-            <summary style="font-weight: bold; font-size: 16px; color: #3498db; cursor: pointer; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed #bdc3c7; outline: none;">
-                展開 / 收合
-            </summary>
-
-            <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: #ecf0f1; padding: 15px; border-radius: 8px; border-left: 5px solid #3498db;">
-                <label style="font-weight: bold; font-size: 15px; color: #2c3e50;">選擇彩券類型：</label>
-                <select id="csvSource" onchange="fetchGoogleCSV()" style="padding: 8px; border-radius: 4px; border: 1px solid #bdc3c7; font-family: inherit; flex: 1; min-width: 200px; font-weight: bold; color: #2980b9;">
-                    <option value="">請選擇彩券...</option>
-                    <option value="./Fan_history_all_sorted.csv">天天樂</option>
-                    <option value="./Ghana_history_all_sorted.csv">迦納彩</option> 
-                    <option value="./539_history_all_sorted.csv">今彩539</option>
-                    <option value="./649_history_all_sorted.csv">大樂透</option>
-                    <option value="./Six_history_all_sorted.csv">六合彩</option>
-                </select>
-            </div>
-
-            <h2>參數設定</h2>
-            <div class="controls-panel">
-                <div class="controls-grid">
-                    <label>起迄日期：</label>
-                    <div class="range-inputs">
-                        <input type="text" class="date-input" id="startMin" value="01/01" placeholder="起"> 
-                        <span class="range-separator">~</span> 
-                        <input type="text" class="date-input" id="startMax" placeholder="迄">
-                    </div>
-                    
-                    <label>組合球數：</label>
-                    <div class="range-inputs">
-                        <input type="number" id="comboMin" value="5" min="1" max="10"> 
-                        <span class="range-separator">~</span> 
-                        <input type="number" id="comboMax" value="5" min="1" max="10">
-                    </div>
-
-                    <label>幾期內開：</label>
-                    <div class="range-inputs">
-                        <input type="number" id="winMin" value="3" min="1"> 
-                        <span class="range-separator">~</span> 
-                        <input type="number" id="winMax" value="3" min="1">
-                    </div>
-
-                    <label>間隔幾期：</label>
-                    <div class="range-inputs">
-                        <input type="number" id="skipMin" value="1" min="0"> 
-                        <span class="range-separator">~</span> 
-                        <input type="number" id="skipMax" value="2" min="0">
-                    </div>
-
-                    <label style="color:#e74c3c;">最少中幾球：</label>
-                    <div class="range-inputs">
-                        <input type="number" id="minMatches" value="2" min="1" max="5">
-                        <span style="font-size:12px; color:#e67e22; margin-left:10px;"></span>
-                    </div>
-
-                    <label style="color:#27ae60;">最少連莊數：</label>
-                    <div class="range-inputs">
-                        <input type="number" id="minCycles" value="2" min="1" max="20">
-                        <span style="font-size:12px; color:#7f8c8d; margin-left:10px;"></span>
-                    </div>
-                </div>
-                <button id="startBtn" onclick="initMining()">搜尋</button>
-            </div>
-        </details>
-        
-        <div id="progressBox" class="progress-container">
-            <div class="progress-text" id="progressText">搜尋中...</div>
-            <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar"></div></div>
-            <div class="progress-task" id="progressTaskText"></div>
+    <div class="form-row">
+        <div class="form-group">
+            <label>比對期數</label>
+            <select id="periodG">
+                <option value="1">下 1 期</option>
+                <option value="6">下 6 期</option>
+                <option value="12">下 12 期</option>
+            </select>
         </div>
-
-        <h2>搜尋結果</h2>
-        <div class="results" id="outputArea">
-            <p style="color:#7f8c8d; text-align:center; margin-top:50px;">請從上方選擇彩券並設定條件，系統將自動為您搜尋版路。</p>
+        <div class="form-group">
+            <label>版路類型</label>
+            <select id="patternType">
+                <option value="加減">加減</option>
+                <option value="合值">合值</option>
+                <option value="拖牌">拖牌</option>
+            </select>
         </div>
     </div>
 
-<script id="workerScript" type="javascript/worker">
-    function* getCombinationsGenerator(n, k) {
-        let combo = Array.from({length: k}, (_, i) => i + 1);
-        yield [...combo];
-        while (true) {
-            let i; for (i = k - 1; i >= 0; i--) { if (combo[i] !== i + n - k + 1) break; }
-            if (i < 0) break;
-            combo[i]++;
-            for (let j = i + 1; j < k; j++) { combo[j] = combo[j - 1] + 1; }
-            yield [...combo];
-        }
-    }
+    <div class="form-row">
+        <div class="form-group">
+            <label>成立次數</label>
+            <select id="minConsecutive">
+                <option value="3">準 3 進 4</option>
+                <option value="4">準 4 進 5</option>
+                <option value="5" selected>準 5 進 6</option>
+                <option value="6">準 6 進 7</option>
+                <option value="7">準 7 進 8</option>
+                <option value="8">準 8 進 9</option>
+                <option value="9">準 9 進 10</option>
+                <option value="10">準 10 進 11</option>
+                <option value="11">準 11 進 12</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>預測碼數</label>
+            <select id="codeCount">
+                <option value="1">單碼 (1顆)</option>
+                <option value="2">雙碼 (2顆)</option>
+            </select>
+        </div>
+    </div>
 
-    self.onmessage = function(e) {
-        const { task, data, poolSize, minMatches, minCycles } = e.data;
-        let comboGen = getCombinationsGenerator(poolSize, task.comboSize);
-        
-        let processedInTask = 0;
-        let waitingPatterns = [];
-        let restingPatterns = [];
+    <button id="startBtn" onclick="runSearch()">開始分析</button>
 
-        while (true) {
-            let next = comboGen.next();
-            if (next.done) break;
-            let combo = next.value;
-            processedInTask++;
-            
-            let currentIndex = task.startIdx;
-            let isValid = true;
-            let hitIndices = []; 
+    <div id="progressBox"><div id="progressBar"></div></div>
+    <div id="statusMsg" style="text-align:center; font-size:0.75rem; color:#8e8e93; margin-top:5px;"></div>
 
-            while (currentIndex < data.length) {
-                let windowData = data.slice(currentIndex, currentIndex + task.windowSize);
-                if (windowData.length === 0) break;
-
-                let hitDraw = null;
-                for (let draw of windowData) {
-                    let matchCount = 0;
-                    for(let i=0; i<task.comboSize; i++) { if(draw.boolMap[combo[i]]) matchCount++; }
-                    if (matchCount >= minMatches) { hitDraw = draw; break; }
-                }
-
-                if (hitDraw) {
-                    hitIndices.push(hitDraw);
-                } else if (windowData.length === task.windowSize) {
-                    isValid = false; break;
-                }
-
-                currentIndex += (task.windowSize + task.skipSize);
-            }
-
-            if (isValid && hitIndices.length >= minCycles) {
-                let historyLog = [];
-                for (let c = 0; c < hitIndices.length; c++) {
-                    let draw = hitIndices[c];
-                    let ballsHtml = draw.nums.map(n => {
-                        let nStr = n.toString().padStart(2, '0');
-                        return combo.includes(n) ? '<span class="ball hit">' + nStr + '</span>' : '<span class="ball">' + nStr + '</span>';
-                    }).join('');
-                    historyLog.push(
-                        '<div class="history-line">' +
-                            '<span class="cycle-badge">第 ' + (c+1) + ' 次</span>' +
-                            '<span class="date-text">' + draw.date + '</span>' +
-                            '<div class="balls-container">' + ballsHtml + '</div>' +
-                        '</div>'
-                    );
-                }
-
-                let nextDrawOffset = data.length - task.startIdx;
-                let cycleLength = task.windowSize + task.skipSize;
-                let posInCycle = nextDrawOffset % cycleLength;
-                
-                let isWaiting = false; let statusHtml = "";
-                if (posInCycle < task.windowSize) {
-                    let hitAlready = false;
-                    if (posInCycle > 0) {
-                        let currentWindowHistory = data.slice(data.length - posInCycle, data.length);
-                        for (let draw of currentWindowHistory) {
-                            let matchCount = 0;
-                            for(let i=0; i<task.comboSize; i++) { if(draw.boolMap[combo[i]]) matchCount++; }
-                            if (matchCount >= minMatches) { hitAlready = true; break; }
-                        }
-                    }
-                    if (hitAlready) {
-                        statusHtml = '<div class="status-badge resting">本輪已提早達標</div>';
-                    } else {
-                        isWaiting = true; let remaining = task.windowSize - posInCycle;
-                        statusHtml = '<div class="status-badge waiting">下期聽牌 (剩 ' + remaining + ' 期)</div>';
-                    }
-                } else {
-                    let remainingSkip = task.skipSize - (posInCycle - task.windowSize);
-                    statusHtml = '<div class="status-badge resting">休息空檔 (還需間隔 ' + remainingSkip + ' 期)</div>';
-                }
-
-                let patternObj = { 
-                    combo: combo, history: historyLog, status: statusHtml, 
-                    taskInfo: task, hits: hitIndices.length 
-                };
-                
-                // 防爆限制
-                if (isWaiting && waitingPatterns.length < 500) waitingPatterns.push(patternObj);
-                else if (!isWaiting && restingPatterns.length < 200) restingPatterns.push(patternObj);
-            }
-
-            // 定期回報進度給主執行緒 (每搜尋 10 萬種組合回報一次，保持順暢)
-            if (processedInTask % 100000 === 0) {
-                self.postMessage({ type: 'progress', processed: processedInTask });
-            }
-        }
-
-        // 任務完成，回傳結果
-        self.postMessage({
-            type: 'done',
-            waiting: waitingPatterns,
-            resting: restingPatterns,
-            processed: processedInTask
-        });
-    };
-</script>
+    <div id="outputArea">
+        <p style="text-align:center; color:#8e8e93; margin-top:40px; font-size:0.9rem;"></p>
+    </div>
+</div>
 
 <script>
-    function fetchGoogleCSV() {
-        const select = document.getElementById('csvSource');
-        const url = select.value;
-        const textarea = document.getElementById('dataInput');
-        
-        if (!url) {
-            textarea.value = '';
-            document.getElementById('startMax').value = '';
-            return;
+    let lotteryData = null;
+
+    function wrap39(v) {
+        let res = v % 39;
+        return res === 0 ? 39 : (res < 0 ? res + 39 : res);
+    }
+
+    async function loadData() {
+        try {
+            const res = await fetch('./Fan_history_all_sorted.csv');
+            const text = await res.text();
+            lotteryData = text.trim().split('\n').map(line => {
+                const parts = line.split(',');
+                return { date: parts[0], nums: parts.slice(1, 6).map(n => parseInt(n)) };
+            }).filter(d => d.nums.length === 5);
+            return true;
+        } catch (e) { alert("讀取 CSV 失敗，請確認檔案位置。"); return false; }
+    }
+
+    function calculateConsecutive(targets, conditionFn) {
+        let count = 0;
+        for (let i = 0; i < targets.length; i++) {
+            if (conditionFn(targets[i], i)) count++;
+            else break;
         }
-        
-        textarea.value = '檔案載入中，請稍候...';
-        document.getElementById('startBtn').innerText = "數據載入中...";
-        document.getElementById('startBtn').disabled = true;
-        
-        fetch(url)
-            .then(response => {
-                if (!response.ok) throw new Error('無法讀取檔案 (HTTP ' + response.status + ')');
-                return response.text();
-            })
-            .then(text => {
-                textarea.value = text;
-                document.getElementById('startBtn').innerText = "搜尋";
-                document.getElementById('startBtn').disabled = false;
-                
-                const lines = text.trim().split('\n');
-                if (lines.length > 0) {
-                    let lastLine = lines[lines.length - 1];
-                    let parts = lastLine.split(',');
-                    if (parts.length > 0) {
-                        let latestDate = parts[0].trim();
-                        document.getElementById('startMax').value = latestDate;
-                    }
-                }
-            })
-            .catch(error => {
-                textarea.value = '';
-                document.getElementById('startMax').value = '';
-                document.getElementById('startBtn').innerText = "載入失敗";
-                alert('載入失敗！\n1. 請確認檔案 (' + url + ') 是否存在。\n2. 檔案必須與此網頁放在同一個資料夾。\n\n錯誤詳情：' + error);
-            });
+        return count;
     }
 
-    function calcTotalCombos(n, k) {
-        if(k === 0 || k === n) return 1; if(k > n) return 0;
-        let res = 1; for (let i = 1; i <= k; i++) { res = res * (n - i + 1) / i; }
-        return Math.round(res);
-    }
+    async function runSearch() {
+        if (!lotteryData && !await loadData()) return;
 
-    function parseData(rawText) {
-        const lines = rawText.trim().split('\n');
-        const data = [];
-        for (let line of lines) {
-            if (!line.trim()) continue;
-            const parts = line.split(','); const date = parts[0].trim();
-            let nums = parts.slice(1).map(n => parseInt(n.trim(), 10));
-            nums.sort((a, b) => a - b);
-            let boolMap = new Array(50).fill(false); 
-            for(let n of nums) boolMap[n] = true;
-            data.push({ date, nums, boolMap });
-        }
-        return data;
-    }
+        const btn = document.getElementById('startBtn');
+        const progBar = document.getElementById('progressBar');
+        const output = document.getElementById('outputArea');
+        const status = document.getElementById('statusMsg');
 
-    // 全域變數
-    let g_data = [];
-    let g_minMatches = 2;
-    let g_minCycles = 2; 
-    let g_tasks = [];
-    let g_currentTask = null;
-    
-    let g_totalTasks = 0, g_completedTasks = 0;
-    let g_foundCount = 0;
-    let g_waitingPatterns = [];
-    let g_restingPatterns = [];
-    let g_autoExpandCount = 0;
-    let g_poolSize = 39; 
+        // 改為 maxG，代表最大掃描期數
+        const maxG = parseInt(document.getElementById('periodG').value);
+        const minHits = parseInt(document.getElementById('minConsecutive').value);
+        const isTwoCode = (document.getElementById('codeCount').value === '2');
+        const patternType = document.getElementById('patternType').value;
 
-    // --- 新增：進度通知紀錄 ---
-    let g_lastNotifiedPct = -1;
-
-    // Web Worker 實例
-    let g_worker = null;
-
-    function getRange(idMin, idMax) {
-        let minVal = document.getElementById(idMin).value.trim();
-        let maxVal = document.getElementById(idMax).value.trim();
-        if(maxVal === "") maxVal = minVal;
-        return { min: minVal, max: maxVal };
-    }
-
-    function buildTaskQueue(skipMin, skipMax) {
-        let tasks = [];
-        let dateRange = getRange('startMin', 'startMax');
-        let idx1 = g_data.findIndex(d => d.date === dateRange.min);
-        let idx2 = g_data.findIndex(d => d.date === dateRange.max);
-        
-        if (idx1 === -1 || idx2 === -1) return null; 
-        let startIdxMin = Math.min(idx1, idx2);
-        let startIdxMax = Math.max(idx1, idx2);
-
-        let comboR = getRange('comboMin', 'comboMax');
-        let winR = getRange('winMin', 'winMax');
-
-        for(let c = parseInt(comboR.min); c <= parseInt(comboR.max); c++) {
-            for(let w = parseInt(winR.min); w <= parseInt(winR.max); w++) {
-                for(let s = parseInt(skipMin); s <= parseInt(skipMax); s++) {
-                    for(let i = startIdxMin; i <= startIdxMax; i++) {
-                        tasks.push({
-                            comboSize: c,
-                            windowSize: w,
-                            skipSize: s,
-                            startIdx: i,
-                            startDateStr: g_data[i].date
-                        });
-                    }
-                }
-            }
-        }
-        return tasks;
-    }
-
-    function initMining() {
-        // --- 要求通知權限 ---
-        if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-            Notification.requestPermission();
-        }
-        g_lastNotifiedPct = -1;
-
-        document.getElementById('settingsWrapper').open = false; 
-
-        document.getElementById('startBtn').disabled = true;
+        btn.disabled = true;
+        output.innerHTML = "";
         document.getElementById('progressBox').style.display = "block";
-        document.getElementById('outputArea').innerHTML = "";
         
-        g_data = parseData(document.getElementById('dataInput').value);
-        if(g_data.length === 0) {
-            document.getElementById('outputArea').innerHTML = `<p style="color:red; text-align:center;">尚未載入數據，請先從上方選擇彩券！</p>`;
-            document.getElementById('progressBox').style.display = "none";
-            document.getElementById('startBtn').disabled = false;
-            document.getElementById('settingsWrapper').open = true; 
-            return;
-        }
+        const N = lotteryData.length;
+        let results = [];
+        let completed = 0;
 
-        let maxNum = 0;
-        for(let d of g_data) {
-            for(let n of d.nums) { if(n > maxNum) maxNum = n; }
-        }
-        g_poolSize = maxNum;
+        for (let pos = 0; pos < 5; pos++) {
+            for (let A = 1; A <= 39; A++) {
+                completed++;
+                if (completed % 10 === 0) {
+                    progBar.style.width = ((completed / 195) * 100) + "%";
+                    status.innerText = `全域掃描中... ${Math.floor((completed / 195) * 100)}%`;
+                }
 
-        g_minMatches = parseInt(document.getElementById('minMatches').value);
-        g_minCycles = parseInt(document.getElementById('minCycles').value);
-        
-        let skipR = getRange('skipMin', 'skipMax');
-        g_tasks = buildTaskQueue(skipR.min, skipR.max);
-        
-        if (!g_tasks) {
-            document.getElementById('outputArea').innerHTML = `<p style="color:red; text-align:center;">找不到您輸入的日期，請確認格式</p>`;
-            document.getElementById('progressBox').style.display = "none";
-            document.getElementById('startBtn').disabled = false;
-            document.getElementById('settingsWrapper').open = true; 
-            return;
-        }
+                let allIdx = [];
+                for (let i = 0; i < N; i++) {
+                    if (lotteryData[i].nums[pos] === A) allIdx.push(i);
+                }
+                if (allIdx.length === 0) continue;
 
-        g_totalTasks = g_tasks.length;
-        g_completedTasks = 0;
-        g_foundCount = 0;
-        g_waitingPatterns = [];
-        g_restingPatterns = [];
-        g_autoExpandCount = 0;
+                // 【核心修改】：從 1 期一路掃描到使用者選擇的最高期數 (maxG)
+                for (let g = 1; g <= maxG; g++) {
+                    let pendingTriggers = allIdx.filter(idx => idx + g >= N);
 
-        // 初始化 Web Worker
-        if (g_worker) g_worker.terminate();
-        const workerBlob = new Blob([document.getElementById('workerScript').textContent], {type: 'application/javascript'});
-        g_worker = new Worker(URL.createObjectURL(workerBlob));
-        
-        g_worker.onmessage = function(e) {
-            if (e.data.type === 'progress') {
-                updateProgress(e.data.processed);
-            } else if (e.data.type === 'done') {
-                g_waitingPatterns = g_waitingPatterns.concat(e.data.waiting);
-                g_restingPatterns = g_restingPatterns.concat(e.data.resting);
-                g_foundCount += (e.data.waiting.length + e.data.resting.length);
-                g_completedTasks++;
-                nextTask();
+                    for (let triggerIdx of pendingTriggers) {
+                        let historyTriggers = allIdx.filter(idx => idx < triggerIdx && idx + g < N);
+                        if (historyTriggers.length < minHits) continue;
+                        historyTriggers.reverse(); 
+
+                        for (let C = -3; C <= 3; C++) {
+                            if (triggerIdx + C < 0 || triggerIdx + C >= N) continue; 
+
+                            for (let D = 0; D < 5; D++) {
+                                let targets = historyTriggers.map(idx => lotteryData[idx + g].nums);
+                                let baseNums = historyTriggers.map(idx => lotteryData[idx + C].nums[D]);
+                                let currentBase = lotteryData[triggerIdx + C].nums[D];
+
+                                if (patternType === '拖牌') {
+                                    if (!isTwoCode) {
+                                        for (let T = 1; T <= 39; T++) {
+                                            let c = calculateConsecutive(targets, (t) => t.includes(T));
+                                            if (c >= minHits) save(results, triggerIdx, pos, A, C, D, T, 0, g, c, currentBase, '拖牌');
+                                        }
+                                    } else {
+                                        for (let T1 = 1; T1 <= 39; T1++) {
+                                            for (let T2 = T1 + 1; T2 <= 39; T2++) {
+                                                let c = calculateConsecutive(targets, (t) => t.includes(T1) || t.includes(T2));
+                                                if (c >= minHits) save(results, triggerIdx, pos, A, C, D, T1, T2, g, c, currentBase, '拖牌');
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    for (let v1 = 1; v1 <= 38; v1++) {
+                                        if (!isTwoCode) {
+                                            let c = calculateConsecutive(targets, (t, i) => {
+                                                let p = (patternType==='加減')?wrap39(baseNums[i]+v1):wrap39(v1-baseNums[i]);
+                                                return t.includes(p);
+                                            });
+                                            if (c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, 0, g, c, currentBase, patternType);
+                                        } else {
+                                            for (let v2 = v1 + 1; v2 <= 39; v2++) {
+                                                let c = calculateConsecutive(targets, (t, i) => {
+                                                    let p1 = (patternType==='加減')?wrap39(baseNums[i]+v1):wrap39(v1-baseNums[i]);
+                                                    let p2 = (patternType==='加減')?wrap39(baseNums[i]+v2):wrap39(v2-baseNums[i]);
+                                                    return t.includes(p1) || t.includes(p2);
+                                                });
+                                                if (c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, v2, g, c, currentBase, patternType);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } // 結束 g 的掃描迴圈
             }
-        };
+            await new Promise(r => setTimeout(r, 1));
+        }
 
-        nextTask();
+        render(results);
+        btn.disabled = false;
+        document.getElementById('progressBox').style.display = "none";
+        status.innerText = `完成分析。找到 ${results.length} 組版路。`;
     }
 
-    function updateProgress(processedInTask) {
-        let combosInTask = calcTotalCombos(g_poolSize, g_currentTask.comboSize);
-        let currentPct = (processedInTask / combosInTask);
-        let overallPct = ((g_completedTasks + currentPct) / g_totalTasks * 100).toFixed(1);
+    function save(arr, tIdx, pos, A, C, D, v1, v2, G, c, curBase, type) {
+        let history = [];
+        let allIdx = []; 
+        for(let i=0; i<lotteryData.length; i++) if(lotteryData[i].nums[pos] === A) allIdx.push(i);
+        let hTriggers = allIdx.filter(idx => idx < tIdx && idx + G < lotteryData.length).reverse().slice(0, c).reverse();
         
-        document.getElementById('progressBar').style.width = overallPct + '%';
-        document.getElementById('progressText').innerText = `進度: ${overallPct}% | 累計搜尋: ${g_foundCount} 組版路`;
+        hTriggers.forEach(idx => {
+            let b = lotteryData[idx + C].nums[D];
+            let p = [];
+            if (type==='拖牌') { p = [v1, v2].filter(v=>v>0); }
+            else if (type==='加減') { p = [wrap39(b+v1), v2>0?wrap39(b+v2):0].filter(v=>v>0); }
+            else { p = [wrap39(v1-b), v2>0?wrap39(v2-b):0].filter(v=>v>0); }
+            history.push({ date: lotteryData[idx+G].date, pred: p, actual: lotteryData[idx+G].nums });
+        });
 
-        // --- 新增：進度推播通知 (每 20% 通知一次避免洗版) ---
-        let currentIntPct = Math.floor(overallPct);
-        if (currentIntPct > 0 && currentIntPct % 20 === 0 && currentIntPct !== g_lastNotifiedPct && currentIntPct < 100) {
-            g_lastNotifiedPct = currentIntPct;
-            if ("Notification" in window && Notification.permission === "granted") {
-                new Notification("版路搜尋進度", {
-                    body: `目前進度：${overallPct}%\n已搜尋：${g_foundCount} 組版路`,
-                    tag: "scan-progress" // 使用相同的 tag 可以覆蓋上一個通知，不會堆滿通知列
-                });
-            }
-        }
+        arr.push({ tIdx, pos: pos+1, A, C, D: D+1, v1, v2, G, hits: c, curBase, type, history, date: lotteryData[tIdx].date });
     }
 
-    function nextTask() {
-        if (g_tasks.length === 0) {
-            if (g_minMatches >= 3 && g_foundCount === 0 && g_autoExpandCount < 20) {
-                g_autoExpandCount++;
-                let skipR = getRange('skipMin', 'skipMax');
-                let newSkip = parseInt(skipR.max) + g_autoExpandCount;
-                let newTasks = buildTaskQueue(newSkip, newSkip);
-                g_tasks = g_tasks.concat(newTasks);
-                g_totalTasks += newTasks.length;
-                nextTask();
-                return;
-            }
-            if (g_worker) { g_worker.terminate(); g_worker = null; }
-            renderResults();
+    function render(results) {
+        const output = document.getElementById('outputArea');
+        if (results.length === 0) {
+            output.innerHTML = `<p style="text-align:center; padding:40px; color:#8e8e93;">查無符合條件版路。</p>`;
             return;
         }
-
-        g_currentTask = g_tasks.shift();
         
-        document.getElementById('progressTaskText').innerText = 
-            `背景搜尋中 [${g_completedTasks + 1}/${g_totalTasks}]：起始日期 ${g_currentTask.startDateStr} | 找 ${g_currentTask.comboSize} 球 | ${g_currentTask.windowSize} 期內開 | 間隔 ${g_currentTask.skipSize} 期`;
+        // 將結果依據連準期數由高至低排序
+        results.sort((a, b) => b.hits - a.hits);
 
-        // 將任務丟給 Worker 在背景全速執行
-        g_worker.postMessage({
-            task: g_currentTask,
-            data: g_data,
-            poolSize: g_poolSize,
-            minMatches: g_minMatches,
-            minCycles: g_minCycles
+        results.slice(0, 100).forEach(r => {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            
+            let predNums = [];
+            if (r.type === '拖牌') { predNums = [r.v1, r.v2].filter(v=>v>0); }
+            else if (r.type === '加減') { predNums = [wrap39(r.curBase+r.v1), r.v2>0?wrap39(r.curBase+r.v2):0].filter(v=>v>0); }
+            else { predNums = [wrap39(r.v1-r.curBase), r.v2>0?wrap39(r.v2-r.curBase):0].filter(v=>v>0); }
+
+            let cText = "";
+            if (r.C === 0) cText = "同期";
+            else if (r.C > 0) cText = `下 ${r.C} 期`;
+            else cText = `上 ${Math.abs(r.C)} 期`;
+
+            let formula = `[${r.type}] 第 ${r.pos} 支開 ${r.A}  ➔ ${cText}，第 ${r.D} 支`;
+            if (r.type==='加減') formula += ` +${r.v1}${r.v2>0?' +'+r.v2:''}`;
+            else if (r.type==='合值') formula += ` 合${r.v1}${r.v2>0?','+r.v2:''}`;
+            
+            // 介面明確顯示這組版路是開在下幾期
+            formula += ` ➔ 下 <strong style="color:#007aff;">${r.G}</strong> 期開出`;
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <span class="trigger-tag">${r.date} 觸發：第 ${r.pos} 支開 ${r.A.toString().padStart(2,'0')}</span>
+                    <span class="status-badge" style="${r.hits >= 7 ? 'background:#ff3b30;' : ''}">連準 ${r.hits}</span>
+                </div>
+                <div class="formula-box">${formula}</div>
+                <div class="pred-box">
+                    <span class="pred-label">預測號碼</span>
+                    <span class="pred-num">${predNums.map(n=>n.toString().padStart(2,'0')).join(' , ')}</span>
+                </div>
+                <div class="history-wrap">
+                    <table>
+                        <thead><tr><th>開獎日期</th><th>預測號碼</th><th>開獎結果</th></tr></thead>
+                        <tbody>
+                            ${r.history.map(h => `
+                                <tr>
+                                    <td>${h.date}</td>
+                                    <td style="color:#007aff; font-weight:bold;">${h.pred.map(p=>p.toString().padStart(2,'0')).join(',')}</td>
+                                    <td>${h.actual.map(n => h.pred.includes(n)?`<span class="ball hit">${n}</span>`:`<span class="ball">${n}</span>`).join('')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            output.appendChild(card);
         });
     }
-
-    function renderResults() {
-        let outputArea = document.getElementById('outputArea');
-        document.getElementById('progressBox').style.display = "none";
-        document.getElementById('startBtn').disabled = false;
-
-        // --- 新增：計算並儲存上一期命中的版路 ---
-        let lastDrawHitCount = 0;
-        let lastDrawDateStr = "";
-        let lastDrawHitPatterns = [];
-        
-        if (g_data.length > 0) {
-            let lastDraw = g_data[g_data.length - 1];
-            lastDrawDateStr = lastDraw.date;
-            let allPatterns = g_waitingPatterns.concat(g_restingPatterns);
-            for(let p of allPatterns) {
-                let matchCount = 0;
-                for(let i=0; i<p.combo.length; i++) {
-                    if(lastDraw.boolMap[p.combo[i]]) matchCount++;
-                }
-                if(matchCount >= g_minMatches) {
-                    lastDrawHitCount++;
-                    lastDrawHitPatterns.push(p);
-                }
-            }
-        }
-        // ----------------------------------------
-
-        function buildHTML(item) {
-            let formattedCombo = item.combo.map(n => n.toString().padStart(2, '0')).join(', ');
-            let t = item.taskInfo;
-            return `
-            <div class="result-item">
-                <div class="combo-header">
-                    <div class="combo-title">版路 [ ${formattedCombo} ]</div>
-                    ${item.status}
-                </div>
-                <div class="rule-tags">
-                    <span class="rule-tag">起始日期: ${t.startDateStr}</span>
-                    <span class="rule-tag">${t.windowSize} 期內開</span>
-                    <span class="rule-tag">間隔 ${t.skipSize} 期</span>
-                    <span class="rule-tag" style="background:#e8f8f5; color:#16a085;">連莊 ${item.hits} 次</span>
-                </div>
-                <div class="combo-history">${item.history.join('')}</div>
-            </div>`;
-        }
-
-        let html = `<p style="color:#27ae60; text-align:center; font-weight:bold; font-size:16px;">
-            搜尋完成！<br>共搜尋出 ${g_foundCount.toLocaleString()} 組版路！<br>
-            <span style="color:#e67e22; font-size:15px; margin-top:5px; display:inline-block;">上一期 (${lastDrawDateStr}) 共有 ${lastDrawHitCount} 組版路命中！</span>
-        </p>`;
-        
-        // --- 新增：上一期命中版路顯示區塊 ---
-        if (lastDrawHitPatterns.length > 0) {
-            html += `
-            <details class="resting-details" style="margin-bottom: 25px; border: 2px solid #e67e22; box-shadow: 0 2px 8px rgba(230, 126, 34, 0.2);">
-                <summary style="color: #d35400;">上一期 (${lastDrawDateStr}) 命中版路清單 - 共 ${lastDrawHitCount} 組</summary>
-                <div style="margin-top:15px;">
-            `;
-            lastDrawHitPatterns.sort((a, b) => b.hits - a.hits);
-            for(let p of lastDrawHitPatterns) html += buildHTML(p);
-            html += `</div></details>`;
-        }
-        // ------------------------------------
-
-        html += `<h3 style="color:#e84118; margin-top:0; border-bottom:2px solid #e84118; padding-bottom:5px;">下一期聽牌</h3>`;
-        if (g_waitingPatterns.length === 0) {
-            html += `<p style="color:#7f8c8d; text-align:center; padding: 20px 0;">在您設定的所有參數中，目前沒有「下期進場」的版路。</p>`;
-        } else {
-            g_waitingPatterns.sort((a, b) => b.hits - a.hits);
-            for(let p of g_waitingPatterns) html += buildHTML(p);
-        }
-
-        if (g_restingPatterns.length > 0) {
-            html += `
-            <details class="resting-details">
-                <summary>休息中的版路 - 已達標或等待間隔中</summary>
-                <div style="margin-top:15px;">
-            `;
-            g_restingPatterns.sort((a, b) => b.hits - a.hits);
-            for(let p of g_restingPatterns) html += buildHTML(p);
-            html += `</div></details>`;
-        }
-        outputArea.innerHTML = html;
-
-        // --- 新增：搜尋完成通知 ---
-        if ("Notification" in window && Notification.permission === "granted") {
-            new Notification("搜尋完成！", {
-                body: `共搜尋出 ${g_foundCount.toLocaleString()} 組版路！\n請返回網頁查看結果。`,
-                tag: "scan-progress" // 覆蓋掉最後一個進度通知
-            });
-        }
-    }
 </script>
+
 </body>
 </html>
