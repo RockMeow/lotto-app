@@ -77,7 +77,7 @@
 
     <div class="form-row">
         <div class="form-group">
-            <label>成立次數 <label style="display:inline; font-weight:normal; color:#007aff; cursor:pointer; font-size:0.75rem;"><input type="checkbox" id="exactMatch" style="vertical-align: middle; margin-left:8px;"> 僅顯示</label></label>
+            <label>成立次數 <label style="display:inline; font-weight:normal; color:#007aff; cursor:pointer; font-size:0.75rem;"><input type="checkbox" id="exactMatch" style="vertical-align: middle; margin-left:8px;"> 僅顯示剛好</label></label>
             <select id="minConsecutive">
                 <option value="3">準 3 進 4</option>
                 <option value="4">準 4 進 5</option>
@@ -184,7 +184,6 @@
 
                     for (let triggerIdx of pendingTriggers) {
                         
-                        // 【終極防卡死機制】精準放置，確保被跳躍時也能釋放記憶體
                         if (Date.now() - lastYieldTime > 30) {
                             await new Promise(r => setTimeout(r, 0));
                             lastYieldTime = Date.now();
@@ -203,20 +202,26 @@
                                 let baseNums = historyTriggers.map(idx => lotteryData[idx + C].nums[D]);
                                 let currentBase = lotteryData[triggerIdx + C].nums[D];
 
-                                // 【記憶體大躍進】完全移除匿名回呼函式，改為直接陣列驗證，徹底消滅導致卡頓的 GC 問題
                                 if (patternType === '拖牌') {
                                     if (!isTwoCode) {
                                         for (let T = 1; T <= maxNum; T++) {
                                             let c = 0;
                                             for (let i = 0; i < targets.length; i++) { if (targets[i].includes(T)) c++; else break; }
-                                            if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, T, 0, g, c, currentBase, '拖牌', historyTriggers);
+                                            if (exactMatch ? c === minHits : c >= minHits) {
+                                                save(results, triggerIdx, pos, A, C, D, T, 0, g, c, currentBase, '拖牌', historyTriggers);
+                                                // 【核心修正】：記憶體保護鎖，超過15000筆自動淘汰劣質資料，鎖死記憶體上限
+                                                if (results.length > 15000) { results.sort((a, b) => b.hits - a.hits); results.length = 10000; }
+                                            }
                                         }
                                     } else {
                                         for (let T1 = 1; T1 <= maxNum; T1++) {
                                             for (let T2 = T1 + 1; T2 <= maxNum; T2++) {
                                                 let c = 0;
                                                 for (let i = 0; i < targets.length; i++) { if (targets[i].includes(T1) || targets[i].includes(T2)) c++; else break; }
-                                                if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, T1, T2, g, c, currentBase, '拖牌', historyTriggers);
+                                                if (exactMatch ? c === minHits : c >= minHits) {
+                                                    save(results, triggerIdx, pos, A, C, D, T1, T2, g, c, currentBase, '拖牌', historyTriggers);
+                                                    if (results.length > 15000) { results.sort((a, b) => b.hits - a.hits); results.length = 10000; }
+                                                }
                                             }
                                         }
                                     }
@@ -228,7 +233,10 @@
                                                 let p = (patternType === '加減') ? wrapNum(baseNums[i] + v1) : wrapNum(v1 - baseNums[i]);
                                                 if (targets[i].includes(p)) c++; else break;
                                             }
-                                            if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, 0, g, c, currentBase, patternType, historyTriggers);
+                                            if (exactMatch ? c === minHits : c >= minHits) {
+                                                save(results, triggerIdx, pos, A, C, D, v1, 0, g, c, currentBase, patternType, historyTriggers);
+                                                if (results.length > 15000) { results.sort((a, b) => b.hits - a.hits); results.length = 10000; }
+                                            }
                                         } else {
                                             for (let v2 = v1 + 1; v2 <= maxNum; v2++) {
                                                 let c = 0;
@@ -237,7 +245,10 @@
                                                     let p2 = (patternType === '加減') ? wrapNum(baseNums[i] + v2) : wrapNum(v2 - baseNums[i]);
                                                     if (targets[i].includes(p1) || targets[i].includes(p2)) c++; else break;
                                                 }
-                                                if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, v2, g, c, currentBase, patternType, historyTriggers);
+                                                if (exactMatch ? c === minHits : c >= minHits) {
+                                                    save(results, triggerIdx, pos, A, C, D, v1, v2, g, c, currentBase, patternType, historyTriggers);
+                                                    if (results.length > 15000) { results.sort((a, b) => b.hits - a.hits); results.length = 10000; }
+                                                }
                                             }
                                         }
                                     }
@@ -252,7 +263,7 @@
 
         btn.disabled = false;
         document.getElementById('progressBox').style.display = "none";
-        status.innerText = `完成分析。找到 ${results.length} 組版路。`;
+        status.innerText = `完成分析。已保留最強 ${results.length} 組版路。`;
 
         // 將計算結果存入全域變數並排序，然後顯示第一頁
         globalResults = results;
@@ -425,9 +436,9 @@
             pageControls.style.border = '1px solid #e5e5ea';
 
             pageControls.innerHTML = `
-                <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''} style="width: auto; padding: 10px 20px; font-size: 0.9rem; background-color: ${currentPage === 1 ? '#aeaeb2' : '#007aff'}; border-radius: 8px;">上一頁</button>
+                <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''} style="width: auto; padding: 10px 20px; font-size: 0.9rem; background-color: ${currentPage === 1 ? '#aeaeb2' : '#007aff'}; color: #fff; border: none; border-radius: 8px; cursor: ${currentPage === 1 ? 'not-allowed' : 'pointer'};">上一頁</button>
                 <span style="font-size: 0.95rem; font-weight: bold; color: #333;">第 ${currentPage} 頁 / 共 ${totalPages} 頁</span>
-                <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''} style="width: auto; padding: 10px 20px; font-size: 0.9rem; background-color: ${currentPage === totalPages ? '#aeaeb2' : '#007aff'}; border-radius: 8px;">下一頁</button>
+                <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''} style="width: auto; padding: 10px 20px; font-size: 0.9rem; background-color: ${currentPage === totalPages ? '#aeaeb2' : '#007aff'}; color: #fff; border: none; border-radius: 8px; cursor: ${currentPage === totalPages ? 'not-allowed' : 'pointer'};">下一頁</button>
             `;
             output.appendChild(pageControls);
         }
