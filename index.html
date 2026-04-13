@@ -113,11 +113,6 @@
     let lotteryData = null;
     let maxNum = 39; 
 
-    // 分頁用全域變數
-    let globalResults = [];
-    let currentPage = 1;
-    const pageSize = 50;
-
     function wrapNum(v) {
         let res = v % maxNum;
         return res === 0 ? maxNum : (res < 0 ? res + maxNum : res);
@@ -170,7 +165,6 @@
         const N = lotteryData.length;
         let results = [];
         let completed = 0;
-        let lastYieldTime = Date.now(); // 效能優化：防卡死計時器
 
         for (let pos = 0; pos < 5; pos++) {
             for (let A = 1; A <= maxNum; A++) {
@@ -179,7 +173,6 @@
                 if (completed % 5 === 0 || completed === totalSteps) {
                     progBar.style.width = ((completed / totalSteps) * 100) + "%";
                     status.innerText = `分析中... ${Math.floor((completed / totalSteps) * 100)}%`;
-                    await new Promise(r => setTimeout(r, 0)); // 強制渲染，避免卡 97%
                 }
 
                 let allIdx = [];
@@ -200,12 +193,6 @@
                         let targets = historyTriggers.map(idx => lotteryData[idx + g].nums);
 
                         for (let C = -3; C <= 3; C++) {
-                            // 效能優化：若運算超過 40 毫秒，強制暫停 0 毫秒釋放記憶體與畫面渲染，保證 100% 順暢
-                            if (Date.now() - lastYieldTime > 40) {
-                                await new Promise(r => setTimeout(r, 0));
-                                lastYieldTime = Date.now();
-                            }
-
                             if (triggerIdx + C < 0 || triggerIdx + C >= N) continue; 
 
                             for (let D = 0; D < 5; D++) {
@@ -252,18 +239,13 @@
                     }
                 } 
             }
-            await new Promise(r => setTimeout(r, 0)); 
+            await new Promise(r => setTimeout(r, 1)); // 釋放瀏覽器渲染線程
         }
 
+        render(results);
         btn.disabled = false;
         document.getElementById('progressBox').style.display = "none";
         status.innerText = `完成分析。找到 ${results.length} 組版路。`;
-
-        // 將計算結果存入全域變數並排序，然後顯示第一頁
-        globalResults = results;
-        globalResults.sort((a, b) => b.hits - a.hits);
-        currentPage = 1;
-        renderPage();
     }
 
     // 效能優化 3：直接接收算好的 historyTriggers，移除耗時的底層全域陣列再掃描
@@ -283,34 +265,18 @@
         arr.push({ tIdx, pos: pos+1, A, C, D: D+1, v1, v2, G, hits: c, curBase, type, history, date: lotteryData[tIdx].date });
     }
 
-    // 分頁切換功能
-    function changePage(delta) {
-        const totalPages = Math.ceil(globalResults.length / pageSize);
-        let newPage = currentPage + delta;
-        if (newPage >= 1 && newPage <= totalPages) {
-            currentPage = newPage;
-            renderPage();
-            // 切換分頁後自動平滑滾動回結果區域的頂部
-            const outputArea = document.getElementById('outputArea');
-            window.scrollTo({ top: outputArea.offsetTop - 20, behavior: 'smooth' });
-        }
-    }
-
-    // 原本的 render 改為 renderPage 支援分頁功能
-    function renderPage() {
+    function render(results) {
         const output = document.getElementById('outputArea');
         output.innerHTML = ""; 
 
-        if (globalResults.length === 0) {
+        if (results.length === 0) {
             output.innerHTML = `<p style="text-align:center; padding:40px; color:#8e8e93;">查無符合條件版路。</p>`;
             return;
         }
 
-        // ==========================================
-        // 版路共伴重合驗證 (統計熱門預測號碼 - 全局資料)
-        // ==========================================
+        // 版路共伴重合驗證 (統計熱門預測號碼)
         let stats = {};
-        globalResults.forEach(r => {
+        results.forEach(r => {
             let predNums = [];
             if (r.type === '拖牌') { predNums = [r.v1, r.v2].filter(v=>v>0); }
             else if (r.type === '加減') { predNums = [wrapNum(r.curBase+r.v1), r.v2>0?wrapNum(r.curBase+r.v2):0].filter(v=>v>0); }
@@ -357,14 +323,9 @@
         summaryCard.innerHTML = sHtml;
         output.appendChild(summaryCard);
         
-        // ==========================================
-        // 渲染當前分頁的版路
-        // ==========================================
-        const startIndex = (currentPage - 1) * pageSize;
-        const endIndex = Math.min(startIndex + pageSize, globalResults.length);
-        const pageResults = globalResults.slice(startIndex, endIndex);
+        results.sort((a, b) => b.hits - a.hits);
 
-        pageResults.forEach(r => {
+        results.slice(0, 100).forEach(r => {
             const card = document.createElement('div');
             card.className = 'result-card';
             
@@ -417,29 +378,6 @@
             `;
             output.appendChild(card);
         });
-
-        // ==========================================
-        // 產生分頁控制按鈕
-        // ==========================================
-        const totalPages = Math.ceil(globalResults.length / pageSize);
-        if (totalPages > 1) {
-            let pageControls = document.createElement('div');
-            pageControls.style.display = 'flex';
-            pageControls.style.justifyContent = 'space-between';
-            pageControls.style.alignItems = 'center';
-            pageControls.style.marginTop = '20px';
-            pageControls.style.padding = '12px';
-            pageControls.style.backgroundColor = '#fff';
-            pageControls.style.borderRadius = '10px';
-            pageControls.style.border = '1px solid #e5e5ea';
-
-            pageControls.innerHTML = `
-                <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''} style="width: auto; padding: 10px 20px; font-size: 0.9rem; background-color: ${currentPage === 1 ? '#aeaeb2' : '#007aff'}; border-radius: 8px;">上一頁</button>
-                <span style="font-size: 0.95rem; font-weight: bold; color: #333;">第 ${currentPage} 頁 / 共 ${totalPages} 頁</span>
-                <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''} style="width: auto; padding: 10px 20px; font-size: 0.9rem; background-color: ${currentPage === totalPages ? '#aeaeb2' : '#007aff'}; border-radius: 8px;">下一頁</button>
-            `;
-            output.appendChild(pageControls);
-        }
     }
 </script>
 
