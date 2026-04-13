@@ -325,7 +325,7 @@
         
         results.sort((a, b) => b.hits - a.hits);
 
-        results.slice(0, 100).forEach(r => {
+        results.forEach(r => {
             const card = document.createElement('div');
             card.className = 'result-card';
             
