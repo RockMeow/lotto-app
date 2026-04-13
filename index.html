@@ -77,7 +77,7 @@
 
     <div class="form-row">
         <div class="form-group">
-            <label>成立次數 <label style="display:inline; font-weight:normal; color:#007aff; cursor:pointer; font-size:0.75rem;"><input type="checkbox" id="exactMatch" style="vertical-align: middle; margin-left:8px;"> 僅顯示</label></label>
+            <label>成立次數 <label style="display:inline; font-weight:normal; color:#007aff; cursor:pointer; font-size:0.75rem;"><input type="checkbox" id="exactMatch" style="vertical-align: middle; margin-left:8px;"> 僅顯示剛好</label></label>
             <select id="minConsecutive">
                 <option value="3">準 3 進 4</option>
                 <option value="4">準 4 進 5</option>
@@ -111,7 +111,7 @@
 
 <script>
     let lotteryData = null;
-    let maxNum = 39; // 動態最大球號
+    let maxNum = 39; 
 
     function wrapNum(v) {
         let res = v % maxNum;
@@ -148,7 +148,6 @@
         const output = document.getElementById('outputArea');
         const status = document.getElementById('statusMsg');
 
-        // 讀取當前彩種的最大球號
         const lotterySelect = document.getElementById('lotteryType');
         maxNum = parseInt(lotterySelect.options[lotterySelect.selectedIndex].dataset.max);
         const totalSteps = 5 * maxNum;
@@ -170,7 +169,8 @@
         for (let pos = 0; pos < 5; pos++) {
             for (let A = 1; A <= maxNum; A++) {
                 completed++;
-                if (completed % 10 === 0) {
+                // 提高 UI 更新頻率，讓進度條跑得更平順
+                if (completed % 5 === 0 || completed === totalSteps) {
                     progBar.style.width = ((completed / totalSteps) * 100) + "%";
                     status.innerText = `分析中... ${Math.floor((completed / totalSteps) * 100)}%`;
                 }
@@ -189,11 +189,14 @@
                         if (historyTriggers.length < minHits) continue;
                         historyTriggers.reverse(); 
 
+                        // 效能優化 1：提早抽出 targets 陣列，避免深層重複運算
+                        let targets = historyTriggers.map(idx => lotteryData[idx + g].nums);
+
                         for (let C = -3; C <= 3; C++) {
                             if (triggerIdx + C < 0 || triggerIdx + C >= N) continue; 
 
                             for (let D = 0; D < 5; D++) {
-                                let targets = historyTriggers.map(idx => lotteryData[idx + g].nums);
+                                // 效能優化 2：提早抽出 baseNums
                                 let baseNums = historyTriggers.map(idx => lotteryData[idx + C].nums[D]);
                                 let currentBase = lotteryData[triggerIdx + C].nums[D];
 
@@ -201,13 +204,13 @@
                                     if (!isTwoCode) {
                                         for (let T = 1; T <= maxNum; T++) {
                                             let c = calculateConsecutive(targets, (t) => t.includes(T));
-                                            if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, T, 0, g, c, currentBase, '拖牌');
+                                            if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, T, 0, g, c, currentBase, '拖牌', historyTriggers);
                                         }
                                     } else {
                                         for (let T1 = 1; T1 <= maxNum; T1++) {
                                             for (let T2 = T1 + 1; T2 <= maxNum; T2++) {
                                                 let c = calculateConsecutive(targets, (t) => t.includes(T1) || t.includes(T2));
-                                                if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, T1, T2, g, c, currentBase, '拖牌');
+                                                if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, T1, T2, g, c, currentBase, '拖牌', historyTriggers);
                                             }
                                         }
                                     }
@@ -218,7 +221,7 @@
                                                 let p = (patternType==='加減')?wrapNum(baseNums[i]+v1):wrapNum(v1-baseNums[i]);
                                                 return t.includes(p);
                                             });
-                                            if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, 0, g, c, currentBase, patternType);
+                                            if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, 0, g, c, currentBase, patternType, historyTriggers);
                                         } else {
                                             for (let v2 = v1 + 1; v2 <= maxNum; v2++) {
                                                 let c = calculateConsecutive(targets, (t, i) => {
@@ -226,7 +229,7 @@
                                                     let p2 = (patternType==='加減')?wrapNum(baseNums[i]+v2):wrapNum(v2-baseNums[i]);
                                                     return t.includes(p1) || t.includes(p2);
                                                 });
-                                                if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, v2, g, c, currentBase, patternType);
+                                                if (exactMatch ? c === minHits : c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, v2, g, c, currentBase, patternType, historyTriggers);
                                             }
                                         }
                                     }
@@ -236,7 +239,7 @@
                     }
                 } 
             }
-            await new Promise(r => setTimeout(r, 1));
+            await new Promise(r => setTimeout(r, 1)); // 釋放瀏覽器渲染線程
         }
 
         render(results);
@@ -245,11 +248,10 @@
         status.innerText = `完成分析。找到 ${results.length} 組版路。`;
     }
 
-    function save(arr, tIdx, pos, A, C, D, v1, v2, G, c, curBase, type) {
+    // 效能優化 3：直接接收算好的 historyTriggers，移除耗時的底層全域陣列再掃描
+    function save(arr, tIdx, pos, A, C, D, v1, v2, G, c, curBase, type, historyTriggers) {
         let history = [];
-        let allIdx = []; 
-        for(let i=0; i<lotteryData.length; i++) if(lotteryData[i].nums[pos] === A) allIdx.push(i);
-        let hTriggers = allIdx.filter(idx => idx < tIdx && idx + G < lotteryData.length).reverse().slice(0, c).reverse();
+        let hTriggers = historyTriggers.slice(0, c).reverse();
         
         hTriggers.forEach(idx => {
             let b = lotteryData[idx + C].nums[D];
@@ -265,16 +267,14 @@
 
     function render(results) {
         const output = document.getElementById('outputArea');
-        output.innerHTML = ""; // 清空
+        output.innerHTML = ""; 
 
         if (results.length === 0) {
             output.innerHTML = `<p style="text-align:center; padding:40px; color:#8e8e93;">查無符合條件版路。</p>`;
             return;
         }
 
-        // ==========================================
         // 版路共伴重合驗證 (統計熱門預測號碼)
-        // ==========================================
         let stats = {};
         results.forEach(r => {
             let predNums = [];
@@ -323,10 +323,9 @@
         summaryCard.innerHTML = sHtml;
         output.appendChild(summaryCard);
         
-        // 將個別版路結果依據連準期數由高至低排序
         results.sort((a, b) => b.hits - a.hits);
 
-        results.slice(0, 100).forEach(r => {
+        results.slice().forEach(r => {
             const card = document.createElement('div');
             card.className = 'result-card';
             
