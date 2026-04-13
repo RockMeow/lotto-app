@@ -81,9 +81,9 @@
             <select id="minConsecutive">
                 <option value="3">準 3 進 4</option>
                 <option value="4">準 4 進 5</option>
-                <option value="5" selected>準 5 進 6</option>
+                <option value="5">準 5 進 6</option>
                 <option value="6">準 6 進 7</option>
-                <option value="7">準 7 進 8</option>
+                <option value="7" selected>準 7 進 8</option>
                 <option value="8">準 8 進 9</option>
                 <option value="9">準 9 進 10</option>
                 <option value="10">準 10 進 11</option>
@@ -99,8 +99,57 @@
         </div>
     </div>
 
-    <button id="startBtn" onclick="runSearch()">開始分析</button>
+    <button id="startBtn" onclick="runSearch()">開始全域分析</button>
 
+    <hr style="border:0; border-top:1px solid #e5e5ea; margin: 20px 0;">
+    <details style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #d1d1d6;">
+        <summary style="font-weight: bold; color: #007aff; cursor: pointer; outline: none; font-size: 0.95rem;">➕ 進階功能：特定版路歷史回測驗證</summary>
+        <div style="margin-top: 15px; font-size: 0.85rem;">
+            <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
+                <div class="form-group">
+                    <label>觸發第幾支</label>
+                    <select id="v_pos" style="padding: 10px; border: 1px solid #d1d1d6; border-radius: 8px; box-sizing: border-box;"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+                </div>
+                <div class="form-group">
+                    <label>觸發號碼</label>
+                    <input type="number" id="v_A" value="5" style="padding: 10px; border: 1px solid #d1d1d6; border-radius: 8px; box-sizing: border-box; width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label>預測下幾期開</label>
+                    <input type="number" id="v_G" value="1" style="padding: 10px; border: 1px solid #d1d1d6; border-radius: 8px; box-sizing: border-box; width: 100%;">
+                </div>
+            </div>
+            <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+                <div class="form-group">
+                    <label>基準期數偏移</label>
+                    <select id="v_C" style="padding: 10px; border: 1px solid #d1d1d6; border-radius: 8px; box-sizing: border-box;">
+                        <option value="0">同期</option>
+                        <option value="-1">上 1 期</option><option value="-2">上 2 期</option><option value="-3">上 3 期</option>
+                        <option value="1">下 1 期</option><option value="2">下 2 期</option><option value="3">下 3 期</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>基準第幾支</label>
+                    <select id="v_D" style="padding: 10px; border: 1px solid #d1d1d6; border-radius: 8px; box-sizing: border-box;"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+                </div>
+            </div>
+            <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
+                <div class="form-group">
+                    <label>版路類型</label>
+                    <select id="v_type" style="padding: 10px; border: 1px solid #d1d1d6; border-radius: 8px; box-sizing: border-box;"><option value="加減">加減</option><option value="合值">合值</option><option value="拖牌">拖牌</option></select>
+                </div>
+                <div class="form-group">
+                    <label>運算值 1</label>
+                    <input type="number" id="v_1" value="1" style="padding: 10px; border: 1px solid #d1d1d6; border-radius: 8px; box-sizing: border-box; width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label>運算值 2 (單碼填0)</label>
+                    <input type="number" id="v_2" value="0" style="padding: 10px; border: 1px solid #d1d1d6; border-radius: 8px; box-sizing: border-box; width: 100%;">
+                </div>
+            </div>
+            <button onclick="runVerify()" style="background-color: #34c759; margin-top: 5px;">執行歷史回測</button>
+        </div>
+    </details>
     <div id="progressBox"><div id="progressBar"></div></div>
     <div id="statusMsg" style="text-align:center; font-size:0.75rem; color:#8e8e93; margin-top:5px;"></div>
 
@@ -291,7 +340,6 @@
             
             formula += ` ➔ 下 <strong style="color:#007aff;">${r.G}</strong> 期開出`;
 
-            // 將原本直接輸出的 div.history-wrap 包裝進 HTML5 的 details 標籤內實現摺疊功能
             card.innerHTML = `
                 <div class="card-header">
                     <span class="trigger-tag">${r.date} 觸發：第 ${r.pos} 支開 ${r.A.toString().padStart(2,'0')}</span>
@@ -325,6 +373,98 @@
             `;
             output.appendChild(card);
         });
+    }
+
+    // ======== 新增：版路驗證專屬執行腳本 ========
+    async function runVerify() {
+        if (!lotteryData && !await loadData()) return;
+
+        const output = document.getElementById('outputArea');
+        output.innerHTML = "<p style='text-align:center; color:#8e8e93; margin-top:40px;'>正在回測整段歷史數據...</p>";
+
+        const lotterySelect = document.getElementById('lotteryType');
+        maxNum = parseInt(lotterySelect.options[lotterySelect.selectedIndex].dataset.max);
+
+        let pos = parseInt(document.getElementById('v_pos').value) - 1;
+        let A = parseInt(document.getElementById('v_A').value);
+        let G = parseInt(document.getElementById('v_G').value);
+        let C = parseInt(document.getElementById('v_C').value);
+        let D = parseInt(document.getElementById('v_D').value) - 1;
+        let type = document.getElementById('v_type').value;
+        let v1 = parseInt(document.getElementById('v_1').value);
+        let v2 = parseInt(document.getElementById('v_2').value) || 0;
+
+        let totalTriggers = 0;
+        let totalHits = 0;
+        let verifyHistory = [];
+
+        for (let i = 0; i < lotteryData.length; i++) {
+            if (lotteryData[i].nums[pos] === A) {
+                if (i + G < lotteryData.length && i + C >= 0 && i + C < lotteryData.length) {
+                    totalTriggers++;
+                    let b = lotteryData[i + C].nums[D];
+                    let p = [];
+
+                    if (type === '拖牌') { 
+                        p = [v1, v2].filter(v=>v>0); 
+                    } else if (type === '加減') { 
+                        p = [wrapNum(b+v1), v2>0?wrapNum(b+v2):0].filter(v=>v>0); 
+                    } else { 
+                        p = [wrapNum(v1-b), v2>0?wrapNum(v2-b):0].filter(v=>v>0); 
+                    }
+
+                    let actual = lotteryData[i + G].nums;
+                    let isHit = p.some(num => actual.includes(num));
+                    if (isHit) totalHits++;
+
+                    verifyHistory.push({
+                        tDate: lotteryData[i].date,
+                        gDate: lotteryData[i+G].date,
+                        pred: p,
+                        actual: actual,
+                        hit: isHit
+                    });
+                }
+            }
+        }
+
+        verifyHistory.reverse(); // 將最新的紀錄排在最上面
+
+        let hitRate = totalTriggers > 0 ? ((totalHits / totalTriggers) * 100).toFixed(1) : 0;
+        let cText = C === 0 ? "同期" : (C > 0 ? `下 ${C} 期` : `上 ${Math.abs(C)} 期`);
+        let formula = `[${type}] 第 ${pos+1} 支開 ${A} ➔ ${cText}，第 ${D+1} 支`;
+        if (type==='加減') formula += ` +${v1}${v2>0?' +'+v2:''}`;
+        else if (type==='合值') formula += ` 合${v1}${v2>0?','+v2:''}`;
+        formula += ` ➔ 下 <strong style="color:#007aff;">${G}</strong> 期開出`;
+
+        output.innerHTML = `
+            <div class="result-card" style="border: 2px solid #34c759;">
+                <div class="card-header">
+                    <span class="trigger-tag" style="color:#34c759;">【版路回測報告】</span>
+                    <span class="status-badge" style="background:#34c759; font-size:0.85rem;">歷史勝率 ${hitRate}%</span>
+                </div>
+                <div class="formula-box">${formula}</div>
+                <div class="pred-box" style="background:#f4fbf5; border-color:#b7ebc3; padding: 15px;">
+                    <span style="color:#28a745; font-weight:bold; font-size:1.1rem;">歷史總觸發：${totalTriggers} 次 │ 成功命中：${totalHits} 次</span>
+                </div>
+                <div class="history-wrap" style="max-height: 500px; overflow-y: auto; margin-top: 15px;">
+                    <table>
+                        <thead><tr><th>觸發日期</th><th>開獎日期(下${G}期)</th><th>預測號碼</th><th>開獎結果</th></tr></thead>
+                        <tbody>
+                            ${verifyHistory.map(h => `
+                                <tr style="${h.hit ? 'background-color: #fff9f9;' : ''}">
+                                    <td style="color:#8e8e93;">${h.tDate}</td>
+                                    <td>${h.gDate}</td>
+                                    <td style="color:#007aff; font-weight:bold;">${h.pred.map(p=>p.toString().padStart(2,'0')).join(',')}</td>
+                                    <td>${h.actual.map(n => h.pred.includes(n)?'<span class="ball hit">'+n+'</span>':'<span class="ball">'+n+'</span>').join('')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        document.getElementById('statusMsg').innerText = `已完成特定版路驗證。總觸發 ${totalTriggers} 次。`;
     }
 </script>
 
