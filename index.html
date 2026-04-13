@@ -44,6 +44,19 @@
     <h1>版路分析工具</h1>
 
     <div class="form-row">
+        <div class="form-group" style="grid-column: span 2;">
+            <label>彩種選擇</label>
+            <select id="lotteryType" onchange="lotteryData = null;">
+                <option value="Fan_history_all_sorted.csv" data-max="39">加州天天樂</option>
+                <option value="Ghana_history_all_sorted.csv" data-max="39">迦納彩</option>
+                <option value="539_history_all_sorted.csv" data-max="39">今彩539</option>
+				<option value="649_history_all_sorted.csv" data-max="49">大樂透</option>
+				<option value="Six_history_all_sorted.csv" data-max="49">六合彩</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-row">
         <div class="form-group">
             <label>比對期數</label>
             <select id="periodG">
@@ -98,15 +111,17 @@
 
 <script>
     let lotteryData = null;
+    let maxNum = 39; // 動態最大球號
 
-    function wrap39(v) {
-        let res = v % 39;
-        return res === 0 ? 39 : (res < 0 ? res + 39 : res);
+    function wrapNum(v) {
+        let res = v % maxNum;
+        return res === 0 ? maxNum : (res < 0 ? res + maxNum : res);
     }
 
     async function loadData() {
         try {
-            const res = await fetch('./Fan_history_all_sorted.csv');
+            const fileName = document.getElementById('lotteryType').value;
+            const res = await fetch('./' + fileName);
             const text = await res.text();
             lotteryData = text.trim().split('\n').map(line => {
                 const parts = line.split(',');
@@ -133,7 +148,11 @@
         const output = document.getElementById('outputArea');
         const status = document.getElementById('statusMsg');
 
-        // 改為 maxG，代表最大掃描期數
+        // 讀取當前彩種的最大球號 (例如 539是39, 大樂透是49)
+        const lotterySelect = document.getElementById('lotteryType');
+        maxNum = parseInt(lotterySelect.options[lotterySelect.selectedIndex].dataset.max);
+        const totalSteps = 5 * maxNum;
+
         const maxG = parseInt(document.getElementById('periodG').value);
         const minHits = parseInt(document.getElementById('minConsecutive').value);
         const isTwoCode = (document.getElementById('codeCount').value === '2');
@@ -148,11 +167,11 @@
         let completed = 0;
 
         for (let pos = 0; pos < 5; pos++) {
-            for (let A = 1; A <= 39; A++) {
+            for (let A = 1; A <= maxNum; A++) {
                 completed++;
                 if (completed % 10 === 0) {
-                    progBar.style.width = ((completed / 195) * 100) + "%";
-                    status.innerText = `全域掃描中... ${Math.floor((completed / 195) * 100)}%`;
+                    progBar.style.width = ((completed / totalSteps) * 100) + "%";
+                    status.innerText = `全域掃描中... ${Math.floor((completed / totalSteps) * 100)}%`;
                 }
 
                 let allIdx = [];
@@ -161,7 +180,6 @@
                 }
                 if (allIdx.length === 0) continue;
 
-                // 【核心修改】：從 1 期一路掃描到使用者選擇的最高期數 (maxG)
                 for (let g = 1; g <= maxG; g++) {
                     let pendingTriggers = allIdx.filter(idx => idx + g >= N);
 
@@ -180,31 +198,31 @@
 
                                 if (patternType === '拖牌') {
                                     if (!isTwoCode) {
-                                        for (let T = 1; T <= 39; T++) {
+                                        for (let T = 1; T <= maxNum; T++) {
                                             let c = calculateConsecutive(targets, (t) => t.includes(T));
                                             if (c >= minHits) save(results, triggerIdx, pos, A, C, D, T, 0, g, c, currentBase, '拖牌');
                                         }
                                     } else {
-                                        for (let T1 = 1; T1 <= 39; T1++) {
-                                            for (let T2 = T1 + 1; T2 <= 39; T2++) {
+                                        for (let T1 = 1; T1 <= maxNum; T1++) {
+                                            for (let T2 = T1 + 1; T2 <= maxNum; T2++) {
                                                 let c = calculateConsecutive(targets, (t) => t.includes(T1) || t.includes(T2));
                                                 if (c >= minHits) save(results, triggerIdx, pos, A, C, D, T1, T2, g, c, currentBase, '拖牌');
                                             }
                                         }
                                     }
                                 } else {
-                                    for (let v1 = 1; v1 <= 38; v1++) {
+                                    for (let v1 = 1; v1 <= maxNum - 1; v1++) {
                                         if (!isTwoCode) {
                                             let c = calculateConsecutive(targets, (t, i) => {
-                                                let p = (patternType==='加減')?wrap39(baseNums[i]+v1):wrap39(v1-baseNums[i]);
+                                                let p = (patternType==='加減')?wrapNum(baseNums[i]+v1):wrapNum(v1-baseNums[i]);
                                                 return t.includes(p);
                                             });
                                             if (c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, 0, g, c, currentBase, patternType);
                                         } else {
-                                            for (let v2 = v1 + 1; v2 <= 39; v2++) {
+                                            for (let v2 = v1 + 1; v2 <= maxNum; v2++) {
                                                 let c = calculateConsecutive(targets, (t, i) => {
-                                                    let p1 = (patternType==='加減')?wrap39(baseNums[i]+v1):wrap39(v1-baseNums[i]);
-                                                    let p2 = (patternType==='加減')?wrap39(baseNums[i]+v2):wrap39(v2-baseNums[i]);
+                                                    let p1 = (patternType==='加減')?wrapNum(baseNums[i]+v1):wrapNum(v1-baseNums[i]);
+                                                    let p2 = (patternType==='加減')?wrapNum(baseNums[i]+v2):wrapNum(v2-baseNums[i]);
                                                     return t.includes(p1) || t.includes(p2);
                                                 });
                                                 if (c >= minHits) save(results, triggerIdx, pos, A, C, D, v1, v2, g, c, currentBase, patternType);
@@ -215,7 +233,7 @@
                             }
                         }
                     }
-                } // 結束 g 的掃描迴圈
+                } 
             }
             await new Promise(r => setTimeout(r, 1));
         }
@@ -236,8 +254,8 @@
             let b = lotteryData[idx + C].nums[D];
             let p = [];
             if (type==='拖牌') { p = [v1, v2].filter(v=>v>0); }
-            else if (type==='加減') { p = [wrap39(b+v1), v2>0?wrap39(b+v2):0].filter(v=>v>0); }
-            else { p = [wrap39(v1-b), v2>0?wrap39(v2-b):0].filter(v=>v>0); }
+            else if (type==='加減') { p = [wrapNum(b+v1), v2>0?wrapNum(b+v2):0].filter(v=>v>0); }
+            else { p = [wrapNum(v1-b), v2>0?wrapNum(v2-b):0].filter(v=>v>0); }
             history.push({ date: lotteryData[idx+G].date, pred: p, actual: lotteryData[idx+G].nums });
         });
 
@@ -251,7 +269,6 @@
             return;
         }
         
-        // 將結果依據連準期數由高至低排序
         results.sort((a, b) => b.hits - a.hits);
 
         results.slice(0, 100).forEach(r => {
@@ -260,8 +277,8 @@
             
             let predNums = [];
             if (r.type === '拖牌') { predNums = [r.v1, r.v2].filter(v=>v>0); }
-            else if (r.type === '加減') { predNums = [wrap39(r.curBase+r.v1), r.v2>0?wrap39(r.curBase+r.v2):0].filter(v=>v>0); }
-            else { predNums = [wrap39(r.v1-r.curBase), r.v2>0?wrap39(r.v2-r.curBase):0].filter(v=>v>0); }
+            else if (r.type === '加減') { predNums = [wrapNum(r.curBase+r.v1), r.v2>0?wrapNum(r.curBase+r.v2):0].filter(v=>v>0); }
+            else { predNums = [wrapNum(r.v1-r.curBase), r.v2>0?wrapNum(r.v2-r.curBase):0].filter(v=>v>0); }
 
             let cText = "";
             if (r.C === 0) cText = "同期";
@@ -272,7 +289,6 @@
             if (r.type==='加減') formula += ` +${r.v1}${r.v2>0?' +'+r.v2:''}`;
             else if (r.type==='合值') formula += ` 合${r.v1}${r.v2>0?','+r.v2:''}`;
             
-            // 介面明確顯示這組版路是開在下幾期
             formula += ` ➔ 下 <strong style="color:#007aff;">${r.G}</strong> 期開出`;
 
             card.innerHTML = `
