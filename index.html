@@ -50,8 +50,8 @@
                 <option value="Fan_history_all_sorted.csv" data-max="39">加州天天樂</option>
                 <option value="Ghana_history_all_sorted.csv" data-max="39">迦納彩</option>
                 <option value="539_history_all_sorted.csv" data-max="39">今彩539</option>
-				<option value="649_history_all_sorted.csv" data-max="49">大樂透</option>
-				<option value="Six_history_all_sorted.csv" data-max="49">六合彩</option>
+                <option value="649_history_all_sorted.csv" data-max="49">大樂透</option>
+                <option value="Six_history_all_sorted.csv" data-max="49">六合彩</option>
             </select>
         </div>
     </div>
@@ -171,7 +171,7 @@
                 completed++;
                 if (completed % 10 === 0) {
                     progBar.style.width = ((completed / totalSteps) * 100) + "%";
-                    status.innerText = `全域掃描中... ${Math.floor((completed / totalSteps) * 100)}%`;
+                    status.innerText = `分析中... ${Math.floor((completed / totalSteps) * 100)}%`;
                 }
 
                 let allIdx = [];
@@ -291,6 +291,7 @@
             
             formula += ` ➔ 下 <strong style="color:#007aff;">${r.G}</strong> 期開出`;
 
+            // 將原本直接輸出的 div.history-wrap 包裝進 HTML5 的 details 標籤內實現摺疊功能
             card.innerHTML = `
                 <div class="card-header">
                     <span class="trigger-tag">${r.date} 觸發：第 ${r.pos} 支開 ${r.A.toString().padStart(2,'0')}</span>
@@ -301,20 +302,26 @@
                     <span class="pred-label">本期 預測</span>
                     <span class="pred-num">${predNums.map(n=>n.toString().padStart(2,'0')).join(' , ')}</span>
                 </div>
-                <div class="history-wrap">
-                    <table>
-                        <thead><tr><th>開獎日期</th><th>預測號碼</th><th>開獎結果</th></tr></thead>
-                        <tbody>
-                            ${r.history.map(h => `
-                                <tr>
-                                    <td>${h.date}</td>
-                                    <td style="color:#007aff; font-weight:bold;">${h.pred.map(p=>p.toString().padStart(2,'0')).join(',')}</td>
-                                    <td>${h.actual.map(n => h.pred.includes(n)?`<span class="ball hit">${n}</span>`:`<span class="ball">${n}</span>`).join('')}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
+                
+                <details>
+                    <summary style="cursor:pointer; color:#007aff; font-size:0.85rem; font-weight:bold; margin-top:10px; outline:none;">
+                        查看命中紀錄
+                    </summary>
+                    <div class="history-wrap">
+                        <table>
+                            <thead><tr><th>開獎日期</th><th>預測號碼</th><th>開獎結果</th></tr></thead>
+                            <tbody>
+                                ${r.history.map(h => `
+                                    <tr>
+                                        <td>${h.date}</td>
+                                        <td style="color:#007aff; font-weight:bold;">${h.pred.map(p=>p.toString().padStart(2,'0')).join(',')}</td>
+                                        <td>${h.actual.map(n => h.pred.includes(n)?`<span class="ball hit">${n}</span>`:`<span class="ball">${n}</span>`).join('')}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
             `;
             output.appendChild(card);
         });
