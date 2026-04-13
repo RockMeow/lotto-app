@@ -77,7 +77,7 @@
 
     <div class="form-row">
         <div class="form-group">
-            <label>成立次數 <label style="display:inline; font-weight:normal; color:#007aff; cursor:pointer; font-size:0.75rem;"><input type="checkbox" id="exactMatch" style="vertical-align: middle; margin-left:8px;"> 僅顯示剛好</label></label>
+            <label>成立次數 <label style="display:inline; font-weight:normal; color:#007aff; cursor:pointer; font-size:0.75rem;"><input type="checkbox" id="exactMatch" style="vertical-align: middle; margin-left:8px;"> 僅顯示</label></label>
             <select id="minConsecutive">
                 <option value="3">準 3 進 4</option>
                 <option value="4">準 4 進 5</option>
@@ -184,27 +184,27 @@
                 if (allIdx.length === 0) continue;
 
                 for (let g = 1; g <= maxG; g++) {
-                    for (let pIdx = allIdx.length - 1; pIdx >= 0; pIdx--) {
-                        let triggerIdx = allIdx[pIdx];
-                        if (triggerIdx + g < N) break; // 超過觸發範圍
+                    let pendingTriggers = allIdx.filter(idx => idx + g >= N);
 
-                        // 防卡死引擎
+                    for (let triggerIdx of pendingTriggers) {
+                        
+                        // 【終極防卡死機制】精準放置，確保被跳躍時也能釋放記憶體
                         if (Date.now() - lastYieldTime > 30) {
                             await new Promise(r => setTimeout(r, 0));
                             lastYieldTime = Date.now();
                         }
 
-                        // 零陣列配置：只抓取索引指標，消滅記憶體浪費
-                        let hTriggers = [];
-                        for (let h = pIdx - 1; h >= 0; h--) {
-                            if (allIdx[h] + g < N) hTriggers.push(allIdx[h]);
-                        }
-                        if (hTriggers.length < minHits) continue;
+                        let historyTriggers = allIdx.filter(idx => idx < triggerIdx && idx + g < N);
+                        if (historyTriggers.length < minHits) continue;
+                        historyTriggers.reverse(); 
+
+                        let targets = historyTriggers.map(idx => lotteryData[idx + g].nums);
 
                         for (let C = -3; C <= 3; C++) {
                             if (triggerIdx + C < 0 || triggerIdx + C >= N) continue; 
 
                             for (let D = 0; D < 5; D++) {
+                                let baseNums = historyTriggers.map(idx => lotteryData[idx + C].nums[D]);
                                 let currentBase = lotteryData[triggerIdx + C].nums[D];
 
                                 // 核心寫入函數，內建垃圾過濾器
@@ -223,17 +223,14 @@
                                     if (!isTwoCode) {
                                         for (let T = 1; T <= maxNum; T++) {
                                             let c = 0;
-                                            for (let i = 0; i < hTriggers.length; i++) { if (lotteryData[hTriggers[i] + g].nums.includes(T)) c++; else break; }
+                                            for (let i = 0; i < targets.length; i++) { if (targets[i].includes(T)) c++; else break; }
                                             addResult(T, 0, c);
                                         }
                                     } else {
                                         for (let T1 = 1; T1 <= maxNum; T1++) {
                                             for (let T2 = T1 + 1; T2 <= maxNum; T2++) {
                                                 let c = 0;
-                                                for (let i = 0; i < hTriggers.length; i++) {
-                                                    let tg = lotteryData[hTriggers[i] + g].nums;
-                                                    if (tg.includes(T1) || tg.includes(T2)) c++; else break;
-                                                }
+                                                for (let i = 0; i < targets.length; i++) { if (targets[i].includes(T1) || targets[i].includes(T2)) c++; else break; }
                                                 addResult(T1, T2, c);
                                             }
                                         }
@@ -242,22 +239,18 @@
                                     for (let v1 = 1; v1 <= maxNum - 1; v1++) {
                                         if (!isTwoCode) {
                                             let c = 0;
-                                            for (let i = 0; i < hTriggers.length; i++) {
-                                                let hIdx = hTriggers[i];
-                                                let p = (patternType === '加減') ? wrapNum(lotteryData[hIdx + C].nums[D] + v1) : wrapNum(v1 - lotteryData[hIdx + C].nums[D]);
-                                                if (lotteryData[hIdx + g].nums.includes(p)) c++; else break;
+                                            for (let i = 0; i < targets.length; i++) {
+                                                let p = (patternType === '加減') ? wrapNum(baseNums[i] + v1) : wrapNum(v1 - baseNums[i]);
+                                                if (targets[i].includes(p)) c++; else break;
                                             }
                                             addResult(v1, 0, c);
                                         } else {
                                             for (let v2 = v1 + 1; v2 <= maxNum; v2++) {
                                                 let c = 0;
-                                                for (let i = 0; i < hTriggers.length; i++) {
-                                                    let hIdx = hTriggers[i];
-                                                    let bNum = lotteryData[hIdx + C].nums[D];
-                                                    let p1 = (patternType === '加減') ? wrapNum(bNum + v1) : wrapNum(v1 - bNum);
-                                                    let p2 = (patternType === '加減') ? wrapNum(bNum + v2) : wrapNum(v2 - bNum);
-                                                    let tg = lotteryData[hIdx + g].nums;
-                                                    if (tg.includes(p1) || tg.includes(p2)) c++; else break;
+                                                for (let i = 0; i < targets.length; i++) {
+                                                    let p1 = (patternType === '加減') ? wrapNum(baseNums[i] + v1) : wrapNum(v1 - baseNums[i]);
+                                                    let p2 = (patternType === '加減') ? wrapNum(baseNums[i] + v2) : wrapNum(v2 - baseNums[i]);
+                                                    if (targets[i].includes(p1) || targets[i].includes(p2)) c++; else break;
                                                 }
                                                 addResult(v1, v2, c);
                                             }
@@ -274,7 +267,7 @@
 
         btn.disabled = false;
         document.getElementById('progressBox').style.display = "none";
-        status.innerText = `完成分析。為保證效能，已為您保留最強的 ${results.length} 組版路。`;
+        status.innerText = `分析完成。已找到 ${results.length} 個版路。`;
 
         globalResults = results;
         globalResults.sort((a, b) => b.hits - a.hits);
@@ -305,7 +298,7 @@
         }
 
         // ==========================================
-        // 版路共伴重合驗證 (統計熱門預測號碼 - 全局資料)
+        // 版路共伴重合驗證 (統計熱門預測號碼 - 依下N期分組)
         // ==========================================
         let stats = {};
         globalResults.forEach(r => {
@@ -314,9 +307,10 @@
             else if (r.type === '加減') { predNums = [wrapNum(r.curBase+r.v1), r.v2>0?wrapNum(r.curBase+r.v2):0].filter(v=>v>0); }
             else { predNums = [wrapNum(r.v1-r.curBase), r.v2>0?wrapNum(r.v2-r.curBase):0].filter(v=>v>0); }
 
+            if (!stats[r.G]) stats[r.G] = {};
             predNums.forEach(n => {
-                if (!stats[n]) stats[n] = 0;
-                stats[n] += 1; 
+                if (!stats[r.G][n]) stats[r.G][n] = 0;
+                stats[r.G][n] += 1; 
             });
         });
 
@@ -328,27 +322,28 @@
 
         let sHtml = `
             <div class="card-header" style="border-bottom: 1px solid #ffe8e6; padding-bottom: 8px; margin-bottom: 10px;">
-                <span class="trigger-tag" style="color:#ff3b30; font-size:1rem;">多重版路重合統計 (整體高機率號碼)</span>
+                <span class="trigger-tag" style="color:#ff3b30; font-size:1rem;">多重版路重合統計 (高機率號碼)</span>
             </div>
             <div style="font-size: 0.85rem; color: #333; line-height: 1.8;">
         `;
 
-        let sortedNums = Object.entries(stats).sort((a, b) => b[1] - a[1]);
-        let highestCount = sortedNums.length > 0 ? sortedNums[0][1] : 0;
-        
-        if (sortedNums.length > 0) {
-            sHtml += `<div style="margin-bottom: 10px;">`;
-            sortedNums.slice(0, 20).forEach(([n, count]) => {
-                let isTop = count >= highestCount && count > 1; 
-                let style = isTop ? `color:#fff; background:#ff3b30; padding:2px 6px; border-radius:4px; font-weight:bold;` : `color:#ff3b30; font-weight:bold;`;
-                sHtml += `<span style="display:inline-block; margin-right: 12px; margin-bottom: 4px;">
-                            <span style="${style}">${n.padStart(2,'0')}</span> 
-                            <span style="color:#8e8e93; font-size:0.75rem;">(${count}組版路)</span>
-                          </span>`;
-            });
-            sHtml += `</div>`;
-        }
-        
+        Object.keys(stats).sort((a,b)=>a-b).forEach(g => {
+            let sortedNums = Object.entries(stats[g]).sort((a, b) => b[1] - a[1]);
+            let highestCount = sortedNums.length > 0 ? sortedNums[0][1] : 0;
+            
+            if (sortedNums.length > 0) {
+                sHtml += `<div style="margin-bottom: 10px;"><strong style="color:#1c1c1e;">下 ${g} 期預測統計：</strong><br>`;
+                sortedNums.slice(0, 15).forEach(([n, count]) => {
+                    let isTop = count >= highestCount && count > 1; 
+                    let style = isTop ? `color:#fff; background:#ff3b30; padding:2px 6px; border-radius:4px; font-weight:bold;` : `color:#ff3b30; font-weight:bold;`;
+                    sHtml += `<span style="display:inline-block; margin-right: 12px; margin-bottom: 4px;">
+                                <span style="${style}">${n.padStart(2,'0')}</span> 
+                                <span style="color:#8e8e93; font-size:0.75rem;">(${count}組版路)</span>
+                              </span>`;
+                });
+                sHtml += `</div>`;
+            }
+        });
         sHtml += `</div>`;
         summaryCard.innerHTML = sHtml;
         output.appendChild(summaryCard);
