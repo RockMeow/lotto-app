@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>綜合數據分析工具箱</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* ================= 全域與頁籤樣式 ================= */
+        body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ================= 工具一與工具二 CSS ================= */
+        .ball-input::-webkit-outer-spin-button,
+        .ball-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .ball-input { -moz-appearance: textfield; }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+        
+        pre.json-output {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-slate-800 p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto flex flex-wrap gap-2 sm:gap-4 justify-center">
+            <button onclick="switchTab(1)" id="btn-tab1" class="px-5 py-2.5 rounded-lg font-bold text-white bg-blue-600 shadow-md transition-all">立柱撞柱工具</button>
+            <button onclick="switchTab(2)" id="btn-tab2" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">複合分析工具</button>
+            <button onclick="switchTab(3)" id="btn-tab3" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">尾數拖牌工具</button>
+            <button onclick="switchTab(4)" id="btn-tab4" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">柱碰版路工具</button>
+        </div>
+    </div>
+
+    <div id="tab1" class="tab-content active">
+        <div id="root-tool1"></div>
+    </div>
+
+    <div id="tab2" class="tab-content">
+        <div id="root-tool2"></div>
+    </div>
+
+    <div id="tab3" class="tab-content">
+        <div class="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+            <div class="bg-red-600 rounded-t-2xl p-6 sm:p-8 text-white shadow-xl border-b-4 border-red-500">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h1 class="text-3xl font-black flex items-center gap-3">
+                            <i data-lucide="scan-line" class="w-8 h-8"></i>
+                            聽牌版路掃描工具
+                        </h1>
+                        <p class="mt-2 text-red-100 font-medium opacity-90">匯入歷史開獎數據，自動回測掃描最高勝率的尾數拖牌版路。</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white shadow-xl p-6 sm:p-8 border border-slate-200 rounded-b-2xl">
+                
+                <div class="mb-8 p-6 bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200 pb-3">
+                        <i data-lucide="settings" class="w-5 h-5 text-red-600"></i>
+                        分析條件設定
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">1. 選擇彩種</label>
+                            <select id="lotteryType" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-red-200 focus:border-red-500 outline-none transition-all shadow-sm">
+                                <option value="39">天天樂 / 539 / 迦納彩</option>
+                                <option value="49">大樂透 / 六合彩</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">2. 掃描期數 (起~迄)</label>
+                            <div class="flex gap-2 items-center">
+                                <input type="number" id="minPeriod" value="1" min="1" max="10" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-red-200 focus:border-red-500 outline-none shadow-sm transition-all">
+                                <span class="text-slate-400 font-bold">~</span>
+                                <input type="number" id="maxPeriod" value="2" min="1" max="10" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-red-200 focus:border-red-500 outline-none shadow-sm transition-all">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">3. 歷史最少出現次數</label>
+                            <input type="number" id="minOccur" value="15" min="5" max="50" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-red-200 focus:border-red-500 outline-none shadow-sm transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">4. 最低歷史勝率門檻 (%)</label>
+                            <input type="number" id="minRate" value="90" min="50" max="100" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-red-200 focus:border-red-500 outline-none shadow-sm transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-8 p-6 bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200 pb-3">
+                        <i data-lucide="database" class="w-5 h-5 text-red-600"></i>
+                        5. 匯入歷史開獎資料庫 (CSV)
+                    </h2>
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex-1">
+                            <textarea id="csvTextTab3" placeholder="直接在此貼上 CSV 數據，或使用右側按鈕上傳檔案..." class="w-full h-32 p-3 border-2 border-slate-200 rounded-xl text-sm font-mono text-slate-600 focus:border-red-500 focus:ring-0 outline-none transition-colors shadow-inner"></textarea>
+                        </div>
+                        <div class="w-full md:w-64 flex flex-col justify-center gap-3">
+                            <input type="file" id="csvFile" accept=".csv" class="hidden" onchange="document.getElementById('csvFileNameTab3').innerText = this.files[0] ? this.files[0].name : '未選擇檔案'; document.getElementById('csvFileNameTab3').classList.add('text-red-600')">
+                            <button onclick="document.getElementById('csvFile').click()" class="w-full py-3 px-4 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl border border-slate-300 transition-colors flex items-center justify-center gap-2 shadow-sm">
+                                <i data-lucide="upload-cloud" class="w-5 h-5"></i> 選擇檔案
+                            </button>
+                            <div id="csvFileNameTab3" class="text-xs font-bold text-center text-slate-400 truncate">未選擇檔案</div>
+                            <button onclick="runAnalysis()" class="w-full py-4 px-6 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl shadow-md transition-transform transform hover:-translate-y-1 flex items-center justify-center gap-2 text-lg mt-2">
+                                <i data-lucide="play" class="w-5 h-5 fill-current"></i> 開始掃描
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="resultsArea" style="display: none;" class="mt-8 border-t-4 border-dashed border-red-100 pt-8 animate-fade-in-up">
+                    <h2 id="statusMsg" class="text-xl font-black text-red-600 mb-6 flex items-center gap-2"></h2>
+                    <div id="cardsContainer" class="grid grid-cols-1 gap-6"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab4" class="tab-content">
+        <div class="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+            <div class="bg-teal-600 rounded-t-2xl p-6 sm:p-8 text-white shadow-xl border-b-4 border-teal-500">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h1 class="text-3xl font-black flex items-center gap-3">
+                            <i data-lucide="network" class="w-8 h-8"></i>
+                            柱碰版路分析工具
+                        </h1>
+                        <p class="mt-2 text-teal-100 font-medium opacity-90">輸入或自訂立柱組合，自動回測歷史跨柱連碰命中狀況。</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white shadow-xl p-6 sm:p-8 border border-slate-200 rounded-b-2xl">
+                
+                <div class="mb-8 p-6 bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200 pb-3">
+                        <i data-lucide="database" class="w-5 h-5 text-teal-600"></i>
+                        1. 貼上歷史 CSV 數據
+                    </h2>
+                    <textarea id="csvDataTab4" placeholder="Date,N1,N2,N3,N4,N5&#10;01/01,13,14,24,25,35..." class="w-full h-32 p-3 border-2 border-slate-200 rounded-xl text-sm font-mono text-slate-600 focus:border-teal-500 focus:ring-0 outline-none transition-colors shadow-inner"></textarea>
+                </div>
+
+                <div class="mb-8 p-6 bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200 pb-3">
+                        <i data-lucide="settings-2" class="w-5 h-5 text-teal-600"></i>
+                        2. 分析條件設定
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">篩選模式</label>
+                            <select id="filterTypeTab4" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none shadow-sm transition-all">
+                                <option value="date">每月日期 (1號、2號...)</option>
+                                <option value="draw">每月期數 (第1期、第2期...)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">起始 (期/日)</label>
+                            <input type="number" id="startRangeTab4" value="18" min="1" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none shadow-sm transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">結束 (期/日)</label>
+                            <input type="number" id="endRangeTab4" value="20" min="1" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none shadow-sm transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">幾柱碰？</label>
+                            <select id="pillarCountTab4" onchange="generatePillarInputsTab4()" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none shadow-sm transition-all">
+                                <option value="2">2 柱</option>
+                                <option value="3" selected>3 柱</option>
+                                <option value="4">4 柱</option>
+                                <option value="5">5 柱</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <i data-lucide="layout-grid" class="w-5 h-5 text-teal-600"></i>
+                        3. 立柱號碼設定
+                    </h2>
+                    <div id="pillars-containerTab4" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"></div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button onclick="autoFindBestNumbersTab4()" class="flex-1 py-4 px-6 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl shadow-md transition-transform transform hover:-translate-y-1 flex items-center justify-center gap-2 text-lg">
+                            <i data-lucide="sparkles" class="w-5 h-5 fill-current"></i> 自動搜尋高頻號碼
+                        </button>
+                        <button onclick="analyzeDataTab4()" class="flex-1 py-4 px-6 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl shadow-md transition-transform transform hover:-translate-y-1 flex items-center justify-center gap-2 text-lg">
+                            <i data-lucide="activity" class="w-5 h-5"></i> 手動驗證版路
+                        </button>
+                    </div>
+                </div>
+
+                <div id="resultAreaTab4" class="mt-8 border-t-4 border-dashed border-teal-100 pt-8 animate-fade-in-up" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabIndex) {
+            // 隱藏所有內容
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // 重置所有按鈕樣式
+            document.querySelectorAll('[id^="btn-tab"]').forEach(el => {
+                el.className = "px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all";
+            });
+            
+            // 顯示選中內容與套用按鈕樣式
+            document.getElementById('tab' + tabIndex).classList.add('active');
+            let activeBtn = document.getElementById('btn-tab' + tabIndex);
+            
+            // 給不同的工具配不同的主題色亮點
+            if(tabIndex === 1) activeBtn.className = "px-5 py-2.5 rounded-lg font-bold text-white bg-blue-600 shadow-md transition-all";
+            if(tabIndex === 2) activeBtn.className = "px-5 py-2.5 rounded-lg font-bold text-white bg-indigo-600 shadow-md transition-all";
+            if(tabIndex === 3) activeBtn.className = "px-5 py-2.5 rounded-lg font-bold text-white bg-red-600 shadow-md transition-all";
+            if(tabIndex === 4) activeBtn.className = "px-5 py-2.5 rounded-lg font-bold text-white bg-teal-600 shadow-md transition-all";
+        }
+    </script>
+
+    <script type="text/babel">
+        {
+            const { useState, useEffect, useMemo, useRef } = React;
+
+            const defaultCSV = ``;
+
+            const App = () => {
+                const [csvText, setCsvText] = useState(defaultCSV);
+                const [historyData, setHistoryData] = useState([]);
+                const [colCount, setColCount] = useState(3);
+                const [columns, setColumns] = useState(['', '', '', '', '', '']);
+                const [unitPrice, setUnitPrice] = useState(1);
+                const fileInputRef = useRef(null);
+
+                useEffect(() => {
+                    const lines = csvText.trim().split('\n');
+                    const parsedData = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const parts = lines[i].split(',').map(s => s.trim());
+                        if (parts.length >= 6) {
+                            parsedData.push({
+                                date: parts[0],
+                                nums: parts.slice(1, 6).map(Number).filter(n => !isNaN(n))
+                            });
+                        }
+                    }
+                    setHistoryData(parsedData);
+                }, [csvText]);
+
+                const handleFileUpload = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            setCsvText(event.target.result);
+                        };
+                        reader.readAsText(file);
+                    }
+                };
+
+                const handleColChange = (index, val) => {
+                    const newCols = [...columns];
+                    newCols[index] = val;
+                    setColumns(newCols);
+                };
+
+                const parsedColumns = useMemo(() => {
+                    return columns.slice(0, colCount).map(colStr => {
+                        return Array.from(new Set(
+                            colStr.replace(/[^0-9\s,]/g, ' ')
+                                  .split(/[\s,]+/)
+                                  .filter(s => s !== '')
+                                  .map(Number)
+                                  .filter(n => n > 0 && n <= 39)
+                        )).sort((a,b) => a - b);
+                    });
+                }, [columns, colCount]);
+
+                const collisions = useMemo(() => {
+                    const results = [];
+                    parsedColumns.forEach((colNums, colIndex) => {
+                        if (colNums.length < 2) return;
+                        for (let i = 0; i < colNums.length; i++) {
+                            for (let j = i + 1; j < colNums.length; j++) {
+                                const num1 = colNums[i];
+                                const num2 = colNums[j];
+                                const collidedDraws = historyData.filter(draw => 
+                                    draw.nums.includes(num1) && draw.nums.includes(num2)
+                                );
+                                if (collidedDraws.length > 0) {
+                                    results.push({
+                                        column: colIndex + 1,
+                                        num1: num1 < 10 ? '0'+num1 : String(num1),
+                                        num2: num2 < 10 ? '0'+num2 : String(num2),
+                                        dates: collidedDraws.map(d => d.date).join(', ')
+                                    });
+                                }
+                            }
+                        }
+                    });
