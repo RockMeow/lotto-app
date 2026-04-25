@@ -222,18 +222,14 @@
 
     <script>
         function switchTab(tabIndex) {
-            // 隱藏所有內容
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            // 重置所有按鈕樣式
             document.querySelectorAll('[id^="btn-tab"]').forEach(el => {
                 el.className = "px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all";
             });
             
-            // 顯示選中內容與套用按鈕樣式
             document.getElementById('tab' + tabIndex).classList.add('active');
             let activeBtn = document.getElementById('btn-tab' + tabIndex);
             
-            // 給不同的工具配不同的主題色亮點
             if(tabIndex === 1) activeBtn.className = "px-5 py-2.5 rounded-lg font-bold text-white bg-blue-600 shadow-md transition-all";
             if(tabIndex === 2) activeBtn.className = "px-5 py-2.5 rounded-lg font-bold text-white bg-indigo-600 shadow-md transition-all";
             if(tabIndex === 3) activeBtn.className = "px-5 py-2.5 rounded-lg font-bold text-white bg-red-600 shadow-md transition-all";
@@ -985,8 +981,9 @@
 
                     let selected = [];
                     
-                    for (let t = 0; t < Math.min(2, validTailTally.length); t++) {
-                        const tail = parseInt(validTailTally[t].tail);
+                    // 前2顆取自第一高機率尾數 (二中一)
+                    if (validTailTally.length > 0) {
+                        const tail = parseInt(validTailTally[0].tail);
                         for (let h = 0; h < Math.min(4, validHeadTally.length); h++) {
                             const head = validHeadTally[h].head;
                             let candidate = head * 10 + tail;
@@ -997,6 +994,24 @@
                             if (!selected.includes(candidate)) {
                                 selected.push(candidate);
                             }
+                            if (selected.length >= 2) break; // 確保只取2顆
+                        }
+                    }
+
+                    // 剩下2顆取自第二高機率尾數搭配高機率頭數 (補滿四中二)
+                    if (validTailTally.length > 1) {
+                        const tail2 = parseInt(validTailTally[1].tail);
+                        for (let h = 0; h < Math.min(4, validHeadTally.length); h++) {
+                            const head = validHeadTally[h].head;
+                            let candidate = head * 10 + tail2;
+                            
+                            if (head === 0 && tail2 === 0) continue; 
+                            if (candidate > config.max) continue; 
+                            
+                            if (!selected.includes(candidate)) {
+                                selected.push(candidate);
+                            }
+                            if (selected.length >= 4) break; // 確保只取到4顆
                         }
                     }
 
@@ -1034,7 +1049,7 @@
                 }, [balls, orderType, sortedTailTally, sortedHeadTally, config]);
 
                 const fullHistoryRecords = useMemo(() => {
-                    if (!csvText || !config) return { records: [], totalHits: 0, totalCount: 0 };
+                    if (!csvText || !config) return { records: [], totalHits2: 0, totalHits4: 0, totalCount: 0 };
                     
                     const getCarPlatesForBalls = (inputNumsArray) => {
                         const tailTally = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
@@ -1057,17 +1072,31 @@
                         const validTailTally = sortedTailTally.filter(t => t.count > 0);
                         const validHeadTally = sortedHeadTally.filter(h => h.count > 0);
 
-                        if (validTailTally.length === 0 || validHeadTally.length === 0) return ['??', '??'];
+                        if (validTailTally.length === 0 || validHeadTally.length === 0) return { top2: ['??', '??'], top4: ['??', '??', '??', '??'] };
 
                         let selected = [];
-                        for (let t = 0; t < Math.min(2, validTailTally.length); t++) {
-                            const tail = parseInt(validTailTally[t].tail);
+                        
+                        if (validTailTally.length > 0) {
+                            const tail = parseInt(validTailTally[0].tail);
                             for (let h = 0; h < Math.min(4, validHeadTally.length); h++) {
                                 const head = validHeadTally[h].head;
                                 let candidate = head * 10 + tail;
                                 if (head === 0 && tail === 0) continue;
                                 if (candidate > config.max) continue;
                                 if (!selected.includes(candidate)) selected.push(candidate);
+                                if (selected.length >= 2) break;
+                            }
+                        }
+
+                        if (validTailTally.length > 1) {
+                            const tail2 = parseInt(validTailTally[1].tail);
+                            for (let h = 0; h < Math.min(4, validHeadTally.length); h++) {
+                                const head = validHeadTally[h].head;
+                                let candidate = head * 10 + tail2;
+                                if (head === 0 && tail2 === 0) continue;
+                                if (candidate > config.max) continue;
+                                if (!selected.includes(candidate)) selected.push(candidate);
+                                if (selected.length >= 4) break;
                             }
                         }
                         
@@ -1092,7 +1121,10 @@
                         const formatSelection = (arr) => arr.sort((a,b) => a - b).map(n => n < 10 ? '0' + n : String(n));
                         let top2 = selected.slice(0, 2);
                         if (top2.length === 1) top2.push(top2[0]);
-                        return formatSelection(top2);
+                        return {
+                            top2: formatSelection(top2),
+                            top4: formatSelection(selected.slice(0, 4))
+                        };
                     };
 
                     const lines = csvText.trim().split('\n');
@@ -1111,36 +1143,47 @@
                         }
                     }
 
-                    if (parsedDraws.length < 2) return { records: [], totalHits: 0, totalCount: 0 };
+                    if (parsedDraws.length < 2) return { records: [], totalHits2: 0, totalHits4: 0, totalCount: 0 };
 
                     const records = [];
-                    let totalHits = 0;
+                    let totalHits2 = 0;
+                    let totalHits4 = 0;
                     
                     for (let i = 0; i < parsedDraws.length - 1; i++) {
                         const curr = parsedDraws[i];
                         const next = parsedDraws[i+1];
                         
                         const numsToUse = orderType === 'size' ? curr.sizeNums : curr.dropNums;
-                        const top2 = getCarPlatesForBalls(numsToUse);
+                        const carPlatePreds = getCarPlatesForBalls(numsToUse);
+                        const top2 = carPlatePreds.top2;
+                        const top4 = carPlatePreds.top4;
                         
                         const nextActualStrs = next.dropNums.map(n => n < 10 ? '0'+n : String(n));
                         const sizeActualStrs = [...next.dropNums].sort((a,b)=>a-b).map(n => n < 10 ? '0'+n : String(n));
-                        const hits = top2.filter(n => nextActualStrs.includes(n));
                         
-                        const isHit = hits.length > 0;
-                        if (isHit) totalHits++;
+                        const hits2 = top2.filter(n => nextActualStrs.includes(n));
+                        const hits4 = top4.filter(n => nextActualStrs.includes(n));
+                        
+                        const isHit2 = hits2.length > 0;
+                        const isHit4 = hits4.length >= 2;
+                        
+                        if (isHit2) totalHits2++;
+                        if (isHit4) totalHits4++;
 
                         records.push({
                             triggerDate: curr.date,
                             targetDate: next.date,
-                            predicted: top2,
+                            predicted2: top2,
+                            predicted4: top4,
                             actual: sizeActualStrs,
-                            hits: hits,
-                            isHit: isHit
+                            hits2: hits2,
+                            hits4: hits4,
+                            isHit2: isHit2,
+                            isHit4: isHit4
                         });
                     }
                     
-                    return { records: records.reverse(), totalHits, totalCount: records.length };
+                    return { records: records.reverse(), totalHits2, totalHits4, totalCount: records.length };
                 }, [csvText, config, orderType, detectedMode]);
 
                 const validationResults = useMemo(() => {
@@ -1618,12 +1661,12 @@
                                                                 二中一 完整預測與開獎紀錄 (共 {fullHistoryRecords.totalCount} 期)
                                                             </span>
                                                             <span className="text-emerald-400 bg-emerald-900/50 px-2 py-1 rounded text-xs border border-emerald-700">
-                                                                歷史勝率: {((fullHistoryRecords.totalHits / fullHistoryRecords.totalCount) * 100).toFixed(1)}% ({fullHistoryRecords.totalHits}勝)
+                                                                歷史勝率: {((fullHistoryRecords.totalHits2 / fullHistoryRecords.totalCount) * 100).toFixed(1)}% ({fullHistoryRecords.totalHits2}勝)
                                                             </span>
                                                         </h4>
                                                         <div className="flex flex-col gap-2 mt-2">
                                                             {fullHistoryRecords.records.map((rec, idx) => (
-                                                                <div key={`hist-${idx}`} className={`p-3 rounded-lg border text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${rec.isHit ? 'bg-amber-900/30 border-amber-500/50' : 'bg-slate-700/30 border-slate-600/50'}`}>
+                                                                <div key={`hist2-${idx}`} className={`p-3 rounded-lg border text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${rec.isHit2 ? 'bg-amber-900/30 border-amber-500/50' : 'bg-slate-700/30 border-slate-600/50'}`}>
                                                                     <div className="flex flex-col gap-1 w-full sm:w-auto">
                                                                         <span className="text-slate-400 font-mono text-[11px]">基準期: {rec.triggerDate}</span>
                                                                         <span className="text-slate-200 font-medium">
@@ -1632,16 +1675,16 @@
                                                                     </div>
                                                                     <div className="flex flex-col sm:items-center gap-1 flex-1">
                                                                         <span className="text-slate-300">
-                                                                            預測: <span className={`font-black text-base tracking-wider ${rec.isHit ? 'text-amber-400' : 'text-slate-400'}`}>{rec.predicted.join(', ')}</span>
+                                                                            預測: <span className={`font-black text-base tracking-wider ${rec.isHit2 ? 'text-amber-400' : 'text-slate-400'}`}>{rec.predicted2.join(', ')}</span>
                                                                         </span>
                                                                         <span className="text-[11px] text-slate-400 tracking-widest">
                                                                             實際開出: {rec.actual.join(', ')}
                                                                         </span>
                                                                     </div>
                                                                     <div className="w-full sm:w-24 text-right flex items-center justify-end">
-                                                                        {rec.isHit ? (
+                                                                        {rec.isHit2 ? (
                                                                             <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-500/20 text-amber-400 rounded border border-amber-500/30 text-xs font-bold whitespace-nowrap">
-                                                                                <i data-lucide="check" className="w-3 h-3"></i>中 {rec.hits.join(', ')}
+                                                                                <i data-lucide="check" className="w-3 h-3"></i>中 {rec.hits2.join(', ')}
                                                                             </span>
                                                                         ) : (
                                                                             <span className="inline-block px-2.5 py-1.5 bg-slate-600/30 text-slate-500 rounded border border-slate-600/50 text-xs whitespace-nowrap">
@@ -1656,17 +1699,64 @@
                                                 )}
                                             </div>
 
-                                            <div className="bg-gradient-to-r from-slate-800 to-slate-700 p-6 rounded-xl shadow-lg flex flex-col md:flex-row items-center gap-6">
-                                                <div className="flex-shrink-0 w-28 text-center text-white">
-                                                    <div className="text-sm font-black text-rose-400 mb-1 tracking-widest">四中二</div>
+                                            <div className="bg-gradient-to-r from-slate-800 to-slate-700 p-6 rounded-xl shadow-lg flex flex-col gap-4">
+                                                <div className="flex flex-col md:flex-row items-center gap-6">
+                                                    <div className="flex-shrink-0 w-28 text-center text-white">
+                                                        <div className="text-sm font-black text-rose-400 mb-1 tracking-widest">四中二</div>
+                                                    </div>
+                                                    <div className="flex gap-4 sm:gap-6 justify-center flex-1">
+                                                        {carPlates.top4.map((num, i) => (
+                                                            <div key={`car4-${i}`} className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-b from-rose-300 to-rose-500 rounded-full flex items-center justify-center font-black text-2xl sm:text-3xl text-white shadow-xl border-4 border-rose-400 transform hover:scale-105 transition-transform">
+                                                                {num}
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                                <div className="flex gap-4 sm:gap-6 justify-center flex-1">
-                                                    {carPlates.top4.map((num, i) => (
-                                                        <div key={`car4-${i}`} className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-b from-rose-300 to-rose-500 rounded-full flex items-center justify-center font-black text-2xl sm:text-3xl text-white shadow-xl border-4 border-rose-400 transform hover:scale-105 transition-transform">
-                                                            {num}
+
+                                                {fullHistoryRecords.totalCount > 0 && (
+                                                    <div className="mt-4 p-4 bg-slate-800/80 rounded-xl border border-slate-600 max-h-96 overflow-y-auto">
+                                                        <h4 className="font-bold text-rose-400 mb-3 text-sm flex items-center justify-between sticky top-0 bg-slate-800 p-2 rounded z-10 border-b border-slate-600">
+                                                            <span className="flex items-center gap-2">
+                                                                <i data-lucide="history" className="w-4 h-4"></i>
+                                                                四中二 完整預測與開獎紀錄 (共 {fullHistoryRecords.totalCount} 期)
+                                                            </span>
+                                                            <span className="text-emerald-400 bg-emerald-900/50 px-2 py-1 rounded text-xs border border-emerald-700">
+                                                                歷史勝率: {((fullHistoryRecords.totalHits4 / fullHistoryRecords.totalCount) * 100).toFixed(1)}% ({fullHistoryRecords.totalHits4}勝)
+                                                            </span>
+                                                        </h4>
+                                                        <div className="flex flex-col gap-2 mt-2">
+                                                            {fullHistoryRecords.records.map((rec, idx) => (
+                                                                <div key={`hist4-${idx}`} className={`p-3 rounded-lg border text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${rec.isHit4 ? 'bg-rose-900/30 border-rose-500/50' : 'bg-slate-700/30 border-slate-600/50'}`}>
+                                                                    <div className="flex flex-col gap-1 w-full sm:w-auto">
+                                                                        <span className="text-slate-400 font-mono text-[11px]">基準期: {rec.triggerDate}</span>
+                                                                        <span className="text-slate-200 font-medium">
+                                                                            目標期: <span className="font-mono text-white">{rec.targetDate}</span>
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex flex-col sm:items-center gap-1 flex-1">
+                                                                        <span className="text-slate-300">
+                                                                            預測: <span className={`font-black text-base tracking-wider ${rec.isHit4 ? 'text-rose-400' : 'text-slate-400'}`}>{rec.predicted4.join(', ')}</span>
+                                                                        </span>
+                                                                        <span className="text-[11px] text-slate-400 tracking-widest">
+                                                                            實際開出: {rec.actual.join(', ')}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="w-full sm:w-24 text-right flex items-center justify-end">
+                                                                        {rec.isHit4 ? (
+                                                                            <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-500/20 text-rose-400 rounded border border-rose-500/30 text-xs font-bold whitespace-nowrap">
+                                                                                <i data-lucide="check" className="w-3 h-3"></i>中 {rec.hits4.join(', ')}
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="inline-block px-2.5 py-1.5 bg-slate-600/30 text-slate-500 rounded border border-slate-600/50 text-xs whitespace-nowrap">
+                                                                                {rec.hits4.length > 0 ? `僅中 ${rec.hits4.join(', ')}` : '未中'}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
                                                         </div>
-                                                    ))}
-                                                </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
