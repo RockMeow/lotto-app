@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>複合分析工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; }
+        .ball-input::-webkit-outer-spin-button, .ball-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .ball-input { -moz-appearance: textfield; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+    </style>
+</head>
+<body>
+    <div class="bg-slate-800 p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto flex flex-wrap gap-2 sm:gap-4 justify-center">
+            <a href="index.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">🏠 首頁</a>
+            <a href="tool1.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">立柱撞柱工具</a>
+            <a href="tool2.html" class="px-5 py-2.5 rounded-lg font-bold text-white bg-indigo-600 shadow-md transition-all">複合分析工具</a>
+            <a href="tool3.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">尾數拖牌工具</a>
+            <a href="tool4.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">柱碰版路工具</a>
+        </div>
+    </div>
+
+    <div id="root-tool2"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        const App = () => {
+            const [orderType, setOrderType] = useState('drop'); 
+            const [mappings, setMappings] = useState(null);
+            const [lotteryKey, setLotteryKey] = useState(null);
+            const [balls, setBalls] = useState({ size: [], drop: [] });
+            const [validationBalls, setValidationBalls] = useState({ size: [], drop: [] });
+            const [analyzeRange, setAnalyzeRange] = useState(19);
+
+            const [detectedMode, setDetectedMode] = useState('daily539');
+            const [fileName, setFileName] = useState('');
+            const [csvText, setCsvText] = useState('');
+            const [generatedCode, setGeneratedCode] = useState(null);
+            const [logs, setLogs] = useState([]);
+            const fileInputRef = useRef(null);
+
+            // 確保每次畫面更新後，Lucide 圖示都會重新渲染
+            useEffect(() => {
+                setTimeout(() => { if (window.lucide) window.lucide.createIcons(); }, 50);
+            });
+
+            useEffect(() => {
+                fetch('./data.json')
+                    .then(res => {
+                        if (!res.ok) throw new Error('網路回應錯誤');
+                        return res.json();
+                    })
+                    .then(parsedData => {
+                        setMappings(parsedData);
+                        if (Object.keys(parsedData).length > 0) {
+                            setLotteryKey(Object.keys(parsedData)[0]);
+                        }
+                    })
+                    .catch(err => {
+                        console.warn('讀取外部 JSON 失敗，您可以直接上傳 CSV 自動產生數據:', err);
+                    });
+            }, []);
+
+            const config = useMemo(() => {
+                if (!mappings || !lotteryKey) return null;
+                const selected = mappings[lotteryKey];
+                const data = selected.data;
+                const balls = Object.keys(data.size.tail).length; 
+                return { name: selected.name, max: selected.max, balls, data };
+            }, [mappings, lotteryKey]);
+
+            useEffect(() => {
+                if (config && config.balls > 0) {
+                    const emptyArray = Array(config.balls).fill('');
+                    setBalls({ size: [...emptyArray], drop: [...emptyArray] });
+                    setValidationBalls({ size: [...emptyArray], drop: [...emptyArray] });
+                }
+            }, [config?.balls]);
+
+            const getModeName = (mode) => {
+                switch(mode) {
+                    case 'daily539': return '今彩539';
+                    case 'lotto49': return '大樂透';
+                    case 'mark6': return '六合彩';
+                    case 'california': return '加州天天樂';
+                    case 'ghana': return '迦納彩';
+                    default: return '今彩539';
+                }
+            };
+
+            const handleFileUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const name = file.name;
+                    setFileName(name);
+                    const lowerName = name.toLowerCase();
+                    if (lowerName.includes('539')) setDetectedMode('daily539');
+                    else if (lowerName.includes('649')) setDetectedMode('lotto49');
+                    else if (lowerName.includes('six')) setDetectedMode('mark6');
+                    else if (lowerName.includes('fan')) setDetectedMode('california');
+                    else if (lowerName.includes('ghana')) setDetectedMode('ghana');
+                    else setDetectedMode('daily539');
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => { setCsvText(event.target.result); };
+                    reader.readAsText(file);
+                }
+            };
+
+            const generateMatrices = () => {
+                if (!csvText.trim()) { alert("請先上傳 CSV 歷史開獎檔案！"); return; }
+                let lines = csvText.trim().split('\n');
+                const rangeNum = parseInt(analyzeRange);
+                if (!isNaN(rangeNum) && rangeNum > 0) {
+                    const header = lines[0];
+                    const dataLines = lines.slice(1).filter(l => l.trim() !== '').slice(-rangeNum);
+                    lines = [header, ...dataLines];
+                }
+
+                const dropOrderData = [];
+                const sizeOrderData = [];
+                const logOutput = [];
+
+                if (fileName) {
+                    logOutput.push(`讀取檔案: ${fileName}`);
+                    logOutput.push(`判斷彩種: ${getModeName(detectedMode)}`);
+                }
+
+                let ballCount = 5; 
+                if (detectedMode === 'lotto49' || detectedMode === 'mark6') ballCount = 6; 
+
+                logOutput.push(`開始解析 CSV... 偵測到 ${lines.length} 行資料。`);
+
+                for (let i = 1; i < lines.length; i++) { 
+                    const parts = lines[i].split(',').map(s => s.trim());
+                    if (parts.length >= ballCount + 1) {
+                        const numsDrop = parts.slice(1, ballCount + 1).map(Number).filter(n => !isNaN(n));
+                        if (numsDrop.length === ballCount) {
+                            dropOrderData.push(numsDrop);
+                            sizeOrderData.push([...numsDrop].sort((a, b) => a - b));
+                        }
+                    }
+                }
+
+                if (dropOrderData.length < 2) { alert("有效的資料筆數不足，請確保格式正確且至少有兩期以上！"); return; }
+
+                logOutput.push(`成功載入 ${dropOrderData.length} 期有效歷史開獎數據。`);
+                logOutput.push(`開始運算矩陣模型...`);
+
+                const calculateMappings = (orderData, maxHead) => {
+                    const tailCounts = { pos: {} };
+                    const headCounts = { pos: {} };
+                    for (let p = 0; p < ballCount; p++) {
+                        tailCounts.pos[p] = {};
+                        headCounts.pos[p] = {};
+                    }
+
+                    for (let k = 0; k < orderData.length - 1; k++) {
+                        const currDraw = orderData[k];
+                        const nextDraw = orderData[k + 1];
+
+                        for (let pos = 0; pos < ballCount; pos++) {
+                            const currTail = currDraw[pos] % 10;
+                            if (!tailCounts.pos[pos][currTail]) tailCounts.pos[pos][currTail] = {};
+                            if (!headCounts.pos[pos][currTail]) headCounts.pos[pos][currTail] = {};
+
+                            for (let num of nextDraw) {
+                                const nextTail = num % 10;
+                                const nextHead = Math.floor(num / 10);
+                                tailCounts.pos[pos][currTail][nextTail] = (tailCounts.pos[pos][currTail][nextTail] || 0) + 1;
+                                headCounts.pos[pos][currTail][nextHead] = (headCounts.pos[pos][currTail][nextHead] || 0) + 1;
+                            }
+                        }
+                    }
+
+                    const formatTopMulti = (countsObj) => {
+                        const result = {};
+                        for (let pos = 0; pos < ballCount; pos++) {
+                            result[pos] = {};
+                            for (let val = 0; val <= 9; val++) { 
+                                if (countsObj.pos[pos][val]) {
+                                    const entries = Object.entries(countsObj.pos[pos][val]);
+                                    entries.sort((a, b) => b[1] !== a[1] ? b[1] - a[1] : parseInt(a[0]) - parseInt(b[0]));
+                                    
+                                    let topPlates = [];
+                                    if (entries.length > 0) {
+                                        topPlates.push(parseInt(entries[0][0]));
+                                        if (entries.length > 1) {
+                                            let thresholdCount = entries[1][1];
+                                            for (let i = 1; i < entries.length; i++) {
+                                                if (entries[i][1] >= thresholdCount) topPlates.push(parseInt(entries[i][0]));
+                                            }
+                                        }
+                                    }
+                                    while (topPlates.length < 2 && topPlates.length > 0) topPlates.push(topPlates[0]);
+                                    result[pos][val] = topPlates;
+                                } else {
+                                    result[pos][val] = [];
+                                }
+                            }
+                        }
+                        return result;
+                    };
+
+                    const tailMappingResult = formatTopMulti(tailCounts);
+                    const headMappingResult = formatTopMulti(headCounts);
+                    return { tailMap: tailMappingResult, headMap: headMappingResult };
+                };
+
+                let maxHeadVal = 3; 
+                if (detectedMode === 'lotto49' || detectedMode === 'mark6') maxHeadVal = 4;
+
+                const dropRes = calculateMappings(dropOrderData, maxHeadVal);
+                const sizeRes = calculateMappings(sizeOrderData, maxHeadVal);
+
+                let finalObj = {};
+                if (detectedMode === 'california') {
+                    finalObj = {
+                        "california": {
+                            "name": "加州天天樂", "max": 39,
+                            "data": { "size": { "tail": sizeRes.tailMap, "head": sizeRes.headMap }, "drop": { "tail": dropRes.tailMap, "head": dropRes.headMap } }
+                        }
+                    };
+                } else {
+                    const maxBalls = (detectedMode === 'lotto49' || detectedMode === 'mark6') ? 49 : 39;
+                    finalObj = {
+                        [detectedMode]: {
+                            "name": getModeName(detectedMode), "max": maxBalls,
+                            "data": { "size": { "tail": sizeRes.tailMap, "head": sizeRes.headMap }, "drop": { "tail": dropRes.tailMap, "head": dropRes.headMap } }
+                        }
+                    };
+                }
+
+                const finalCode = JSON.stringify(finalObj, null, 4);
+                logOutput.push(`矩陣運算完成！已自動套用最新數據至下方分析工具。`);
+                setLogs(logOutput);
+                setGeneratedCode(finalCode);
+                setMappings(prev => ({ ...prev, ...finalObj }));
+                setLotteryKey(detectedMode);
+            };
+
+            const applyLatestDraw = () => {
+                if (!csvText.trim()) { alert("請先上傳或輸入 CSV 歷史開獎檔案！"); return; }
+                const lines = csvText.trim().split('\n');
+                let ballCount = 5; 
+                if (detectedMode === 'lotto49' || detectedMode === 'mark6') ballCount = 6; 
+
+                const dropOrderData = [];
+                for (let i = 1; i < lines.length; i++) { 
+                    const parts = lines[i].split(',').map(s => s.trim());
+                    if (parts.length >= ballCount + 1) {
+                        const numsDrop = parts.slice(1, ballCount + 1).map(Number).filter(n => !isNaN(n));
+                        if (numsDrop.length === ballCount) {
+                            dropOrderData.push(numsDrop);
+                        }
+                    }
+                }
+
+                if (dropOrderData.length > 0) {
+                    const latestDrop = dropOrderData[dropOrderData.length - 1];
+                    const latestSize = [...latestDrop].sort((a, b) => a - b);
+                    setBalls(prev => ({
+                        ...prev,
+                        size: latestSize.map(n => n < 10 ? '0'+n : String(n)),
+                        drop: latestDrop.map(n => n < 10 ? '0'+n : String(n))
+                    }));
+                    if (detectedMode === 'california') {
+                        setOrderType('size');
+                        setLogs(prev => [...prev, `✅ 已帶入最新一期號碼並切換至「順球」。`]);
+                    } else {
+                        setOrderType('drop');
+                        setLogs(prev => [...prev, `✅ 已帶入最新一期號碼並切換至「落球」。`]);
+                    }
+                } else { alert("找不到有效的最新一期開獎數據！"); }
+            };
+
+            const copyCode = () => {
+                if (generatedCode) {
+                    navigator.clipboard.writeText(generatedCode).then(() => { alert("已複製 JSON 數據！"); }).catch(err => console.error(err));
+                }
+            };
+
+            const handleBallChange = (index, value) => {
+                if (/^\d{0,2}$/.test(value)) {
+                    setBalls(prev => {
+                        const newArray = [...prev[orderType]];
+                        newArray[index] = value;
+                        return { ...prev, [orderType]: newArray };
+                    });
+                }
+            };
+
+            const handleValidationBallChange = (index, value) => {
+                if (/^\d{0,2}$/.test(value)) {
+                    setValidationBalls(prev => {
+                        const newArray = [...prev[orderType]];
+                        newArray[index] = value;
+                        return { ...prev, [orderType]: newArray };
+                    });
+                }
+            };
+
+            const getPredictions = () => {
+                const tailPredictions = []; const headPredictions = [];
+                const tailTally = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
+                const headTally = { 0:0, 1:0, 2:0, 3:0, 4:0 };
+
+                if (!config || balls[orderType].length === 0) return { tailPredictions, tailTally, headPredictions, headTally };
+
+                const currentBalls = balls[orderType];
+                const currentDict = config.data[orderType];
+
+                currentBalls.forEach((ballStr, index) => {
+                    const ball = parseInt(ballStr);
+                    if (!isNaN(ball) && ball > 0 && ball <= config.max) {
+                        const tail = ball % 10;
+                        const tailPreds = currentDict.tail[index]?.[tail] || [];
+                        tailPredictions.push({ pos: index + 1, ball, tail, preds: tailPreds });
+                        if (tailPreds) tailPreds.forEach(p => tailTally[p]++);
+
+                        const headPreds = currentDict.head[index]?.[tail] || [];
+                        headPredictions.push({ pos: index + 1, ball, tail, preds: headPreds });
+                        if (headPreds) headPreds.forEach(p => { if(headTally[p] !== undefined) headTally[p]++; });
+                    } else {
+                        tailPredictions.push({ pos: index + 1, ball: '?', tail: '?', preds: [] });
+                        headPredictions.push({ pos: index + 1, ball: '?', tail: '?', preds: [] });
+                    }
+                });
+                return { tailPredictions, tailTally, headPredictions, headTally };
+            };
+
+            const { tailPredictions, tailTally, headPredictions, headTally } = getPredictions();
+
+            const sortedTailTally = Object.entries(tailTally)
+                .map(([tail, count]) => ({ tail, count }))
+                .sort((a, b) => b.count !== a.count ? b.count - a.count : parseInt(a.tail) - parseInt(b.tail));
+            const tailMaxCount = sortedTailTally[0]?.count || 1;
+
+            const sortedHeadTally = Object.entries(headTally)
+                .map(([head, count]) => ({ head: parseInt(head), count }))
+                .sort((a, b) => b.count !== a.count ? b.count - a.count : a.head - b.head);
+            const headMaxCount = sortedHeadTally[0]?.count || 1;
+
+            const fiveNotToPlay = useMemo(() => {
+                if(!config) return [];
+                const inputNums = balls[orderType].map(n => parseInt(n)).filter(n => !isNaN(n) && n > 0 && n <= config.max);
+                const hotTails = sortedTailTally.slice(0, 3).map(x => parseInt(x.tail)); 
+                let candidates = [];
+                for (let i = 1; i <= config.max; i++) {
+                    if (inputNums.includes(i) || hotTails.includes(i % 10)) continue; 
+                    candidates.push(i);
+                }
+                let selected = []; let usedTails = new Set();
+                for (let num of candidates) {
+                    if (selected.length >= 5) break;
+                    const tail = num % 10;
+                    if (usedTails.has(tail)) continue; 
+                    if (selected.some(s => Math.abs(s - num) === 1)) continue; 
+                    selected.push(num); usedTails.add(tail);
+                }
+                if (selected.length < 5) {
+                    for (let i = 1; i <= config.max; i++) {
+                        if (selected.length >= 5) break;
+                        if (!inputNums.includes(i) && !selected.includes(i)) selected.push(i);
+                    }
+                }
+                return selected.sort((a, b) => a - b).map(n => n < 10 ? '0' + n : String(n));
+            }, [balls, orderType, sortedTailTally, config]);
+
+            const getColdTailSelection = (targetCount) => {
+                if(!config) return [];
+                const inputNums = balls[orderType].map(n => parseInt(n)).filter(n => !isNaN(n) && n > 0 && n <= config.max);
+                const coldTails = [...sortedTailTally].reverse().map(x => parseInt(x.tail)); 
+                let selected = [];
+                for (let tail of coldTails) {
+                    for (let i = 1; i <= config.max; i++) {
+                        if (i % 10 === tail && !inputNums.includes(i) && !selected.includes(i)) selected.push(i);
+                        if (selected.length >= targetCount) break;
+                    }
+                    if (selected.length >= targetCount) break;
+                }
+                return selected.sort((a, b) => a - b).map(n => n < 10 ? '0' + n : String(n));
+            };
+
+            const sixNotToPlay = useMemo(() => getColdTailSelection(6), [balls, orderType, sortedTailTally, config]);
+            const sevenNotToPlay = useMemo(() => getColdTailSelection(7), [balls, orderType, sortedTailTally, config]);
+            const eightNotToPlay = useMemo(() => getColdTailSelection(8), [balls, orderType, sortedTailTally, config]);
+            const nineNotToPlay = useMemo(() => getColdTailSelection(9), [balls, orderType, sortedTailTally, config]);
+            const tenNotToPlay = useMemo(() => getColdTailSelection(10), [balls, orderType, sortedTailTally, config]);
+            const elevenNotToPlay = useMemo(() => getColdTailSelection(11), [balls, orderType, sortedTailTally, config]);
+            const twelveNotToPlay = useMemo(() => getColdTailSelection(12), [balls, orderType, sortedTailTally, config]);
+
+            const carPlates = useMemo(() => {
+                if(!config) return { top2: ['??', '??'], others: [] };
+                const inputNums = balls[orderType].map(n => parseInt(n)).filter(n => !isNaN(n) && n > 0 && n <= config.max);
+                if (inputNums.length === 0) return { top2: ['??', '??'], others: [] }; 
+                
+                const validTailTally = sortedTailTally.filter(t => t.count > 0);
+                const validHeadTally = sortedHeadTally.filter(h => h.count > 0);
+                if (validTailTally.length === 0 || validHeadTally.length === 0) return { top2: ['??', '??'], others: [] }; 
+
+                let allValidWithScores = [];
+                for (let i = 0; i < validTailTally.length; i++) {
+                    const tailObj = validTailTally[i];
+                    for (let j = 0; j < validHeadTally.length; j++) {
+                        const headObj = validHeadTally[j];
+                        let candidate = headObj.head * 10 + parseInt(tailObj.tail);
+                        if (headObj.head === 0 && parseInt(tailObj.tail) === 0) continue;
+                        if (candidate > config.max) continue;
+                        let score = tailObj.count + headObj.count;
+                        if (!allValidWithScores.some(c => c.num === candidate)) allValidWithScores.push({num: candidate, score: score});
+                    }
+                }
+                allValidWithScores.sort((a, b) => b.score !== a.score ? b.score - a.score : a.num - b.num);
+
+                let topPlatesNums = []; let othersNums = [];
+                if (allValidWithScores.length > 0) {
+                    topPlatesNums.push(allValidWithScores[0].num);
+                    if (allValidWithScores.length > 1) {
+                        let thresholdScore = allValidWithScores[1].score;
+                        for (let i = 1; i < allValidWithScores.length; i++) {
+                            if (allValidWithScores[i].score >= thresholdScore) {
+                                if (!topPlatesNums.includes(allValidWithScores[i].num)) topPlatesNums.push(allValidWithScores[i].num);
+                            } else {
+                                if (!othersNums.includes(allValidWithScores[i].num)) othersNums.push(allValidWithScores[i].num);
+                            }
+                        }
+                    }
+                }
+                if (topPlatesNums.length === 1 && allValidWithScores.length > 0) topPlatesNums.push(topPlatesNums[0]);
+                othersNums = othersNums.slice(0, 10);
+                const formatSelection = (arr) => arr.sort((a,b) => a - b).map(n => n < 10 ? '0' + n : String(n));
+
+                return { top2: formatSelection(topPlatesNums), others: formatSelection(othersNums) };
+            }, [balls, orderType, sortedTailTally, sortedHeadTally, config]);
+
+            const fullHistoryRecords = useMemo(() => {
+                if (!csvText || !config) return { records: [], totalHits2: 0, totalCount: 0 };
+                
+                let lines = csvText.trim().split('\n');
+                let ballCount = (detectedMode === 'lotto49' || detectedMode === 'mark6') ? 6 : 5;
+                const allParsedDraws = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const parts = lines[i].split(',').map(s => s.trim());
+                    if (parts.length >= ballCount + 1) {
+                        const date = parts[0];
+                        const dropNums = parts.slice(1, ballCount + 1).map(Number).filter(n => !isNaN(n));
+                        if (dropNums.length === ballCount) allParsedDraws.push({ date, dropNums, sizeNums: [...dropNums].sort((a,b)=>a-b) });
+                    }
+                }
+
+                if (allParsedDraws.length < 2) return { records: [], totalHits2: 0, totalCount: 0 };
+                
+                const rangeNum = parseInt(analyzeRange);
+                const evaluateCount = (isNaN(rangeNum) || rangeNum === 0) ? allParsedDraws.length : rangeNum;
+                const records = []; let totalHits2 = 0;
+
+                const buildMatrixForWindow = (drawsWindow) => {
+                    const tailCounts = { pos: {} }; const headCounts = { pos: {} };
+                    for (let p = 0; p < ballCount; p++) { tailCounts.pos[p] = {}; headCounts.pos[p] = {}; }
+                    for (let k = 0; k < drawsWindow.length - 1; k++) {
+                        const currDraw = orderType === 'size' ? drawsWindow[k].sizeNums : drawsWindow[k].dropNums;
+                        const nextDraw = orderType === 'size' ? drawsWindow[k+1].sizeNums : drawsWindow[k+1].dropNums;
+                        for (let pos = 0; pos < ballCount; pos++) {
+                            const currTail = currDraw[pos] % 10;
+                            if (!tailCounts.pos[pos][currTail]) tailCounts.pos[pos][currTail] = {};
+                            if (!headCounts.pos[pos][currTail]) headCounts.pos[pos][currTail] = {};
+                            for (let num of nextDraw) {
+                                const nextTail = num % 10; const nextHead = Math.floor(num / 10);
+                                tailCounts.pos[pos][currTail][nextTail] = (tailCounts.pos[pos][currTail][nextTail] || 0) + 1;
+                                headCounts.pos[pos][currTail][nextHead] = (headCounts.pos[pos][currTail][nextHead] || 0) + 1;
+                            }
+                        }
+                    }
+                    const formatTopMulti = (countsObj) => {
+                        const result = {};
+                        for (let pos = 0; pos < ballCount; pos++) {
+                            result[pos] = {};
+                            for (let val = 0; val <= 9; val++) { 
+                                if (countsObj.pos[pos][val]) {
+                                    const entries = Object.entries(countsObj.pos[pos][val]);
+                                    entries.sort((a, b) => b[1] !== a[1] ? b[1] - a[1] : parseInt(a[0]) - parseInt(b[0]));
+                                    let topPlates = [];
+                                    if (entries.length > 0) {
+                                        topPlates.push(parseInt(entries[0][0]));
+                                        if (entries.length > 1) {
+                                            let thresholdCount = entries[1][1];
+                                            for (let i = 1; i < entries.length; i++) {
+                                                if (entries[i][1] >= thresholdCount) topPlates.push(parseInt(entries[i][0]));
+                                            }
+                                        }
+                                    }
+                                    while (topPlates.length < 2 && topPlates.length > 0) topPlates.push(topPlates[0]);
+                                    result[pos][val] = topPlates;
+                                } else { result[pos][val] = []; }
+                            }
+                        }
+                        return result;
+                    };
+                    return { tailMap: formatTopMulti(tailCounts), headMap: formatTopMulti(headCounts) };
+                };
+
+                for (let i = 0; i < allParsedDraws.length - 1; i++) {
+                    const curr = allParsedDraws[i];
+                    const next = allParsedDraws[i+1];
+                    
+                    let windowStart = i - evaluateCount + 1;
+                    if (windowStart < 0) windowStart = 0;
+                    
+                    const trainingWindow = allParsedDraws.slice(windowStart, i + 1);
+
+                    const { tailMap, headMap } = buildMatrixForWindow(trainingWindow);
+                    const numsToUse = orderType === 'size' ? curr.sizeNums : curr.dropNums;
+                    
+                    const tailTally = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
+                    const headTally = { 0:0, 1:0, 2:0, 3:0, 4:0 };
+                    numsToUse.forEach((ball, index) => {
+                        const tail = ball % 10;
+                        const tailPreds = tailMap[index]?.[tail] || [];
+                        if (tailPreds) tailPreds.forEach(p => tailTally[p]++);
+                        const headPreds = headMap[index]?.[tail] || [];
+                        if (headPreds) headPreds.forEach(p => { if(headTally[p] !== undefined) headTally[p]++; });
+                    });
+
+                    const sortedTailTally = Object.entries(tailTally).map(([t, c]) => ({ tail: t, count: c })).sort((a, b) => b.count !== a.count ? b.count - a.count : parseInt(a.tail) - parseInt(b.tail));
+                    const sortedHeadTally = Object.entries(headTally).map(([h, c]) => ({ head: parseInt(h), count: c })).sort((a, b) => b.count !== a.count ? b.count - a.count : a.head - b.head);
+                    const validTailTally = sortedTailTally.filter(t => t.count > 0); const validHeadTally = sortedHeadTally.filter(h => h.count > 0);
+                    
+                    let top2 = ['??', '??'], others = [];
+                    if (validTailTally.length > 0 && validHeadTally.length > 0) {
+                        let allValidWithScores = [];
+                        for (let ti = 0; ti < validTailTally.length; ti++) {
+                            for (let hi = 0; hi < validHeadTally.length; hi++) {
+                                const tailObj = validTailTally[ti]; const headObj = validHeadTally[hi];
+                                let candidate = headObj.head * 10 + parseInt(tailObj.tail);
+                                if (headObj.head === 0 && parseInt(tailObj.tail) === 0) continue;
+                                if (candidate > config.max) continue;
+                                let score = tailObj.count + headObj.count;
+                                if (!allValidWithScores.some(c => c.num === candidate)) allValidWithScores.push({num: candidate, score: score});
+                            }
+                        }
+                        allValidWithScores.sort((a, b) => b.score !== a.score ? b.score - a.score : a.num - b.num);
+                        let topPlatesNums = []; let othersNums = [];
+                        if (allValidWithScores.length > 0) {
+                            topPlatesNums.push(allValidWithScores[0].num);
+                            if (allValidWithScores.length > 1) {
+                                let thresholdScore = allValidWithScores[1].score;
+                                for (let ti = 1; ti < allValidWithScores.length; ti++) {
+                                    if (allValidWithScores[ti].score >= thresholdScore) {
+                                        if (!topPlatesNums.includes(allValidWithScores[ti].num)) topPlatesNums.push(allValidWithScores[ti].num);
+                                    } else {
+                                        if (!othersNums.includes(allValidWithScores[ti].num)) othersNums.push(allValidWithScores[ti].num);
+                                    }
+                                }
+                            }
+                        }
+                        if (topPlatesNums.length === 1 && allValidWithScores.length > 0) topPlatesNums.push(topPlatesNums[0]);
+                        othersNums = othersNums.slice(0, 10);
+                        const formatSelection = (arr) => arr.sort((a,b) => a - b).map(n => n < 10 ? '0' + n : String(n));
+                        top2 = formatSelection(topPlatesNums);
+                        others = formatSelection(othersNums);
+                    }
+
+                    const nextActualStrs = next.dropNums.map(n => n < 10 ? '0'+n : String(n));
+                    const sizeActualStrs = [...next.dropNums].sort((a,b)=>a-b).map(n => n < 10 ? '0'+n : String(n));
+                    const hits2 = top2.filter(n => nextActualStrs.includes(n));
+                    const othersHits = others.filter(n => nextActualStrs.includes(n));
+                    const isHit2 = hits2.length > 0;
+                    if (isHit2) totalHits2++;
+                    records.push({ triggerDate: curr.date, targetDate: next.date, predicted2: top2, others: others, actual: sizeActualStrs, hits2: hits2, othersHits: othersHits, isHit2: isHit2 });
+                }
+                return { records: records.reverse(), totalHits2, totalCount: records.length };
+            }, [csvText, config, orderType, detectedMode, analyzeRange]);
+
+            const validationResults = useMemo(() => {
+                if(!config) return null;
+                const currentValidNums = validationBalls[orderType].map(n => parseInt(n)).filter(n => !isNaN(n) && n > 0 && n <= config.max);
+                if (currentValidNums.length === 0) return null;
+                const currentValidStrs = currentValidNums.map(n => n < 10 ? '0' + n : String(n));
+                const carPlateHits2 = currentValidStrs.filter(n => carPlates.top2.includes(n));
+                const carPlateOthersHits = currentValidStrs.filter(n => carPlates.others.includes(n));
+
+                const checkPass = (notPlayList) => {
+                    const hits = currentValidStrs.filter(n => notPlayList.includes(n));
+                    return { passed: hits.length === 0, hits };
+                };
+
+                return {
+                    carPlateCheck: { passed: carPlateHits2.length > 0, hits: carPlateHits2, othersHits: carPlateOthersHits },
+                    five: checkPass(fiveNotToPlay), six: checkPass(sixNotToPlay), seven: checkPass(sevenNotToPlay),
+                    eight: checkPass(eightNotToPlay), nine: checkPass(nineNotToPlay), ten: checkPass(tenNotToPlay),
+                    eleven: checkPass(elevenNotToPlay), twelve: checkPass(twelveNotToPlay)
+                };
+            }, [validationBalls, orderType, carPlates, fiveNotToPlay, sixNotToPlay, sevenNotToPlay, eightNotToPlay, nineNotToPlay, tenNotToPlay, elevenNotToPlay, twelveNotToPlay, config]);
+
+            return (
+                <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+                    <div className="bg-indigo-600 rounded-t-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <h1 className="text-3xl font-bold flex items-center gap-3">
+                                <i data-lucide="radar" className="w-8 h-8"></i>
+                                {config ? config.name : ''} 頭尾數分析工具
+                            </h1>
+                            <p className="mt-2 text-indigo-100 opacity-90">輸入上一期開獎號碼，自動比對歷史數據，找出最強重疊拖牌尾數和頭數。</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-b-2xl shadow-lg p-6 sm:p-8">
+                        <div className="mb-8 p-6 bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
+                            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200 pb-3">
+                                <i data-lucide="database" className="w-5 h-5 text-indigo-600"></i>
+                                更新歷史開獎資料庫
+                            </h2>
+                            <div className="flex flex-col gap-4">
+                                <div className="flex flex-col sm:flex-row gap-4 items-start">
+                                    <div className="flex-1 w-full">
+                                        <div className="text-sm font-bold text-slate-700 mb-2">1. 貼上或上傳檔案：</div>
+                                        <textarea className="w-full h-24 p-3 border border-slate-200 rounded-xl text-sm font-mono text-slate-600 focus:border-indigo-500 focus:ring-0 transition-colors mb-2" value={csvText} onChange={(e) => setCsvText(e.target.value)} placeholder="在此貼上歷史開獎數據 (CSV格式)..."></textarea>
+                                        <div className="flex items-center gap-2">
+                                            <input type="file" accept=".csv,.txt" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
+                                            <button onClick={() => fileInputRef.current.click()} className="flex-1 py-2.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 text-sm font-bold rounded-lg border border-slate-300 shadow-sm transition-colors flex items-center justify-center gap-2">
+                                                <i data-lucide="upload-cloud" className="w-4 h-4"></i>
+                                                {fileName ? '重新選擇檔案' : '上傳 CSV 檔案'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 w-full sm:w-64 flex flex-col justify-start">
+                                        <div className="text-sm font-bold text-slate-700 mb-2 flex justify-between items-center w-full">
+                                            <span>2. 生成與套用</span>
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-xs text-slate-500">分析近</span>
+                                                <input type="number" value={analyzeRange} onChange={(e) => setAnalyzeRange(e.target.value)} className="w-12 text-xs bg-white border border-indigo-200 text-indigo-700 rounded p-1 outline-none focus:ring-1 focus:ring-indigo-400 text-center shadow-sm" min="0" />
+                                                <span className="text-xs text-slate-500">期 (0=全部)</span>
+                                            </div>
+                                        </div>
+                                        <button onClick={generateMatrices} className="w-full py-4 px-6 h-24 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-md transition-transform transform hover:-translate-y-1 flex items-center justify-center gap-2 text-lg">
+                                            <i data-lucide="play" className="w-5 h-5 fill-current"></i> 生成矩陣並套用
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {generatedCode && (
+                                <div className="mt-6 border-t border-slate-200 pt-6 animate-fade-in-up">
+                                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-4">
+                                        <h3 className="font-bold text-sm text-slate-700 flex items-center gap-2"><i data-lucide="terminal" className="w-4 h-4"></i> 系統日誌</h3>
+                                    </div>
+                                    <div className="text-sm font-mono space-y-1.5 bg-white p-3 rounded-lg border border-slate-200 text-slate-600 mb-4">
+                                        {logs.map((log, i) => (<div key={i} className={log.includes('✅') ? `text-indigo-600 font-bold` : ''}>{log.includes('✅') ? <i data-lucide="check-circle-2" className="w-4 h-4 inline-block mr-1.5 mb-0.5"></i> : <span className="mr-3 opacity-50">&gt;</span>}{log}</div>))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex flex-col gap-4 mb-8">
+                            <div className="flex flex-wrap items-center justify-center gap-4">
+                                <div className="bg-slate-100 p-1.5 rounded-xl inline-flex flex-wrap justify-center shadow-inner gap-1 sm:gap-0">
+                                    {mappings && Object.entries(mappings).map(([key, item]) => (
+                                        <button key={key} onClick={() => setLotteryKey(key)} className={`px-4 sm:px-6 py-2.5 rounded-lg font-bold transition-all text-sm sm:text-base ${lotteryKey === key ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>{item.name}</button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-center gap-4">
+                                <div className="bg-slate-100 p-1.5 rounded-xl inline-flex shadow-inner">
+                                    <button onClick={() => setOrderType('size')} className={`px-6 py-2.5 rounded-lg font-bold transition-all text-sm sm:text-base ${orderType === 'size' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>順球分析</button>
+                                    <button onClick={() => setOrderType('drop')} className={`px-6 py-2.5 rounded-lg font-bold transition-all text-sm sm:text-base ${orderType === 'drop' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>落球分析</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {!config ? ( <div className="text-center mt-10 mb-10 text-gray-500 font-bold text-xl">載入字典中...</div> ) : (
+                            <>
+                                <div className="mb-8">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2 mb-0"><i data-lucide="pencil-line" className="w-4 h-4"></i> 請輸入上一期開出號碼 ({orderType === 'size' ? '順球' : '落球'})</label>
+                                        <button onClick={applyLatestDraw} className="py-1.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-bold rounded-lg border border-indigo-200 transition-colors flex items-center gap-1.5 shadow-sm">
+                                            <i data-lucide="download" className="w-4 h-4"></i> 帶入最新一期號碼
+                                        </button>
+                                    </div>
+                                    <div className={`grid grid-cols-${config.balls} gap-3 sm:gap-4`}>
+                                        {balls[orderType].map((ball, index) => (
+                                            <div key={index} className="flex flex-col items-center">
+                                                <span className="text-xs text-gray-500 mb-1 font-medium">第 {index + 1} 球</span>
+                                                <input type="text" value={ball} onChange={(e) => handleBallChange(index, e.target.value)} className="ball-input w-full text-center text-2xl font-bold py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all shadow-sm text-indigo-900" maxLength="2" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* 尾數區塊 */}
+                                <div className="mt-12 border-t-4 border-dashed border-indigo-100 pt-8">
+                                    <h2 className="text-2xl font-black text-indigo-800 mb-6 flex items-center gap-2">
+                                        <i className="w-6 h-6"></i>
+                                        尾數
+                                    </h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                                <i data-lucide="list-tree" className="w-5 h-5 text-indigo-600"></i>
+                                                各球「尾數」明細
+                                            </h3>
+                                            <div className="space-y-3">
+                                                {tailPredictions.map((p, i) => (
+                                                    <div key={`tail-det-${i}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-white transition-colors">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">{p.pos}</div>
+                                                            <div className="text-sm">
+                                                                <span className="text-gray-500">開出 </span>
+                                                                <span className="font-bold text-gray-800 text-lg">{p.ball}</span>
+                                                                <span className="text-gray-400 text-xs ml-1">({p.tail}尾)</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <i data-lucide="arrow-right" className="w-4 h-4 text-gray-300"></i>
+                                                            {p.preds && p.preds.length > 0 ? (
+                                                                <div className="flex gap-2">
+                                                                    {p.preds.map((predVal, predIdx) => (
+                                                                        <span key={`p-${predIdx}`} className={`px-3 py-1 font-bold rounded-md ${predIdx === 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-700'}`}>{predVal} 尾</span>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-gray-400 text-sm">請輸入有效數字</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                                <i data-lucide="bar-chart-2" className="w-5 h-5 text-red-500"></i>
+                                                尾數強度總表
+                                            </h3>
+                                            <div className="space-y-4 bg-gray-50 p-5 rounded-xl border border-gray-100">
+                                                {sortedTailTally.map((item, index) => {
+                                                    if (item.count === 0 && index > 2) return null; 
+                                                    const percentage = item.count > 0 ? (item.count / tailMaxCount) * 100 : 0;
+                                                    const isTop = item.count > 0 && item.count === tailMaxCount;
+                                                    const isStrong = item.count >= 2;
+                                                    return (
+                                                        <div key={`tail-tal-${item.tail}`} className="flex items-center gap-3">
+                                                            <div className={`w-12 h-10 flex items-center justify-center rounded-lg font-bold text-lg border-2 ${isTop ? 'bg-red-500 border-red-600 text-white shadow-md transform scale-105' : isStrong ? 'bg-orange-100 border-orange-300 text-orange-800' : 'bg-white border-gray-200 text-gray-500'}`}>
+                                                                {item.tail} 尾
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <div className="h-4 w-full bg-gray-200 rounded-full overflow-hidden flex">
+                                                                    <div className={`h-full transition-all duration-500 ease-out ${isTop ? 'bg-red-500' : isStrong ? 'bg-orange-400' : 'bg-gray-400'}`} style={{ width: `${percentage}%` }}></div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="w-14 text-right">
+                                                                <span className={`font-bold text-lg ${isTop ? 'text-red-600' : isStrong ? 'text-orange-600' : 'text-gray-500'}`}>
+                                                                    {item.count} <span className="text-xs font-normal">次</span>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 頭數區塊 */}
+                                <div className="mt-12 border-t-4 border-dashed border-indigo-100 pt-8">
+                                    <h2 className="text-2xl font-black text-indigo-800 mb-6 flex items-center gap-2">
+                                        <i className="w-6 h-6"></i>
+                                        頭數
+                                    </h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                                <i data-lucide="list-tree" className="w-5 h-5 text-indigo-600"></i>
+                                                各球「頭數」明細
+                                            </h3>
+                                            <div className="space-y-3">
+                                                {headPredictions.map((p, i) => (
+                                                    <div key={`head-det-${i}`} className="flex items-center justify-between p-3 bg-indigo-50/50 rounded-lg border border-indigo-100 hover:bg-white transition-colors">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">{p.pos}</div>
+                                                            <div className="text-sm">
+                                                                <span className="text-gray-500">開出 </span>
+                                                                <span className="font-bold text-gray-800 text-lg">{p.ball}</span>
+                                                                <span className="text-indigo-500 font-bold text-xs ml-1">({p.tail}尾)</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <i data-lucide="arrow-right" className="w-4 h-4 text-gray-300"></i>
+                                                            {p.preds && p.preds.length > 0 ? (
+                                                                <div className="flex gap-2">
+                                                                    {p.preds.map((predVal, predIdx) => (
+                                                                        <span key={`p-${predIdx}`} className={`px-3 py-1 font-bold rounded-md ${predIdx === 0 ? 'bg-amber-100 text-amber-800' : 'bg-gray-200 text-gray-700'}`}>{predVal} 頭</span>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-gray-400 text-sm">請輸入有效數字</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                                <i data-lucide="bar-chart-2" className="w-5 h-5 text-rose-500"></i>
+                                                頭數強度總表
+                                            </h3>
+                                            <div className="space-y-4 bg-indigo-50/30 p-5 rounded-xl border border-indigo-100">
+                                                {sortedHeadTally.map((item, index) => {
+                                                    if (item.count === 0) return null; 
+                                                    const percentage = item.count > 0 ? (item.count / headMaxCount) * 100 : 0;
+                                                    const isTop = item.count > 0 && item.count === headMaxCount;
+                                                    const isStrong = item.count >= 2;
+                                                    return (
+                                                        <div key={`head-tal-${item.head}`} className="flex items-center gap-3">
+                                                            <div className={`w-20 h-10 flex items-center justify-center rounded-lg font-bold text-base border-2 ${isTop ? 'bg-rose-500 border-rose-600 text-white shadow-md transform scale-105' : isStrong ? 'bg-orange-100 border-orange-300 text-orange-800' : 'bg-white border-gray-200 text-gray-500'}`}>
+                                                                {item.head} 頭
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <div className="h-4 w-full bg-gray-200 rounded-full overflow-hidden flex">
+                                                                    <div className={`h-full transition-all duration-500 ease-out ${isTop ? 'bg-rose-500' : isStrong ? 'bg-orange-400' : 'bg-gray-400'}`} style={{ width: `${percentage}%` }}></div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="w-14 text-right">
+                                                                <span className={`font-bold text-lg ${isTop ? 'text-rose-600' : isStrong ? 'text-orange-600' : 'text-gray-500'}`}>
+                                                                    {item.count} <span className="text-xs font-normal">次</span>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 不出牌區塊 */}
+                                <div className="mt-8 border-t border-gray-200 pt-8">
+                                    <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-4">
+                                        <i data-lucide="shield-off" className="w-5 h-5 text-purple-600"></i>
+                                        不出牌
+                                    </h2>
+                                    <div className="space-y-6">
+                                        <div className="bg-purple-50 p-4 sm:p-6 rounded-xl border border-purple-100 flex flex-col md:flex-row items-center gap-4 sm:gap-6">
+                                            <div className="flex-shrink-0 w-24 text-center">
+                                                <div className="text-sm font-bold text-purple-800 mb-1">5不出</div>
+                                            </div>
+                                            <div className="flex gap-2 sm:gap-3 flex-wrap justify-center flex-1">
+                                                {fiveNotToPlay.map((num, i) => ( <div key={i} className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center font-black text-lg text-purple-700 shadow-sm border-2 border-purple-200">{num}</div> ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-indigo-50 p-4 sm:p-6 rounded-xl border border-indigo-100 flex flex-col md:flex-row items-center gap-4 sm:gap-6">
+                                            <div className="flex-shrink-0 w-24 text-center">
+                                                <div className="text-sm font-bold text-indigo-800 mb-1">6不出</div>
+                                            </div>
+                                            <div className="flex gap-2 sm:gap-3 flex-wrap justify-center flex-1">
+                                                {sixNotToPlay.map((num, i) => ( <div key={i} className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center font-black text-lg text-indigo-700 shadow-sm border-2 border-indigo-200">{num}</div> ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-sky-50 p-4 sm:p-6 rounded-xl border border-sky-100 flex flex-col md:flex-row items-center gap-4 sm:gap-6">
+                                            <div className="flex-shrink-0 w-24 text-center">
+                                                <div className="text-sm font-bold text-sky-800 mb-1">7不出</div>
+                                            </div>
+                                            <div className="flex gap-2 sm:gap-3 flex-wrap justify-center flex-1">
+                                                {sevenNotToPlay.map((num, i) => ( <div key={i} className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center font-black text-lg text-sky-700 shadow-sm border-2 border-sky-200">{num}</div> ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-emerald-50 p-4 sm:p-6 rounded-xl border border-emerald-100 flex flex-col md:flex-row items-center gap-4 sm:gap-6">
+                                            <div className="flex-shrink-0 w-24 text-center">
+                                                <div className="text-sm font-bold text-emerald-800 mb-1">8不出</div>
+                                            </div>
+                                            <div className="flex gap-2 sm:gap-3 flex-wrap justify-center flex-1">
+                                                {eightNotToPlay.map((num, i) => ( <div key={i} className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center font-black text-lg text-emerald-700 shadow-sm border-2 border-emerald-200">{num}</div> ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-amber-50 p-4 sm:p-6 rounded-xl border border-amber-100 flex flex-col md:flex-row items-center gap-4 sm:gap-6">
+                                            <div className="flex-shrink-0 w-24 text-center">
+                                                <div className="text-sm font-bold text-amber-800 mb-1">9不出</div>
+                                            </div>
+                                            <div className="flex gap-2 sm:gap-3 flex-wrap justify-center flex-1">
+                                                {nineNotToPlay.map((num, i) => ( <div key={i} className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center font-black text-lg text-amber-700 shadow-sm border-2 border-amber-200">{num}</div> ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-orange-50 p-4 sm:p-6 rounded-xl border border-orange-100 flex flex-col md:flex-row items-center gap-4 sm:gap-6">
+                                            <div className="flex-shrink-0 w-24 text-center">
+                                                <div className="text-sm font-bold text-orange-800 mb-1">10不出</div>
+                                            </div>
+                                            <div className="flex gap-2 sm:gap-3 flex-wrap justify-center flex-1">
+                                                {tenNotToPlay.map((num, i) => ( <div key={i} className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center font-black text-lg text-orange-700 shadow-sm border-2 border-orange-200">{num}</div> ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-pink-50 p-4 sm:p-6 rounded-xl border border-pink-100 flex flex-col md:flex-row items-center gap-4 sm:gap-6">
+                                            <div className="flex-shrink-0 w-24 text-center">
+                                                <div className="text-sm font-bold text-pink-800 mb-1">11不出</div>
+                                            </div>
+                                            <div className="flex gap-2 sm:gap-3 flex-wrap justify-center flex-1">
+                                                {elevenNotToPlay.map((num, i) => ( <div key={i} className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center font-black text-lg text-pink-700 shadow-sm border-2 border-pink-200">{num}</div> ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-rose-50 p-4 sm:p-6 rounded-xl border border-rose-100 flex flex-col md:flex-row items-center gap-4 sm:gap-6">
+                                            <div className="flex-shrink-0 w-24 text-center">
+                                                <div className="text-sm font-bold text-rose-800 mb-1">12不出</div>
+                                            </div>
+                                            <div className="flex gap-2 sm:gap-3 flex-wrap justify-center flex-1">
+                                                {twelveNotToPlay.map((num, i) => ( <div key={i} className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full flex items-center justify-center font-black text-lg text-rose-700 shadow-sm border-2 border-rose-200">{num}</div> ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 推薦車牌區塊 */}
+                                <div className="mt-12 border-t-4 border-dashed border-indigo-100 pt-8">
+                                    <h2 className="text-2xl font-black text-indigo-800 mb-6 flex items-center gap-2"><i className="w-6 h-6"></i> 推薦車牌</h2>
+                                    <div className="space-y-4">
+                                        <div className="bg-gradient-to-r from-slate-800 to-slate-700 p-6 rounded-xl shadow-lg flex flex-col gap-4">
+                                            <div className="flex flex-col md:flex-row items-center gap-6">
+                                                <div className="flex-shrink-0 w-28 text-center text-white"><div className="text-sm font-black text-amber-400 mb-1 tracking-widest">二中一</div></div>
+                                                <div className="flex gap-4 sm:gap-6 justify-center flex-1 flex-wrap">
+                                                    {carPlates.top2.map((num, i) => (
+                                                        <div key={`car2-${i}`} className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-b from-amber-300 to-amber-500 rounded-full flex items-center justify-center font-black text-3xl sm:text-4xl text-slate-900 shadow-xl border-4 border-amber-200 transform hover:scale-105 transition-transform">{num}</div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            {carPlates.others && carPlates.others.length > 0 && (
+                                                <div className="mt-2 pt-4 border-t border-slate-600/50 flex flex-col sm:flex-row items-center gap-3">
+                                                    <span className="text-sm font-bold text-slate-400">其他高機率組合：</span>
+                                                    <div className="flex gap-2 flex-wrap justify-center flex-1">
+                                                        {carPlates.others.map(num => ( <span key={`others-${num}`} className="px-3 py-1.5 bg-slate-800/80 text-amber-200/80 rounded-lg border border-slate-600/50 text-sm font-bold shadow-inner">{num}</span> ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {fullHistoryRecords.totalCount > 0 && (
+                                                <div className="mt-4 p-4 bg-slate-800/80 rounded-xl border border-slate-600 max-h-96 overflow-y-auto">
+                                                    <h4 className="font-bold text-amber-400 mb-3 text-sm flex items-center justify-between sticky top-0 bg-slate-800 p-2 rounded z-10 border-b border-slate-600">
+                                                        <span className="flex items-center gap-2"><i data-lucide="history" className="w-4 h-4"></i> 二中一 完整預測與開獎紀錄 (共 {fullHistoryRecords.totalCount} 期)</span>
+                                                        <span className="text-emerald-400 bg-emerald-900/50 px-2 py-1 rounded text-xs border border-emerald-700">二中一勝率: {((fullHistoryRecords.totalHits2 / fullHistoryRecords.totalCount) * 100).toFixed(1)}% ({fullHistoryRecords.totalHits2}勝)</span>
+                                                    </h4>
+                                                    <div className="flex flex-col gap-2 mt-2">
+                                                        {fullHistoryRecords.records.map((rec, idx) => (
+                                                            <div key={`hist2-${idx}`} className={`p-3 rounded-lg border text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${rec.isHit2 ? 'bg-amber-900/30 border-amber-500/50' : 'bg-slate-700/30 border-slate-600/50'}`}>
+                                                                <div className="flex flex-col gap-1 w-full sm:w-auto">
+                                                                    <span className="text-slate-400 font-mono text-[11px]">基準期: {rec.triggerDate}</span>
+                                                                    <span className="text-slate-200 font-medium">目標期: <span className="font-mono text-white">{rec.targetDate}</span></span>
+                                                                </div>
+                                                                <div className="flex flex-col sm:items-center gap-1 flex-1">
+                                                                    <span className="text-slate-300">二中一: <span className={`font-black text-base tracking-wider ${rec.isHit2 ? 'text-amber-400' : 'text-slate-400'}`}>{rec.predicted2.join(', ')}</span></span>
+                                                                    <span className="text-[11px] text-slate-400 tracking-widest flex items-center flex-wrap justify-center gap-1">實際開出: {rec.actual.join(', ')}</span>
+                                                                </div>
+                                                                <div className="w-full sm:w-24 text-right flex items-center justify-end">
+                                                                    {rec.isHit2 ? ( <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-500/20 text-amber-400 rounded border border-amber-500/30 text-xs font-bold"><i data-lucide="check" className="w-3 h-3"></i>中 {rec.hits2.join(', ')}</span> ) : ( <span className="inline-block px-2.5 py-1.5 bg-slate-600/30 text-slate-500 rounded border border-slate-600/50 text-xs">未中</span> )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 開獎驗證區塊 */}
+                                <div className="mt-8 border-t border-gray-200 pt-8">
+                                    <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-4">
+                                        <i data-lucide="check-circle" className="w-5 h-5 text-emerald-600"></i>
+                                        開獎驗證
+                                    </h2>
+                                    <div className="bg-emerald-50 p-5 sm:p-6 rounded-xl border border-emerald-100 mb-6">
+                                        <label className="block text-sm font-semibold text-emerald-800 mb-3 flex items-center gap-2">
+                                            <i data-lucide="target" className="w-4 h-4"></i>
+                                            請輸入本期開出號碼
+                                        </label>
+                                        <div className={`grid grid-cols-${config.balls} gap-3 sm:gap-4`}>
+                                            {validationBalls[orderType].map((ball, index) => (
+                                                <div key={`val-${index}`} className="flex flex-col items-center">
+                                                    <input type="text" value={ball} onChange={(e) => handleValidationBallChange(index, e.target.value)} className="ball-input w-full text-center text-xl sm:text-2xl font-bold py-2 sm:py-3 rounded-lg border-2 border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all shadow-sm text-emerald-900" maxLength="2" placeholder="??" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {validationResults && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                                                <h3 className="font-bold text-gray-700 mb-3 border-b border-gray-100 pb-2">🎯 車牌驗證</h3>
+                                                <div className="space-y-3 mt-4">
+                                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                                        <span className="text-sm font-bold text-amber-700">二中一: {carPlates.top2.join(', ')} 
+                                                            {carPlates.others && carPlates.others.length > 0 && <span className="text-xs text-slate-500 font-normal ml-2">其他: {carPlates.others.join(', ')}</span>}
+                                                        </span>
+                                                        <div className="flex items-center gap-2">
+                                                            {validationResults.carPlateCheck.passed ? 
+                                                                <span className="text-sm font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-md flex items-center gap-1"><i data-lucide="check" className="w-4 h-4"></i> 命中 ({validationResults.carPlateCheck.hits.join(', ')})</span> : 
+                                                                <span className="text-sm font-bold bg-gray-100 text-gray-500 px-3 py-1 rounded-md">未中</span>
+                                                            }
+                                                            {validationResults.carPlateCheck.othersHits && validationResults.carPlateCheck.othersHits.length > 0 && (
+                                                                <span className="text-sm font-bold bg-teal-100 text-teal-700 px-3 py-1 rounded-md flex items-center gap-1">其他命中 ({validationResults.carPlateCheck.othersHits.join(', ')})</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                                                <h3 className="font-bold text-gray-700 mb-3 border-b border-gray-100 pb-2">🛡️ 不出牌過關結果</h3>
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-bold text-purple-700">5不出</span>
+                                                        {validationResults.five.passed ? <span className="text-sm font-bold bg-green-100 text-green-700 px-3 py-1 rounded-md flex items-center gap-1"><i data-lucide="check" className="w-4 h-4"></i> 完美過關</span> : <span className="text-sm font-bold bg-red-100 text-red-700 px-3 py-1 rounded-md">失敗 (命中 {validationResults.five.hits.join(', ')})</span>}
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-bold text-indigo-700">6不出</span>
+                                                        {validationResults.six.passed ? <span className="text-sm font-bold bg-green-100 text-green-700 px-3 py-1 rounded-md flex items-center gap-1"><i data-lucide="check" className="w-4 h-4"></i> 完美過關</span> : <span className="text-sm font-bold bg-red-100 text-red-700 px-3 py-1 rounded-md">失敗 (命中 {validationResults.six.hits.join(', ')})</span>}
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-bold text-sky-700">7不出</span>
+                                                        {validationResults.seven.passed ? <span className="text-sm font-bold bg-green-100 text-green-700 px-3 py-1 rounded-md flex items-center gap-1"><i data-lucide="check" className="w-4 h-4"></i> 完美過關</span> : <span className="text-sm font-bold bg-red-100 text-red-700 px-3 py-1 rounded-md">失敗 (命中 {validationResults.seven.hits.join(', ')})</span>}
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-bold text-emerald-700">8不出</span>
+                                                        {validationResults.eight.passed ? <span className="text-sm font-bold bg-green-100 text-green-700 px-3 py-1 rounded-md flex items-center gap-1"><i data-lucide="check" className="w-4 h-4"></i> 完美過關</span> : <span className="text-sm font-bold bg-red-100 text-red-700 px-3 py-1 rounded-md">失敗 (命中 {validationResults.eight.hits.join(', ')})</span>}
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-bold text-amber-700">9不出</span>
+                                                        {validationResults.nine.passed ? <span className="text-sm font-bold bg-green-100 text-green-700 px-3 py-1 rounded-md flex items-center gap-1"><i data-lucide="check" className="w-4 h-4"></i> 完美過關</span> : <span className="text-sm font-bold bg-red-100 text-red-700 px-3 py-1 rounded-md">失敗 (命中 {validationResults.nine.hits.join(', ')})</span>}
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-bold text-orange-700">10不出</span>
+                                                        {validationResults.ten.passed ? <span className="text-sm font-bold bg-green-100 text-green-700 px-3 py-1 rounded-md flex items-center gap-1"><i data-lucide="check" className="w-4 h-4"></i> 完美過關</span> : <span className="text-sm font-bold bg-red-100 text-red-700 px-3 py-1 rounded-md">失敗 (命中 {validationResults.ten.hits.join(', ')})</span>}
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-bold text-pink-700">11不出</span>
+                                                        {validationResults.eleven.passed ? <span className="text-sm font-bold bg-green-100 text-green-700 px-3 py-1 rounded-md flex items-center gap-1"><i data-lucide="check" className="w-4 h-4"></i> 完美過關</span> : <span className="text-sm font-bold bg-red-100 text-red-700 px-3 py-1 rounded-md">失敗 (命中 {validationResults.eleven.hits.join(', ')})</span>}
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-bold text-rose-700">12不出</span>
+                                                        {validationResults.twelve.passed ? <span className="text-sm font-bold bg-green-100 text-green-700 px-3 py-1 rounded-md flex items-center gap-1"><i data-lucide="check" className="w-4 h-4"></i> 完美過關</span> : <span className="text-sm font-bold bg-red-100 text-red-700 px-3 py-1 rounded-md">失敗 (命中 {validationResults.twelve.hits.join(', ')})</span>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root-tool2'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

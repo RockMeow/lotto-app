@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>柱碰版路工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; }</style>
+</head>
+<body>
+    <div class="bg-slate-800 p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto flex flex-wrap gap-2 sm:gap-4 justify-center">
+            <a href="index.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">🏠 首頁</a>
+            <a href="tool1.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">立柱撞柱工具</a>
+            <a href="tool2.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">複合分析工具</a>
+            <a href="tool3.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">尾數拖牌工具</a>
+            <a href="tool4.html" class="px-5 py-2.5 rounded-lg font-bold text-white bg-teal-600 shadow-md transition-all">柱碰版路工具</a>
+        </div>
+    </div>
+
+    <div class="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <div class="bg-teal-600 rounded-t-2xl p-6 sm:p-8 text-white shadow-xl border-b-4 border-teal-500">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-3xl font-black flex items-center gap-3"><i data-lucide="network" class="w-8 h-8"></i>柱碰版路分析工具</h1>
+                    <p class="mt-2 text-teal-100 font-medium opacity-90">輸入或自訂立柱組合，自動回測歷史跨柱連碰命中狀況。</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white shadow-xl p-6 sm:p-8 border border-slate-200 rounded-b-2xl">
+            <div class="mb-8 p-6 bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200 pb-3">
+                    <i data-lucide="database" class="w-5 h-5 text-teal-600"></i>1. 貼上歷史 CSV 數據
+                </h2>
+                <textarea id="csvDataTab4" placeholder="Date,N1,N2,N3,N4,N5&#10;01/01,13,14,24,25,35..." class="w-full h-32 p-3 border-2 border-slate-200 rounded-xl text-sm font-mono text-slate-600 focus:border-teal-500 focus:ring-0 outline-none transition-colors shadow-inner"></textarea>
+            </div>
+
+            <div class="mb-8 p-6 bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200 pb-3">
+                    <i data-lucide="settings-2" class="w-5 h-5 text-teal-600"></i>2. 分析條件設定
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">篩選模式</label>
+                        <select id="filterTypeTab4" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none shadow-sm transition-all">
+                            <option value="date">每月日期 (1號、2號...)</option>
+                            <option value="draw">每月期數 (第1期、第2期...)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">起始 (期/日)</label>
+                        <input type="number" id="startRangeTab4" value="18" min="1" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none shadow-sm transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">結束 (期/日)</label>
+                        <input type="number" id="endRangeTab4" value="20" min="1" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none shadow-sm transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">幾柱碰？</label>
+                        <select id="pillarCountTab4" onchange="generatePillarInputsTab4()" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none shadow-sm transition-all">
+                            <option value="2">2 柱</option>
+                            <option value="3" selected>3 柱</option>
+                            <option value="4">4 柱</option>
+                            <option value="5">5 柱</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-8">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2">
+                    <i data-lucide="layout-grid" class="w-5 h-5 text-teal-600"></i>3. 立柱號碼設定
+                </h2>
+                <div id="pillars-containerTab4" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6"></div>
+                
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button onclick="autoFindBestNumbersTab4()" class="flex-1 py-4 px-6 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl shadow-md transition-transform transform hover:-translate-y-1 flex items-center justify-center gap-2 text-lg">
+                        <i data-lucide="sparkles" class="w-5 h-5 fill-current"></i> 自動搜尋高頻號碼
+                    </button>
+                    <button onclick="analyzeDataTab4()" class="flex-1 py-4 px-6 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl shadow-md transition-transform transform hover:-translate-y-1 flex items-center justify-center gap-2 text-lg">
+                        <i data-lucide="activity" class="w-5 h-5"></i> 手動驗證版路
+                    </button>
+                </div>
+            </div>
+
+            <div id="resultAreaTab4" class="mt-8 border-t-4 border-dashed border-teal-100 pt-8" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const tab4Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const tab4NumsPerPillar = 3; 
+
+        document.addEventListener('DOMContentLoaded', function() {
+            generatePillarInputsTab4();
+            lucide.createIcons();
+        });
+
+        function generatePillarInputsTab4() {
+            const count = parseInt(document.getElementById("pillarCountTab4").value);
+            const container = document.getElementById("pillars-containerTab4");
+            container.innerHTML = ""; 
+
+            for (let i = 0; i < count; i++) {
+                const letter = tab4Alphabet[i];
+                const div = document.createElement("div");
+                div.className = "p-5 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3 transition-colors hover:border-teal-300";
+                div.innerHTML = `
+                    <label class="font-black text-teal-700 flex justify-between items-center">
+                        第 ${letter} 柱 <i data-lucide="grip-vertical" class="w-4 h-4 text-slate-300"></i>
+                    </label>
+                    <input type="text" id="pillarTab4_${letter}" placeholder="例如: 08, 19, 27" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none text-lg font-mono font-bold text-slate-700 transition-colors shadow-inner">
+                `;
+                container.appendChild(div);
+            }
+            setTimeout(() => { if(window.lucide) window.lucide.createIcons(); }, 10);
+        }
+
+        function autoFindBestNumbersTab4() {
+            const csvRaw = document.getElementById("csvDataTab4").value.trim();
+            if (!csvRaw) { alert("請先貼上 CSV 數據！"); return; }
+            const filterType = document.getElementById("filterTypeTab4").value;
+            const startRange = parseInt(document.getElementById("startRangeTab4").value);
+            const endRange = parseInt(document.getElementById("endRangeTab4").value);
+            const pillarCount = parseInt(document.getElementById("pillarCountTab4").value);
+
+            const lines = csvRaw.split('\n').map(l => l.trim()).filter(l => l && !l.toLowerCase().includes('date'));
+            let dataByMonth = {};
+            
+            lines.forEach(line => {
+                const parts = line.split(',');
+                if (parts.length < 6) return;
+                const dateStr = parts[0];
+                const month = dateStr.split('/')[0];
+                const day = parseInt(dateStr.split('/')[1], 10);
+                const nums = parts.slice(1, 6).map(n => parseInt(n, 10));
+
+                if (!dataByMonth[month]) dataByMonth[month] = [];
+                dataByMonth[month].push({ date: dateStr, day: day, nums: nums });
+            });
+
+            let frequency = {};
+            for (const [month, draws] of Object.entries(dataByMonth)) {
+                let filteredDraws = [];
+                if (filterType === 'draw') {
+                    for (let i = 0; i < draws.length; i++) {
+                        let drawIndex = i + 1;
+                        if (drawIndex >= startRange && drawIndex <= endRange) filteredDraws.push(draws[i]);
+                    }
+                } else {
+                    for (let i = 0; i < draws.length; i++) {
+                        if (draws[i].day >= startRange && draws[i].day <= endRange) filteredDraws.push(draws[i]);
+                    }
+                }
+                filteredDraws.forEach(draw => { draw.nums.forEach(n => { frequency[n] = (frequency[n] || 0) + 1; }); });
+            }
+
+            let sortedNumbers = Object.keys(frequency).map(n => ({ num: parseInt(n), count: frequency[n] })).sort((a, b) => b.count - a.count);
+            const totalNeeded = pillarCount * tab4NumsPerPillar;
+            if (sortedNumbers.length < totalNeeded) { alert("該區間內的數據量太少，無法抓出足夠的號碼組合！"); return; }
+
+            let topNumbers = sortedNumbers.slice(0, totalNeeded).map(item => item.num);
+            let distributed = Array.from({ length: pillarCount }, () => []);
+            for (let i = 0; i < topNumbers.length; i++) distributed[i % pillarCount].push(topNumbers[i]);
+
+            for (let i = 0; i < pillarCount; i++) {
+                const letter = tab4Alphabet[i];
+                distributed[i].sort((a, b) => a - b); 
+                const formattedNums = distributed[i].map(n => String(n).padStart(2, '0')).join(', ');
+                document.getElementById(`pillarTab4_${letter}`).value = formattedNums;
+            }
+            analyzeDataTab4();
+        }
+
+        function analyzeDataTab4() {
+            const csvRaw = document.getElementById("csvDataTab4").value.trim();
+            const filterType = document.getElementById("filterTypeTab4").value;
+            const startRange = parseInt(document.getElementById("startRangeTab4").value);
+            const endRange = parseInt(document.getElementById("endRangeTab4").value);
+            const pillarCount = parseInt(document.getElementById("pillarCountTab4").value);
+            if (!csvRaw) return;
+
+            let pillars = [];
+            for (let i = 0; i < pillarCount; i++) {
+                const letter = tab4Alphabet[i];
+                const val = document.getElementById(`pillarTab4_${letter}`).value;
+                const nums = val.split(',').map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n));
+                pillars.push({ name: letter, nums: nums });
+            }
+
+            const lines = csvRaw.split('\n').map(l => l.trim()).filter(l => l && !l.toLowerCase().includes('date'));
+            let dataByMonth = {};
+            lines.forEach(line => {
+                const parts = line.split(',');
+                if (parts.length < 6) return;
+                const dateStr = parts[0];
+                const month = dateStr.split('/')[0];
+                const day = parseInt(dateStr.split('/')[1], 10);
+                const nums = parts.slice(1, 6).map(n => parseInt(n, 10));
+                if (!dataByMonth[month]) dataByMonth[month] = [];
+                dataByMonth[month].push({ date: dateStr, day: day, nums: nums });
+            });
+
+            let html = `<div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm mt-4">
+                <table class="w-full text-left border-collapse text-sm whitespace-nowrap">
+                <thead><tr class="bg-slate-800 text-white"><th class="p-4 border-b border-slate-600 font-bold">月份</th><th class="p-4 border-b border-slate-600 font-bold">${filterType === 'draw' ? '期數' : '日期'}</th><th class="p-4 border-b border-slate-600 font-bold">實際開獎號碼</th><th class="p-4 border-b border-slate-600 font-bold">各柱命中狀況</th><th class="p-4 border-b border-slate-600 font-bold">跨組連碰狀況</th></tr></thead><tbody class="bg-white">`;
+
+            for (const [month, draws] of Object.entries(dataByMonth)) {
+                let rowSpanDrawn = false; let filteredDraws = [];
+                if (filterType === 'draw') {
+                    for (let i = 0; i < draws.length; i++) {
+                        let drawIndex = i + 1;
+                        if (drawIndex >= startRange && drawIndex <= endRange) filteredDraws.push({ ...draws[i], label: `第 ${drawIndex} 期` });
+                    }
+                } else {
+                    for (let i = 0; i < draws.length; i++) {
+                        if (draws[i].day >= startRange && draws[i].day <= endRange) filteredDraws.push({ ...draws[i], label: draws[i].date });
+                    }
+                }
+                if (filteredDraws.length === 0) continue;
+
+                filteredDraws.forEach((draw, index) => {
+                    let hitSummary = []; let hitGroups = []; let drawNumsFormatted = [];
+                    draw.nums.forEach(n => {
+                        let isHit = false;
+                        pillars.forEach(p => { if (p.nums.includes(n)) isHit = true; });
+                        if (isHit) drawNumsFormatted.push(`<span class="inline-flex w-7 h-7 sm:w-8 sm:h-8 bg-teal-100 text-teal-700 font-black rounded-full items-center justify-center border border-teal-300 shadow-sm text-xs sm:text-sm">${String(n).padStart(2, '0')}</span>`);
+                        else drawNumsFormatted.push(`<span class="inline-flex w-7 h-7 sm:w-8 sm:h-8 bg-slate-100 text-slate-500 rounded-full items-center justify-center border border-slate-200 text-xs sm:text-sm">${String(n).padStart(2, '0')}</span>`);
+                    });
+
+                    pillars.forEach(p => {
+                        let hitsInThisPillar = p.nums.filter(n => draw.nums.includes(n));
+                        if (hitsInThisPillar.length > 0) {
+                            let formattedHits = hitsInThisPillar.map(n => String(n).padStart(2, '0')).join(', ');
+                            hitSummary.push(`**${formattedHits}**(${p.name})`); hitGroups.push(p.name);
+                        }
+                    });
+
+                    let hitStatusText = hitSummary.length > 0 ? hitSummary.join('、').replace(/\*\*/g, '') : '<span class="text-slate-300">無</span>';
+                    let comboStatusText = '-';
+                    if (hitGroups.length > 0) {
+                        if (hitGroups.length === pillarCount) comboStatusText = `<span class="inline-flex items-center gap-1 bg-amber-100 text-amber-800 px-3 py-1 rounded-md font-bold shadow-sm"><i data-lucide="flame" class="w-4 h-4 text-amber-500"></i> ${hitGroups.join(' x ')} 完美連碰</span>`;
+                        else if (hitGroups.length === 1) comboStatusText = `<span class="text-slate-500">僅中 ${hitGroups[0]} 組</span>`;
+                        else comboStatusText = `<span class="text-teal-600 font-bold bg-teal-50 px-2 py-1 rounded-md">中 ${hitGroups.join('、')} 組</span>`;
+                    }
+
+                    html += `<tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">`;
+                    if (!rowSpanDrawn) {
+                        html += `<td rowspan="${filteredDraws.length}" class="p-4 border-r border-slate-100 align-top bg-slate-50"><b class="text-lg text-slate-700">${parseInt(month, 10)} 月</b></td>`;
+                        rowSpanDrawn = true;
+                    }
+                    html += `<td class="p-4 text-slate-600 font-medium">${draw.label}</td><td class="p-4 font-mono text-base"><div class="flex gap-1.5 items-center">${drawNumsFormatted.join('')}</div></td><td class="p-4">${hitStatusText}</td><td class="p-4">${comboStatusText}</td></tr>`;
+                });
+            }
+
+            html += `</tbody></table></div>`;
+            const resultArea = document.getElementById("resultAreaTab4");
+            resultArea.style.display = "block";
+            resultArea.innerHTML = html;
+            setTimeout(() => { if(window.lucide) window.lucide.createIcons(); }, 100);
+        }
+    </script>
+</body>
+</html>

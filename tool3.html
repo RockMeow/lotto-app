@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>尾數拖牌工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; }</style>
+</head>
+<body>
+    <div class="bg-slate-800 p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto flex flex-wrap gap-2 sm:gap-4 justify-center">
+            <a href="index.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">🏠 首頁</a>
+            <a href="tool1.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">立柱撞柱工具</a>
+            <a href="tool2.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">複合分析工具</a>
+            <a href="tool3.html" class="px-5 py-2.5 rounded-lg font-bold text-white bg-red-600 shadow-md transition-all">尾數拖牌工具</a>
+            <a href="tool4.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">柱碰版路工具</a>
+        </div>
+    </div>
+
+    <div class="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <div class="bg-red-600 rounded-t-2xl p-6 sm:p-8 text-white shadow-xl border-b-4 border-red-500">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-3xl font-black flex items-center gap-3">
+                        <i data-lucide="scan-line" class="w-8 h-8"></i>
+                        聽牌版路掃描工具
+                    </h1>
+                    <p class="mt-2 text-red-100 font-medium opacity-90">匯入歷史開獎數據，自動回測掃描最高勝率的尾數拖牌版路。</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white shadow-xl p-6 sm:p-8 border border-slate-200 rounded-b-2xl">
+            <div class="mb-8 p-6 bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200 pb-3">
+                    <i data-lucide="settings" class="w-5 h-5 text-red-600"></i>分析條件設定
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">1. 選擇彩種</label>
+                        <select id="lotteryType" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-red-200 focus:border-red-500 outline-none transition-all shadow-sm">
+                            <option value="39">天天樂 / 539 / 迦納彩</option>
+                            <option value="49">大樂透 / 六合彩</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">2. 掃描期數 (起~迄)</label>
+                        <div class="flex gap-2 items-center">
+                            <input type="number" id="minPeriod" value="1" min="1" max="10" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-red-200 focus:border-red-500 outline-none shadow-sm transition-all">
+                            <span class="text-slate-400 font-bold">~</span>
+                            <input type="number" id="maxPeriod" value="2" min="1" max="10" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-red-200 focus:border-red-500 outline-none shadow-sm transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">3. 歷史最少出現次數</label>
+                        <input type="number" id="minOccur" value="15" min="5" max="50" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-red-200 focus:border-red-500 outline-none shadow-sm transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">4. 最低歷史勝率門檻 (%)</label>
+                        <input type="number" id="minRate" value="90" min="50" max="100" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-center font-bold text-slate-700 focus:ring-2 focus:ring-red-200 focus:border-red-500 outline-none shadow-sm transition-all">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-8 p-6 bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200 pb-3">
+                    <i data-lucide="database" class="w-5 h-5 text-red-600"></i>5. 匯入歷史開獎資料庫 (CSV)
+                </h2>
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex-1">
+                        <textarea id="csvTextTab3" placeholder="直接在此貼上 CSV 數據，或使用右側按鈕上傳檔案..." class="w-full h-32 p-3 border-2 border-slate-200 rounded-xl text-sm font-mono text-slate-600 focus:border-red-500 focus:ring-0 outline-none transition-colors shadow-inner"></textarea>
+                    </div>
+                    <div class="w-full md:w-64 flex flex-col justify-center gap-3">
+                        <input type="file" id="csvFile" accept=".csv" class="hidden" onchange="document.getElementById('csvFileNameTab3').innerText = this.files[0] ? this.files[0].name : '未選擇檔案'; document.getElementById('csvFileNameTab3').classList.add('text-red-600')">
+                        <button onclick="document.getElementById('csvFile').click()" class="w-full py-3 px-4 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl border border-slate-300 transition-colors flex items-center justify-center gap-2 shadow-sm">
+                            <i data-lucide="upload-cloud" class="w-5 h-5"></i> 選擇檔案
+                        </button>
+                        <div id="csvFileNameTab3" class="text-xs font-bold text-center text-slate-400 truncate">未選擇檔案</div>
+                        <button onclick="runAnalysis()" class="w-full py-4 px-6 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl shadow-md transition-transform transform hover:-translate-y-1 flex items-center justify-center gap-2 text-lg mt-2">
+                            <i data-lucide="play" class="w-5 h-5 fill-current"></i> 開始掃描
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="resultsArea" style="display: none;" class="mt-8 border-t-4 border-dashed border-red-100 pt-8">
+                <h2 id="statusMsg" class="text-xl font-black text-red-600 mb-6 flex items-center gap-2"></h2>
+                <div id="cardsContainer" class="grid grid-cols-1 gap-6"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => lucide.createIcons());
+
+        function runAnalysis() {
+            const textArea = document.getElementById('csvTextTab3');
+            const fileInput = document.getElementById('csvFile');
+            if (textArea && textArea.value.trim() !== '') { processAnalysis(textArea.value.trim()); return; }
+            if (!fileInput.files.length) { alert('請貼上 CSV 數據或選擇要上傳的檔案！'); return; }
+            const reader = new FileReader();
+            reader.onload = function(e) { processAnalysis(e.target.result); };
+            reader.readAsText(fileInput.files[0]);
+        }
+
+        function processAnalysis(csvText) {
+            const maxNum = parseInt(document.getElementById('lotteryType').value);
+            const minP = parseInt(document.getElementById('minPeriod').value);
+            const maxP = parseInt(document.getElementById('maxPeriod').value);
+            const minOccur = parseInt(document.getElementById('minOccur').value);
+            const minRate = parseFloat(document.getElementById('minRate').value) / 100;
+
+            const cardsContainer = document.getElementById('cardsContainer');
+            const statusMsg = document.getElementById('statusMsg');
+            cardsContainer.innerHTML = '';
+            document.getElementById('resultsArea').style.display = 'block';
+
+            const lines = csvText.split('\n');
+            const draws = []; const dates = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const parts = lines[i].split(',');
+                if (parts.length < 2) continue;
+                dates.push(parts[0].trim());
+                const nums = new Set();
+                for (let j = 1; j < parts.length; j++) {
+                    const num = parseInt(parts[j].trim());
+                    if (!isNaN(num)) nums.add(num);
+                }
+                draws.push(nums);
+            }
+
+            if (draws.length < minOccur) {
+                statusMsg.innerHTML = '<i data-lucide="x-circle" class="w-6 h-6"></i>數據量太少！';
+                lucide.createIcons(); return;
+            }
+
+            const tailTargets = {};
+            for (let i = 0; i < 10; i++) {
+                const s = new Set();
+                for (let n = 1; n <= maxNum; n++) if (n % 10 === i) s.add(n);
+                tailTargets[`${i}尾`] = s;
+            }
+
+            let activePatterns = [];
+            for (let trigger = 1; trigger <= maxNum; trigger++) {
+                let triggerIndices = [];
+                for (let i = 0; i < draws.length; i++) if (draws[i].has(trigger)) triggerIndices.push(i);
+                if (triggerIndices.length < minOccur) continue;
+
+                for (let p = minP; p <= maxP; p++) {
+                    for (let [targetName, targetSet] of Object.entries(tailTargets)) {
+                        let hits = 0; let validTrials = 0;
+                        let numberHitCounts = {}; let recentRecords = []; 
+                        
+                        for (let idx of triggerIndices) {
+                            if (idx + p < draws.length) {
+                                validTrials++; let found = false;
+                                let trialHitNumbers = new Set(); let hitPeriod = 0; let hitDate = "";
+                                for (let j = 1; j <= p; j++) {
+                                    for (let item of targetSet) {
+                                        if (draws[idx + j].has(item)) { 
+                                            found = true; trialHitNumbers.add(item);
+                                            if(hitPeriod === 0) { hitPeriod = j; hitDate = dates[idx+j]; }
+                                        }
+                                    }
+                                }
+                                if (found) {
+                                    hits++;
+                                    for (let num of trialHitNumbers) numberHitCounts[num] = (numberHitCounts[num] || 0) + 1;
+                                    let hitNumsStr = Array.from(trialHitNumbers).sort((a,b)=>a-b).map(n => String(n).padStart(2,'0')).join(', ');
+                                    recentRecords.push(`[${dates[idx]} 開出] ➔ 第 ${hitPeriod} 期 (${hitDate}) 成功開出: <span class="font-black text-red-600">${hitNumsStr}</span>`);
+                                } else {
+                                    recentRecords.push(`[${dates[idx]} 開出] ➔ ❌ ${p}期內未開出 (破版)`);
+                                }
+                            }
+                        }
+
+                        let rate = validTrials > 0 ? hits / validTrials : 0;
+                        if (rate >= minRate && validTrials >= minOccur) {
+                            let hitStats = [];
+                            for (let num in numberHitCounts) {
+                                let count = numberHitCounts[num];
+                                hitStats.push({ num: parseInt(num), count: count, rate: validTrials > 0 ? (count / validTrials) : 0 });
+                            }
+                            hitStats.sort((a, b) => b.count !== a.count ? b.count - a.count : a.num - b.num);
+                            let lastIdx = triggerIndices[triggerIndices.length - 1];
+                            let passedPeriods = (draws.length - 1) - lastIdx;
+
+                            if (passedPeriods < p) {
+                                let alreadyHit = false; let hitPeriod = 0; let hitDate = "";
+                                if (passedPeriods > 0) {
+                                    for (let j = 1; j <= passedPeriods; j++) {
+                                        for (let item of targetSet) {
+                                            if (draws[lastIdx + j].has(item)) { alreadyHit = true; hitPeriod = j; hitDate = dates[lastIdx + j]; break; }
+                                        }
+                                        if (alreadyHit) break;
+                                    }
+                                }
+                                activePatterns.push({ trigger: trigger, target: targetName, period: p, rate: rate, success: hits, total: validTrials, triggerDate: dates[lastIdx], remaining: p - passedPeriods, alreadyHit: alreadyHit, hitPeriod: hitPeriod, hitDate: hitDate, hitStats: hitStats, recentRecords: recentRecords.slice() });
+                            }
+                        }
+                    }
+                }
+            }
+
+            activePatterns.sort((a, b) => a.alreadyHit !== b.alreadyHit ? (a.alreadyHit ? 1 : -1) : (a.remaining !== b.remaining ? a.remaining - b.remaining : b.rate - a.rate));
+            statusMsg.innerHTML = `<i data-lucide="siren" class="w-6 h-6"></i>掃描完成！近期觸發了 ${activePatterns.length} 個版路：`;
+
+            if (activePatterns.length === 0) {
+                cardsContainer.innerHTML = `<div class="text-center text-slate-400 p-8 border border-slate-200 rounded-xl bg-slate-50 font-bold">近期沒有任何高勝率版路被觸發。</div>`;
+                lucide.createIcons(); return;
+            }
+
+            activePatterns.forEach(ap => {
+                const ratePct = (ap.rate * 100).toFixed(1);
+                const isPerfect = ap.rate === 1.0;
+                const statusBadge = ap.alreadyHit ? `<span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm"><i data-lucide="check-circle" class="w-4 h-4"></i>已於第 ${ap.hitPeriod} 期 (${ap.hitDate}) 開出</span>` : `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm"><i data-lucide="alert-circle" class="w-4 h-4"></i>聽牌中：剩餘 ${ap.remaining} 期</span>`;
+                let hitStatsHTML = '';
+                if (ap.hitStats && ap.hitStats.length > 0) {
+                    hitStatsHTML = `<div class="mt-4 pt-4 border-t border-slate-100"><strong class="text-slate-700 text-sm mb-3 flex items-center gap-1"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> 尾數內各號碼命中分析：</strong><div class="grid grid-cols-2 sm:grid-cols-3 gap-3">`;
+                    ap.hitStats.forEach(stat => { hitStatsHTML += `<div class="text-sm text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-200"><span class="font-black text-red-600 mr-2">${String(stat.num).padStart(2, '0')}</span>命中 ${stat.count} 次 <span class="text-xs text-slate-400 font-bold block mt-1">(${(stat.rate * 100).toFixed(1)}%)</span></div>`; });
+                    hitStatsHTML += `</div></div>`;
+                }
+                let recordsHTML = '';
+                if (ap.recentRecords && ap.recentRecords.length > 0) {
+                    recordsHTML = `<div class="mt-4 pt-4 border-t border-slate-100"><strong class="text-slate-700 text-sm mb-3 flex items-center gap-1"><i data-lucide="history" class="w-4 h-4"></i> 命中紀錄：</strong><ul class="space-y-1.5 text-xs text-slate-500 list-disc list-inside bg-slate-50 p-3 rounded-lg border border-slate-200">`;
+                    ap.recentRecords.forEach(rec => { recordsHTML += `<li>${rec}</li>`; });
+                    recordsHTML += `</ul></div>`;
+                }
+                let cardHTML = `
+                    <div class="bg-white p-5 sm:p-6 rounded-xl shadow-sm border-l-4 ${isPerfect ? 'border-l-amber-400 bg-amber-50/10' : 'border-l-red-500'} border-y border-r border-y-slate-200 border-r-slate-200 transition-all hover:shadow-md">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-4 border-b border-slate-100">
+                            <span class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                ${isPerfect ? '<span class="text-amber-500">🔥</span>' : '<span class="text-red-500">🎯</span>'} 
+                                【${ap.triggerDate}】開出 <span class="text-white bg-slate-800 px-2 py-0.5 rounded-md font-black">${String(ap.trigger).padStart(2, '0')}</span> ➔ 高機率拖出 <span class="text-red-600 font-black text-xl underline decoration-red-300">${ap.target}</span>
+                            </span>
+                            ${statusBadge}
+                        </div>
+                        <p class="text-sm text-slate-600 leading-relaxed font-medium">
+                            版路條件：只要開出 <strong class="text-slate-800">${ap.trigger}</strong>，<strong class="text-slate-800">${ap.period}</strong> 期內開 <strong class="text-slate-800">${ap.target}</strong> <br>
+                            整體尾數歷史勝率：<span class="text-red-600 font-black text-lg">${ratePct}%</span> <span class="text-slate-400">(${ap.success} / ${ap.total})</span>
+                        </p>
+                        ${hitStatsHTML} ${recordsHTML}
+                    </div>
+                `;
+                cardsContainer.innerHTML += cardHTML;
+            });
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
