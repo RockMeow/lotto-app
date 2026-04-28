@@ -119,7 +119,7 @@
                     <div class="overflow-x-auto">
                         <table class="results-table" id="tableLogic1">
                             <thead>
-                                <tr><th>版路規則</th><th>週期/回測</th><th>歷史勝率</th></tr>
+                                <tr><th>版路規則</th><th>週期/回測</th><th>歷史勝率</th><th>詳細命中紀錄</th></tr>
                             </thead>
                             <tbody></tbody>
                         </table>
@@ -139,7 +139,7 @@
                     <div class="overflow-x-auto">
                         <table class="results-table" id="tableLogic2">
                             <thead>
-                                <tr><th>版路規則</th><th>週期/回測</th><th>歷史勝率</th></tr>
+                                <tr><th>版路規則</th><th>週期/回測</th><th>歷史勝率</th><th>詳細命中紀錄</th></tr>
                             </thead>
                             <tbody></tbody>
                         </table>
@@ -215,6 +215,7 @@
             for (let offsets of offsetsToTest) {
                 for (let periods of [1, 2, 3]) {
                     let totalPlays = 0, hitCount = 0;
+                    let hitHistory = [];
                     const ruleName = `星期${dayNames[anchorDay]}日期 ${offsets.map(o=>o>0?'+'+o:o).join(',')}`;
 
                     for (let i = 0; i < draws.length; i++) {
@@ -232,14 +233,19 @@
                             }
                             if (i + periods - 1 < draws.length || isHit) {
                                 totalPlays++;
-                                if (isHit) hitCount++;
+                                if (isHit) {
+                                    hitCount++;
+                                    hitHistory.push('⭕');
+                                } else {
+                                    hitHistory.push('❌');
+                                }
                             }
                         }
                     }
 
                     if (totalPlays >= 10) {
                         const winRate = hitCount / totalPlays;
-                        results.push({ rule: ruleName, periods, plays: totalPlays, winRate });
+                        results.push({ rule: ruleName, periods, plays: totalPlays, hitCount, hitHistory, winRate });
 
                         // 🔔 檢查是否產生警報 (勝率 >= 85%)
                         if (winRate >= 0.85) {
@@ -262,9 +268,9 @@
 
                                     if (consumed < periods) { // 還有剩餘期數可追
                                         if (hitAlready) {
-                                            globalAlerts.push({ statusType: 'hit', statusText: '✅ 提前命中', rule: ruleName, nums: predictNums, action: `前 ${consumed} 期已命中，視情況停利。`, winRate });
+                                            globalAlerts.push({ statusType: 'hit', statusText: '✅ 提前命中', rule: ruleName, nums: predictNums, action: `前 ${consumed} 期已命中，視情況停利。`, winRate, hitCount, plays: totalPlays });
                                         } else {
-                                            globalAlerts.push({ statusType: 'chase', statusText: '🔥 尚未開出 (強力推薦)', rule: ruleName, nums: predictNums, action: `前 ${consumed} 期未出，最後倒數 ${periods - consumed} 期必拗！`, winRate });
+                                            globalAlerts.push({ statusType: 'chase', statusText: '🔥 尚未開出 (強力推薦)', rule: ruleName, nums: predictNums, action: `前 ${consumed} 期未出，最後倒數 ${periods - consumed} 期必拗！`, winRate, hitCount, plays: totalPlays });
                                         }
                                     }
                                 }
@@ -284,6 +290,7 @@
                 for (let targetDay = 1; targetDay <= 6; targetDay++) {
                     for (let periods of [1, 2, 3]) {
                         let totalPlays = 0, hitCount = 0;
+                        let hitHistory = [];
                         const ruleName = `上週${dayNames[refDay]} 順${ballPos+1}尾，星期${dayNames[targetDay]}起用`;
 
                         for (let i = 0; i < draws.length; i++) {
@@ -303,7 +310,12 @@
                                     }
                                     if (startIdx + periods - 1 < draws.length || isHit) {
                                         totalPlays++;
-                                        if (isHit) hitCount++;
+                                        if (isHit) {
+                                            hitCount++;
+                                            hitHistory.push('⭕');
+                                        } else {
+                                            hitHistory.push('❌');
+                                        }
                                     }
                                 }
                             }
@@ -311,7 +323,7 @@
 
                         if (totalPlays >= 10) {
                             const winRate = hitCount / totalPlays;
-                            results.push({ rule: ruleName, periods, plays: totalPlays, winRate });
+                            results.push({ rule: ruleName, periods, plays: totalPlays, hitCount, hitHistory, winRate });
 
                             // 🔔 檢查是否產生警報
                             if (winRate >= 0.85) {
@@ -330,7 +342,7 @@
 
                                         if (startIdx === -1 && (draws.length - realRefIdx < 7)) {
                                             // 尚未到達進場星期
-                                            globalAlerts.push({ statusType: 'wait', statusText: '⏳ 等待進場', rule: ruleName, nums: predictNums, action: `等待星期${dayNames[targetDay]}開始，可追 ${periods} 期`, winRate });
+                                            globalAlerts.push({ statusType: 'wait', statusText: '⏳ 等待進場', rule: ruleName, nums: predictNums, action: `等待星期${dayNames[targetDay]}開始，可追 ${periods} 期`, winRate, hitCount, plays: totalPlays });
                                         } else if (startIdx !== -1) {
                                             const consumed = draws.length - startIdx;
                                             if (consumed < periods) {
@@ -339,9 +351,9 @@
                                                     if (predictNums.some(n => draws[k].nums.includes(n))) hitAlready = true;
                                                 }
                                                 if (hitAlready) {
-                                                    globalAlerts.push({ statusType: 'hit', statusText: '✅ 提前命中', rule: ruleName, nums: predictNums, action: `已命中過，視情況續守。`, winRate });
+                                                    globalAlerts.push({ statusType: 'hit', statusText: '✅ 提前命中', rule: ruleName, nums: predictNums, action: `已命中過，視情況續守。`, winRate, hitCount, plays: totalPlays });
                                                 } else {
-                                                    globalAlerts.push({ statusType: 'chase', statusText: '🔥 強力續追', rule: ruleName, nums: predictNums, action: `前 ${consumed} 期落空，剩下 ${periods - consumed} 期高機率開出！`, winRate });
+                                                    globalAlerts.push({ statusType: 'chase', statusText: '🔥 強力續追', rule: ruleName, nums: predictNums, action: `前 ${consumed} 期落空，剩下 ${periods - consumed} 期高機率開出！`, winRate, hitCount, plays: totalPlays });
                                                 }
                                             }
                                         }
@@ -374,7 +386,10 @@
                 <td style="font-weight:bold;">${item.rule}</td>
                 <td>${predictHtml}</td>
                 <td style="color:#333; font-weight:700;">${item.action}</td>
-                <td style="color:#c0392b; font-weight:900; font-size:1.1rem;">${(item.winRate * 100).toFixed(1)}%</td>
+                <td style="color:#c0392b; font-weight:900; font-size:1.1rem;">
+                    ${(item.winRate * 100).toFixed(1)}%
+                    <div class="text-xs text-slate-500 font-normal mt-0.5">中${item.hitCount} / 錯${item.plays - item.hitCount}</div>
+                </td>
             `;
             tbody.appendChild(tr);
         });
@@ -385,10 +400,15 @@
         tbody.innerHTML = '';
         data.forEach(item => {
             const tr = document.createElement('tr');
+            const historyDisp = item.hitHistory.length > 35 ? '...' + item.hitHistory.slice(-35).join('') : item.hitHistory.join('');
             tr.innerHTML = `
                 <td class="font-bold text-slate-700">${item.rule}</td>
                 <td class="text-slate-500">用 ${item.periods} 期 <span class="text-xs ml-1">(測 ${item.plays} 次)</span></td>
-                <td class="font-black text-blue-600">${(item.winRate * 100).toFixed(1)}%</td>
+                <td class="font-black text-blue-600">
+                    ${(item.winRate * 100).toFixed(1)}%
+                    <div class="text-xs font-normal text-slate-400 mt-0.5">中${item.hitCount} / 錯${item.plays - item.hitCount}</div>
+                </td>
+                <td class="text-[10px] tracking-widest leading-relaxed" style="max-width: 250px; word-break: break-all;">${historyDisp}</td>
             `;
             tbody.appendChild(tr);
         });
