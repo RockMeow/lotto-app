@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>版路預測自動化系統 V5 - 動態訊號強化追蹤版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; }
+        
+        /* 針對 JS 動態生成的內容進行 Tailwind 風格的 CSS 映射 */
+        #s3-body td {
+            padding: 1rem;
+            color: #475569;
+            font-weight: 500;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: center;
+            vertical-align: middle;
+        }
+        #s3-body tr { transition: background-color 0.15s ease-in-out; }
+        #s3-body tr:hover { background-color: #f8fafc; }
+        
+        .hit { color: #0f766e; font-weight: 900; }
+        .miss { color: #ef4444; font-weight: 700; }
+        
+        .row-hit-active { background-color: #f0fdfa !important; border-left: 4px solid #14b8a6; }
+        .row-hit-active td { color: #0f766e; }
+        
+        .num-pill { background: #cbd5e1; color: #334155; padding: 0.25rem 0.6rem; border-radius: 9999px; font-weight: 800; margin: 0 0.15rem; display: inline-block; font-size: 0.875rem; border: 1px solid #94a3b8; }
+        .num-pill.hit-pill { background: #ccfbf1; color: #0f766e; border-color: #5eead4; animation: pulse 1.5s infinite; }
+        
+        .alert-box { background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 1.25rem; border-radius: 0.75rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #fef3c7; }
+        .alert-box h3 { margin: 0 0 0.5rem 0; font-size: 1.1rem; color: #b45309; display: flex; align-items: center; gap: 0.5rem; font-weight: 800; }
+        .alert-box p { color: #475569; font-size: 0.95rem; margin: 0; line-height: 1.6; }
+        
+        .alert-box.alert-hit { background-color: #f0fdf4; border-left-color: #10b981; border: 1px solid #dcfce7; }
+        .alert-box.alert-hit h3 { color: #15803d; }
+        .alert-box.alert-hit .status-text { background: #10b981; color: white; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; margin-left: 0.5rem; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(20, 184, 166, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-slate-800 p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto flex flex-wrap gap-2 sm:gap-4 justify-center">
+            <a href="index.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">🏠 首頁</a>
+            <a href="tool1.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">立柱撞柱工具</a>
+            <a href="tool5.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">星期版路工具</a>
+            <a href="tool3.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">尾數拖牌工具</a>
+            <a href="tool6.html" class="px-5 py-2.5 rounded-lg font-bold text-white bg-teal-600 shadow-md transition-all">版路分析工具</a>
+        </div>
+    </div>
+
+    <div class="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <div class="bg-teal-600 rounded-t-2xl p-6 sm:p-8 text-white shadow-xl border-b-4 border-teal-500">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-3xl font-black flex items-center gap-3"><i data-lucide="activity" class="w-8 h-8"></i>版路分析工具</h1>
+                    <p class="mt-2 text-teal-100 font-medium opacity-90">自動捕捉最新訊號，期限內命中將 <strong class="text-white">特別標註</strong> 高亮顯示。</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white shadow-xl p-6 sm:p-8 border border-slate-200 rounded-b-2xl">
+            
+            <div class="mb-8 p-6 bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200 pb-3">
+                    <i data-lucide="folder-up" class="w-5 h-5 text-teal-600"></i>1. 匯入歷史數據
+                </h2>
+                <input type="file" id="csvFileInput" accept=".csv" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-teal-200 focus:border-teal-500 outline-none shadow-sm transition-all cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+            </div>
+
+            <div id="mainDashboard" style="display: none;" class="grid grid-cols-1 gap-8">
+                
+                <div class="bg-slate-50 border border-slate-200 rounded-xl shadow-sm p-6">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-200 pb-3">
+                        <i data-lucide="bell-ring" class="w-5 h-5 text-amber-500"></i>最新盤勢動態預警 (追蹤最新3期訊號)
+                    </h2>
+                    <div id="dynamicAlerts" class="mt-4"></div>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-xl shadow-sm p-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-3 mb-4 gap-3">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="target" class="w-5 h-5 text-teal-600"></i>策略三：純動態二中一版路捕捉
+                        </h2>
+                        <span id="s3-stat" class="bg-teal-600 text-white px-4 py-1.5 rounded-full text-sm font-black shadow-sm">--</span>
+                    </div>
+                    
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm mt-4">
+                        <table class="w-full text-left border-collapse text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-slate-800 text-white">
+                                    <th class="p-4 border-b border-slate-600 font-bold text-center">觸發日</th>
+                                    <th class="p-4 border-b border-slate-600 font-bold text-center">動態捕捉組合</th>
+                                    <th class="p-4 border-b border-slate-600 font-bold text-center">判定邏輯</th>
+                                    <th class="p-4 border-b border-slate-600 font-bold text-center">期限內命中情形</th>
+                                    <th class="p-4 border-b border-slate-600 font-bold text-center">結果</th>
+                                </tr>
+                            </thead>
+                            <tbody id="s3-body" class="bg-white"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+
+        document.getElementById('csvFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const lines = e.target.result.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                const data = [];
+                for(let i=1; i<lines.length; i++) {
+                    const parts = lines[i].split(',');
+                    if(parts.length < 6) continue;
+                    data.push({
+                        date: parts[0],
+                        nums: parts.slice(1,6).map(n => parseInt(n)).sort((a,b)=>a-b)
+                    });
+                }
+                if(data.length > 0) {
+                    document.getElementById('mainDashboard').style.display = 'grid';
+                    processDynamicAnalysis(data);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function extractDynamicPairs(data, currentIndex) {
+            const currentNums = data[currentIndex].nums;
+            const prevNums = currentIndex > 0 ? data[currentIndex-1].nums : [];
+            let pairs = [];
+            let seen = new Set();
+
+            function addPair(pArr, type, logic) {
+                if(pArr.length !== 2) return;
+                pArr.sort((a,b)=>a-b);
+                let key = pArr.join('-');
+                if(!seen.has(key)) {
+                    seen.add(key);
+                    pairs.push({pair: pArr, type: type, logic: logic});
+                }
+            }
+
+            // 規則1：同期雙開 (同字頭熱區)
+            let heads = {};
+            currentNums.forEach(n => {
+                let h = Math.floor(n/10);
+                if(!heads[h]) heads[h] = [];
+                heads[h].push(n);
+            });
+            for(let h in heads) {
+                if(heads[h].length >= 2) {
+                    for(let i=0; i<heads[h].length-1; i++) {
+                        for(let j=i+1; j<heads[h].length; j++) {
+                            addPair([heads[h][i], heads[h][j]], '字頭雙開', `當期 ${heads[h][i]}, ${heads[h][j]} 同開，${h}字頭熱度推進`);
+                        }
+                    }
+                }
+            }
+
+            // 規則2：連莊拖牌
+            const repeats = currentNums.filter(n => prevNums.includes(n));
+            repeats.forEach(r => {
+                if(r > 1) addPair([r-1, r], '連莊拖牌', `${r} 連莊，拖出相鄰號碼 ${r-1}`);
+                if(r < 39) addPair([r, r+1], '連莊拖牌', `${r} 連莊，拖出相鄰號碼 ${r+1}`);
+            });
+
+            // 規則3：尾數補空
+            let recentNums = new Set();
+            for(let j = 0; j < 3; j++) {
+                if(currentIndex - j >= 0) {
+                    data[currentIndex - j].nums.forEach(n => recentNums.add(n));
+                }
+            }
+            let tailGroups = {};
+            for(let i=1; i<=39; i++) {
+                let t = i % 10;
+                if(!tailGroups[t]) tailGroups[t] = { appeared: [], missing: [] };
+                if(recentNums.has(i)) tailGroups[t].appeared.push(i);
+                else tailGroups[t].missing.push(i);
+            }
+            for(let t in tailGroups) {
+                if(tailGroups[t].missing.length === 2 && tailGroups[t].appeared.length > 0) {
+                    addPair(tailGroups[t].missing, '尾數補空', `近期 ${t} 尾活躍，高低位天平補齊 ${tailGroups[t].missing.join(',')}`);
+                }
+            }
+            return pairs;
+        }
+
+        function processDynamicAnalysis(data) {
+            const s3Body = document.getElementById('s3-body');
+            const alertBox = document.getElementById('dynamicAlerts');
+            s3Body.innerHTML = ''; alertBox.innerHTML = '';
+            
+            let s3Total = 0, s3Hits = 0;
+            let futureAlerts = [];
+            let rowsHtml = [];
+
+            for (let i = 0; i < data.length; i++) {
+                const dynamicPairs = extractDynamicPairs(data, i);
+                
+                dynamicPairs.forEach(dp => {
+                    let hitCount = 0, hitDates = [], isPending = false;
+                    let hitNumsSet = new Set();
+                    
+                    // 檢查未來3期
+                    for(let j=1; j<=3; j++) {
+                        if(i+j < data.length) {
+                            const found = dp.pair.filter(n => data[i+j].nums.includes(n));
+                            if(found.length > 0) {
+                                hitCount += found.length;
+                                found.forEach(fn => hitNumsSet.add(fn));
+                                hitDates.push(`第${j}期(${data[i+j].date}) 🎯命中 [${found.join(', ')}]`);
+                            }
+                        } else {
+                            isPending = true;
+                        }
+                    }
+
+                    // 標籤樣式處理
+                    let p1_html = `<span class="num-pill ${hitNumsSet.has(dp.pair[0]) ? 'hit-pill' : ''}">${dp.pair[0]}</span>`;
+                    let p2_html = `<span class="num-pill ${hitNumsSet.has(dp.pair[1]) ? 'hit-pill' : ''}">${dp.pair[1]}</span>`;
+
+                    if(!isPending || hitCount > 0) {
+                        s3Total++;
+                        if(hitCount > 0) s3Hits++;
+                        
+                        if(s3Total > data.length * 3 - 200) {
+                            // 判斷是否為「正在發生中，且已經提前命中」的特別高亮列
+                            let rowClass = (isPending && hitCount > 0) ? 'class="row-hit-active"' : '';
+                            
+                            let resultText = '';
+                            if (isPending && hitCount > 0) resultText = '🌟 提前命中';
+                            else if (!isPending && hitCount > 0) resultText = '✅ 命中';
+                            else resultText = '❌ 未中';
+
+                            rowsHtml.unshift(`<tr ${rowClass}>
+                                <td>${data[i].date}</td>
+                                <td>${p1_html} ${p2_html}</td>
+                                <td style="font-size:0.85rem; text-align:left;">[${dp.type}] ${dp.logic}</td>
+                                <td style="${(isPending && hitCount > 0) ? 'font-weight:bold;' : ''}">${hitCount > 0 ? hitDates.join('<br>') : '等待中...'}</td>
+                                <td class="${hitCount>0?'hit':'miss'}">${resultText}</td>
+                            </tr>`);
+                        }
+                    } 
+                    
+                    // 動態預警：目前還在3期期限內
+                    if(isPending) {
+                        // 計算剩餘期數
+                        let remaining = 3 - (data.length - 1 - i);
+                        
+                        if(hitCount > 0) {
+                            // 期限內已經開出：特別高亮警報！
+                            futureAlerts.push(`<div class="alert-box alert-hit">
+                                <h3>🎉 訊號捕捉：${dp.type} <span class="status-text">✅ 期限內已開出</span></h3>
+                                <p>觸發日期：<strong>${data[i].date}</strong> | 追蹤組合：${p1_html} ${p2_html}</p>
+                                <p style="margin-top:5px; font-weight:bold; color:#1e8449;">🎯 戰報：${hitDates.join(' | ')} (距結案還有 ${remaining} 期)</p>
+                            </div>`);
+                        } else {
+                            // 期限內尚未開出：一般追蹤警報
+                            futureAlerts.push(`<div class="alert-box">
+                                <h3>🔥 訊號捕捉：${dp.type}</h3>
+                                <p>觸發日期：<strong>${data[i].date}</strong> | 預測組合：${p1_html} ${p2_html}</p>
+                                <p style="margin-top:5px; font-size:0.9rem;">💡 邏輯：${dp.logic} (預測倒數 <strong>${remaining}</strong> 期)</p>
+                            </div>`);
+                        }
+                    }
+                });
+            }
+            
+            s3Body.innerHTML = rowsHtml.slice(0, 100).join(''); 
+            document.getElementById('s3-stat').innerText = `動態演算法歷史勝率: ${s3Total>0?((s3Hits/s3Total)*100).toFixed(1):0}%`;
+            
+            if(futureAlerts.length > 0) {
+                // 將 "已經命中" 的警報排在最前面
+                futureAlerts.sort((a, b) => {
+                    if(a.includes('alert-hit') && !b.includes('alert-hit')) return -1;
+                    if(!a.includes('alert-hit') && b.includes('alert-hit')) return 1;
+                    return 0;
+                });
+                alertBox.innerHTML = futureAlerts.join('');
+            } else {
+                alertBox.innerHTML = '<div class="alert-box"><p>✅ 目前盤面平穩，無動態預警訊號。</p></div>';
+            }
+        }
+    </script>
+</body>
+</html>
