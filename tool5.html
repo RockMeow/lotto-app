@@ -119,7 +119,7 @@
                     <div class="overflow-x-auto">
                         <table class="results-table" id="tableLogic1">
                             <thead>
-                                <tr><th>版路規則</th><th>週期/回測</th><th>歷史勝率</th><th>詳細命中紀錄</th></tr>
+                                <tr><th>版路規則</th><th>週期/回測</th><th>歷史勝率</th><th>詳細命中紀錄 (日期)</th></tr>
                             </thead>
                             <tbody></tbody>
                         </table>
@@ -139,7 +139,7 @@
                     <div class="overflow-x-auto">
                         <table class="results-table" id="tableLogic2">
                             <thead>
-                                <tr><th>版路規則</th><th>週期/回測</th><th>歷史勝率</th><th>詳細命中紀錄</th></tr>
+                                <tr><th>版路規則</th><th>週期/回測</th><th>歷史勝率</th><th>詳細命中紀錄 (日期)</th></tr>
                             </thead>
                             <tbody></tbody>
                         </table>
@@ -226,18 +226,23 @@
                             });
 
                             let isHit = false;
+                            let hitDateStr = '';
+                            let triggerDateStr = draws[i].dateStr;
+                            
                             for (let j = 0; j < periods; j++) {
                                 if (i + j < draws.length && targetNums.some(n => draws[i+j].nums.includes(n))) {
-                                    isHit = true; break;
+                                    isHit = true;
+                                    hitDateStr = draws[i+j].dateStr;
+                                    break;
                                 }
                             }
                             if (i + periods - 1 < draws.length || isHit) {
                                 totalPlays++;
                                 if (isHit) {
                                     hitCount++;
-                                    hitHistory.push('⭕');
+                                    hitHistory.push(`<span class="text-green-600">${triggerDateStr} 觸發 ➔ ${hitDateStr} 命中</span>`);
                                 } else {
-                                    hitHistory.push('❌');
+                                    hitHistory.push(`<span class="text-red-500">${triggerDateStr} 觸發 ➔ ❌ 失敗</span>`);
                                 }
                             }
                         }
@@ -298,23 +303,29 @@
                                 const tail = draws[i].sortedNums[ballPos] % 10;
                                 const targetNums = [tail, tail+10, tail+20, tail+30].filter(n => n>=1 && n<=39);
                                 let startIdx = -1;
+                                let triggerDateStr = draws[i].dateStr;
+                                
                                 for (let k = i + 1; k < draws.length && k <= i + 7; k++) {
                                     if (draws[k].dayOfWeek === targetDay) { startIdx = k; break; }
                                 }
                                 if (startIdx !== -1) {
                                     let isHit = false;
+                                    let hitDateStr = '';
+                                    
                                     for (let j = 0; j < periods; j++) {
                                         if (startIdx + j < draws.length && targetNums.some(n => draws[startIdx+j].nums.includes(n))) {
-                                            isHit = true; break;
+                                            isHit = true;
+                                            hitDateStr = draws[startIdx+j].dateStr;
+                                            break;
                                         }
                                     }
                                     if (startIdx + periods - 1 < draws.length || isHit) {
                                         totalPlays++;
                                         if (isHit) {
                                             hitCount++;
-                                            hitHistory.push('⭕');
+                                            hitHistory.push(`<span class="text-green-600">${triggerDateStr} 觸發 ➔ ${hitDateStr} 命中</span>`);
                                         } else {
-                                            hitHistory.push('❌');
+                                            hitHistory.push(`<span class="text-red-500">${triggerDateStr} 觸發 ➔ ❌ 失敗</span>`);
                                         }
                                     }
                                 }
@@ -400,15 +411,18 @@
         tbody.innerHTML = '';
         data.forEach(item => {
             const tr = document.createElement('tr');
-            const historyDisp = item.hitHistory.length > 35 ? '...' + item.hitHistory.slice(-35).join('') : item.hitHistory.join('');
+            
+            // 將歷史紀錄陣列轉換成可滾動的列表
+            const historyDisp = `<div class="max-h-32 overflow-y-auto pr-2 space-y-1">` + item.hitHistory.join('<br>') + `</div>`;
+            
             tr.innerHTML = `
-                <td class="font-bold text-slate-700">${item.rule}</td>
-                <td class="text-slate-500">用 ${item.periods} 期 <span class="text-xs ml-1">(測 ${item.plays} 次)</span></td>
-                <td class="font-black text-blue-600">
+                <td class="font-bold text-slate-700 w-1/4">${item.rule}</td>
+                <td class="text-slate-500 w-1/4">用 ${item.periods} 期 <span class="text-xs ml-1">(測 ${item.plays} 次)</span></td>
+                <td class="font-black text-blue-600 w-1/6">
                     ${(item.winRate * 100).toFixed(1)}%
                     <div class="text-xs font-normal text-slate-400 mt-0.5">中${item.hitCount} / 錯${item.plays - item.hitCount}</div>
                 </td>
-                <td class="text-[10px] tracking-widest leading-relaxed" style="max-width: 250px; word-break: break-all;">${historyDisp}</td>
+                <td class="text-xs font-mono text-slate-600 w-1/3 leading-tight" style="min-width: 200px;">${historyDisp}</td>
             `;
             tbody.appendChild(tr);
         });
