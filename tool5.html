@@ -17,8 +17,9 @@
 
         .predict-num { width: 2.25rem; height: 2.25rem; border-radius: 9999px; background-color: #dbeafe; color: #1e40af; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; border: 2px solid #bfdbfe; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); margin: 0 0.125rem; }
 
-        /* 表格樣式 */
-        .alert-table, .results-table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 0.75rem; overflow: hidden; border: 1px solid #e2e8f0; background: white; }
+        /* 表格樣式 - 增加 min-width 確保手機版可左右滑動而不擠壓變形 */
+        .alert-table { width: 100%; min-width: 800px; border-collapse: separate; border-spacing: 0; border-radius: 0.75rem; overflow: hidden; border: 1px solid #e2e8f0; background: white; }
+        .results-table { width: 100%; min-width: 650px; border-collapse: separate; border-spacing: 0; border-radius: 0.75rem; overflow: hidden; border: 1px solid #e2e8f0; background: white; }
         .alert-table th, .results-table th { font-weight: 700; padding: 0.75rem 1rem; text-align: left; }
         .alert-table td, .results-table td { padding: 0.75rem 1rem; border-top: 1px solid #e2e8f0; vertical-align: middle; color: #334155; }
         .results-table tr:nth-child(even) td { background-color: #f8fafc; }
@@ -36,60 +37,60 @@
 
     <div class="bg-slate-800 p-4 shadow-lg sticky top-0 z-50">
         <div class="max-w-5xl mx-auto flex flex-wrap gap-2 sm:gap-4 justify-center">
-            <a href="index.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">🏠 首頁</a>
-            <a href="tool1.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">立柱撞柱工具</a>
-            <a href="tool5.html" class="px-5 py-2.5 rounded-lg font-bold text-white bg-blue-600 shadow-md transition-all">星期版路工具</a>
-            <a href="tool3.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">尾數拖牌工具</a>
-            <a href="tool6.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">版路分析工具</a>
+            <a href="index.html" class="px-3 py-2 sm:px-5 sm:py-2.5 text-sm sm:text-base whitespace-nowrap rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">🏠 首頁</a>
+            <a href="tool1.html" class="px-3 py-2 sm:px-5 sm:py-2.5 text-sm sm:text-base whitespace-nowrap rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">立柱撞柱工具</a>
+            <a href="tool5.html" class="px-3 py-2 sm:px-5 sm:py-2.5 text-sm sm:text-base whitespace-nowrap rounded-lg font-bold text-white bg-blue-600 shadow-md transition-all">星期版路工具</a>
+            <a href="tool3.html" class="px-3 py-2 sm:px-5 sm:py-2.5 text-sm sm:text-base whitespace-nowrap rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">尾數拖牌工具</a>
+            <a href="tool6.html" class="px-3 py-2 sm:px-5 sm:py-2.5 text-sm sm:text-base whitespace-nowrap rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">版路分析工具</a>
         </div>
     </div>
 
-    <div class="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+    <div class="py-6 sm:py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
         <div class="bg-slate-800 rounded-t-2xl p-6 sm:p-8 text-white shadow-xl border-b-4 border-blue-500">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 class="text-3xl font-black flex items-center gap-3">
-                        <i data-lucide="target" class="w-8 h-8 text-blue-400"></i>
+                    <h1 class="text-2xl sm:text-3xl font-black flex items-center gap-2 sm:gap-3">
+                        <i data-lucide="target" class="w-7 h-7 sm:w-8 sm:h-8 text-blue-400"></i>
                         星期版路工具
                     </h1>
-                    <p class="mt-2 text-slate-300 font-medium opacity-90">上傳最新開獎紀錄，自動掃描全網版路與計算最新進場時機。</p>
+                    <p class="mt-2 text-sm sm:text-base text-slate-300 font-medium opacity-90">上傳最新開獎紀錄，自動掃描全網版路與計算最新進場時機。</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white shadow-xl p-6 sm:p-8 border border-slate-200 rounded-b-2xl">
+        <div class="bg-white shadow-xl p-4 sm:p-8 border border-slate-200 rounded-b-2xl">
             
-            <div class="mb-10">
+            <div class="mb-8 sm:mb-10">
                 <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-2">
                     <i data-lucide="database" class="w-5 h-5 text-blue-600"></i>
                     第一步：更新資料庫
                 </h2>
-                <div class="flex flex-col md:flex-row gap-6 items-center bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-inner">
+                <div class="flex flex-col md:flex-row gap-4 sm:gap-6 items-center bg-slate-50 p-4 sm:p-6 rounded-xl border border-slate-200 shadow-inner">
                     <div class="w-full md:w-64 flex flex-col justify-center gap-3">
-                        <label class="w-full py-3 px-4 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl border-2 border-dashed border-blue-400 hover:border-blue-600 transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer">
+                        <label class="w-full py-3 px-4 bg-white hover:bg-slate-100 text-slate-700 font-bold rounded-xl border-2 border-dashed border-blue-400 hover:border-blue-600 transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer text-sm sm:text-base">
                             <input type="file" id="csvFileInput" accept=".csv" class="hidden" />
                             <i data-lucide="upload-cloud" class="w-5 h-5 text-blue-600"></i> 上傳開獎紀錄 (CSV)
                         </label>
                     </div>
                     <div class="flex-1 text-center md:text-left">
-                        <p id="fileNameDisplay" class="text-slate-500 font-bold text-lg">尚未讀取檔案</p>
+                        <p id="fileNameDisplay" class="text-slate-500 font-bold text-base sm:text-lg break-all">尚未讀取檔案</p>
                     </div>
                 </div>
                 
                 <div id="loading" style="display: none;" class="mt-6 p-4 bg-amber-50 text-amber-800 rounded-xl border border-amber-200 font-bold shadow-sm">
-                    <div class="flex items-center justify-center gap-3">
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
                         <i data-lucide="loader-2" class="w-6 h-6 animate-spin text-amber-600"></i> 
-                        <span class="text-lg">正在掃描全網版路與計算最新進場時機...</span>
+                        <span class="text-base sm:text-lg">正在掃描全網版路與計算最新進場時機...</span>
                     </div>
                 </div>
             </div>
 
-            <div id="alertDashboard" style="display: none;" class="mb-10 p-6 bg-red-50 border-2 border-red-200 rounded-xl shadow-sm">
-                <h2 class="text-xl font-black text-red-700 mb-4 flex items-center gap-2">
-                    <i data-lucide="siren" class="w-6 h-6"></i>
-                    🚨 本期/近期 下注決策警報 (高勝率版路提示)
+            <div id="alertDashboard" style="display: none;" class="mb-8 sm:mb-10 p-4 sm:p-6 bg-red-50 border-2 border-red-200 rounded-xl shadow-sm">
+                <h2 class="text-lg sm:text-xl font-black text-red-700 mb-4 flex items-center gap-2">
+                    <i data-lucide="siren" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                    🚨 本期/近期 下注決策警報
                 </h2>
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto rounded-lg">
                     <table class="alert-table" id="tableAlerts">
                         <thead>
                             <tr>
@@ -105,18 +106,18 @@
                 </div>
             </div>
 
-            <div id="resultsArea" style="display: none;" class="space-y-10">
+            <div id="resultsArea" style="display: none;" class="space-y-8 sm:space-y-10">
                 <div>
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 border-b border-slate-100 pb-2 gap-4">
-                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 border-b border-slate-100 pb-2 gap-3 sm:gap-4">
+                        <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
                             <i data-lucide="calendar-days" class="w-5 h-5 text-blue-600"></i>
-                            📅 歷史勝率榜：日期定位法 (Top 10)
+                            📅 歷史勝率榜：日期定位法
                         </h2>
                         <div class="bg-blue-50 p-1.5 rounded-xl border border-blue-100">
-                            <span class="text-sm font-bold text-blue-800 px-3 py-1" id="dataInfo1"></span>
+                            <span class="text-xs sm:text-sm font-bold text-blue-800 px-2 sm:px-3 py-1" id="dataInfo1"></span>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto rounded-lg">
                         <table class="results-table" id="tableLogic1">
                             <thead>
                                 <tr><th>版路規則</th><th>週期/回測</th><th>歷史勝率</th><th>詳細命中紀錄 (日期)</th></tr>
@@ -127,16 +128,16 @@
                 </div>
 
                 <div>
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 border-b border-slate-100 pb-2 gap-4">
-                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 border-b border-slate-100 pb-2 gap-3 sm:gap-4">
+                        <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-2">
                             <i data-lucide="git-commit" class="w-5 h-5 text-blue-600"></i>
-                            🎾 歷史勝率榜：順球尾數拖牌法 (Top 10)
+                            🎾 歷史勝率榜：順球尾數拖牌法
                         </h2>
                         <div class="bg-blue-50 p-1.5 rounded-xl border border-blue-100">
-                            <span class="text-sm font-bold text-blue-800 px-3 py-1" id="dataInfo2"></span>
+                            <span class="text-xs sm:text-sm font-bold text-blue-800 px-2 sm:px-3 py-1" id="dataInfo2"></span>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto rounded-lg">
                         <table class="results-table" id="tableLogic2">
                             <thead>
                                 <tr><th>版路規則</th><th>週期/回測</th><th>歷史勝率</th><th>詳細命中紀錄 (日期)</th></tr>
@@ -395,7 +396,7 @@
             tr.innerHTML = `
                 <td><span class="${statusClass}">${item.statusText}</span></td>
                 <td style="font-weight:bold;">${item.rule}</td>
-                <td>${predictHtml}</td>
+                <td class="whitespace-nowrap">${predictHtml}</td>
                 <td style="color:#333; font-weight:700;">${item.action}</td>
                 <td style="color:#c0392b; font-weight:900; font-size:1.1rem;">
                     ${(item.winRate * 100).toFixed(1)}%
