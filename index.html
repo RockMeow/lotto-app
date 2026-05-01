@@ -5,41 +5,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>高機率 三期牌/週牌</title>
     <style>
+        /* 基礎變數與亮色模式設定 */
+        :root {
+            --bg-color: #f4f7f6;
+            --container-bg: #ffffff;
+            --text-color: #333333;
+            --heading-color: #1a73e8;
+            --section-bg: #ffffff;
+            --section-border: #eaeef2;
+            --card-bg: #f8faff;
+            --card-border: #d2e3fc;
+            --th-bg: #f1f3f4;
+            --td-border: #edf2f7;
+            --tr-even: #fcfcfc;
+            --tr-hover: #f5f8fd;
+            --notice-bg: #fff8e1;
+            --notice-border: #ffc107;
+            --notice-text: #5d4037;
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --ball-bg: linear-gradient(135deg, #4285f4, #1a73e8);
+            --ball-text: #ffffff;
+            --ball-shadow: rgba(26, 115, 232, 0.4);
+        }
+
+        /* 深色模式設定 */
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --heading-color: #669df6;
+            --section-bg: #2d2d2d;
+            --section-border: #444444;
+            --card-bg: #2a2d35;
+            --card-border: #3b404a;
+            --th-bg: #333333;
+            --td-border: #444444;
+            --tr-even: #252525;
+            --tr-hover: #383838;
+            --notice-bg: #3e3318;
+            --notice-border: #dcb324;
+            --notice-text: #f0e6d2;
+            --input-bg: #2d2d2d;
+            --input-border: #555555;
+            --ball-bg: linear-gradient(135deg, #669df6, #4285f4);
+            --ball-shadow: rgba(102, 157, 246, 0.4);
+        }
+
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif; 
             line-height: 1.6; 
             padding: 20px 10px; 
-            background-color: #f4f7f6; 
-            color: #333; 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
             margin: 0;
+            transition: background-color 0.3s, color 0.3s;
         }
         .container { 
             max-width: 1100px; 
             margin: auto; 
-            background: white; 
+            background: var(--container-bg); 
             padding: 30px; 
             border-radius: 16px; 
-            box-shadow: 0 8px 24px rgba(0,0,0,0.06); 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08); 
+            transition: background-color 0.3s;
+            position: relative;
         }
+        
+        /* 深色模式切換按鈕 */
+        .theme-toggle {
+            position: absolute;
+            top: 25px;
+            right: 30px;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: transform 0.2s;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
         h1 { 
-            color: #1a73e8; 
+            color: var(--heading-color); 
             text-align: center; 
             margin-bottom: 30px; 
             font-size: 1.8em;
+            padding-right: 40px; /* 避免跟按鈕重疊 */
         }
         .section { 
-            background: #ffffff; 
-            border: 1px solid #eaeef2; 
+            background: var(--section-bg); 
+            border: 1px solid var(--section-border); 
             padding: 20px; 
             border-radius: 12px; 
             margin-bottom: 24px; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            transition: background-color 0.3s, border-color 0.3s;
         }
         .section-title { 
             font-weight: bold; 
             font-size: 1.2em; 
             margin-bottom: 15px; 
-            color: #2c3e50; 
+            color: var(--text-color); 
             display: flex; 
             align-items: center; 
         }
@@ -47,7 +116,7 @@
             content: ""; 
             width: 5px; 
             height: 20px; 
-            background: #1a73e8; 
+            background: var(--heading-color); 
             margin-right: 12px; 
             border-radius: 4px; 
         }
@@ -59,50 +128,86 @@
             margin-bottom: 24px; 
         }
         .stat-card { 
-            background: #f8faff; 
-            border: 1px solid #d2e3fc; 
+            background: var(--card-bg); 
+            border: 1px solid var(--card-border); 
             padding: 20px 15px; 
             border-radius: 12px; 
             text-align: center; 
-            transition: transform 0.2s;
+            transition: transform 0.2s, background-color 0.3s;
         }
         .stat-card:hover { transform: translateY(-2px); }
-        .stat-value { font-size: 2em; font-weight: bold; color: #1a73e8; margin: 5px 0; }
-        .stat-label { color: #5f6368; font-size: 0.95em; font-weight: 600; }
+        .stat-value { font-size: 2em; font-weight: bold; color: var(--heading-color); margin: 5px 0; }
+        .stat-label { font-size: 0.95em; font-weight: 600; opacity: 0.8; }
 
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95em; min-width: 500px; }
-        th, td { border: 1px solid #edf2f7; padding: 14px 12px; text-align: center; }
-        th { background-color: #f1f3f4; color: #3c4043; font-weight: 600; white-space: nowrap; }
-        tr:nth-child(even) { background-color: #fcfcfc; }
-        tr:hover { background-color: #f5f8fd; }
+        th, td { border: 1px solid var(--td-border); padding: 14px 12px; text-align: center; transition: border-color 0.3s; }
+        th { background-color: var(--th-bg); color: var(--text-color); font-weight: 600; white-space: nowrap; transition: background-color 0.3s; }
+        tr:nth-child(even) { background-color: var(--tr-even); }
+        tr:hover { background-color: var(--tr-hover); }
         
         .status-active { color: #1a73e8; font-weight: bold; background: #e8f0fe; border-radius: 6px; padding: 6px 10px; display: inline-block;}
         .status-hit { color: #1e7e34; font-weight: bold; background: #d4edda; border-radius: 6px; padding: 6px 10px; display: inline-block;}
         .status-miss { color: #d93025; background: #fce8e6; border-radius: 6px; padding: 6px 10px; display: inline-block;}
         
-        .info-text { font-size: 0.85em; color: #7f8c8d; margin-top: 8px; }
-        .history-container { max-height: 500px; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 8px; }
-        .notice { background: #fff8e1; padding: 15px 20px; border-left: 5px solid #ffc107; border-radius: 8px; margin-bottom: 20px; font-size: 0.95em; color: #5d4037; }
+        /* 深色模式下的狀態標籤調整 */
+        [data-theme="dark"] .status-active { background: rgba(26,115,232,0.2); color: #8ab4f8; }
+        [data-theme="dark"] .status-hit { background: rgba(30,126,52,0.2); color: #81c995; }
+        [data-theme="dark"] .status-miss { background: rgba(217,48,37,0.2); color: #f28b82; }
+
+        .info-text { font-size: 0.85em; opacity: 0.7; margin-top: 8px; }
+        .history-container { max-height: 500px; overflow-y: auto; border: 1px solid var(--td-border); border-radius: 8px; }
+        .notice { background: var(--notice-bg); padding: 15px 20px; border-left: 5px solid var(--notice-border); border-radius: 8px; margin-bottom: 20px; font-size: 0.95em; color: var(--notice-text); transition: background-color 0.3s; }
         
-        input[type="file"] { display: block; width: 100%; max-width: 300px; padding: 10px; border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; color: #475569; cursor: pointer; margin-top: 10px; }
-        select { padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em; color: #333; background-color: #fff; cursor: pointer; outline: none; }
-        select:focus { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.2); }
+        input[type="file"] { display: block; width: 100%; max-width: 300px; padding: 10px; border: 2px dashed var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-color); cursor: pointer; margin-top: 10px; transition: background-color 0.3s; }
+        select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--input-border); font-size: 1em; color: var(--text-color); background-color: var(--input-bg); cursor: pointer; outline: none; transition: background-color 0.3s; }
+        select:focus { border-color: var(--heading-color); box-shadow: 0 0 0 2px rgba(26,115,232,0.2); }
+
+        /* 彩球樣式 */
+        .ball-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+        }
+        .lottery-ball {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--ball-bg);
+            color: var(--ball-text);
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 2px 5px var(--ball-shadow);
+            text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+            letter-spacing: 0;
+        }
+        /* 特殊訊號加紅的球 */
+        .lottery-ball.target-ball {
+            background: linear-gradient(135deg, #ff5252, #d32f2f);
+            box-shadow: 0 2px 5px rgba(211, 47, 47, 0.4);
+        }
 
         @media (max-width: 768px) {
             body { padding: 10px; }
             .container { padding: 20px 15px; border-radius: 12px; }
+            .theme-toggle { top: 15px; right: 15px; }
             h1 { font-size: 1.5em; margin-bottom: 20px; }
             .stats-grid { grid-template-columns: 1fr; gap: 15px; }
             .section { padding: 15px; }
             th, td { padding: 10px 8px; font-size: 0.9em; }
             .notice { padding: 12px 15px; }
+            .lottery-ball { width: 28px; height: 28px; font-size: 12px; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <button class="theme-toggle" onclick="toggleTheme()" title="切換深色/亮色模式">🌙</button>
     <h1>高機率 三期牌/週牌</h1>
 
     <div class="notice">
@@ -130,7 +235,7 @@
     <div class="section">
         <div class="section-title">1. 設定模式與載入數據</div>
         <div style="margin-bottom: 15px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <label for="gameType" style="font-weight: bold; color: #444;">當前分析模式：</label>
+            <label for="gameType" style="font-weight: bold; color: var(--text-color);">當前分析模式：</label>
             <select id="gameType">
                 <option value="mark6">🇭🇰 香港 六合彩 6/49</option>
                 <option value="649">🇹🇼 台灣 大樂透 6/49</option>
@@ -140,10 +245,10 @@
             </select>
         </div>
         
-        <!-- 新增下拉選單直接讀取 CSV -->
+        <!-- 下拉選單直接讀取 CSV -->
         <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 10px;">
             <input type="file" id="csvFile" accept=".csv" style="margin-top: 0; max-width: 250px;">
-            <span style="font-weight: bold; color: #666;">或直接讀取檔案：</span>
+            <span style="font-weight: bold; color: var(--text-color);"></span>
             <select id="autoLoadCsv">
                 <option value="">-- 請選擇彩球類型 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
@@ -193,6 +298,37 @@
 </div>
 
 <script>
+    // 深色模式切換邏輯
+    function toggleTheme() {
+        const body = document.body;
+        const currentTheme = body.getAttribute('data-theme');
+        const btn = document.querySelector('.theme-toggle');
+        if (currentTheme === 'dark') {
+            body.removeAttribute('data-theme');
+            btn.textContent = '🌙';
+            localStorage.setItem('theme', 'light');
+        } else {
+            body.setAttribute('data-theme', 'dark');
+            btn.textContent = '☀️';
+            localStorage.setItem('theme', 'dark');
+        }
+    }
+
+    // 初始化主題
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+        document.body.setAttribute('data-theme', 'dark');
+        document.querySelector('.theme-toggle').textContent = '☀️';
+    }
+
+    // 格式化彩球 HTML
+    function formatBalls(numsArray, isTarget = false) {
+        let ballClass = isTarget ? "lottery-ball target-ball" : "lottery-ball";
+        let ballsHtml = numsArray.map(n => `<span class="${ballClass}">${n.toString().padStart(2, '0')}</span>`).join('');
+        return `<div class="ball-container">${ballsHtml}</div>`;
+    }
+
     let allRecords = []; 
     let currentHistoryData = [];
 
@@ -224,7 +360,7 @@
         reader.readAsText(file);
     });
 
-    // 新增：下拉選單直接讀取同層資料夾 CSV
+    // 下拉選單直接讀取同層資料夾 CSV
     document.getElementById('autoLoadCsv').addEventListener('change', function(e) {
         const fileName = e.target.value;
         if (!fileName) return;
@@ -256,7 +392,7 @@
             })
             .catch(error => {
                 alert(error.message + "\n\n⚠️ 如果您是直接雙擊開啟 HTML 檔案，瀏覽器安全機制會阻擋讀取本地 CSV。請使用本地伺服器 (如 VS Code 的 Live Server) 開啟網頁，或改用旁邊的「選擇檔案」按鈕手動上傳。");
-                e.target.value = ""; // 發生錯誤時重置選項
+                e.target.value = ""; 
             });
     });
 
@@ -307,7 +443,7 @@
                     const hit = target.targets.find(n => draw.nums.includes(n));
                     if(hit) {
                         target.status = '命中停止';
-                        target.hitInfo = `${draw.date} 開出 [${hit}]`;
+                        target.hitInfo = `${draw.date} 開出 ${formatBalls([hit])}`;
                     } else {
                         target.life--;
                         if(target.life <= 0) target.status = '未中結束';
@@ -350,7 +486,7 @@
                 }
             } else if (gameType === '539') {
                 if(diff === 4) {
-                    allRecords.push({ type: '三期牌 (夾縫)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                    allRecords.push({ type: '三期牌 (連號)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
                 } else if(diff === 5) {
                     allRecords.push({ type: '三期牌 (大斷層)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
                 } else if(diff === 6) {
@@ -358,14 +494,14 @@
                 }
             } else if (gameType === 'daily4') {
                 if(diff === 4) {
-                    allRecords.push({ type: '三期牌 (夾縫)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                    allRecords.push({ type: '三期牌 (連號)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
                 } else if(diff === 5) {
                     allRecords.push({ type: '三期牌 (大斷層)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
                     allRecords.push({ type: '三期牌 (回馬槍)', targets: [mainNums[i], mainNums[i+1]], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
                 }
             } else if (gameType === 'ghana') {
                 if(diff === 4) {
-                    allRecords.push({ type: '三期牌 (夾縫補3碼)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                    allRecords.push({ type: '三期牌 (連號補3碼)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
                 } else if(diff === 5) {
                     allRecords.push({ type: '三期牌 (大斷層補4碼)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
                 } else if(diff === 6) {
@@ -376,7 +512,7 @@
 
         // 【二、三期牌：大樂透/六合彩 專屬特別號推算】
         if(specialNum !== null) {
-            let maxN = gameType === 'mark6' ? 49 : 49; // 兩者皆49
+            let maxN = gameType === 'mark6' ? 49 : 49; 
             if (gameType === '649' || gameType === 'mark6') {
                 let t1 = (specialNum % maxN) + 1;
                 let t2 = ((specialNum + 1) % maxN) + 1;
@@ -468,16 +604,22 @@
             const statusClass = t.status === '進行中' ? 'status-active' : (t.status === '命中停止' ? 'status-hit' : 'status-miss');
             
             let displayType = t.type;
+            let isTargetSignal = false;
+            
             if(t.type.includes('超級斷層') || t.type.includes('大斷層') || t.type.includes('回馬槍') || t.type.includes('三同尾') || t.type.includes('特別號')) {
                 displayType = `<span style="color: #d93025; font-weight: bold;">🎯 ${t.type}</span>`;
+                isTargetSignal = true;
             }
 
-            const rowHtml = `<td>${displayType}</td><td style="font-weight:bold; letter-spacing:1px;">${t.targets.join(', ')}</td><td>${t.startDate}</td><td>${t.status === '進行中' ? t.life : '-'}</td><td><span class="${statusClass}">${t.status}</span></td>`;
+            // 將號碼陣列轉換為彩球樣式 HTML
+            const ballsHtml = formatBalls(t.targets, isTargetSignal);
+
+            const rowHtml = `<td>${displayType}</td><td>${ballsHtml}</td><td>${t.startDate}</td><td>${t.status === '進行中' ? t.life : '-'}</td><td><span class="${statusClass}">${t.status}</span></td>`;
 
             if(t.status === '進行中') {
                 const tr = document.createElement('tr'); tr.innerHTML = rowHtml; activeBody.appendChild(tr);
             } else {
-                const tr = document.createElement('tr'); tr.innerHTML = `<td>${t.startDate}</td><td>${displayType}</td><td style="letter-spacing:1px;">${t.targets.join(', ')}</td><td><span class="${statusClass}">${t.status}</span></td><td>${t.hitInfo}</td>`;
+                const tr = document.createElement('tr'); tr.innerHTML = `<td>${t.startDate}</td><td>${displayType}</td><td>${ballsHtml}</td><td><span class="${statusClass}">${t.status}</span></td><td>${t.hitInfo}</td>`;
                 historyBody.appendChild(tr);
             }
         });
