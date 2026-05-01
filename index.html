@@ -3,52 +3,491 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>綜合數據分析工具箱 - 首頁</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }</style>
+    <title>高機率 三期牌/週牌</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif; 
+            line-height: 1.6; 
+            padding: 20px 10px; 
+            background-color: #f4f7f6; 
+            color: #333; 
+            margin: 0;
+        }
+        .container { 
+            max-width: 1100px; 
+            margin: auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 16px; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06); 
+        }
+        h1 { 
+            color: #1a73e8; 
+            text-align: center; 
+            margin-bottom: 30px; 
+            font-size: 1.8em;
+        }
+        .section { 
+            background: #ffffff; 
+            border: 1px solid #eaeef2; 
+            padding: 20px; 
+            border-radius: 12px; 
+            margin-bottom: 24px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .section-title { 
+            font-weight: bold; 
+            font-size: 1.2em; 
+            margin-bottom: 15px; 
+            color: #2c3e50; 
+            display: flex; 
+            align-items: center; 
+        }
+        .section-title::before { 
+            content: ""; 
+            width: 5px; 
+            height: 20px; 
+            background: #1a73e8; 
+            margin-right: 12px; 
+            border-radius: 4px; 
+        }
+        
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px; 
+            margin-bottom: 24px; 
+        }
+        .stat-card { 
+            background: #f8faff; 
+            border: 1px solid #d2e3fc; 
+            padding: 20px 15px; 
+            border-radius: 12px; 
+            text-align: center; 
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-value { font-size: 2em; font-weight: bold; color: #1a73e8; margin: 5px 0; }
+        .stat-label { color: #5f6368; font-size: 0.95em; font-weight: 600; }
+
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95em; min-width: 500px; }
+        th, td { border: 1px solid #edf2f7; padding: 14px 12px; text-align: center; }
+        th { background-color: #f1f3f4; color: #3c4043; font-weight: 600; white-space: nowrap; }
+        tr:nth-child(even) { background-color: #fcfcfc; }
+        tr:hover { background-color: #f5f8fd; }
+        
+        .status-active { color: #1a73e8; font-weight: bold; background: #e8f0fe; border-radius: 6px; padding: 6px 10px; display: inline-block;}
+        .status-hit { color: #1e7e34; font-weight: bold; background: #d4edda; border-radius: 6px; padding: 6px 10px; display: inline-block;}
+        .status-miss { color: #d93025; background: #fce8e6; border-radius: 6px; padding: 6px 10px; display: inline-block;}
+        
+        .info-text { font-size: 0.85em; color: #7f8c8d; margin-top: 8px; }
+        .history-container { max-height: 500px; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 8px; }
+        .notice { background: #fff8e1; padding: 15px 20px; border-left: 5px solid #ffc107; border-radius: 8px; margin-bottom: 20px; font-size: 0.95em; color: #5d4037; }
+        
+        input[type="file"] { display: block; width: 100%; max-width: 300px; padding: 10px; border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; color: #475569; cursor: pointer; margin-top: 10px; }
+        select { padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em; color: #333; background-color: #fff; cursor: pointer; outline: none; }
+        select:focus { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.2); }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 20px 15px; border-radius: 12px; }
+            h1 { font-size: 1.5em; margin-bottom: 20px; }
+            .stats-grid { grid-template-columns: 1fr; gap: 15px; }
+            .section { padding: 15px; }
+            th, td { padding: 10px 8px; font-size: 0.9em; }
+            .notice { padding: 12px 15px; }
+        }
+    </style>
 </head>
 <body>
-    <div class="bg-slate-800 p-4 shadow-lg sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto flex flex-wrap gap-2 sm:gap-4 justify-center">
-            <a href="index.html" class="px-5 py-2.5 rounded-lg font-bold text-white bg-slate-600 shadow-md transition-all">🏠 首頁</a>
-            <a href="tool1.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">立柱撞柱工具</a>
-            <a href="tool5.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">星期版路工具</a>
-            <a href="tool3.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">尾數拖牌工具</a>
-            <a href="tool6.html" class="px-5 py-2.5 rounded-lg font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all">版路分析工具</a>
+
+<div class="container">
+    <h1>高機率 三期牌/週牌</h1>
+
+    <div class="notice">
+        <strong>系統更新：</strong><br>
+        1. <strong>🇭🇰 香港 六合彩：</strong>特有訊號「特別號同尾 (勝率86%)」、「斷層9回馬槍」。<br>
+        2. <strong>🇹🇼 台灣 大樂透：</strong>特有訊號「特別號順推」、「斷層6回馬槍」。<br>
+        3. <strong>🇹🇼 台灣 今彩 539：</strong>超級斷層 (差6追中3碼)、大斷層 (差5)。<br>
+        4. <strong>🇺🇸 加州 天天樂：</strong>斷層回馬槍 (差5追原2碼)、三同尾狙擊。<br>
+        5. <strong>🇬🇭 迦納彩：</strong>暴力補空專屬參數，大斷層(差5補4碼)。
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">三期牌 總命中率</div>
+            <div id="threePeriodRate" class="stat-value">0%</div>
+            <div id="threePeriodDetail" class="info-text">已結束: 0 | 命中: 0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">期牌/週牌 總命中率</div>
+            <div id="weeklyRate" class="stat-value">0%</div>
+            <div id="weeklyDetail" class="info-text">已結束: 0 | 命中: 0</div>
         </div>
     </div>
 
-    <div class="py-12 px-4 max-w-4xl mx-auto text-center">
-        <h1 class="text-4xl font-black text-slate-800 mb-6 flex items-center justify-center gap-3">
-            <i data-lucide="layout-dashboard" class="w-10 h-10 text-indigo-600"></i>
-            綜合數據分析工具箱
-        </h1>
-        <p class="text-lg text-slate-600 mb-10 font-medium">請從上方選單或下方卡片選擇您要使用的分析工具。</p>
+    <div class="section">
+        <div class="section-title">1. 設定模式與載入數據</div>
+        <div style="margin-bottom: 15px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <label for="gameType" style="font-weight: bold; color: #444;">當前分析模式：</label>
+            <select id="gameType">
+                <option value="mark6">🇭🇰 香港 六合彩 6/49</option>
+                <option value="649">🇹🇼 台灣 大樂透 6/49</option>
+                <option value="539">🇹🇼 台灣 今彩 5/39</option>
+                <option value="daily4">🇺🇸 加州 天天樂 5/39</option>
+                <option value="ghana">🇬🇭 非洲 迦納彩 5/39</option>
+            </select>
+        </div>
         
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <a href="tool1.html" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-400 transition-all flex flex-col items-center gap-3">
-                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center"><i data-lucide="columns" class="w-8 h-8"></i></div>
-                <h2 class="text-xl font-bold text-slate-800">立柱撞柱工具</h2>
-                <p class="text-sm text-slate-500">自動計算碰數成本與偵測撞柱。</p>
-            </a>
-            <a href="tool5.html" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-indigo-400 transition-all flex flex-col items-center gap-3">
-                <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center"><i data-lucide="target" class="w-8 h-8"></i></div>
-                <h2 class="text-xl font-bold text-slate-800">星期版路工具</h2>
-                <p class="text-sm text-slate-500">自動掃描全網版路與計算最新進場時機。</p>
-            </a>
-            <a href="tool3.html" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-red-400 transition-all flex flex-col items-center gap-3">
-                <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center"><i data-lucide="scan-line" class="w-8 h-8"></i></div>
-                <h2 class="text-xl font-bold text-slate-800">尾數拖牌工具</h2>
-                <p class="text-sm text-slate-500">掃描歷史最高勝率的拖牌版路。</p>
-            </a>
-            <a href="tool6.html" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-emerald-400 transition-all flex flex-col items-center gap-3">
-                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center"><i data-lucide="activity" class="w-8 h-8"></i></div>
-                <h2 class="text-xl font-bold text-slate-800">版路分析工具</h2>
-                <p class="text-sm text-slate-500">自動捕捉最新訊號，動態訊號強化追蹤。</p>
-            </a>
+        <!-- 新增下拉選單直接讀取 CSV -->
+        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 10px;">
+            <input type="file" id="csvFile" accept=".csv" style="margin-top: 0; max-width: 250px;">
+            <span style="font-weight: bold; color: #666;">或直接讀取檔案：</span>
+            <select id="autoLoadCsv">
+                <option value="">-- 請選擇彩球類型 --</option>
+                <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
+                <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
+                <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
+                <option value="Fan_history_2026.csv">🇺🇸 加州 天天樂</option>
+                <option value="Ghana_history_2026.csv">🇬🇭 非洲 迦納彩</option>
+            </select>
         </div>
     </div>
-    <script>lucide.createIcons();</script>
+
+    <div class="section">
+        <div class="section-title">2. 當前追蹤中的牌組 (中一即停)</div>
+        <div class="table-responsive">
+            <table id="activeTable">
+                <thead>
+                    <tr>
+                        <th>類型</th>
+                        <th>目標號碼</th>
+                        <th>起始日期</th>
+                        <th>剩餘期數</th>
+                        <th>狀態</th>
+                    </tr>
+                </thead>
+                <tbody id="activeBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">3. 完整歷史命中紀錄</div>
+        <div class="history-container table-responsive">
+            <table id="historyTable">
+                <thead>
+                    <tr>
+                        <th>起始日期</th>
+                        <th>類型</th>
+                        <th>目標號碼</th>
+                        <th>結果</th>
+                        <th>命中詳情</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let allRecords = []; 
+    let currentHistoryData = [];
+
+    // 手動上傳檔案觸發
+    document.getElementById('csvFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        
+        const fileName = file.name.toLowerCase();
+        const gameTypeSelect = document.getElementById('gameType');
+        
+        // 自動判斷檔名並切換模式
+        if (fileName.includes('six')) {
+            gameTypeSelect.value = 'mark6';
+        } else if (fileName.includes('649')) {
+            gameTypeSelect.value = '649';
+        } else if (fileName.includes('fan') || fileName.includes('daily')) {
+            gameTypeSelect.value = 'daily4';
+        } else if (fileName.includes('ghana')) {
+            gameTypeSelect.value = 'ghana';
+        } else {
+            gameTypeSelect.value = '539';
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            processCSV(event.target.result);
+        };
+        reader.readAsText(file);
+    });
+
+    // 新增：下拉選單直接讀取同層資料夾 CSV
+    document.getElementById('autoLoadCsv').addEventListener('change', function(e) {
+        const fileName = e.target.value;
+        if (!fileName) return;
+
+        const lowerName = fileName.toLowerCase();
+        const gameTypeSelect = document.getElementById('gameType');
+        
+        if (lowerName.includes('six')) {
+            gameTypeSelect.value = 'mark6';
+        } else if (lowerName.includes('649')) {
+            gameTypeSelect.value = '649';
+        } else if (lowerName.includes('fan') || lowerName.includes('daily')) {
+            gameTypeSelect.value = 'daily4';
+        } else if (lowerName.includes('ghana')) {
+            gameTypeSelect.value = 'ghana';
+        } else {
+            gameTypeSelect.value = '539';
+        }
+
+        fetch(fileName)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("找不到檔案: " + fileName);
+                }
+                return response.text();
+            })
+            .then(text => {
+                processCSV(text);
+            })
+            .catch(error => {
+                alert(error.message + "\n\n⚠️ 如果您是直接雙擊開啟 HTML 檔案，瀏覽器安全機制會阻擋讀取本地 CSV。請使用本地伺服器 (如 VS Code 的 Live Server) 開啟網頁，或改用旁邊的「選擇檔案」按鈕手動上傳。");
+                e.target.value = ""; // 發生錯誤時重置選項
+            });
+    });
+
+    // 模式手動切換重算
+    document.getElementById('gameType').addEventListener('change', function() {
+        if(currentHistoryData.length > 0) {
+            recalculateAll();
+        }
+    });
+
+    function getWeekday(dateStr) {
+        try {
+            let dt = new Date("2026/" + dateStr);
+            return dt.getDay(); // 0:Sun, 1:Mon, 2:Tue, 3:Wed, 4:Thu, 5:Fri, 6:Sat
+        } catch (e) {
+            return -1;
+        }
+    }
+
+    function processCSV(text) {
+        const lines = text.trim().split('\n');
+        currentHistoryData = [];
+
+        for(let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',');
+            if(cols.length >= 6) {
+                let nums = [];
+                for(let c=1; c<cols.length; c++) {
+                    let val = parseInt(cols[c]);
+                    if(!isNaN(val)) nums.push(val);
+                }
+                currentHistoryData.push({
+                    date: cols[0].trim(),
+                    nums: nums
+                });
+            }
+        }
+        recalculateAll();
+    }
+
+    function recalculateAll() {
+        allRecords = [];
+        for(let i = 0; i < currentHistoryData.length; i++) {
+            const draw = currentHistoryData[i];
+            allRecords.forEach(target => {
+                if(target.status === '進行中') {
+                    // 目標數字出現在當期開獎號碼(包含特別號)就視為命中
+                    const hit = target.targets.find(n => draw.nums.includes(n));
+                    if(hit) {
+                        target.status = '命中停止';
+                        target.hitInfo = `${draw.date} 開出 [${hit}]`;
+                    } else {
+                        target.life--;
+                        if(target.life <= 0) target.status = '未中結束';
+                    }
+                }
+            });
+            generateTargets(draw);
+        }
+        renderTables();
+    }
+
+    function generateTargets(draw) {
+        const date = draw.date;
+        const gameType = document.getElementById('gameType').value;
+        let mainNums = [];
+        let specialNum = null;
+
+        if (gameType === '649' || gameType === 'mark6') {
+            mainNums = draw.nums.slice(0, 6).sort((a,b)=>a-b);
+            specialNum = draw.nums[6] || null;
+        } else {
+            mainNums = draw.nums.slice(0, 5).sort((a,b)=>a-b);
+        }
+
+        // 【一、三期牌：夾縫與斷層】
+        for(let i=0; i<mainNums.length-1; i++) {
+            let diff = mainNums[i+1] - mainNums[i];
+            
+            if (gameType === 'mark6') {
+                if(diff === 9) {
+                    allRecords.push({ type: '三期牌 (斷層9回馬槍)', targets: [mainNums[i], mainNums[i+1]], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                } else if(diff === 6) {
+                    allRecords.push({ type: '三期牌 (大斷層)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4, mainNums[i]+5], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                }
+            } else if (gameType === '649') {
+                if(diff === 6) {
+                    allRecords.push({ type: '三期牌 (斷層回馬槍)', targets: [mainNums[i], mainNums[i+1]], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                } else if(diff === 7) {
+                    allRecords.push({ type: '三期牌 (大斷層)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4, mainNums[i]+5, mainNums[i]+6], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                }
+            } else if (gameType === '539') {
+                if(diff === 4) {
+                    allRecords.push({ type: '三期牌 (夾縫)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                } else if(diff === 5) {
+                    allRecords.push({ type: '三期牌 (大斷層)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                } else if(diff === 6) {
+                    allRecords.push({ type: '三期牌 (超級斷層)', targets: [mainNums[i]+2, mainNums[i]+3, mainNums[i]+4], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                }
+            } else if (gameType === 'daily4') {
+                if(diff === 4) {
+                    allRecords.push({ type: '三期牌 (夾縫)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                } else if(diff === 5) {
+                    allRecords.push({ type: '三期牌 (大斷層)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                    allRecords.push({ type: '三期牌 (回馬槍)', targets: [mainNums[i], mainNums[i+1]], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                }
+            } else if (gameType === 'ghana') {
+                if(diff === 4) {
+                    allRecords.push({ type: '三期牌 (夾縫補3碼)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                } else if(diff === 5) {
+                    allRecords.push({ type: '三期牌 (大斷層補4碼)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                } else if(diff === 6) {
+                    allRecords.push({ type: '三期牌 (超級斷層補5碼)', targets: [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4, mainNums[i]+5], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                }
+            }
+        }
+
+        // 【二、三期牌：大樂透/六合彩 專屬特別號推算】
+        if(specialNum !== null) {
+            let maxN = gameType === 'mark6' ? 49 : 49; // 兩者皆49
+            if (gameType === '649' || gameType === 'mark6') {
+                let t1 = (specialNum % maxN) + 1;
+                let t2 = ((specialNum + 1) % maxN) + 1;
+                allRecords.push({ type: '三期牌 (特別號順推)', targets: [t1, t2], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+            }
+            if (gameType === 'mark6') {
+                // 六合彩獨家：特別號同尾
+                let sTail = specialNum % 10;
+                let tailTargets = [];
+                for(let n=1; n<=maxN; n++) {
+                    if(n % 10 === sTail && n !== specialNum) tailTargets.push(n);
+                }
+                if(tailTargets.length > 0) {
+                    allRecords.push({ type: '三期牌 (特別號同尾)', targets: tailTargets, startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                }
+            }
+        }
+
+        // 【三、三期牌：同尾】
+        const tails = mainNums.map(n => n % 10);
+        const tailCounts = {};
+        tails.forEach(t => tailCounts[t] = (tailCounts[t] || 0) + 1);
+        for(let t in tailCounts) {
+            if (gameType === 'daily4') {
+                if(tailCounts[t] === 2) {
+                    allRecords.push({ type: '三期牌 (同尾)', targets: mainNums.filter(n => n % 10 == t), startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                } else if(tailCounts[t] >= 3) {
+                    allRecords.push({ type: '三期牌 (三同尾)', targets: mainNums.filter(n => n % 10 == t), startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                }
+            } else {
+                // 649, mark6, 539, ghana 一般同尾
+                if(tailCounts[t] >= 2) {
+                    allRecords.push({ type: '三期牌 (同尾)', targets: mainNums.filter(n => n % 10 == t), startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+                }
+            }
+        }
+
+        // 【四、期牌/週牌：產生3組不重複】
+        const maxNum = (gameType === '649' || gameType === 'mark6') ? 49 : 39;
+        const day = getWeekday(date);
+        
+        let shouldGenerateWeekly = false;
+        let weeklyLife = 5;
+        
+        if (gameType === '649') {
+            // 大樂透逢週二(2)、週五(5)
+            if(day === 2 || day === 5) { shouldGenerateWeekly = true; weeklyLife = 3; }
+        } else if (gameType === 'mark6') {
+            // 六合彩逢週二(2)、週四(4)、週六(6)
+            if(day === 2 || day === 4 || day === 6) { shouldGenerateWeekly = true; weeklyLife = 3; }
+        } else {
+            // 週一(1)產生週牌
+            if(day === 1) { shouldGenerateWeekly = true; weeklyLife = 5; }
+        }
+
+        if(shouldGenerateWeekly) { 
+            let extra = mainNums[mainNums.length - 1] + 1;
+            if (extra > maxNum) extra = mainNums[0] - 1;
+            if (extra < 1) extra = 10;
+            while(mainNums.includes(extra)) {
+                extra = (extra % maxNum) + 1;
+            }
+            
+            const pool = [...mainNums, extra];
+            const cardName = (gameType === '649' || gameType === 'mark6') ? '期牌' : '週牌';
+            
+            allRecords.push({ type: `${cardName} (第1組)`, targets: [pool[0], pool[1]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
+            allRecords.push({ type: `${cardName} (第2組)`, targets: [pool[2], pool[3]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
+            allRecords.push({ type: `${cardName} (第3組)`, targets: [pool[4], pool[5]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
+        }
+    }
+
+    function renderTables() {
+        const activeBody = document.getElementById('activeBody');
+        const historyBody = document.getElementById('historyBody');
+        activeBody.innerHTML = '';
+        historyBody.innerHTML = '';
+
+        let tTotal = 0, tHits = 0, wTotal = 0, wHits = 0;
+
+        [...allRecords].reverse().forEach(t => {
+            const isThree = t.type.includes('三期');
+            const isWeekly = t.type.includes('週牌') || t.type.includes('期牌');
+            if(t.status !== '進行中') {
+                if(isThree) { tTotal++; if(t.status === '命中停止') tHits++; }
+                else if(isWeekly) { wTotal++; if(t.status === '命中停止') wHits++; }
+            }
+
+            const statusClass = t.status === '進行中' ? 'status-active' : (t.status === '命中停止' ? 'status-hit' : 'status-miss');
+            
+            let displayType = t.type;
+            if(t.type.includes('超級斷層') || t.type.includes('大斷層') || t.type.includes('回馬槍') || t.type.includes('三同尾') || t.type.includes('特別號')) {
+                displayType = `<span style="color: #d93025; font-weight: bold;">🎯 ${t.type}</span>`;
+            }
+
+            const rowHtml = `<td>${displayType}</td><td style="font-weight:bold; letter-spacing:1px;">${t.targets.join(', ')}</td><td>${t.startDate}</td><td>${t.status === '進行中' ? t.life : '-'}</td><td><span class="${statusClass}">${t.status}</span></td>`;
+
+            if(t.status === '進行中') {
+                const tr = document.createElement('tr'); tr.innerHTML = rowHtml; activeBody.appendChild(tr);
+            } else {
+                const tr = document.createElement('tr'); tr.innerHTML = `<td>${t.startDate}</td><td>${displayType}</td><td style="letter-spacing:1px;">${t.targets.join(', ')}</td><td><span class="${statusClass}">${t.status}</span></td><td>${t.hitInfo}</td>`;
+                historyBody.appendChild(tr);
+            }
+        });
+
+        document.getElementById('threePeriodRate').innerText = tTotal > 0 ? ((tHits / tTotal) * 100).toFixed(1) + '%' : '0%';
+        document.getElementById('threePeriodDetail').innerText = `已結束: ${tTotal} | 命中: ${tHits}`;
+        document.getElementById('weeklyRate').innerText = wTotal > 0 ? ((wHits / wTotal) * 100).toFixed(1) + '%' : '0%';
+        document.getElementById('weeklyDetail').innerText = `已結束: ${wTotal} | 命中: ${wHits}`;
+    }
+</script>
+
 </body>
 </html>
