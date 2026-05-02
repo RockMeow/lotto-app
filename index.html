@@ -245,7 +245,6 @@
             </select>
         </div>
         
-        <!-- 下拉選單直接讀取 CSV -->
         <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 10px;">
             <input type="file" id="csvFile" accept=".csv" style="margin-top: 0; max-width: 250px;">
             <span style="font-weight: bold; color: var(--text-color);"></span>
@@ -439,11 +438,11 @@
             const draw = currentHistoryData[i];
             allRecords.forEach(target => {
                 if(target.status === '進行中') {
-                    // 目標數字出現在當期開獎號碼(包含特別號)就視為命中
-                    const hit = target.targets.find(n => draw.nums.includes(n));
-                    if(hit) {
+                    // 將 find 改為 filter，抓出所有命中的號碼
+                    const hits = target.targets.filter(n => draw.nums.includes(n));
+                    if(hits.length > 0) {
                         target.status = '命中停止';
-                        target.hitInfo = `${draw.date} 開出 ${formatBalls([hit])}`;
+                        target.hitInfo = `${draw.date} 開出 ${formatBalls(hits)}`;
                     } else {
                         target.life--;
                         if(target.life <= 0) target.status = '未中結束';
