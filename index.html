@@ -127,6 +127,14 @@
             margin-bottom: 24px; 
             align-items: start;
         }
+        
+        /* 當隱藏週牌時，讓三期牌置中放大 */
+        .stats-grid.single-card {
+            grid-template-columns: 1fr;
+            max-width: 500px;
+            margin: 0 auto 24px auto;
+        }
+
         .stat-card { 
             background: var(--card-bg); 
             border: 1px solid var(--card-border); 
@@ -235,14 +243,14 @@
         6. 🔥 訊號共振：自動交叉比對當期版路，獲得「雙重版路」以上認證將標示為「🔥 訊號共振」！
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
+    <div id="statsGrid" class="stats-grid">
+        <div class="stat-card" id="threePeriodCard">
             <div class="stat-label">三期牌 總命中率</div>
             <div id="threePeriodRate" class="stat-value">0%</div>
             <div id="threePeriodDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="threePeriodBreakdown" class="detailed-stats"></div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" id="weeklyCard">
             <div class="stat-label">期牌/週牌 總命中率</div>
             <div id="weeklyRate" class="stat-value">0%</div>
             <div id="weeklyDetail" class="info-text">已結束: 0 | 命中: 0</div>
@@ -508,6 +516,19 @@
     function recalculateAll() {
         allRecords = [];
 
+        // 根據選擇的彩票類型調整統計卡片的顯示
+        const gameType = document.getElementById('gameType').value;
+        const weeklyCard = document.getElementById('weeklyCard');
+        const statsGrid = document.getElementById('statsGrid');
+        
+        if (gameType === '649' || gameType === 'mark6') {
+            weeklyCard.style.display = 'none';
+            statsGrid.classList.add('single-card');
+        } else {
+            weeklyCard.style.display = 'block';
+            statsGrid.classList.remove('single-card');
+        }
+
         for(let i = 0; i < currentHistoryData.length; i++) {
             const draw = currentHistoryData[i];
             
@@ -599,12 +620,14 @@
 
         const maxNum = (gameType === '649' || gameType === 'mark6') ? 49 : 39;
         const day = getWeekday(date);
+        
+        // 修改區：大樂透 (649) 和 六合彩 (mark6) 關閉週牌/期牌的產生
         let shouldGenerateWeekly = false;
         let weeklyLife = 5;
         
-        if (gameType === '649') { if(day === 2 || day === 5) { shouldGenerateWeekly = true; weeklyLife = 3; } } 
-        else if (gameType === 'mark6') { if(day === 2 || day === 4 || day === 6) { shouldGenerateWeekly = true; weeklyLife = 3; } } 
-        else { if(day === 1) { shouldGenerateWeekly = true; weeklyLife = 5; } }
+        if (gameType !== '649' && gameType !== 'mark6') {
+            if(day === 1) { shouldGenerateWeekly = true; weeklyLife = 5; }
+        }
 
         if(shouldGenerateWeekly) { 
             let extra = mainNums[mainNums.length - 1] + 1;
@@ -613,7 +636,7 @@
             while(mainNums.includes(extra)) extra = (extra % maxNum) + 1;
             
             const pool = [...mainNums, extra];
-            const cardName = (gameType === '649' || gameType === 'mark6') ? '期牌' : '週牌';
+            const cardName = '週牌';
             
             allRecords.push({ type: `${cardName} (第1組)`, targets: [pool[0], pool[1]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
             allRecords.push({ type: `${cardName} (第2組)`, targets: [pool[2], pool[3]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
@@ -733,8 +756,13 @@
 
         document.getElementById('threePeriodRate').innerText = tTotal > 0 ? ((tHits / tTotal) * 100).toFixed(1) + '%' : '0%';
         document.getElementById('threePeriodDetail').innerText = `已結束: ${tTotal} | 命中: ${tHits}`;
-        document.getElementById('weeklyRate').innerText = wTotal > 0 ? ((wHits / wTotal) * 100).toFixed(1) + '%' : '0%';
-        document.getElementById('weeklyDetail').innerText = `已結束: ${wTotal} | 命中: ${wHits}`;
+        
+        // 只有在非大樂透/六合彩才更新週牌數據
+        const gameType = document.getElementById('gameType').value;
+        if (gameType !== '649' && gameType !== 'mark6') {
+            document.getElementById('weeklyRate').innerText = wTotal > 0 ? ((wHits / wTotal) * 100).toFixed(1) + '%' : '0%';
+            document.getElementById('weeklyDetail').innerText = `已結束: ${wTotal} | 命中: ${wHits}`;
+        }
 
         // 渲染詳細明細版面
         let threeBreakdownHtml = '';
@@ -763,7 +791,9 @@
         });
         
         document.getElementById('threePeriodBreakdown').innerHTML = threeBreakdownHtml;
-        document.getElementById('weeklyBreakdown').innerHTML = weeklyBreakdownHtml;
+        if (gameType !== '649' && gameType !== 'mark6') {
+            document.getElementById('weeklyBreakdown').innerHTML = weeklyBreakdownHtml;
+        }
     }
 </script>
 
