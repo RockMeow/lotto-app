@@ -319,7 +319,7 @@
         4. <strong>🇺🇸 天天樂：</strong>追原號、三同尾狙擊。<br>
         5. <strong>🇬🇭 迦納彩：</strong>暴力補空專屬參數，4連號、5連號。<br>
         <span style="color: #2563eb; font-weight: bold; display: inline-block; margin-top: 5px;">
-        💡 引擎升級：週牌系統採用「熱力均線 Top 6 模型」，天天樂期限覆蓋週一至週日，539/迦納彩覆蓋週一至週六！
+        💡 引擎升級：週牌系統採用「熱力均線」，天天樂期限覆蓋週一至週日，539/迦納彩覆蓋週一至週六！
         </span>
     </div>
 
@@ -609,9 +609,9 @@
             let sortedNums = Object.keys(freq).map(Number).sort((a, b) => freq[b] !== freq[a] ? freq[b] - freq[a] : a - b);
             let top6 = sortedNums.slice(0, 6);
             while(top6.length < 6) { let f = 1; while(top6.includes(f)) f++; top6.push(f); }
-            allRecords.push({ type: `週牌 (熱力Top6-第1組)`, targets: [top6[0], top6[1]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
-            allRecords.push({ type: `週牌 (熱力Top6-第2組)`, targets: [top6[2], top6[3]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
-            allRecords.push({ type: `週牌 (熱力Top6-第3組)`, targets: [top6[4], top6[5]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
+            allRecords.push({ type: `週牌 (第1組)`, targets: [top6[0], top6[1]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
+            allRecords.push({ type: `週牌 (第2組)`, targets: [top6[2], top6[3]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
+            allRecords.push({ type: `週牌 (第3組)`, targets: [top6[4], top6[5]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
         }
     }
 
