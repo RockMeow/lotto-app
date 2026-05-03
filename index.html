@@ -625,8 +625,10 @@
         let shouldGenerateWeekly = false;
         let weeklyLife = 5;
         
-        if (gameType !== '649' && gameType !== 'mark6') {
-            if(day === 1) { shouldGenerateWeekly = true; weeklyLife = 5; }
+        if (gameType === 'daily4') {
+            if (day === 0) { shouldGenerateWeekly = true; weeklyLife = 5; } // 天天樂: 星期日 (0) 開完獎產生
+        } else if (gameType === '539' || gameType === 'ghana') {
+            if (day === 6) { shouldGenerateWeekly = true; weeklyLife = 5; } // 539、迦納彩: 星期六 (6) 開完獎產生
         }
 
         if(shouldGenerateWeekly) { 
