@@ -187,6 +187,7 @@
             padding: 10px;
         }
 
+        /* 統計資料卡片 */
         .stats-grid { 
             display: grid; 
             grid-template-columns: 1fr 1fr; 
@@ -224,6 +225,7 @@
         .detailed-stats-row .type-rate { font-weight: 700; color: var(--heading-color); }
         .detailed-stats-row .type-rate.high-rate { color: var(--high-rate-color); }
 
+        /* 表格設計 */
         .table-responsive { 
             width: 100%; 
             overflow-x: auto; 
@@ -250,6 +252,7 @@
         .info-text { font-size: 0.85em; opacity: 0.7; margin-top: 8px; }
         .history-container { max-height: 500px; overflow-y: auto; }
         
+        /* 彩球樣式 */
         .ball-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
         .lottery-ball {
             display: inline-flex; align-items: center; justify-content: center;
@@ -257,34 +260,30 @@
             background: var(--ball-bg); color: var(--ball-text);
             font-weight: 700; font-size: 14px;
             box-shadow: 0 3px 6px var(--ball-shadow); 
-            text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
         .lottery-ball.target-ball {
             background: linear-gradient(135deg, #f87171, #dc2626);
             box-shadow: 0 3px 6px rgba(220, 38, 38, 0.3);
         }
 
-        .heatmap-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 15px; }
+        /* 熱力分佈圖強化 (包含遺漏值) */
+        .heatmap-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
+        .heatmap-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .heatmap-box {
             position: relative; display: inline-flex; align-items: center; justify-content: center;
-            width: 40px; height: 40px; border-radius: 10px; font-weight: 700; font-size: 15px; 
+            width: 42px; height: 42px; border-radius: 12px; font-weight: 700; font-size: 15px; 
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .heatmap-box:hover { transform: scale(1.1); z-index: 2; box-shadow: var(--shadow-md); }
         .heatmap-badge {
-            position: absolute; top: -6px; right: -6px; background: #111; color: #fff;
-            font-size: 11px; font-weight: bold; border-radius: 50%; width: 20px; height: 20px;
+            position: absolute; top: -8px; right: -8px; background: #111; color: #fff;
+            font-size: 10px; font-weight: bold; border-radius: 50%; width: 18px; height: 18px;
             display: flex; align-items: center; justify-content: center; border: 2px solid var(--section-bg);
             box-shadow: var(--shadow-sm);
         }
-
-        .prediction-card {
-            background: var(--card-bg); 
-            border: 1px solid var(--card-border); 
-            padding: 16px; 
-            border-radius: 14px; 
-            box-shadow: var(--shadow-sm);
-        }
+        .omission-text { font-size: 11px; font-weight: 600; opacity: 0.8; }
+        .omission-warn { color: #ef4444; font-weight: 800; }
 
         @media (max-width: 768px) {
             body { padding: 15px 8px; }
@@ -298,7 +297,7 @@
             th, td { padding: 12px 10px; font-size: 0.9em; }
             .notice { padding: 15px; }
             .lottery-ball { width: 30px; height: 30px; font-size: 13px; }
-            .heatmap-box { width: 36px; height: 36px; font-size: 13px; }
+            .heatmap-box { width: 38px; height: 38px; font-size: 13px; }
         }
     </style>
 </head>
@@ -311,7 +310,7 @@
     <div class="notice">
         <strong>系統更新：</strong><br>
         <span style="color: #ef4444; font-weight: bold; display: inline-block; margin-bottom: 8px;">
-        🔥 新增功能：「本期預測」與「遺漏值」，系統自動抓取最新一期號碼，直接給出本期預測並標示冷門號。<br>
+        🔥 新增功能：遺漏值 (Omission) 已整合至熱力分佈圖，彩球下方可直接查看該號碼目前的遺漏期數。<br>
         </span><br>
         1. <strong>🇭🇰 六合彩：</strong>特有訊號「特別號同尾 (勝率86%)」、「追原號」。<br>
         2. <strong>🇹🇼 大樂透：</strong>特有訊號「特別號順推」、「追原號」。<br>
@@ -319,7 +318,7 @@
         4. <strong>🇺🇸 天天樂：</strong>追原號、三同尾狙擊。<br>
         5. <strong>🇬🇭 迦納彩：</strong>暴力補空專屬參數，4連號、5連號。<br>
         <span style="color: #2563eb; font-weight: bold; display: inline-block; margin-top: 5px;">
-        💡 引擎升級：週牌系統採用「熱力均線」，天天樂期限覆蓋週一至週日，539/迦納彩覆蓋週一至週六！
+        💡 引擎說明：週牌採用「熱力均線 Top 6 模型」，天天樂期限覆蓋週一至週日，539/迦納彩覆蓋週一至週六！
         </span>
     </div>
 
@@ -365,13 +364,9 @@
         </div>
     </div>
 
-    <div class="section" id="predictionSection" style="display: none; border: 2px solid var(--heading-color);">
-        <div class="section-title" style="color: var(--heading-color); font-size: 1.4em;">🔮 本期預測</div>
-        <div id="predictionBoard" style="display: flex; flex-direction: column; gap: 12px;"></div>
-    </div>
-
     <div class="section">
-        <div class="section-title">2. 近 10 期熱力分佈圖</div>
+        <div class="section-title">2. 近 10 期熱力與遺漏值分佈</div>
+        <div class="info-text" style="margin-top: 0; margin-bottom: 10px;">彩球上標為近10期出現次數；下方為目前遺漏期數（⚠️ 紅色代表超過 20 期未開）。</div>
         <div id="heatmapContainer" class="heatmap-container"></div>
     </div>
 
@@ -433,18 +428,6 @@
             omission++;
         }
         return omission; 
-    }
-
-    function formatPredictionWithOmission(numsArray, isTarget) {
-        let ballClass = isTarget ? "lottery-ball target-ball" : "lottery-ball";
-        return numsArray.map(n => {
-            let omi = getOmission(n);
-            let warn = omi >= 20 ? `<span style="color:#ef4444; font-weight:800; font-size:12px;">⚠️冷</span>` : '';
-            return `<div style="display:inline-block; text-align:center; margin: 5px;">
-                        <div class="${ballClass}">${n.toString().padStart(2, '0')}</div>
-                        <div style="font-size:11px; opacity:0.8; margin-top:6px; font-weight:600;">漏${omi}期<br>${warn}</div>
-                    </div>`;
-        }).join('');
     }
 
     let allRecords = []; 
@@ -514,8 +497,14 @@
         const freq = {};
         for(let i=1; i<=maxNum; i++) freq[i] = 0;
         recentDraws.forEach(draw => { draw.nums.forEach(n => { if(n >= 1 && n <= maxNum) freq[n]++; }); });
+        
         for(let i=1; i<=maxNum; i++) {
             let count = freq[i];
+            let omission = getOmission(i);
+            
+            let item = document.createElement('div');
+            item.className = 'heatmap-item';
+            
             let box = document.createElement('div');
             box.className = 'heatmap-box';
             if(count === 0) { box.style.background = 'var(--th-bg)'; box.style.color = 'var(--text-color)'; box.style.opacity = '0.5'; } 
@@ -523,8 +512,21 @@
             else if(count === 2) { box.style.background = 'linear-gradient(135deg, #fbbf24, #d97706)'; box.style.color = '#fff'; } 
             else { box.style.background = 'linear-gradient(135deg, #f87171, #dc2626)'; box.style.color = '#fff'; }
             box.innerHTML = i.toString().padStart(2, '0');
-            if(count > 0) { let badge = document.createElement('span'); badge.className = 'heatmap-badge'; badge.innerHTML = count; box.appendChild(badge); }
-            container.appendChild(box);
+            
+            if(count > 0) {
+                let badge = document.createElement('span');
+                badge.className = 'heatmap-badge';
+                badge.innerHTML = count;
+                box.appendChild(badge);
+            }
+            
+            let omiText = document.createElement('span');
+            omiText.className = 'omission-text' + (omission >= 20 ? ' omission-warn' : '');
+            omiText.innerHTML = `漏${omission}`;
+            
+            item.appendChild(box);
+            item.appendChild(omiText);
+            container.appendChild(item);
         }
     }
 
@@ -546,7 +548,7 @@
             });
             generateTargets(i);
         }
-        renderTables(); renderHeatmap(); renderPredictionBoard();
+        renderTables(); renderHeatmap();
     }
 
     function generateTargets(drawIndex) {
@@ -577,7 +579,7 @@
         }
 
         if(specialNum !== null) {
-            allRecords.push({ type: '三期牌 (特別號順推)', targets: [(specialNum % maxN) + 1, ((specialNum + 1) % maxN) + 1], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
+            allRecords.push({ type: '三期牌 (特別號順推)', targets: [(specialNum % maxNum) + 1, ((specialNum + 1) % maxNum) + 1], startDate: date, life: 3, status: '進行中', hitInfo: '-' });
             if (gameType === 'mark6') {
                 let sTail = specialNum % 10;
                 let tailTargets = [];
@@ -592,12 +594,8 @@
         const day = getWeekday(date);
         let shouldGenerateWeekly = false;
         let weeklyLife = 5;
-        
-        if (gameType === 'daily4') {
-            if (day === 0) { shouldGenerateWeekly = true; weeklyLife = 7; } // 天天樂: 週一至週日 (7期)
-        } else if (gameType === '539' || gameType === 'ghana') {
-            if (day === 6) { shouldGenerateWeekly = true; weeklyLife = 6; } // 539、迦納彩: 週一至週六 (6期)
-        }
+        if (gameType === 'daily4') { if (day === 0) { shouldGenerateWeekly = true; weeklyLife = 7; } } 
+        else if (gameType === '539' || gameType === 'ghana') { if (day === 6) { shouldGenerateWeekly = true; weeklyLife = 6; } }
 
         if(shouldGenerateWeekly) { 
             let startIdx = Math.max(0, drawIndex - 9);
@@ -609,24 +607,10 @@
             let sortedNums = Object.keys(freq).map(Number).sort((a, b) => freq[b] !== freq[a] ? freq[b] - freq[a] : a - b);
             let top6 = sortedNums.slice(0, 6);
             while(top6.length < 6) { let f = 1; while(top6.includes(f)) f++; top6.push(f); }
-            allRecords.push({ type: `週牌 (第1組)`, targets: [top6[0], top6[1]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
-            allRecords.push({ type: `週牌 (第2組)`, targets: [top6[2], top6[3]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
-            allRecords.push({ type: `週牌 (第3組)`, targets: [top6[4], top6[5]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
+            allRecords.push({ type: `週牌 (熱力Top6-第1組)`, targets: [top6[0], top6[1]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
+            allRecords.push({ type: `週牌 (熱力Top6-第2組)`, targets: [top6[2], top6[3]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
+            allRecords.push({ type: `週牌 (熱力Top6-第3組)`, targets: [top6[4], top6[5]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
         }
-    }
-
-    function renderPredictionBoard() {
-        const sec = document.getElementById('predictionSection'); const board = document.getElementById('predictionBoard');
-        if (!currentHistoryData.length) { sec.style.display = 'none'; return; }
-        const latestDate = currentHistoryData[currentHistoryData.length - 1].date;
-        const active = allRecords.filter(t => t.status === '進行中' && t.startDate === latestDate);
-        if (active.length > 0) {
-            sec.style.display = 'block'; let html = '';
-            active.forEach(p => {
-                let isT = p.type.includes('連號') || p.type.includes('追原號') || p.type.includes('特別號') || p.type.includes('同尾');
-                html += `<div class="prediction-card"><div style="margin-bottom: 12px; border-bottom: 1px dashed var(--td-border); padding-bottom: 10px;"><span style="font-weight: 800; color: var(--text-color); font-size: 1.1em;">🎯 ${p.type}</span></div><div style="display:flex; flex-wrap:wrap; justify-content:center;">${formatPredictionWithOmission(p.targets, isT)}</div></div>`;
-            }); board.innerHTML = html;
-        } else { sec.style.display = 'none'; }
     }
 
     function renderTables() {
