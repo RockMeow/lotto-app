@@ -165,7 +165,7 @@
             margin-bottom: 15px;
         }
         
-        select, input[type="file"] { 
+        select { 
             padding: 12px 16px; 
             border-radius: 10px; 
             border: 1px solid var(--input-border); 
@@ -177,14 +177,9 @@
             box-shadow: var(--shadow-sm);
             transition: all 0.2s; 
         }
-        select:focus, input[type="file"]:focus { 
+        select:focus { 
             border-color: var(--heading-color); 
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); 
-        }
-        input[type="file"] { 
-            border: 2px dashed var(--input-border); 
-            background: var(--card-bg);
-            padding: 10px;
         }
 
         /* 統計資料卡片 */
@@ -293,7 +288,7 @@
             .stats-grid { grid-template-columns: 1fr; gap: 15px; }
             .section { padding: 20px 15px; }
             .control-group { flex-direction: column; align-items: stretch; }
-            select, input[type="file"] { width: 100%; max-width: none; }
+            select { width: 100%; max-width: none; }
             th, td { padding: 12px 10px; font-size: 0.9em; }
             .notice { padding: 15px; }
             .lottery-ball { width: 30px; height: 30px; font-size: 13px; }
@@ -348,10 +343,8 @@
         </div>
         
         <div class="control-group">
-            <input type="file" id="csvFile" accept=".csv">
-            <span style="font-weight: 600; color: var(--text-color); margin: 0 10px;">或自動讀取</span>
             <select id="autoLoadCsv">
-                <option value="">-- 請選擇彩球類型 --</option>
+                <option value="">-- 請選擇自動讀取彩球類型 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
                 <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
                 <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -429,21 +422,6 @@
 
     let allRecords = []; 
     let currentHistoryData = [];
-
-    document.getElementById('csvFile').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if(!file) return;
-        const fileName = file.name.toLowerCase();
-        const gameTypeSelect = document.getElementById('gameType');
-        if (fileName.includes('six')) gameTypeSelect.value = 'mark6';
-        else if (fileName.includes('649')) gameTypeSelect.value = '649';
-        else if (fileName.includes('fan') || fileName.includes('daily')) gameTypeSelect.value = 'daily4';
-        else if (fileName.includes('ghana')) gameTypeSelect.value = 'ghana';
-        else gameTypeSelect.value = '539';
-        const reader = new FileReader();
-        reader.onload = function(event) { processCSV(event.target.result); };
-        reader.readAsText(file);
-    });
 
     document.getElementById('autoLoadCsv').addEventListener('change', function(e) {
         const fileName = e.target.value;
@@ -584,9 +562,6 @@
                 if(tailTargets.length > 0) allRecords.push({ type: '三期牌 (特別號同尾)', targets: tailTargets, startDate: date, life: 3, status: '進行中', hitInfo: '-' });
             }
         }
-
-        const tc = {}; mainNums.map(n => n % 10).forEach(t => tc[t] = (tc[t] || 0) + 1);
-        for(let t in tc) if(tc[t] >= 2) allRecords.push({ type: '三期牌 (同尾)', targets: mainNums.filter(n => n % 10 == t), startDate: date, life: 3, status: '進行中', hitInfo: '-' });
 
         const day = getWeekday(date);
         let shouldGenerateWeekly = false;
