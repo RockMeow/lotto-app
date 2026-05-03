@@ -164,8 +164,13 @@
             gap: 12px; 
             margin-bottom: 15px;
         }
+
+        /* 隱藏指定 UI 元素 */
+        #gameTypeRow, #manualUploadRow {
+            display: none !important;
+        }
         
-        select, input[type="file"] { 
+        select { 
             padding: 12px 16px; 
             border-radius: 10px; 
             border: 1px solid var(--input-border); 
@@ -177,14 +182,9 @@
             box-shadow: var(--shadow-sm);
             transition: all 0.2s; 
         }
-        select:focus, input[type="file"]:focus { 
+        select:focus { 
             border-color: var(--heading-color); 
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); 
-        }
-        input[type="file"] { 
-            border: 2px dashed var(--input-border); 
-            background: var(--card-bg);
-            padding: 10px;
         }
 
         /* 統計資料卡片 */
@@ -293,7 +293,7 @@
             .stats-grid { grid-template-columns: 1fr; gap: 15px; }
             .section { padding: 20px 15px; }
             .control-group { flex-direction: column; align-items: stretch; }
-            select, input[type="file"] { width: 100%; max-width: none; }
+            select { width: 100%; max-width: none; }
             th, td { padding: 12px 10px; font-size: 0.9em; }
             .notice { padding: 15px; }
             .lottery-ball { width: 30px; height: 30px; font-size: 13px; }
@@ -335,9 +335,9 @@
     </div>
 
     <div class="section">
-        <div class="section-title">1. 設定模式與載入數據</div>
-        <div class="control-group">
-            <label for="gameType" style="font-weight: 700; color: var(--text-color);">當前分析模式：</label>
+        <div class="section-title">數據載入與設定</div>
+        
+        <div class="control-group" id="gameTypeRow">
             <select id="gameType">
                 <option value="mark6">🇭🇰 香港 六合彩 6/49</option>
                 <option value="649">🇹🇼 台灣 大樂透 6/49</option>
@@ -348,10 +348,12 @@
         </div>
         
         <div class="control-group">
-            <input type="file" id="csvFile" accept=".csv">
-            <span style="font-weight: 600; color: var(--text-color); margin: 0 10px;">或自動讀取</span>
+            <div id="manualUploadRow">
+                <input type="file" id="csvFile" accept=".csv">
+            </div>
+            
             <select id="autoLoadCsv">
-                <option value="">-- 請選擇彩球類型 --</option>
+                <option value="">-- 請選擇自動讀取彩球類型 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
                 <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
                 <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -362,13 +364,13 @@
     </div>
 
     <div class="section">
-        <div class="section-title">2. 近 10 期熱門號與遺漏期分佈</div>
+        <div class="section-title">近 10 期熱門號與遺漏期分佈</div>
         <div class="info-text" style="margin-top: 0; margin-bottom: 10px;">彩球上標為近10期出現次數；下方為目前遺漏期數（⚠️ 紅色代表超過 20 期未開）。</div>
         <div id="heatmapContainer" class="heatmap-container"></div>
     </div>
 
     <div class="section">
-        <div class="section-title">3. 當前追蹤中的牌組 (中一即停)</div>
+        <div class="section-title">當前追蹤中的牌組 (中一即停)</div>
         <div class="table-responsive">
             <table id="activeTable">
                 <thead><tr><th>類型</th><th>目標號碼</th><th>起始日期</th><th>剩餘期數</th><th>狀態</th></tr></thead>
@@ -378,7 +380,7 @@
     </div>
 
     <div class="section">
-        <div class="section-title">4. 完整歷史命中紀錄</div>
+        <div class="section-title">完整歷史命中紀錄</div>
         <div class="history-container table-responsive">
             <table id="historyTable">
                 <thead><tr><th>起始日期</th><th>類型</th><th>目標號碼</th><th>結果</th><th>命中詳情</th></tr></thead>
@@ -430,6 +432,7 @@
     let allRecords = []; 
     let currentHistoryData = [];
 
+    // 手動上傳邏輯保留
     document.getElementById('csvFile').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if(!file) return;
@@ -606,7 +609,7 @@
             allPastNums.forEach(n => freq[n] = (freq[n] || 0) + 1);
             let sortedNums = Object.keys(freq).map(Number).sort((a, b) => freq[b] !== freq[a] ? freq[b] - freq[a] : a - b);
             let top6 = sortedNums.slice(0, 6);
-            while(top6.length < 6) { let f = 1; while(top6.includes(f)) f++; top6.push(f); }
+            while(top6.length < 6) { let f = 1; f++; while(top6.includes(f)) f++; top6.push(f); }
             allRecords.push({ type: `週牌 (第1組)`, targets: [top6[0], top6[1]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
             allRecords.push({ type: `週牌 (第2組)`, targets: [top6[2], top6[3]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
             allRecords.push({ type: `週牌 (第3組)`, targets: [top6[4], top6[5]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
