@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌/週牌</title>
+    <title>三期牌 / 週牌</title>
     <style>
         /* =========================================
            現代化 UI 變數與亮色模式
@@ -305,21 +305,18 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()" title="切換深色/亮色模式">🌙</button>
-    <h1>三期牌/週牌</h1>
+    <h1>三期牌 / 週牌</h1>
 
     <div class="notice">
         <strong>系統更新：</strong><br>
         <span style="color: #ef4444; font-weight: bold; display: inline-block; margin-bottom: 8px;">
-        🔥 新增功能：遺漏值 (Omission) 已整合至熱力分佈圖，彩球下方可直接查看該號碼目前的遺漏期數。<br>
+        🔥 新增功能：遺漏期已整合至熱力分佈圖，彩球下方可直接查看該號碼目前的遺漏期數。<br>
         </span><br>
         1. <strong>🇭🇰 六合彩：</strong>特有訊號「特別號同尾 (勝率86%)」、「追原號」。<br>
         2. <strong>🇹🇼 大樂透：</strong>特有訊號「特別號順推」、「追原號」。<br>
         3. <strong>🇹🇼 今彩 539：</strong>5連號 (包心中間3碼)、4連號。<br>
         4. <strong>🇺🇸 天天樂：</strong>追原號、三同尾狙擊。<br>
         5. <strong>🇬🇭 迦納彩：</strong>暴力補空專屬參數，4連號、5連號。<br>
-        <span style="color: #2563eb; font-weight: bold; display: inline-block; margin-top: 5px;">
-        💡 引擎說明：週牌採用「熱力均線 Top 6 模型」，天天樂期限覆蓋週一至週日，539/迦納彩覆蓋週一至週六！
-        </span>
     </div>
 
     <div id="statsGrid" class="stats-grid">
@@ -365,7 +362,7 @@
     </div>
 
     <div class="section">
-        <div class="section-title">2. 近 10 期熱力與遺漏值分佈</div>
+        <div class="section-title">2. 近 10 期熱門號與遺漏期分佈</div>
         <div class="info-text" style="margin-top: 0; margin-bottom: 10px;">彩球上標為近10期出現次數；下方為目前遺漏期數（⚠️ 紅色代表超過 20 期未開）。</div>
         <div id="heatmapContainer" class="heatmap-container"></div>
     </div>
@@ -607,9 +604,9 @@
             let sortedNums = Object.keys(freq).map(Number).sort((a, b) => freq[b] !== freq[a] ? freq[b] - freq[a] : a - b);
             let top6 = sortedNums.slice(0, 6);
             while(top6.length < 6) { let f = 1; while(top6.includes(f)) f++; top6.push(f); }
-            allRecords.push({ type: `週牌 (熱力Top6-第1組)`, targets: [top6[0], top6[1]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
-            allRecords.push({ type: `週牌 (熱力Top6-第2組)`, targets: [top6[2], top6[3]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
-            allRecords.push({ type: `週牌 (熱力Top6-第3組)`, targets: [top6[4], top6[5]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
+            allRecords.push({ type: `週牌 (第1組)`, targets: [top6[0], top6[1]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
+            allRecords.push({ type: `週牌 (第2組)`, targets: [top6[2], top6[3]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
+            allRecords.push({ type: `週牌 (第3組)`, targets: [top6[4], top6[5]], startDate: date, life: weeklyLife, status: '進行中', hitInfo: '-' });
         }
     }
 
