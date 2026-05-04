@@ -178,8 +178,8 @@
 
     <div class="notice">
         <strong>各彩種 AI 自動過濾光芒提示：</strong><br>
-        <span style="color: #ef4444; font-weight: bold;">🔥 焰紅發光 (三期神球)：</span> 已自動濾除死區陷阱，勝率最高 (天天樂63% / 迦納54% / 539 40%)，強烈建議坐車！<br>
-        <span style="color: #f59e0b; font-weight: bold;">⭐ 橘黃發光 (三期常規)：</span> 處於正常回補帶，可小注防守。<br>
+        <span style="color: #ef4444; font-weight: bold;">🔥 焰紅發光 (三期神球)：</span> 已自動濾除死區陷阱 (天天樂更加入單雙保護)，勝率最高，強烈建議坐車！<br>
+        <span style="color: #f59e0b; font-weight: bold;">⭐ 橘黃發光 (三期常規)：</span> 處於正常回補帶 (或受雙數降級保護)，可小注防守。<br>
         <span style="color: #6b7280; font-weight: bold;">💀 灰黑發光 (三期死區)：</span> 觸發連莊壓制或死亡尾數，勝率低於 15%，絕對放棄！<br>
         <span style="color: #22c55e; font-weight: bold;">☘️ 綠色發光 (最佳週牌)：</span> 已自動過濾溫水蛙與透支號，最佳護航立柱點。<br>
         <span style="color: #dc2626; font-weight: bold;">🚫 暗紅發光 (週牌陷阱)：</span> 539/迦納開出≥4次(透支)，或天天樂開出剛好3次(死水)，極易摃龜！
@@ -272,7 +272,6 @@
         }
     }
 
-    // 取得單一號碼在最後10期的開出總數 (加入 evalIndex 凍結時間軸)
     function getFreqInLast10(num, evalIndex) {
         if (!currentHistoryData || currentHistoryData.length === 0) return 0;
         if (evalIndex === undefined) evalIndex = currentHistoryData.length - 1;
@@ -284,7 +283,6 @@
         return count;
     }
 
-    // 取得指定尾數在最後10期的開出總數 (加入 evalIndex 凍結時間軸)
     function getTailFreqInLast10(tail, evalIndex) {
         if (!currentHistoryData || currentHistoryData.length === 0) return 0;
         if (evalIndex === undefined) evalIndex = currentHistoryData.length - 1;
@@ -298,7 +296,6 @@
         return count;
     }
 
-    // 取得最近一次開獎的連莊顆數 (加入 evalIndex 凍結時間軸)
     function getLatestRepeaters(evalIndex) {
         if (!currentHistoryData || currentHistoryData.length < 2) return 0;
         if (evalIndex === undefined) evalIndex = currentHistoryData.length - 1;
@@ -326,7 +323,7 @@
                     let repeaters = getLatestRepeaters(evalIndex);
                     let tailFreq = getTailFreqInLast10(numVal % 10, evalIndex);
 
-                    // 天天樂 (最新 63% 動態矩陣邏輯)
+                    // 天天樂 (加入單雙極限保護)
                     if(gameType === 'daily4' && [8,9,10,11].includes(currentOmi)) {
                         let isSuper = false;
                         let isDead = false;
@@ -342,7 +339,12 @@
                         if (isDead) {
                             carTipClass = " three-period-dead"; 
                         } else if (isSuper) {
-                            carTipClass = " three-period-super"; 
+                            // 單雙保護邏輯：如果是偶數(雙數)，降級為常規橘黃光
+                            if (numVal % 2 === 0) {
+                                carTipClass = " three-period-tip"; 
+                            } else {
+                                carTipClass = " three-period-super"; 
+                            }
                         } else {
                             carTipClass = " three-period-tip"; 
                         }
@@ -375,7 +377,6 @@
                     
                     if (isTargetOmi) {
                         let freq = getFreqInLast10(numVal, evalIndex);
-                        // 天天樂週牌特化：溫水蛙死區在 3 次，2,4,5為神球
                         if (gameType === 'daily4') {
                             let isWSuper = false;
                             let isWDead = false;
@@ -459,14 +460,13 @@
         let advice = "";
         let extraNotice = "";
         
-        // --- 根據彩種生成專屬提示與警告 ---
         if(gameType === 'daily4') {
             if (repCount > 0) {
                 advice = `⚠️ <b style='color:#ef4444;'>連莊壓制中 (${repCount}顆)</b>：連莊狀態下，必須依賴尾數動能來突破。請鎖定對應連莊數的發爐尾數。`;
             } else {
-                advice = "🔥 <b style='color:#ef4444;'>完美大冷盤 (0連莊)</b>：三期牌進入絕佳回補帶！只要尾數夠力(開5,6,7次)，勝率極高！";
+                advice = "🔥 <b style='color:#ef4444;'>完美大冷盤 (0連莊)</b>：三期牌進入絕佳回補帶！只要尾數夠力(開5,6,7次)，單數球勝率極高！";
             }
-            extraNotice = `💡 <b>天天樂動態矩陣觀測：</b>目前熱尾(≥4次)有 [ ${hotTails.length>0 ? hotTails.join(', ') : '無'} ]。天天樂的週牌請避開「近10期剛好開3次」的溫水號碼！`;
+            extraNotice = `💡 <b>天天樂動態矩陣觀測：</b><br>1. 目前熱尾(≥4次)有 [ ${hotTails.length>0 ? hotTails.join(', ') : '無'} ]。<br>2. <b>單雙保護啟動：</b>天天樂雙數(偶數)冷號極難破冰，AI 已將雙數神球自動降級保護。`;
             if(getOmission(12) >= 11) extraNotice += "<br>🚨 <span style='color:var(--high-rate-color);'>特別警報：號碼 12 能量已達臨界點！</span>";
             
         } else if(gameType === '539') {
