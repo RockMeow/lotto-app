@@ -264,8 +264,8 @@
         
         let ballsHtml = numsArray.map(n => {
             let carTipClass = "";
+            // 修正：發光提示一律根據當下數據庫最新的遺漏狀態 (getOmission)
             if(isTarget && currentHistoryData.length > 0) {
-                // 強制計算相對於數據庫最後一筆的遺漏值
                 let currentOmi = getOmission(n);
                 
                 if (isThreePeriod) {
@@ -441,6 +441,7 @@
             }
             const sClass = t.status === '進行中' ? 'status-active' : (t.status === '命中停止' ? 'status-hit' : 'status-miss');
             let isT = t.type.includes('連號') || t.type.includes('追原號') || t.type.includes('特別號') || t.type.includes('同尾');
+            // 修正：將 t.type 傳入 formatBalls 確保發光判斷正確
             const rowHtml = `<td><span style="color:${isT?'var(--high-rate-color)':'inherit'}; font-weight:700;">${t.type}</span></td><td>${formatBalls(t.targets, isT, t.drawIdx, t.type)}</td><td>${t.startDate}</td><td>${t.status === '進行中' ? t.life : '-'}</td><td><span class="${sClass}">${t.status}</span></td>`;
             if(t.status === '進行中') { const tr = document.createElement('tr'); tr.innerHTML = rowHtml; activeBody.appendChild(tr); } 
             else { const tr = document.createElement('tr'); tr.innerHTML = `<td>${t.startDate}</td><td><span style="color:${isT?'var(--high-rate-color)':'inherit'}; font-weight:700;">${t.type}</span></td><td>${formatBalls(t.targets, isT, t.drawIdx, t.type)}</td><td><span class="${sClass}">${t.status}</span></td><td><span style="font-size:0.9em;">${t.hitInfo || '-'}</span></td>`; historyBody.appendChild(tr); }
