@@ -142,8 +142,11 @@
         
         .lottery-ball.three-period-tip { border: 2px solid #fbbf24; box-shadow: 0 0 12px #fbbf24; background: linear-gradient(135deg, #f59e0b, #d97706); }
         .lottery-ball.weekly-tip { border: 2px solid #4ade80; box-shadow: 0 0 12px #4ade80; background: linear-gradient(135deg, #22c55e, #15803d); }
-        /* 新增：週牌過熱警告發光 */
+        
+        /* 過熱警告與三期死區/神球發光 */
         .lottery-ball.overheat-tip { border: 2px solid #ef4444; box-shadow: 0 0 12px #ef4444; background: linear-gradient(135deg, #7f1d1d, #450a0a); color: #fca5a5; }
+        .lottery-ball.three-period-super { border: 2px solid #fef08a; box-shadow: 0 0 15px #facc15; background: linear-gradient(135deg, #ef4444, #991b1b); color: #ffffff; }
+        .lottery-ball.three-period-dead { border: 2px solid #9ca3af; box-shadow: 0 0 10px #6b7280; background: linear-gradient(135deg, #4b5563, #1f2937); color: #d1d5db; }
 
         .heatmap-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
         .heatmap-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -176,9 +179,11 @@
 
     <div class="notice">
         <strong>大數據坐車提示：</strong><br>
-        <span style="color: #f59e0b; font-weight: bold;">⭐ 橘黃發光 (三期牌)：</span> 抓中段回補 (天天樂 8-11、539 8,9,11,15、迦納 2,3,13,15)。<br>
+        <span style="color: #f59e0b; font-weight: bold;">⭐ 橘黃發光 (三期牌)：</span> 抓中段回補 (常態勝率區間)。<br>
+        <span style="color: #ef4444; font-weight: bold;">🔥 焰紅發光 (539三期神球)：</span> 尾數極冷(0-1次)或極熱(6-8次)，必殺高勝率！<br>
+        <span style="color: #6b7280; font-weight: bold;">💀 灰黑發光 (539三期死區)：</span> 昨晚連莊>=2 或是 尾數陷阱(2-3次/超9次)，勝率0%請放棄！<br>
         <span style="color: #22c55e; font-weight: bold;">☘️ 綠色發光 (週牌)：</span> 抓極熱連莊 (未透支的健康熱號)。<br>
-        <span style="color: #ef4444; font-weight: bold;">🚫 暗紅發光 (週牌過熱警告)：</span> 近10期已開4次以上，額度透支請避開！
+        <span style="color: #dc2626; font-weight: bold;">🚫 暗紅發光 (週牌過熱警告)：</span> 近10期已開4次以上，額度透支請避開！
     </div>
 
     <!-- 實戰動態分析區塊 -->
@@ -269,7 +274,7 @@
         }
     }
 
-    // 新增：取得單一號碼在最後10期的開出總數
+    // 取得單一號碼在最後10期的開出總數
     function getFreqInLast10(num) {
         if (!currentHistoryData || currentHistoryData.length === 0) return 0;
         let startIdx = Math.max(0, currentHistoryData.length - 10);
@@ -278,6 +283,27 @@
             if (currentHistoryData[i].nums.includes(num)) count++;
         }
         return count;
+    }
+
+    // 取得指定尾數在最後10期的開出總數
+    function getTailFreqInLast10(tail) {
+        if (!currentHistoryData || currentHistoryData.length === 0) return 0;
+        let startIdx = Math.max(0, currentHistoryData.length - 10);
+        let count = 0;
+        for (let i = startIdx; i < currentHistoryData.length; i++) {
+            currentHistoryData[i].nums.forEach(n => {
+                if (n % 10 === tail) count++;
+            });
+        }
+        return count;
+    }
+
+    // 取得最近一次開獎的連莊顆數
+    function getLatestRepeaters() {
+        if (!currentHistoryData || currentHistoryData.length < 2) return 0;
+        let latest = currentHistoryData[currentHistoryData.length - 1].nums;
+        let prev = currentHistoryData[currentHistoryData.length - 2].nums;
+        return latest.filter(n => prev.includes(n)).length;
     }
 
     function formatBalls(numsArray, isTarget = false, typeName = "") {
@@ -293,7 +319,17 @@
                 let currentOmi = getOmission(numVal);
                 if (isThreePeriod) {
                     if(gameType === 'daily4' && [8,9,10,11].includes(currentOmi)) carTipClass = " three-period-tip";
-                    else if(gameType === '539' && [8,9,11,15].includes(currentOmi)) carTipClass = " three-period-tip";
+                    else if(gameType === '539' && [8,9,11,15].includes(currentOmi)) {
+                        let repeaters = getLatestRepeaters();
+                        let tailFreq = getTailFreqInLast10(numVal % 10);
+                        if (repeaters >= 2 || (tailFreq >= 2 && tailFreq <= 3) || tailFreq >= 9) {
+                            carTipClass = " three-period-dead"; // 死區或陷阱
+                        } else if (tailFreq <= 1 || (tailFreq >= 6 && tailFreq <= 8)) {
+                            carTipClass = " three-period-super"; // 極冷或極熱尾神球
+                        } else {
+                            carTipClass = " three-period-tip"; // 常規 (4-5次)
+                        }
+                    }
                     else if(gameType === 'ghana' && [2,3,13,15].includes(currentOmi)) carTipClass = " three-period-tip";
                 } else if (isWeekly) {
                     let isTargetOmi = false;
