@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌 / 週牌</title>
+    <title>三期牌 / 週牌 (全彩種特化版)</title>
     <link rel="manifest" href="manifest.json">
     <style>
         /* =========================================
@@ -174,19 +174,19 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>三期牌 / 週牌</h1>
+    <h1>三期牌 / 週牌 (高階特化版)</h1>
 
     <div class="notice">
-        <strong>各彩球顏色提示：</strong><br>
-        <span style="color: #ef4444; font-weight: bold;">紅色 (三期神球)：</span> 已自動濾除死區陷阱，勝率最高 (天天樂50% / 迦納54% / 539 40%)，強烈建議坐車！<br>
-        <span style="color: #f59e0b; font-weight: bold;">黃色 (三期常規)：</span> 處於正常回補帶，可小注防守。<br>
-        <span style="color: #6b7280; font-weight: bold;">灰黑 (三期死區)：</span> 觸發連莊壓制或死亡尾數，勝率低於 15%，絕對放棄！<br>
-        <span style="color: #22c55e; font-weight: bold;">綠色 (最佳週牌)：</span> 已自動過濾溫水蛙與透支號，最佳護航立柱點。<br>
-        <span style="color: #dc2626; font-weight: bold;">暗紅 (週牌陷阱)：</span> 539/迦納開出≥4次(透支)，或天天樂開出剛好3次(死水)，極易摃龜！
+        <strong>各彩種 AI 自動過濾光芒提示：</strong><br>
+        <span style="color: #ef4444; font-weight: bold;">🔥 焰紅發光 (三期神球)：</span> 已自動濾除死區陷阱，勝率最高 (天天樂63% / 迦納54% / 539 40%)，強烈建議坐車！<br>
+        <span style="color: #f59e0b; font-weight: bold;">⭐ 橘黃發光 (三期常規)：</span> 處於正常回補帶，可小注防守。<br>
+        <span style="color: #6b7280; font-weight: bold;">💀 灰黑發光 (三期死區)：</span> 觸發連莊壓制或死亡尾數，勝率低於 15%，絕對放棄！<br>
+        <span style="color: #22c55e; font-weight: bold;">☘️ 綠色發光 (最佳週牌)：</span> 已自動過濾溫水蛙與透支號，最佳護航立柱點。<br>
+        <span style="color: #dc2626; font-weight: bold;">🚫 暗紅發光 (週牌陷阱)：</span> 539/迦納開出≥4次(透支)，或天天樂開出剛好3次(死水)，極易摃龜！
     </div>
 
     <div class="section" id="analysisSection" style="display:none; border-color: var(--heading-color);">
-        <div class="section-title">動態分析</div>
+        <div class="section-title">📊 實戰動態分析 (即時更新)</div>
         <div id="dynamicAnalysis" class="analysis-content"></div>
     </div>
 
@@ -219,7 +219,7 @@
         <div class="control-group">
             <div id="manualUploadRow"><input type="file" id="csvFile" accept=".csv"></div>
             <select id="autoLoadCsv">
-                <option value="">-- 請選擇彩球類型 --</option>
+                <option value="">-- 請選擇彩球類型及歷史紀錄 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
                 <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
                 <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -326,11 +326,22 @@
                     let repeaters = getLatestRepeaters(evalIndex);
                     let tailFreq = getTailFreqInLast10(numVal % 10, evalIndex);
 
-                    // 天天樂
+                    // 天天樂 (最新 63% 動態矩陣邏輯)
                     if(gameType === 'daily4' && [8,9,10,11].includes(currentOmi)) {
-                        if (repeaters >= 1 && tailFreq <= 2) {
+                        let isSuper = false;
+                        let isDead = false;
+                        
+                        if (repeaters === 0 && [5, 6, 7].includes(tailFreq)) isSuper = true;
+                        else if (repeaters === 1 && [4, 6, 7].includes(tailFreq)) isSuper = true;
+                        else if (repeaters >= 2 && [3, 4].includes(tailFreq)) isSuper = true;
+                        
+                        if (repeaters >= 1 && tailFreq <= 2) isDead = true;
+                        else if (repeaters >= 1 && tailFreq === 5) isDead = true;
+                        else if (tailFreq >= 8) isDead = true;
+
+                        if (isDead) {
                             carTipClass = " three-period-dead"; 
-                        } else if (repeaters === 0 || [4, 6, 7].includes(tailFreq)) {
+                        } else if (isSuper) {
                             carTipClass = " three-period-super"; 
                         } else {
                             carTipClass = " three-period-tip"; 
@@ -364,11 +375,24 @@
                     
                     if (isTargetOmi) {
                         let freq = getFreqInLast10(numVal, evalIndex);
+                        // 天天樂週牌特化：溫水蛙死區在 3 次，2,4,5為神球
                         if (gameType === 'daily4') {
-                            if (freq === 3) {
+                            let isWSuper = false;
+                            let isWDead = false;
+                            
+                            if (freq === 2 && [0, 1].includes(currentOmi)) isWSuper = true;
+                            else if (freq === 4 && currentOmi === 0) isWSuper = true;
+                            else if (freq === 5) isWSuper = true;
+                            
+                            if (freq === 3) isWDead = true;
+                            else if (freq === 4 && currentOmi === 2) isWDead = true;
+                            
+                            if (isWDead) {
                                 carTipClass = " overheat-tip"; 
-                            } else {
+                            } else if (isWSuper) {
                                 carTipClass = " weekly-tip";   
+                            } else {
+                                carTipClass = ""; // 常規紅球無特效
                             }
                         } else {
                             if (freq >= 4) {
@@ -438,11 +462,11 @@
         // --- 根據彩種生成專屬提示與警告 ---
         if(gameType === 'daily4') {
             if (repCount > 0) {
-                advice = "⚠️ <b style='color:#ef4444;'>連莊壓制中</b>：昨晚有連莊號，三期牌勝率將大幅下降，建議改守綠光週牌。";
+                advice = `⚠️ <b style='color:#ef4444;'>連莊壓制中 (${repCount}顆)</b>：連莊狀態下，必須依賴尾數動能來突破。請鎖定對應連莊數的發爐尾數。`;
             } else {
-                advice = "🔥 <b style='color:#ef4444;'>完美大冷盤 (0連莊)</b>：三期牌勝率飆升至 50%！請尋找亮起「焰紅光」的號碼重注。";
+                advice = "🔥 <b style='color:#ef4444;'>完美大冷盤 (0連莊)</b>：三期牌進入絕佳回補帶！只要尾數夠力(開5,6,7次)，勝率極高！";
             }
-            extraNotice = `💡 <b>天天樂尾數觀測：</b>目前熱尾(≥4次)有 [ ${hotTails.length>0 ? hotTails.join(', ') : '無'} ]。天天樂極度依賴熱尾拉拔冷號，請優先選擇這些尾數！`;
+            extraNotice = `💡 <b>天天樂動態矩陣觀測：</b>目前熱尾(≥4次)有 [ ${hotTails.length>0 ? hotTails.join(', ') : '無'} ]。天天樂的週牌請避開「近10期剛好開3次」的溫水號碼！`;
             if(getOmission(12) >= 11) extraNotice += "<br>🚨 <span style='color:var(--high-rate-color);'>特別警報：號碼 12 能量已達臨界點！</span>";
             
         } else if(gameType === '539') {
@@ -472,7 +496,7 @@
             <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 18px; border-radius: 12px;">
                 <div style="margin-bottom: 12px; font-size: 1.05em;">${advice}</div>
                 <div style="margin-bottom: 12px; font-size: 0.95em; color: var(--heading-color); background: var(--tr-hover); padding: 10px; border-radius: 8px;">${extraNotice}</div>
-                <div style="margin-bottom: 5px;"><strong>🚀 推薦號碼 (深冷潛力)：</strong> ${hungryBalls.length > 0 ? hungryBalls.map(n => `<span style="color:var(--high-rate-color); font-weight:bold; font-size:1.1em;">${n.toString().padStart(2, '0')}</span>`).join(', ') : '能量累積中...'}</div>
+                <div style="margin-bottom: 5px;"><strong>🚀 必殺高優球 (深冷潛力)：</strong> ${hungryBalls.length > 0 ? hungryBalls.map(n => `<span style="color:var(--high-rate-color); font-weight:bold; font-size:1.1em;">${n.toString().padStart(2, '0')}</span>`).join(', ') : '能量累積中...'}</div>
             </div>
         `;
     }
