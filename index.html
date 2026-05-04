@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>三期牌 / 週牌</title>
+    <!-- 整合 manifest.json -->
     <link rel="manifest" href="manifest.json">
     <style>
         /* =========================================
@@ -88,7 +89,6 @@
 
         .notice { background: var(--notice-bg); padding: 20px 25px; border-left: 6px solid var(--notice-border); border-radius: 12px; margin-bottom: 25px; font-size: 0.95em; color: var(--notice-text); box-shadow: var(--shadow-sm); transition: background-color 0.3s; }
 
-        /* 新增：分析卡片內容樣式 */
         .analysis-content { color: var(--text-color); line-height: 1.8; }
 
         .control-group { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; }
@@ -142,6 +142,8 @@
         
         .lottery-ball.three-period-tip { border: 2px solid #fbbf24; box-shadow: 0 0 12px #fbbf24; background: linear-gradient(135deg, #f59e0b, #d97706); }
         .lottery-ball.weekly-tip { border: 2px solid #4ade80; box-shadow: 0 0 12px #4ade80; background: linear-gradient(135deg, #22c55e, #15803d); }
+        /* 新增：週牌過熱警告發光 */
+        .lottery-ball.overheat-tip { border: 2px solid #ef4444; box-shadow: 0 0 12px #ef4444; background: linear-gradient(135deg, #7f1d1d, #450a0a); color: #fca5a5; }
 
         .heatmap-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
         .heatmap-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -173,13 +175,15 @@
     <h1>三期牌 / 週牌</h1>
 
     <div class="notice">
-        <strong>坐車提示：</strong><br>
-        <span style="color: #f59e0b; font-weight: bold;">橘黃發光 (三期牌)：</span> 遺漏期 (天天樂 8-11、今彩539 8,9,11,15、迦納彩 2,3,13,15)。<br>
-        <span style="color: #22c55e; font-weight: bold;">綠色發光 (週牌)：</span> 遺漏期 (天天樂 0-2、今彩539 0-1、迦納彩 0-2 期)。
+        <strong>大數據坐車提示：</strong><br>
+        <span style="color: #f59e0b; font-weight: bold;">⭐ 橘黃發光 (三期牌)：</span> 抓中段回補 (天天樂 8-11、539 8,9,11,15、迦納 2,3,13,15)。<br>
+        <span style="color: #22c55e; font-weight: bold;">☘️ 綠色發光 (週牌)：</span> 抓極熱連莊 (未透支的健康熱號)。<br>
+        <span style="color: #ef4444; font-weight: bold;">🚫 暗紅發光 (週牌過熱警告)：</span> 近10期已開4次以上，額度透支請避開！
     </div>
 
+    <!-- 實戰動態分析區塊 -->
     <div class="section" id="analysisSection" style="display:none; border-color: var(--heading-color);">
-        <div class="section-title">📊 動態分析 (即時更新)</div>
+        <div class="section-title">📊 實戰動態分析 (即時更新)</div>
         <div id="dynamicAnalysis" class="analysis-content"></div>
     </div>
 
@@ -212,7 +216,7 @@
         <div class="control-group">
             <div id="manualUploadRow"><input type="file" id="csvFile" accept=".csv"></div>
             <select id="autoLoadCsv">
-                <option value="">-- 請選擇彩球類型 --</option>
+                <option value="">-- 請選擇彩球類型及歷史紀錄 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
                 <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
                 <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -265,6 +269,17 @@
         }
     }
 
+    // 新增：取得單一號碼在最後10期的開出總數
+    function getFreqInLast10(num) {
+        if (!currentHistoryData || currentHistoryData.length === 0) return 0;
+        let startIdx = Math.max(0, currentHistoryData.length - 10);
+        let count = 0;
+        for (let i = startIdx; i < currentHistoryData.length; i++) {
+            if (currentHistoryData[i].nums.includes(num)) count++;
+        }
+        return count;
+    }
+
     function formatBalls(numsArray, isTarget = false, typeName = "") {
         const gameType = document.getElementById('gameType').value;
         const isThreePeriod = typeName.includes('三期');
@@ -281,9 +296,19 @@
                     else if(gameType === '539' && [8,9,11,15].includes(currentOmi)) carTipClass = " three-period-tip";
                     else if(gameType === 'ghana' && [2,3,13,15].includes(currentOmi)) carTipClass = " three-period-tip";
                 } else if (isWeekly) {
-                    if(gameType === 'daily4' && [0,1,2].includes(currentOmi)) carTipClass = " weekly-tip";
-                    else if(gameType === '539' && [0,1].includes(currentOmi)) carTipClass = " weekly-tip";
-                    else if(gameType === 'ghana' && [0,1,2].includes(currentOmi)) carTipClass = " weekly-tip";
+                    let isTargetOmi = false;
+                    if(gameType === 'daily4' && [0,1,2].includes(currentOmi)) isTargetOmi = true;
+                    else if(gameType === '539' && [0,1].includes(currentOmi)) isTargetOmi = true;
+                    else if(gameType === 'ghana' && [0,1,2].includes(currentOmi)) isTargetOmi = true;
+                    
+                    if (isTargetOmi) {
+                        let freq = getFreqInLast10(numVal);
+                        if (freq >= 4) {
+                            carTipClass = " overheat-tip"; // 大於等於4次亮紅燈
+                        } else {
+                            carTipClass = " weekly-tip";   // 健康次數亮綠燈
+                        }
+                    }
                 }
             }
             let ballClass = isTarget ? ("lottery-ball target-ball" + carTipClass) : "lottery-ball";
@@ -304,7 +329,6 @@
 
     function getOmission(num) { return getOmissionAt(num, currentHistoryData.length - 1); }
 
-    // 新增：動態分析與實戰提示邏輯
     function updateDynamicAnalysis() {
         const analysisSection = document.getElementById('analysisSection');
         const dynamicAnalysis = document.getElementById('dynamicAnalysis');
@@ -317,7 +341,6 @@
         let hungryBalls = [];
         for(let i=1; i<=maxNum; i++) {
             let omi = getOmission(i);
-            // 偵測「極度飢餓」區 (超出黃金區尚未開出的號碼)
             if(gameType === 'daily4' && omi >= 12 && omi <= 16) hungryBalls.push(i);
             if(gameType === '539' && omi >= 16 && omi <= 19) hungryBalls.push(i);
             if(gameType === 'ghana' && omi >= 16 && omi <= 18) hungryBalls.push(i);
@@ -342,7 +365,7 @@
         dynamicAnalysis.innerHTML = `
             <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 18px; border-radius: 12px;">
                 <div style="margin-bottom: 10px;"><strong>🎯 盤勢診斷：</strong> ${advice}</div>
-                <div style="margin-bottom: 10px;"><strong>🔥 推薦號碼：</strong> ${hungryBalls.length > 0 ? hungryBalls.map(n => `<span style="color:var(--high-rate-color); font-weight:bold; font-size:1.1em;">${n.toString().padStart(2, '0')}</span>`).join(', ') : '能量累積中...'}</div>
+                <div style="margin-bottom: 10px;"><strong>🔥 必殺高優球：</strong> ${hungryBalls.length > 0 ? hungryBalls.map(n => `<span style="color:var(--high-rate-color); font-weight:bold; font-size:1.1em;">${n.toString().padStart(2, '0')}</span>`).join(', ') : '能量累積中...'}</div>
                 <div style="font-size: 0.85em; opacity: 0.8; border-top: 1px dashed var(--card-border); padding-top: 8px; margin-top: 8px;">
                     ※ 實戰策略：若最新一期開出 2 顆以上連莊號，下一期應專注於「週牌」綠光號碼。
                 </div>
@@ -434,7 +457,7 @@
             generateTargets(i);
         }
         renderTables(); renderHeatmap();
-        updateDynamicAnalysis(); // 執行實戰分析
+        updateDynamicAnalysis(); 
     }
 
     function generateTargets(drawIndex) {
