@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌 / 週牌 (全彩種特化版)</title>
+    <title>三期牌 / 週牌</title>
     <link rel="manifest" href="manifest.json">
     <style>
         /* =========================================
@@ -174,10 +174,10 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>三期牌 / 週牌 (高階特化版)</h1>
+    <h1>三期牌 / 週牌</h1>
 
     <div class="notice">
-        <strong>各彩種 AI 自動過濾光芒提示：</strong><br>
+        <strong>各彩球顏色提示：</strong><br>
         <span style="color: #ef4444; font-weight: bold;">🔥 焰紅發光 (三期神球)：</span> 已自動濾除死區陷阱，勝率最高 (天天樂50% / 迦納54% / 539 40%)，強烈建議坐車！<br>
         <span style="color: #f59e0b; font-weight: bold;">⭐ 橘黃發光 (三期常規)：</span> 處於正常回補帶，可小注防守。<br>
         <span style="color: #6b7280; font-weight: bold;">💀 灰黑發光 (三期死區)：</span> 觸發連莊壓制或死亡尾數，勝率低於 15%，絕對放棄！<br>
@@ -186,7 +186,7 @@
     </div>
 
     <div class="section" id="analysisSection" style="display:none; border-color: var(--heading-color);">
-        <div class="section-title">📊 實戰動態分析 (即時更新)</div>
+        <div class="section-title">📊 動態分析 (即時更新)</div>
         <div id="dynamicAnalysis" class="analysis-content"></div>
     </div>
 
@@ -219,7 +219,7 @@
         <div class="control-group">
             <div id="manualUploadRow"><input type="file" id="csvFile" accept=".csv"></div>
             <select id="autoLoadCsv">
-                <option value="">-- 請選擇彩球類型及歷史紀錄 --</option>
+                <option value="">-- 請選擇彩球類型 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
                 <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
                 <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -319,34 +319,34 @@
                     let repeaters = getLatestRepeaters();
                     let tailFreq = getTailFreqInLast10(numVal % 10);
 
-                    // 天天樂 (特化條件：0連莊大好，尾數4,6,7神球)
+                    // 天天樂
                     if(gameType === 'daily4' && [8,9,10,11].includes(currentOmi)) {
                         if (repeaters >= 1 && tailFreq <= 2) {
-                            carTipClass = " three-period-dead"; // 死區 14.3%
+                            carTipClass = " three-period-dead"; 
                         } else if (repeaters === 0 || [4, 6, 7].includes(tailFreq)) {
-                            carTipClass = " three-period-super"; // 神球 50.0%
+                            carTipClass = " three-period-super"; 
                         } else {
-                            carTipClass = " three-period-tip"; // 常規
+                            carTipClass = " three-period-tip"; 
                         }
                     }
-                    // 今彩 539 (特化條件：嚴防2顆連莊壓制，喜冷極或熱極尾數)
+                    // 今彩 539
                     else if(gameType === '539' && [8,9,11,15].includes(currentOmi)) {
                         if (repeaters >= 2 || (tailFreq >= 2 && tailFreq <= 3) || tailFreq >= 9) {
-                            carTipClass = " three-period-dead"; // 死區或陷阱
+                            carTipClass = " three-period-dead"; 
                         } else if (tailFreq <= 1 || (tailFreq >= 6 && tailFreq <= 8)) {
-                            carTipClass = " three-period-super"; // 極冷或極熱尾神球
+                            carTipClass = " three-period-super"; 
                         } else {
-                            carTipClass = " three-period-tip"; // 常規 (4-5次)
+                            carTipClass = " three-period-tip"; 
                         }
                     }
-                    // 迦納彩 (特化條件：2次尾數強勢反彈，防3次陷阱)
+                    // 迦納彩
                     else if(gameType === 'ghana' && [2,3,13,15].includes(currentOmi)) {
                         if (repeaters === 2 || tailFreq === 3 || tailFreq >= 9) {
-                            carTipClass = " three-period-dead"; // 死區 (2連莊壓制或3次陷阱)
+                            carTipClass = " three-period-dead"; 
                         } else if (tailFreq === 2 || repeaters === 1 || repeaters >= 3) {
-                            carTipClass = " three-period-super"; // 神球 (2次反彈或1/3連莊平衡爆走)
+                            carTipClass = " three-period-super"; 
                         } else {
-                            carTipClass = " three-period-tip"; // 常規
+                            carTipClass = " three-period-tip"; 
                         }
                     }
                 } else if (isWeekly) {
@@ -357,19 +357,17 @@
                     
                     if (isTargetOmi) {
                         let freq = getFreqInLast10(numVal);
-                        // 天天樂週牌特化：溫水蛙死區在 3 次，>=4次反而熱爆
                         if (gameType === 'daily4') {
                             if (freq === 3) {
-                                carTipClass = " overheat-tip"; // 死亡陷阱
+                                carTipClass = " overheat-tip"; 
                             } else {
-                                carTipClass = " weekly-tip";   // 神球 (2, 4, 5)
+                                carTipClass = " weekly-tip";   
                             }
                         } else {
-                        // 539與迦納：大於等於4次是透支死區
                             if (freq >= 4) {
-                                carTipClass = " overheat-tip"; // 亮暗紅警告
+                                carTipClass = " overheat-tip"; 
                             } else {
-                                carTipClass = " weekly-tip";   // 健康次數亮綠燈
+                                carTipClass = " weekly-tip";   
                             }
                         }
                     }
@@ -402,6 +400,7 @@
         const gameType = document.getElementById('gameType').value;
         const maxNum = (gameType === '649' || gameType === 'mark6') ? 49 : 39;
         
+        // 高優球計算
         let hungryBalls = [];
         for(let i=1; i<=maxNum; i++) {
             let omi = getOmission(i);
@@ -410,26 +409,63 @@
             if(gameType === 'ghana' && omi >= 16 && omi <= 18) hungryBalls.push(i);
         }
         
+        // 盤面連莊狀況
         const latest = currentHistoryData[currentHistoryData.length-1];
         const prev = currentHistoryData[currentHistoryData.length-2];
         const repeats = latest.nums.filter(n => prev.nums.includes(n));
+        const repCount = repeats.length;
+        
+        // 尾數熱度計算 (近10期)
+        let startIdx = Math.max(0, currentHistoryData.length - 10);
+        let tailCounts = {};
+        for(let i=0; i<=9; i++) tailCounts[i] = 0;
+        for (let i = startIdx; i < currentHistoryData.length; i++) {
+            currentHistoryData[i].nums.forEach(n => { tailCounts[n % 10]++; });
+        }
+        let hotTails = Object.keys(tailCounts).filter(t => tailCounts[t] >= 4).map(Number);
+        let coldTails = Object.keys(tailCounts).filter(t => tailCounts[t] <= 1).map(Number);
         
         let advice = "";
+        let extraNotice = "";
+        
+        // --- 根據彩種生成專屬提示與警告 ---
         if(gameType === 'daily4') {
-            advice = repeats.length === 0 ? "⚠️ 注意：大冷盤出現，三期牌回補引力極強！" : "💡 提示：熱牌連動中，優先參考綠光熱號。";
-            if(getOmission(12) >= 11) advice += " <span style='color:var(--high-rate-color); font-weight:bold;'>特別注意號碼 12</span>，能量已達臨界點。";
+            if (repCount > 0) {
+                advice = "⚠️ <b style='color:#ef4444;'>連莊壓制中</b>：昨晚有連莊號，三期牌勝率將大幅下降，建議改守綠光週牌。";
+            } else {
+                advice = "🔥 <b style='color:#ef4444;'>完美大冷盤 (0連莊)</b>：三期牌勝率飆升至 50%！請尋找亮起「焰紅光」的號碼重注。";
+            }
+            extraNotice = `💡 <b>天天樂尾數觀測：</b>目前熱尾(≥4次)有 [ ${hotTails.length>0 ? hotTails.join(', ') : '無'} ]。天天樂極度依賴熱尾拉拔冷號，請優先選擇這些尾數！`;
+            if(getOmission(12) >= 11) extraNotice += "<br>🚨 <span style='color:var(--high-rate-color);'>特別警報：號碼 12 能量已達臨界點！</span>";
+            
         } else if(gameType === '539') {
-            advice = repeats.length >= 2 ? "⚠️ 連莊壓制過強，三期牌勝率極低，建議觀望。" : "盤面壓力解除，可鎖定焰紅發光的神球。";
+            if (repCount >= 2) {
+                advice = "💀 <b style='color:#ef4444;'>絕對死區 (連莊≥2)</b>：昨晚連莊過多，三期牌被嚴重壓制 (勝率低於 7%)，強烈建議今晚放棄三期牌！";
+            } else {
+                advice = "⭐ <b style='color:#f59e0b;'>盤面壓力解除</b>：昨晚無過度連莊，三期牌恢復活力！請鎖定「尾數極熱(6-8次)」或「極冷(0-1次)」的焰紅神球。";
+            }
+            extraNotice = `💡 <b>539 尾數陷阱觀測：</b>請避開近10期開出「2~3 次」的溫水陷阱尾數。目前熱尾有 [ ${hotTails.length>0 ? hotTails.join(', ') : '無'} ]，冷尾有 [ ${coldTails.length>0 ? coldTails.join(', ') : '無'} ]。`;
+            
         } else if(gameType === 'ghana') {
-            advice = "迦納彩特有的尾數反彈點是 2 次，抓緊機會！";
+            if (repCount === 2) {
+                advice = "💀 <b style='color:#ef4444;'>迦納死亡陷阱</b>：昨晚剛好 2 顆連莊，三期牌陷入死區，請轉攻週牌！";
+            } else if (repCount === 1 || repCount >= 3) {
+                advice = "🔥 <b style='color:#ef4444;'>迦納爆走點</b>：盤面處於最強平衡或滿溢狀態，三期牌勝率突破 54%！";
+            } else {
+                advice = "⭐ <b style='color:#f59e0b;'>常態盤面</b>：請留意尾數剛好開「2 次」的反彈神球。";
+            }
+            let trapTails = Object.keys(tailCounts).filter(t => tailCounts[t] === 3).map(Number);
+            extraNotice = `💡 <b>迦納彩尾數觀測：</b>注意！尾數開出 3 次是絕對死區，目前 3 次尾有 [ <span style="color:#ef4444; font-weight:bold;">${trapTails.length>0 ? trapTails.join(', ') : '無'}</span> ]，請絕對避開！`;
+            
         } else {
             advice = "請優先觀察熱力圖，選擇合適的號碼進行佈局。";
         }
 
         dynamicAnalysis.innerHTML = `
             <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 18px; border-radius: 12px;">
-                <div style="margin-bottom: 10px;"><strong>🎯 盤勢診斷：</strong> ${advice}</div>
-                <div style="margin-bottom: 10px;"><strong>🔥 必殺高優球：</strong> ${hungryBalls.length > 0 ? hungryBalls.map(n => `<span style="color:var(--high-rate-color); font-weight:bold; font-size:1.1em;">${n.toString().padStart(2, '0')}</span>`).join(', ') : '能量累積中...'}</div>
+                <div style="margin-bottom: 12px; font-size: 1.05em;">${advice}</div>
+                <div style="margin-bottom: 12px; font-size: 0.95em; color: var(--heading-color); background: var(--tr-hover); padding: 10px; border-radius: 8px;">${extraNotice}</div>
+                <div style="margin-bottom: 5px;"><strong>🚀 推薦號碼：</strong> ${hungryBalls.length > 0 ? hungryBalls.map(n => `<span style="color:var(--high-rate-color); font-weight:bold; font-size:1.1em;">${n.toString().padStart(2, '0')}</span>`).join(', ') : '能量累積中...'}</div>
             </div>
         `;
     }
