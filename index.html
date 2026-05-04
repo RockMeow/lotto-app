@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌 / 週牌</title>
+    <title>三期牌 / 週牌 (極致辨識版)</title>
     <link rel="manifest" href="manifest.json">
     <style>
         /* =========================================
@@ -98,10 +98,7 @@
         .stat-label { font-size: 1em; font-weight: 700; opacity: 0.8; }
         .detailed-stats { margin-top: 15px; font-size: 0.9em; text-align: left; border-top: 1px dashed var(--card-border); padding-top: 12px; display: grid; grid-template-columns: 1fr; gap: 8px; }
         .detailed-stats-row { display: flex; justify-content: space-between; align-items: center; }
-        .detailed-stats-row .type-name { color: var(--text-color); font-weight: 500; }
-        .detailed-stats-row .type-rate { font-weight: 700; color: var(--heading-color); }
-        .detailed-stats-row .type-rate.high-rate { color: var(--high-rate-color); }
-
+        
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid var(--td-border); box-shadow: var(--shadow-sm); }
         table { width: 100%; border-collapse: collapse; font-size: 0.95em; min-width: 550px; }
         th, td { border-bottom: 1px solid var(--td-border); padding: 16px 12px; text-align: center; }
@@ -125,29 +122,35 @@
         .lottery-ball {
             display: inline-flex; align-items: center; justify-content: center;
             width: 34px; height: 34px; border-radius: 50%;
-            background: var(--ball-bg); color: var(--ball-text);
+            background: #cbd5e1; color: #475569;
             font-weight: 700; font-size: 14px;
-            box-shadow: 0 3px 6px var(--ball-shadow); text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .lottery-ball.target-ball { background: linear-gradient(135deg, #f87171, #dc2626); box-shadow: 0 3px 6px rgba(220, 38, 38, 0.3); }
-        
-        /* 特殊標記：神級球獨有閃爍發光效果 */
+
+        /* --- 球色區分設定 --- */
+        /* 常規三期牌: 海洋藍 */
+        .lottery-ball.normal-3p { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #ffffff; box-shadow: 0 3px 6px rgba(37, 99, 235, 0.3); }
+        /* 常規週牌: 深灰藍 */
+        .lottery-ball.normal-weekly { background: linear-gradient(135deg, #64748b, #334155); color: #ffffff; }
+
+        /* 👑 神級三期牌: 魅影紫 + 金邊 + 閃爍 */
         .lottery-ball.god-tier-ball { 
-            border: 2px solid #fef08a; background: linear-gradient(135deg, #ef4444, #991b1b); color: #ffffff;
-            box-shadow: 0 0 20px #ef4444, 0 0 30px #facc15; animation: pulse-glow 1.5s infinite alternate; 
+            border: 2px solid #fbbf24; background: linear-gradient(135deg, #a855f7, #6b21a8); color: #ffffff;
+            box-shadow: 0 0 15px #a855f7, 0 0 25px #fbbf24; animation: pulse-purple 1.5s infinite alternate; 
         }
+        /* 👑 神級週牌: 翡翠綠 + 白光 + 閃爍 */
         .lottery-ball.god-tier-weekly { 
-            border: 2px solid #4ade80; background: linear-gradient(135deg, #22c55e, #15803d); color: #ffffff;
-            box-shadow: 0 0 20px #22c55e, 0 0 30px #4ade80; animation: pulse-glow-green 1.5s infinite alternate; 
+            border: 2px solid #ffffff; background: linear-gradient(135deg, #22c55e, #15803d); color: #ffffff;
+            box-shadow: 0 0 15px #22c55e, 0 0 25px #ffffff; animation: pulse-green 1.5s infinite alternate; 
         }
         
-        @keyframes pulse-glow {
-            from { box-shadow: 0 0 10px #ef4444; transform: scale(1); }
-            to { box-shadow: 0 0 20px #ef4444, 0 0 30px #facc15; transform: scale(1.08); }
+        @keyframes pulse-purple {
+            from { box-shadow: 0 0 10px #a855f7; transform: scale(1); }
+            to { box-shadow: 0 0 20px #a855f7, 0 0 30px #fbbf24; transform: scale(1.08); }
         }
-        @keyframes pulse-glow-green {
+        @keyframes pulse-green {
             from { box-shadow: 0 0 10px #22c55e; transform: scale(1); }
-            to { box-shadow: 0 0 20px #22c55e, 0 0 30px #4ade80; transform: scale(1.08); }
+            to { box-shadow: 0 0 20px #22c55e, 0 0 30px #ffffff; transform: scale(1.08); }
         }
 
         .heatmap-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
@@ -177,30 +180,30 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>三期牌 / 週牌</h1>
+    <h1>三期牌 / 週牌 (乾淨狙擊版)</h1>
 
     <div id="statsGrid" class="stats-grid">
         <div class="stat-card" id="godThreePeriodCard">
-            <div class="stat-label">👑 三期牌 總命中率</div>
-            <div id="godThreePeriodRate" class="stat-value">0%</div>
+            <div class="stat-label">👑 神級三期牌 命中率</div>
+            <div id="godThreePeriodRate" class="stat-value" style="color:#a855f7;">0%</div>
             <div id="godThreePeriodDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="godThreePeriodBreakdown" class="detailed-stats"></div>
         </div>
         <div class="stat-card" id="godWeeklyCard">
-            <div class="stat-label">👑 週牌 總命中率</div>
-            <div id="godWeeklyRate" class="stat-value">0%</div>
+            <div class="stat-label">👑 神級週牌 命中率</div>
+            <div id="godWeeklyRate" class="stat-value" style="color:#22c55e;">0%</div>
             <div id="godWeeklyDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="godWeeklyBreakdown" class="detailed-stats"></div>
         </div>
 
         <div class="stat-card" id="threePeriodCard">
-            <div class="stat-label">三期牌 總命中率</div>
+            <div class="stat-label">常規三期牌 命中率</div>
             <div id="threePeriodRate" class="stat-value">0%</div>
             <div id="threePeriodDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="threePeriodBreakdown" class="detailed-stats"></div>
         </div>
         <div class="stat-card" id="weeklyCard">
-            <div class="stat-label">週牌 總命中率</div>
+            <div class="stat-label">常規週牌 命中率</div>
             <div id="weeklyRate" class="stat-value">0%</div>
             <div id="weeklyDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="weeklyBreakdown" class="detailed-stats"></div>
@@ -221,7 +224,7 @@
         <div class="control-group">
             <div id="manualUploadRow"><input type="file" id="csvFile" accept=".csv"></div>
             <select id="autoLoadCsv">
-                <option value="">-- 請選擇彩球類型 --</option>
+                <option value="">-- 請選擇彩球類型及歷史紀錄 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
                 <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
                 <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -237,7 +240,7 @@
     </div>
 
     <div class="section">
-        <div class="section-title">當前追蹤中的牌組 (中一即停)</div>
+        <div class="section-title">當前狙擊中的牌組 (中一即停)</div>
         <div class="table-responsive">
             <table id="activeTable">
                 <thead><tr><th>類型</th><th>目標號碼</th><th>起始日期</th><th>剩餘期數</th><th>狀態</th></tr></thead>
@@ -307,7 +310,6 @@
         return latest.filter(n => prev.includes(n)).length;
     }
 
-    // 簡化版 formatBalls (完全移除常規卡片的光芒邏輯，僅保留神級球專屬特效)
     function formatBalls(numsArray, isTarget = false, typeName = "", evalIndex) {
         let ballsHtml = numsArray.map(n => {
             let numVal = Number(n);
@@ -320,6 +322,9 @@
                 if (isGod) {
                     if (isThreePeriod) carTipClass = " god-tier-ball";
                     else carTipClass = " god-tier-weekly";
+                } else {
+                    if (isThreePeriod) carTipClass = " normal-3p";
+                    else carTipClass = " normal-weekly";
                 }
             }
             
@@ -543,7 +548,7 @@
             });
 
             if (ultra3P.length > 0) {
-                allRecords.push({ type: '👑 三期牌', targets: ultra3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex });
+                allRecords.push({ type: '👑 神級三期牌', targets: ultra3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex });
             }
         }
 
@@ -592,7 +597,7 @@
                 });
 
                 if (ultraW.length > 0) {
-                    allRecords.push({ type: '👑 週牌', targets: ultraW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
+                    allRecords.push({ type: '👑 神級週牌', targets: ultraW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
                 }
             }
         }
@@ -602,7 +607,6 @@
         const activeBody = document.getElementById('activeBody'); const historyBody = document.getElementById('historyBody');
         activeBody.innerHTML = ''; historyBody.innerHTML = ''; 
         
-        // 獨立計數器
         let tTotal = 0, tHits = 0, wTotal = 0, wHits = 0;
         let godTTotal = 0, godTHits = 0, godWTotal = 0, godWHits = 0;
         let typeStats = {};
@@ -616,31 +620,18 @@
                 if (!typeStats[t.type]) typeStats[t.type] = { total: 0, hits: 0 }; 
                 typeStats[t.type].total++;
                 
-                // 獨立分流計算
                 if (isGod) {
-                    if (isThree) {
-                        godTTotal++;
-                        if(t.status === '命中停止') { godTHits++; typeStats[t.type].hits++; }
-                    } else if (isWeekly) {
-                        godWTotal++;
-                        if(t.status === '命中停止') { godWHits++; typeStats[t.type].hits++; }
-                    }
+                    if (isThree) { godTTotal++; if(t.status === '命中停止') { godTHits++; typeStats[t.type].hits++; } } 
+                    else if (isWeekly) { godWTotal++; if(t.status === '命中停止') { godWHits++; typeStats[t.type].hits++; } }
                 } else {
-                    if(isThree) { 
-                        tTotal++; 
-                        if(t.status === '命中停止') { tHits++; typeStats[t.type].hits++; } 
-                    }
-                    else if(isWeekly) { 
-                        wTotal++; 
-                        if(t.status === '命中停止') { wHits++; typeStats[t.type].hits++; } 
-                    }
+                    if(isThree) { tTotal++; if(t.status === '命中停止') { tHits++; typeStats[t.type].hits++; } }
+                    else if(isWeekly) { wTotal++; if(t.status === '命中停止') { wHits++; typeStats[t.type].hits++; } }
                 }
             }
             
             const sClass = t.status === '進行中' ? 'status-active' : (t.status === '命中停止' ? 'status-hit' : 'status-miss');
             let isT = t.type.includes('連號') || t.type.includes('追原號') || t.type.includes('特別號') || t.type.includes('同尾') || t.type.includes('神級');
             
-            // 神級行微底色高亮
             let rowStyle = isGod ? "background-color: var(--notice-bg);" : "";
             
             const rowHtml = `<td style="${rowStyle}"><span style="color:${isT?'var(--high-rate-color)':'inherit'}; font-weight:700;">${t.type}</span></td><td style="${rowStyle}">${formatBalls(t.targets, true, t.type, t.drawIndex)}</td><td style="${rowStyle}">${t.startDate}</td><td style="${rowStyle}">${t.status === '進行中' ? t.life : '-'}</td><td style="${rowStyle}"><span class="${sClass}">${t.status}</span></td>`;
@@ -648,21 +639,15 @@
             else { const tr = document.createElement('tr'); tr.innerHTML = `<td style="${rowStyle}">${t.startDate}</td><td style="${rowStyle}"><span style="color:${isT?'var(--high-rate-color)':'inherit'}; font-weight:700;">${t.type}</span></td><td style="${rowStyle}">${formatBalls(t.targets, true, t.type, t.drawIndex)}</td><td style="${rowStyle}"><span class="${sClass}">${t.status}</span></td><td style="${rowStyle}"><span style="font-size:0.9em;">${t.hitInfo || '-'}</span></td>`; historyBody.appendChild(tr); }
         });
         
-        // --- 渲染常規命中率 ---
         document.getElementById('threePeriodRate').innerText = tTotal > 0 ? ((tHits / tTotal) * 100).toFixed(1) + '%' : '0%';
         document.getElementById('threePeriodDetail').innerText = `已結束: ${tTotal} | 命中: ${tHits}`;
-        
-        // --- 渲染神級命中率 ---
         document.getElementById('godThreePeriodRate').innerText = godTTotal > 0 ? ((godTHits / godTTotal) * 100).toFixed(1) + '%' : '0%';
         document.getElementById('godThreePeriodDetail').innerText = `已結束: ${godTTotal} | 命中: ${godTHits}`;
 
         const gameType = document.getElementById('gameType').value;
         if (!['649','mark6'].includes(gameType)) { 
-            // 渲染常規週牌
             document.getElementById('weeklyRate').innerText = wTotal > 0 ? ((wHits / wTotal) * 100).toFixed(1) + '%' : '0%'; 
             document.getElementById('weeklyDetail').innerText = `已結束: ${wTotal} | 命中: ${wHits}`; 
-            
-            // 渲染神級週牌
             document.getElementById('godWeeklyRate').innerText = godWTotal > 0 ? ((godWHits / godWTotal) * 100).toFixed(1) + '%' : '0%'; 
             document.getElementById('godWeeklyDetail').innerText = `已結束: ${godWTotal} | 命中: ${godWHits}`; 
         }
@@ -672,11 +657,11 @@
 
         Object.keys(typeStats).sort((a, b) => (typeStats[b].hits / typeStats[b].total) - (typeStats[a].hits / typeStats[a].total)).forEach(type => {
             let stat = typeStats[type]; let rate = ((stat.hits / stat.total) * 100).toFixed(1) + '%';
+            let nameStyle = type.includes('👑') ? "color: #a855f7; font-weight: 800; font-size: 1.1em;" : "color: var(--text-color); font-weight: 500;";
+            if (type.includes('👑') && type.includes('週牌')) nameStyle = "color: #22c55e; font-weight: 800; font-size: 1.1em;";
             
-            let nameStyle = type.includes('👑') ? "color: var(--high-rate-color); font-weight: 800; font-size: 1.1em;" : "color: var(--text-color); font-weight: 500;";
             let row = `<div class="detailed-stats-row"><span class="type-name" style="${nameStyle}">${type.replace('三期牌 (', '').replace(')', '').replace('週牌 (', '')}</span><span class="type-rate ${(stat.hits/stat.total)>=0.6?'high-rate':''}">${stat.hits}/${stat.total} (${rate})</span></div>`;
             
-            // 分流 Breakdown 渲染
             if (type.includes('👑')) {
                 if (type.includes('三期')) godThreeB += row; else if (type.includes('週牌')) godWeeklyB += row;
             } else {
@@ -686,7 +671,6 @@
         
         document.getElementById('threePeriodBreakdown').innerHTML = threeB;
         document.getElementById('godThreePeriodBreakdown').innerHTML = godThreeB;
-        
         if (!['649','mark6'].includes(gameType)) { 
             document.getElementById('weeklyBreakdown').innerHTML = weeklyB;
             document.getElementById('godWeeklyBreakdown').innerHTML = godWeeklyB;
