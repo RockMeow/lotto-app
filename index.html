@@ -140,8 +140,8 @@
         
         /* 坐車提示球：三期牌(黃橘色) */
         .lottery-ball.three-period-tip { border: 2px solid #fbbf24; box-shadow: 0 0 12px #fbbf24; background: linear-gradient(135deg, #f59e0b, #d97706); }
-        /* 坐車提示球：週牌(藍色) */
-        .lottery-ball.weekly-tip { border: 2px solid #22d3ee; box-shadow: 0 0 12px #22d3ee; background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+        /* 坐車提示球：週牌(綠色) */
+        .lottery-ball.weekly-tip { border: 2px solid #4ade80; box-shadow: 0 0 12px #4ade80; background: linear-gradient(135deg, #22c55e, #15803d); }
 
         .heatmap-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
         .heatmap-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -175,7 +175,7 @@
     <div class="notice">
         <strong>大數據坐車提示：</strong><br>
         <span style="color: #f59e0b; font-weight: bold;">⭐ 橘黃發光 (三期牌)：</span> 抓中段回補 (天天樂 8-11、539 8,9,11,15、迦納 2,3,13,15)。<br>
-        <span style="color: #0ea5e9; font-weight: bold;">💎 藍色發光 (週牌)：</span> 抓極熱連莊 (統一判定為漏 0, 1, 2 期)。
+        <span style="color: #22c55e; font-weight: bold;">☘️ 綠色發光 (週牌)：</span> 抓極熱連莊 (天天樂 0-2、539 0-1、迦納 0-2 期)。
     </div>
 
     <div id="statsGrid" class="stats-grid">
@@ -207,7 +207,7 @@
         <div class="control-group">
             <div id="manualUploadRow"><input type="file" id="csvFile" accept=".csv"></div>
             <select id="autoLoadCsv">
-                <option value="">-- 請選擇彩球類型 --</option>
+                <option value="">-- 請選擇彩球類型及歷史紀錄 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
                 <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
                 <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -271,8 +271,10 @@
                     else if(gameType === '539' && [8,9,11,15].includes(omi)) carTipClass = " three-period-tip";
                     else if(gameType === 'ghana' && [2,3,13,15].includes(omi)) carTipClass = " three-period-tip";
                 } else if (isWeekly) {
-                    // 週牌條件：0, 1, 2 期
-                    if([0,1,2].includes(omi)) carTipClass = " weekly-tip";
+                    // 週牌還原專屬條件
+                    if(gameType === 'daily4' && [0,1,2].includes(omi)) carTipClass = " weekly-tip";
+                    else if(gameType === '539' && [0,1].includes(omi)) carTipClass = " weekly-tip";
+                    else if(gameType === 'ghana' && [0,1,2].includes(omi)) carTipClass = " weekly-tip";
                 }
             }
             let ballClass = isTarget ? ("lottery-ball target-ball" + carTipClass) : "lottery-ball";
