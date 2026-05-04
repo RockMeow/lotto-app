@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌 / 週牌 (極致防守版)</title>
+    <title>三期牌 / 週牌 (極致防守終極版)</title>
     <link rel="manifest" href="manifest.json">
     <style>
         /* =========================================
@@ -174,15 +174,15 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>三期牌 / 週牌 (極致防守版)</h1>
+    <h1>三期牌 / 週牌 (極致防守終極版)</h1>
 
     <div class="notice">
-        <strong>⚠️ 寧缺勿濫機制啟動：目前僅顯示勝率 66% 以上的絕對領域神球</strong><br>
-        <span style="color: #ef4444; font-weight: bold;">🔥 焰紅發光 (極致神球)：</span> 勝率高達 66.7% (買3中2)，遇到請重注坐車！<br>
-        <span style="color: #f59e0b; font-weight: bold;">⭐ 橘黃發光 (降級防守)：</span> 條件不完美，不值得冒險，僅供觀望。<br>
-        <span style="color: #6b7280; font-weight: bold;">💀 灰黑發光 (絕對死區)：</span> 觸發連莊壓制或死亡尾數，幾乎必摃！<br>
-        <span style="color: #22c55e; font-weight: bold;">☘️ 綠色發光 (最佳週牌)：</span> 過濾溫水蛙，最佳護航點。<br>
-        <span style="color: #dc2626; font-weight: bold;">🚫 暗紅發光 (週牌陷阱)：</span> 能量透支死水區，極易摃龜！
+        <strong>⚠️ 寧缺勿濫：目前僅顯示勝率極端 (大於40% 或 低於15%) 的目標</strong><br>
+        <span style="color: #ef4444; font-weight: bold;">🔥 焰紅發光 (極致神球)：</span> 三期牌勝率 ≥ 66% (買3中2)，遇到請重注坐車！<br>
+        <span style="color: #22c55e; font-weight: bold;">☘️ 綠色發光 (週牌神球)：</span> 勝率 40%~60%，未透支的最強連莊點，極佳護航。<br>
+        <span style="color: #6b7280; font-weight: bold;">💀 灰黑發光 (絕對死區)：</span> 觸發連莊壓制或死亡尾數，勝率低於 10%，幾乎必摃！<br>
+        <span style="color: #dc2626; font-weight: bold;">🚫 暗紅發光 (週牌陷阱)：</span> 能量透支死水區，勝率低於 20%，嚴禁下注！<br>
+        <span style="color: #f59e0b; font-weight: bold;">⭐ 橘黃/無光 (常規降級)：</span> 勝率在 25%~30% 的灰色地帶，請控制資金觀望。
     </div>
 
     <div class="section" id="analysisSection" style="display:none; border-color: var(--heading-color);">
@@ -323,28 +323,28 @@
                     let repeaters = getLatestRepeaters(evalIndex);
                     let tailFreq = getTailFreqInLast10(numVal % 10, evalIndex);
 
-                    // 天天樂極致防守
+                    // 天天樂極致防守 (包含灰黑光優化)
                     if(gameType === 'daily4' && [8,9,10,11].includes(currentOmi)) {
                         let isUltraSuper = (repeaters === 0 && [6, 7].includes(tailFreq) && numVal % 2 !== 0);
-                        let isDead = (repeaters >= 1 && tailFreq <= 2) || (repeaters >= 1 && tailFreq === 5) || (tailFreq >= 8);
-
-                        if (isUltraSuper) carTipClass = " three-period-super"; 
-                        else if (isDead) carTipClass = " three-period-dead"; 
-                        else carTipClass = " three-period-tip"; // 降級觀望
-                    }
-                    // 539 極致防守
-                    else if(gameType === '539' && [8,9,11,15].includes(currentOmi)) {
-                        let isUltraSuper = (repeaters === 0 && [6, 7, 8].includes(tailFreq));
-                        let isDead = (repeaters >= 2 || (tailFreq >= 2 && tailFreq <= 3) || tailFreq >= 9);
+                        let isDead = (repeaters === 1 && tailFreq <= 2) || (repeaters >= 1 && tailFreq === 5);
 
                         if (isUltraSuper) carTipClass = " three-period-super"; 
                         else if (isDead) carTipClass = " three-period-dead"; 
                         else carTipClass = " three-period-tip"; 
                     }
-                    // 迦納彩極致防守
+                    // 539 極致防守 (包含灰黑光優化)
+                    else if(gameType === '539' && [8,9,11,15].includes(currentOmi)) {
+                        let isUltraSuper = (repeaters === 0 && [6, 7, 8].includes(tailFreq));
+                        let isDead = (tailFreq === 2) || (repeaters === 1 && tailFreq === 7) || (repeaters >= 1 && tailFreq === 5);
+
+                        if (isUltraSuper) carTipClass = " three-period-super"; 
+                        else if (isDead) carTipClass = " three-period-dead"; 
+                        else carTipClass = " three-period-tip"; 
+                    }
+                    // 迦納彩極致防守 (包含灰黑光優化)
                     else if(gameType === 'ghana' && [2,3,13,15].includes(currentOmi)) {
                         let isUltraSuper = (repeaters >= 3 && [5, 6, 7].includes(tailFreq));
-                        let isDead = (repeaters === 2 || tailFreq === 3 || tailFreq >= 9);
+                        let isDead = (repeaters === 2 && tailFreq === 7) || (repeaters === 0 && [3, 4].includes(tailFreq));
 
                         if (isUltraSuper) carTipClass = " three-period-super"; 
                         else if (isDead) carTipClass = " three-period-dead"; 
@@ -358,17 +358,25 @@
                     
                     if (isTargetOmi) {
                         let freq = getFreqInLast10(numVal, evalIndex);
+                        let isWSuper = false;
+                        let isWDead = false;
+                        
                         if (gameType === 'daily4') {
-                            let isWSuper = (freq === 2 && [0, 1].includes(currentOmi)) || (freq === 4 && currentOmi === 0) || (freq === 5);
-                            let isWDead = (freq === 3) || (freq === 4 && currentOmi === 2);
-                            
-                            if (isWDead) carTipClass = " overheat-tip"; 
-                            else if (isWSuper) carTipClass = " weekly-tip";   
-                            else carTipClass = ""; 
-                        } else {
-                            if (freq >= 4) carTipClass = " overheat-tip"; 
-                            else carTipClass = " weekly-tip";   
+                            isWSuper = (freq === 5) || (freq === 4 && currentOmi === 0) || (freq === 2 && currentOmi === 1);
+                            isWDead = (freq === 4 && currentOmi === 2);
+                        } 
+                        else if (gameType === '539') {
+                            isWSuper = (freq === 2 && currentOmi === 0) || (freq === 5 && currentOmi === 0);
+                            isWDead = (freq === 2 && currentOmi === 1) || (freq === 4 && currentOmi === 1);
                         }
+                        else if (gameType === 'ghana') {
+                            isWSuper = (freq === 2 && [1, 2].includes(currentOmi)) || (freq === 4 && currentOmi === 2);
+                            isWDead = (freq === 4 && currentOmi === 0) || (freq === 2 && currentOmi === 0);
+                        }
+
+                        if (isWDead) carTipClass = " overheat-tip"; 
+                        else if (isWSuper) carTipClass = " weekly-tip";   
+                        else carTipClass = ""; // 不發光 (寧缺勿濫)
                     }
                 }
             }
@@ -423,14 +431,17 @@
         let extraNotice = "";
         
         if(gameType === 'daily4') {
-            if (repCount === 0) advice = "🔥 <b style='color:#ef4444;'>完美大冷盤 (0連莊)</b>：符合極致防守第一條件。尋找尾數熱且為『單數』的神球。";
+            if (repCount === 0) advice = "🔥 <b style='color:#ef4444;'>完美大冷盤 (0連莊)</b>：符合極致防守第一條件。尋找尾數熱(6,7次)且為『單數』的神球。";
             else advice = `⚠️ <b style='color:#f59e0b;'>非冷盤狀態 (${repCount}顆)</b>：極致防守機制啟動，今日三期牌建議觀望。`;
+            extraNotice = `💡 <b>天天樂死水區：</b>週牌如果近10期開4次且漏2期，是絕對死區，將亮起暗紅光警告！`;
         } else if(gameType === '539') {
-            if (repCount === 0) advice = "🔥 <b style='color:#ef4444;'>完美大冷盤 (0連莊)</b>：符合極致防守第一條件。尋找尾數極端發爐的神球。";
+            if (repCount === 0) advice = "🔥 <b style='color:#ef4444;'>完美大冷盤 (0連莊)</b>：符合極致防守第一條件。尋找尾數極端發爐(6~8次)的神球。";
             else advice = `⚠️ <b style='color:#f59e0b;'>非冷盤狀態 (${repCount}顆)</b>：極致防守機制啟動，今日三期牌建議觀望。`;
+            extraNotice = `💡 <b>539 週牌神球：</b>漏0期且近10期剛好開2次，是539最強初連莊點，將亮起綠光！`;
         } else if(gameType === 'ghana') {
             if (repCount >= 3) advice = "🔥 <b style='color:#ef4444;'>極端爆走盤 (連莊≥3)</b>：符合極致防守第一條件。迦納彩的極限反轉點已到達！";
             else advice = `⚠️ <b style='color:#f59e0b;'>常規狀態 (${repCount}顆)</b>：極致防守機制啟動，今日三期牌建議觀望。`;
+            extraNotice = `💡 <b>迦納彩死區：</b>三期牌如果遇到昨晚無連莊且尾數剛好開3或4次，是絕對死區(灰黑光)。`;
         } else {
             advice = "請優先觀察熱力圖，選擇合適的號碼進行佈局。";
         }
@@ -438,7 +449,7 @@
         dynamicAnalysis.innerHTML = `
             <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 18px; border-radius: 12px;">
                 <div style="margin-bottom: 12px; font-size: 1.05em;">${advice}</div>
-                <div style="margin-bottom: 12px; font-size: 0.95em; color: var(--heading-color); background: var(--tr-hover); padding: 10px; border-radius: 8px;">💡 <b>極致防守機制</b>：寧願一週只出手一次，也不浪費資金在期望值低於 66% 的號碼上。請耐心等待焰紅光的降臨。</div>
+                <div style="margin-bottom: 12px; font-size: 0.95em; color: var(--heading-color); background: var(--tr-hover); padding: 10px; border-radius: 8px;">${extraNotice}</div>
             </div>
         `;
     }
