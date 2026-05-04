@@ -125,6 +125,9 @@
         [data-theme="dark"] .status-hit { background: rgba(22,101,52,0.3); color: #86efac; }
         [data-theme="dark"] .status-miss { background: rgba(185,28,28,0.2); color: #fca5a5; }
 
+        .info-text { font-size: 0.85em; opacity: 0.7; margin-top: 8px; }
+        .history-container { max-height: 500px; overflow-y: auto; }
+        
         .ball-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
         .lottery-ball {
             display: inline-flex; align-items: center; justify-content: center;
@@ -204,7 +207,7 @@
         <div class="control-group">
             <div id="manualUploadRow"><input type="file" id="csvFile" accept=".csv"></div>
             <select id="autoLoadCsv">
-                <option value="">-- 請選擇彩球類型及歷史紀錄 --</option>
+                <option value="">-- 請選擇彩球類型 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
                 <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
                 <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -257,14 +260,13 @@
         }
     }
 
-    // 核心修正：強制動態判定最新的遺漏狀態
     function formatBalls(numsArray, isTarget = false, typeName = "") {
         const gameType = document.getElementById('gameType').value;
         const isThreePeriod = typeName.includes('三期');
         const isWeekly = typeName.includes('週牌');
         
         let ballsHtml = numsArray.map(n => {
-            let numVal = Number(n); // 強制轉為數字型態
+            let numVal = Number(n);
             let carTipClass = "";
             
             if(isTarget && currentHistoryData.length > 0) {
@@ -275,7 +277,7 @@
                     else if(gameType === '539' && [8,9,11,15].includes(currentOmi)) carTipClass = " three-period-tip";
                     else if(gameType === 'ghana' && [2,3,13,15].includes(currentOmi)) carTipClass = " three-period-tip";
                 } else if (isWeekly) {
-                    // 週牌綠光：天天樂 0-2、539 0-1、迦納 0-2
+                    // 還原週牌專屬判定條件
                     if(gameType === 'daily4' && [0,1,2].includes(currentOmi)) carTipClass = " weekly-tip";
                     else if(gameType === '539' && [0,1].includes(currentOmi)) carTipClass = " weekly-tip";
                     else if(gameType === 'ghana' && [0,1,2].includes(currentOmi)) carTipClass = " weekly-tip";
