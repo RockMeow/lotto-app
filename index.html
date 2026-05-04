@@ -92,6 +92,9 @@
         
         select { padding: 12px 16px; border-radius: 10px; border: 1px solid var(--input-border); font-size: 16px; color: var(--text-color); background-color: var(--input-bg); cursor: pointer; outline: none; box-shadow: var(--shadow-sm); transition: all 0.2s; }
         select:focus { border-color: var(--heading-color); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+        
+        /* 彩球選擇欄位拉寬 */
+        #autoLoadCsv { width: 100%; max-width: 450px; }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; align-items: start; }
         .stats-grid.single-card { grid-template-columns: 1fr; max-width: 600px; margin: 0 auto 24px auto; }
@@ -134,8 +137,10 @@
         }
         .lottery-ball.target-ball { background: linear-gradient(135deg, #f87171, #dc2626); box-shadow: 0 3px 6px rgba(220, 38, 38, 0.3); }
         
-        /* 坐車提示球樣式 */
-        .lottery-ball.car-tip { border: 2px solid #fbbf24; box-shadow: 0 0 12px #fbbf24; background: linear-gradient(135deg, #f59e0b, #d97706); }
+        /* 坐車提示球樣式：三期牌(黃橘色) */
+        .lottery-ball.three-period-tip { border: 2px solid #fbbf24; box-shadow: 0 0 12px #fbbf24; background: linear-gradient(135deg, #f59e0b, #d97706); }
+        /* 坐車提示球樣式：週牌(藍色) */
+        .lottery-ball.weekly-tip { border: 2px solid #22d3ee; box-shadow: 0 0 12px #22d3ee; background: linear-gradient(135deg, #0ea5e9, #0284c7); }
 
         .heatmap-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
         .heatmap-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -156,6 +161,7 @@
             .container { padding: 25px 20px; }
             h1 { font-size: 1.6em; }
             .stats-grid { grid-template-columns: 1fr; }
+            #autoLoadCsv { max-width: 100%; }
         }
     </style>
 </head>
@@ -167,10 +173,8 @@
 
     <div class="notice">
         <strong>大數據坐車提示：</strong><br>
-        <span style="color: #f59e0b; font-weight: bold;">⭐ 黃金提示：號碼球出現「黃圈發光」代表處於各彩種專屬神級遺漏期。</span><br>
-        1. <strong>🇺🇸 天天樂：</strong>漏 8, 9, 10, 11。<br>
-        2. <strong>🇹🇼 今彩 539：</strong>漏 8, 9, 11, 15。<br>
-        3. <strong>🇬🇭 迦納彩：</strong>漏 2, 3, 13, 15。
+        <span style="color: #f59e0b; font-weight: bold;">⭐ 橘色發光 (三期牌)：</span> 抓中段回補 (天天樂 8-11、539 8,9,11,15、迦納 1,2,3,15)。<br>
+        <span style="color: #0ea5e9; font-weight: bold;">💎 藍色發光 (週牌)：</span> 抓極熱連莊 (各彩種主要為 0, 1, 2 期)。
     </div>
 
     <div id="statsGrid" class="stats-grid">
@@ -202,7 +206,7 @@
         <div class="control-group">
             <div id="manualUploadRow"><input type="file" id="csvFile" accept=".csv"></div>
             <select id="autoLoadCsv">
-                <option value="">-- 請選擇彩球類型 --</option>
+                <option value="">-- 請選擇彩球類型及歷史紀錄 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
                 <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
                 <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -252,16 +256,25 @@
         }
     }
 
-    function formatBalls(numsArray, isTarget = false, historyIndex = -1) {
+    function formatBalls(numsArray, isTarget = false, historyIndex = -1, typeName = "") {
         const gameType = document.getElementById('gameType').value;
+        const isThreePeriod = typeName.includes('三期');
+        const isWeekly = typeName.includes('週牌');
+        
         let ballsHtml = numsArray.map(n => {
             let carTipClass = "";
             if(isTarget && historyIndex !== -1) {
                 let omi = getOmissionAt(n, historyIndex);
                 // 獨立彩種遺漏推薦邏輯
-                if(gameType === 'daily4' && [8,9,10,11].includes(omi)) carTipClass = " car-tip";
-                if(gameType === '539' && [8,9,11,15].includes(omi)) carTipClass = " car-tip";
-                if(gameType === 'ghana' && [2,3,13,15].includes(omi)) carTipClass = " car-tip";
+                if (isThreePeriod) {
+                    if(gameType === 'daily4' && [8,9,10,11].includes(omi)) carTipClass = " three-period-tip";
+                    if(gameType === '539' && [8,9,11,15].includes(omi)) carTipClass = " three-period-tip";
+                    if(gameType === 'ghana' && [1,2,3,15].includes(omi)) carTipClass = " three-period-tip";
+                } else if (isWeekly) {
+                    if(gameType === 'daily4' && [0,1,2].includes(omi)) carTipClass = " weekly-tip";
+                    if(gameType === '539' && [0,1].includes(omi)) carTipClass = " weekly-tip";
+                    if(gameType === 'ghana' && [0,1,2].includes(omi)) carTipClass = " weekly-tip";
+                }
             }
             let ballClass = isTarget ? ("lottery-ball target-ball" + carTipClass) : "lottery-ball";
             return `<span class="${ballClass}">${n.toString().padStart(2, '0')}</span>`;
@@ -429,9 +442,9 @@
             }
             const sClass = t.status === '進行中' ? 'status-active' : (t.status === '命中停止' ? 'status-hit' : 'status-miss');
             let isT = t.type.includes('連號') || t.type.includes('追原號') || t.type.includes('特別號') || t.type.includes('同尾');
-            const rowHtml = `<td><span style="color:${isT?'var(--high-rate-color)':'inherit'}; font-weight:700;">${t.type}</span></td><td>${formatBalls(t.targets, isT, t.drawIdx)}</td><td>${t.startDate}</td><td>${t.status === '進行中' ? t.life : '-'}</td><td><span class="${sClass}">${t.status}</span></td>`;
+            const rowHtml = `<td><span style="color:${isT?'var(--high-rate-color)':'inherit'}; font-weight:700;">${t.type}</span></td><td>${formatBalls(t.targets, isT, t.drawIdx, t.type)}</td><td>${t.startDate}</td><td>${t.status === '進行中' ? t.life : '-'}</td><td><span class="${sClass}">${t.status}</span></td>`;
             if(t.status === '進行中') { const tr = document.createElement('tr'); tr.innerHTML = rowHtml; activeBody.appendChild(tr); } 
-            else { const tr = document.createElement('tr'); tr.innerHTML = `<td>${t.startDate}</td><td><span style="color:${isT?'var(--high-rate-color)':'inherit'}; font-weight:700;">${t.type}</span></td><td>${formatBalls(t.targets, isT, t.drawIdx)}</td><td><span class="${sClass}">${t.status}</span></td><td><span style="font-size:0.9em;">${t.hitInfo}</span></td>`; historyBody.appendChild(tr); }
+            else { const tr = document.createElement('tr'); tr.innerHTML = `<td>${t.startDate}</td><td><span style="color:${isT?'var(--high-rate-color)':'inherit'}; font-weight:700;">${t.type}</span></td><td>${formatBalls(t.targets, isT, t.drawIdx, t.type)}</td><td><span class="${sClass}">${t.status}</span></td><td><span style="font-size:0.9em;">${t.hitInfo}</span></td>`; historyBody.appendChild(tr); }
         });
         document.getElementById('threePeriodRate').innerText = tTotal > 0 ? ((tHits / tTotal) * 100).toFixed(1) + '%' : '0%';
         document.getElementById('threePeriodDetail').innerText = `已結束: ${tTotal} | 命中: ${tHits}`;
