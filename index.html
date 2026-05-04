@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌 / 週牌 (三階狙擊版)</title>
+    <title>三期牌 / 週牌</title>
     <link rel="manifest" href="manifest.json">
     <style>
         /* =========================================
@@ -158,14 +158,14 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>三期牌 / 週牌 (三階狙擊版)</h1>
+    <h1>三期牌 / 週牌</h1>
 
     <div id="statsGrid" class="stats-grid">
-        <div class="stat-card"><div class="stat-label">👑 神級三期 命中率</div><div id="godT" class="stat-value" style="color:#a855f7;">0%</div><div id="godTD" class="info-text"></div><div id="godTB" class="detailed-stats"></div></div>
-        <div class="stat-card"><div class="stat-label">👑 神級週牌 命中率</div><div id="godW" class="stat-value" style="color:#22c55e;">0%</div><div id="godWD" class="info-text"></div><div id="godWB" class="detailed-stats"></div></div>
-        <div class="stat-card"><div class="stat-label">⭐ 高級三期 命中率</div><div id="advT" class="stat-value" style="color:#f59e0b;">0%</div><div id="advTD" class="info-text"></div><div id="advTB" class="detailed-stats"></div></div>
-        <div class="stat-card"><div class="stat-label">⭐ 高級週牌 命中率</div><div id="advW" class="stat-value" style="color:#06b6d4;">0%</div><div id="advWD" class="info-text"></div><div id="advWB" class="detailed-stats"></div></div>
-        <div class="stat-card"><div class="stat-label">常規三期 命中率</div><div id="norT" class="stat-value">0%</div><div id="norTD" class="info-text"></div><div id="norTB" class="detailed-stats"></div></div>
+        <div class="stat-card"><div class="stat-label">👑 高機率三期 命中率</div><div id="godT" class="stat-value" style="color:#a855f7;">0%</div><div id="godTD" class="info-text"></div><div id="godTB" class="detailed-stats"></div></div>
+        <div class="stat-card"><div class="stat-label">👑 高機率週牌 命中率</div><div id="godW" class="stat-value" style="color:#22c55e;">0%</div><div id="godWD" class="info-text"></div><div id="godWB" class="detailed-stats"></div></div>
+        <div class="stat-card"><div class="stat-label">⭐ 中機率三期牌 命中率</div><div id="advT" class="stat-value" style="color:#f59e0b;">0%</div><div id="advTD" class="info-text"></div><div id="advTB" class="detailed-stats"></div></div>
+        <div class="stat-card"><div class="stat-label">⭐ 中機率週牌 命中率</div><div id="advW" class="stat-value" style="color:#06b6d4;">0%</div><div id="advWD" class="info-text"></div><div id="advWB" class="detailed-stats"></div></div>
+        <div class="stat-card"><div class="stat-label">常規三期牌 命中率</div><div id="norT" class="stat-value">0%</div><div id="norTD" class="info-text"></div><div id="norTB" class="detailed-stats"></div></div>
         <div class="stat-card"><div class="stat-label">常規週牌 命中率</div><div id="norW" class="stat-value">0%</div><div id="norWD" class="info-text"></div><div id="norWB" class="detailed-stats"></div></div>
     </div>
 
@@ -174,7 +174,7 @@
         <div class="control-group" id="gameTypeRow"><select id="gameType"><option value="mark6">🇭🇰 香港 六合彩</option><option value="649">🇹🇼 台灣 大樂透</option><option value="539">🇹🇼 台灣 今彩 539</option><option value="daily4">🇺🇸 加州 天天樂</option><option value="ghana">🇬🇭 迦納彩</option></select></div>
         <div class="control-group">
             <div id="manualUploadRow"><input type="file" id="csvFile" accept=".csv"></div>
-            <select id="autoLoadCsv"><option value="">-- 請選擇彩球歷史紀錄 --</option><option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option><option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option><option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option><option value="Fan_history_2026.csv">🇺🇸 加州 天天樂</option><option value="Ghana_history_2026.csv">🇬🇭 迦納彩</option></select>
+            <select id="autoLoadCsv"><option value="">-- 請選擇彩球種類 --</option><option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option><option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option><option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option><option value="Fan_history_2026.csv">🇺🇸 加州 天天樂</option><option value="Ghana_history_2026.csv">🇬🇭 迦納彩</option></select>
         </div>
     </div>
 
@@ -268,8 +268,8 @@
                 
                 if (isGod) god3P.push(n); else if (isAdv) adv3P.push(n);
             });
-            if (god3P.length) allRecords.push({ type: '👑 神級三期牌', targets: god3P, startDate: date, life: 3, status: '進行中', drawIndex: idx });
-            if (adv3P.length) allRecords.push({ type: '⭐ 高級三期牌', targets: adv3P, startDate: date, life: 3, status: '進行中', drawIndex: idx });
+            if (god3P.length) allRecords.push({ type: '👑 高機率三期牌', targets: god3P, startDate: date, life: 3, status: '進行中', drawIndex: idx });
+            if (adv3P.length) allRecords.push({ type: '⭐ 中機率三期牌', targets: adv3P, startDate: date, life: 3, status: '進行中', drawIndex: idx });
         }
 
         // 3. 週牌分級
@@ -291,8 +291,8 @@
                     if (isGS) godW.push(n); else if (isAS) advW.push(n);
                 }
             });
-            if (godW.length) allRecords.push({ type: '👑 神級週牌', targets: godW, startDate: date, life: 6, status: '進行中', drawIndex: idx });
-            if (advW.length) allRecords.push({ type: '⭐ 高級週牌', targets: advW, startDate: date, life: 6, status: '進行中', drawIndex: idx });
+            if (godW.length) allRecords.push({ type: '👑 高機率週牌', targets: godW, startDate: date, life: 6, status: '進行中', drawIndex: idx });
+            if (advW.length) allRecords.push({ type: '⭐ 中機率週牌', targets: advW, startDate: date, life: 6, status: '進行中', drawIndex: idx });
         }
     }
 
