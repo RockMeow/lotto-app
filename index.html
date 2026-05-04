@@ -175,7 +175,7 @@
     <div class="notice">
         <strong>大數據坐車提示：</strong><br>
         <span style="color: #f59e0b; font-weight: bold;">⭐ 橘黃發光 (三期牌)：</span> 抓中段回補 (天天樂 8-11、539 8,9,11,15、迦納 2,3,13,15)。<br>
-        <span style="color: #22c55e; font-weight: bold;">☘️ 綠色發光 (週牌)：</span> 抓極熱連莊 (統一判定為最新遺漏 0, 1, 2 期)。
+        <span style="color: #22c55e; font-weight: bold;">☘️ 綠色發光 (週牌)：</span> 抓極熱連莊 (天天樂 0-2、539 0-1、迦納 0-2 期)。
     </div>
 
     <div id="statsGrid" class="stats-grid">
@@ -264,17 +264,19 @@
         
         let ballsHtml = numsArray.map(n => {
             let carTipClass = "";
-            if(isTarget) {
-                // 修正：發光提示一律以「最新開獎後」的遺漏狀態為準
-                let currentOmi = getOmission(n); 
+            if(isTarget && currentHistoryData.length > 0) {
+                // 強制計算相對於數據庫最後一筆的遺漏值
+                let currentOmi = getOmission(n);
                 
                 if (isThreePeriod) {
                     if(gameType === 'daily4' && [8,9,10,11].includes(currentOmi)) carTipClass = " three-period-tip";
                     else if(gameType === '539' && [8,9,11,15].includes(currentOmi)) carTipClass = " three-period-tip";
                     else if(gameType === 'ghana' && [2,3,13,15].includes(currentOmi)) carTipClass = " three-period-tip";
                 } else if (isWeekly) {
-                    // 週牌條件還原：最新遺漏 0, 1, 2 期則亮綠光
-                    if([0,1,2].includes(currentOmi)) carTipClass = " weekly-tip";
+                    // 週牌還原條件：天天樂 0-2、539 0-1、迦納 0-2
+                    if(gameType === 'daily4' && [0,1,2].includes(currentOmi)) carTipClass = " weekly-tip";
+                    else if(gameType === '539' && [0,1].includes(currentOmi)) carTipClass = " weekly-tip";
+                    else if(gameType === 'ghana' && [0,1,2].includes(currentOmi)) carTipClass = " weekly-tip";
                 }
             }
             let ballClass = isTarget ? ("lottery-ball target-ball" + carTipClass) : "lottery-ball";
