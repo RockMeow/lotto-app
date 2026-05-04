@@ -88,13 +88,15 @@
 
         .notice { background: var(--notice-bg); padding: 20px 25px; border-left: 6px solid var(--notice-border); border-radius: 12px; margin-bottom: 25px; font-size: 0.95em; color: var(--notice-text); box-shadow: var(--shadow-sm); transition: background-color 0.3s; }
 
+        /* 新增：分析卡片內容樣式 */
+        .analysis-content { color: var(--text-color); line-height: 1.8; }
+
         .control-group { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; }
         #gameTypeRow, #manualUploadRow { display: none !important; }
         
         select { padding: 12px 16px; border-radius: 10px; border: 1px solid var(--input-border); font-size: 16px; color: var(--text-color); background-color: var(--input-bg); cursor: pointer; outline: none; box-shadow: var(--shadow-sm); transition: all 0.2s; }
         select:focus { border-color: var(--heading-color); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
         
-        /* 選擇欄位寬度拉寬 */
         #autoLoadCsv { width: 100%; max-width: 450px; }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; align-items: start; }
@@ -138,9 +140,7 @@
         }
         .lottery-ball.target-ball { background: linear-gradient(135deg, #f87171, #dc2626); box-shadow: 0 3px 6px rgba(220, 38, 38, 0.3); }
         
-        /* 坐車提示球：三期牌(黃橘色) */
         .lottery-ball.three-period-tip { border: 2px solid #fbbf24; box-shadow: 0 0 12px #fbbf24; background: linear-gradient(135deg, #f59e0b, #d97706); }
-        /* 坐車提示球：週牌(綠色) */
         .lottery-ball.weekly-tip { border: 2px solid #4ade80; box-shadow: 0 0 12px #4ade80; background: linear-gradient(135deg, #22c55e, #15803d); }
 
         .heatmap-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
@@ -178,6 +178,11 @@
         <span style="color: #22c55e; font-weight: bold;">☘️ 綠色發光 (週牌)：</span> 抓極熱連莊 (天天樂 0-2、539 0-1、迦納 0-2 期)。
     </div>
 
+    <div class="section" id="analysisSection" style="display:none; border-color: var(--heading-color);">
+        <div class="section-title">📊 實戰動態分析 (即時更新)</div>
+        <div id="dynamicAnalysis" class="analysis-content"></div>
+    </div>
+
     <div id="statsGrid" class="stats-grid">
         <div class="stat-card" id="threePeriodCard">
             <div class="stat-label">三期牌 總命中率</div>
@@ -207,7 +212,7 @@
         <div class="control-group">
             <div id="manualUploadRow"><input type="file" id="csvFile" accept=".csv"></div>
             <select id="autoLoadCsv">
-                <option value="">-- 請選擇彩球類型 --</option>
+                <option value="">-- 請選擇彩球類型及歷史紀錄 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
                 <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
                 <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -271,13 +276,11 @@
             
             if(isTarget && currentHistoryData.length > 0) {
                 let currentOmi = getOmission(numVal);
-                
                 if (isThreePeriod) {
                     if(gameType === 'daily4' && [8,9,10,11].includes(currentOmi)) carTipClass = " three-period-tip";
                     else if(gameType === '539' && [8,9,11,15].includes(currentOmi)) carTipClass = " three-period-tip";
                     else if(gameType === 'ghana' && [2,3,13,15].includes(currentOmi)) carTipClass = " three-period-tip";
                 } else if (isWeekly) {
-                    // 還原週牌專屬判定條件
                     if(gameType === 'daily4' && [0,1,2].includes(currentOmi)) carTipClass = " weekly-tip";
                     else if(gameType === '539' && [0,1].includes(currentOmi)) carTipClass = " weekly-tip";
                     else if(gameType === 'ghana' && [0,1,2].includes(currentOmi)) carTipClass = " weekly-tip";
@@ -300,6 +303,52 @@
     }
 
     function getOmission(num) { return getOmissionAt(num, currentHistoryData.length - 1); }
+
+    // 新增：動態分析與實戰提示邏輯
+    function updateDynamicAnalysis() {
+        const analysisSection = document.getElementById('analysisSection');
+        const dynamicAnalysis = document.getElementById('dynamicAnalysis');
+        if(!currentHistoryData || currentHistoryData.length < 5) return;
+        
+        analysisSection.style.display = 'block';
+        const gameType = document.getElementById('gameType').value;
+        const maxNum = (gameType === '649' || gameType === 'mark6') ? 49 : 39;
+        
+        let hungryBalls = [];
+        for(let i=1; i<=maxNum; i++) {
+            let omi = getOmission(i);
+            // 偵測「極度飢餓」區 (超出黃金區尚未開出的號碼)
+            if(gameType === 'daily4' && omi >= 12 && omi <= 16) hungryBalls.push(i);
+            if(gameType === '539' && omi >= 16 && omi <= 19) hungryBalls.push(i);
+            if(gameType === 'ghana' && omi >= 16 && omi <= 18) hungryBalls.push(i);
+        }
+        
+        const latest = currentHistoryData[currentHistoryData.length-1];
+        const prev = currentHistoryData[currentHistoryData.length-2];
+        const repeats = latest.nums.filter(n => prev.nums.includes(n));
+        
+        let advice = "";
+        if(gameType === 'daily4') {
+            advice = repeats.length > 0 ? "⚠️ 注意：機器正處於「強勢慣性」模式，連莊球頻發。" : "💡 提示：目前盤面較散，預計「中段 8-11 期回補能量」近期將有強烈噴發。";
+            if(getOmission(12) >= 11) advice += " <span style='color:var(--high-rate-color); font-weight:bold;'>特別注意號碼 12</span>，能量已達臨界點。";
+        } else if(gameType === '539') {
+            advice = repeats.length > 0 ? "熱牌連動明顯，週牌（綠光）號碼為本期護航首選。" : "盤面冷熱交替，請盯緊 8, 9, 11 期的補空機會。";
+        } else if(gameType === 'ghana') {
+            advice = "迦納彩訊號具備「延遲噴發」特性，三期牌目標若未中，建議多守 1 期。";
+        } else {
+            advice = "請優先觀察熱力圖，選擇遺漏 8-12 期之號碼進行坐車佈局。";
+        }
+
+        dynamicAnalysis.innerHTML = `
+            <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 18px; border-radius: 12px;">
+                <div style="margin-bottom: 10px;"><strong>🎯 盤勢診斷：</strong> ${advice}</div>
+                <div style="margin-bottom: 10px;"><strong>🔥 必殺高優球：</strong> ${hungryBalls.length > 0 ? hungryBalls.map(n => `<span style="color:var(--high-rate-color); font-weight:bold; font-size:1.1em;">${n.toString().padStart(2, '0')}</span>`).join(', ') : '能量累積中...'}</div>
+                <div style="font-size: 0.85em; opacity: 0.8; border-top: 1px dashed var(--card-border); padding-top: 8px; margin-top: 8px;">
+                    ※ 實戰策略：若最新一期開出 2 顆以上連莊號，下一期應專注於「週牌」綠光號碼。
+                </div>
+            </div>
+        `;
+    }
 
     document.getElementById('csvFile').addEventListener('change', function(e) {
         const file = e.target.files[0];
@@ -385,6 +434,7 @@
             generateTargets(i);
         }
         renderTables(); renderHeatmap();
+        updateDynamicAnalysis(); // 執行實戰分析
     }
 
     function generateTargets(drawIndex) {
@@ -442,15 +492,9 @@
             }
             const sClass = t.status === '進行中' ? 'status-active' : (t.status === '命中停止' ? 'status-hit' : 'status-miss');
             let isT = t.type.includes('連號') || t.type.includes('追原號') || t.type.includes('特別號') || t.type.includes('同尾');
-            
             const rowHtml = `<td><span style="color:${isT?'var(--high-rate-color)':'inherit'}; font-weight:700;">${t.type}</span></td><td>${formatBalls(t.targets, true, t.type)}</td><td>${t.startDate}</td><td>${t.status === '進行中' ? t.life : '-'}</td><td><span class="${sClass}">${t.status}</span></td>`;
-            
             if(t.status === '進行中') { const tr = document.createElement('tr'); tr.innerHTML = rowHtml; activeBody.appendChild(tr); } 
-            else { 
-                const tr = document.createElement('tr'); 
-                tr.innerHTML = `<td>${t.startDate}</td><td><span style="color:${isT?'var(--high-rate-color)':'inherit'}; font-weight:700;">${t.type}</span></td><td>${formatBalls(t.targets, true, t.type)}</td><td><span class="${sClass}">${t.status}</span></td><td><span style="font-size:0.9em;">${t.hitInfo || '-'}</span></td>`; 
-                historyBody.appendChild(tr); 
-            }
+            else { const tr = document.createElement('tr'); tr.innerHTML = `<td>${t.startDate}</td><td><span style="color:${isT?'var(--high-rate-color)':'inherit'}; font-weight:700;">${t.type}</span></td><td>${formatBalls(t.targets, true, t.type)}</td><td><span class="${sClass}">${t.status}</span></td><td><span style="font-size:0.9em;">${t.hitInfo || '-'}</span></td>`; historyBody.appendChild(tr); }
         });
         document.getElementById('threePeriodRate').innerText = tTotal > 0 ? ((tHits / tTotal) * 100).toFixed(1) + '%' : '0%';
         document.getElementById('threePeriodDetail').innerText = `已結束: ${tTotal} | 命中: ${tHits}`;
