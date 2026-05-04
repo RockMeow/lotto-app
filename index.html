@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌 / 週牌 (全彩種狙擊版)</title>
+    <title>三期牌 / 週牌</title>
     <link rel="manifest" href="manifest.json">
     <style>
         /* =========================================
@@ -178,29 +178,29 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>三期牌 / 週牌 (全彩種特化版)</h1>
+    <h1>三期牌 / 週牌</h1>
 
     <div id="statsGrid" class="stats-grid">
         <div class="stat-card" id="godThreePeriodCard">
-            <div class="stat-label">👑 神級三期牌 命中率</div>
+            <div class="stat-label">👑 三期牌 命中率</div>
             <div id="godThreePeriodRate" class="stat-value" style="color:#a855f7;">0%</div>
             <div id="godThreePeriodDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="godThreePeriodBreakdown" class="detailed-stats"></div>
         </div>
         <div class="stat-card" id="godWeeklyCard">
-            <div class="stat-label">👑 神級週牌 命中率</div>
+            <div class="stat-label">👑 週牌 命中率</div>
             <div id="godWeeklyRate" class="stat-value" style="color:#22c55e;">0%</div>
             <div id="godWeeklyDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="godWeeklyBreakdown" class="detailed-stats"></div>
         </div>
         <div class="stat-card" id="threePeriodCard">
-            <div class="stat-label">常規三期牌 命中率</div>
+            <div class="stat-label">三期牌 命中率</div>
             <div id="threePeriodRate" class="stat-value">0%</div>
             <div id="threePeriodDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="threePeriodBreakdown" class="detailed-stats"></div>
         </div>
         <div class="stat-card" id="weeklyCard">
-            <div class="stat-label">常規週牌 命中率</div>
+            <div class="stat-label">週牌 命中率</div>
             <div id="weeklyRate" class="stat-value">0%</div>
             <div id="weeklyDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="weeklyBreakdown" class="detailed-stats"></div>
@@ -467,7 +467,7 @@
             else if(gameType === 'ghana') { isUltra = ([2,3,13,15].includes(omi) && repeaters >= 3 && [5, 6, 7].includes(tFreq)); }
             if (isUltra) ultra3P.push(numVal);
         });
-        if (ultra3P.length > 0) { allRecords.push({ type: '👑 神級三期牌', targets: ultra3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
+        if (ultra3P.length > 0) { allRecords.push({ type: '👑 三期牌', targets: ultra3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
 
         // 3. 產生原本的週牌
         const day = getWeekday(date); let shouldWeekly = false; let weeklyLife = 5;
@@ -492,7 +492,7 @@
                     if (isWS) ultraW.push(numVal);
                 }
             });
-            if (ultraW.length > 0) { allRecords.push({ type: '👑 神級週牌', targets: ultraW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
+            if (ultraW.length > 0) { allRecords.push({ type: '👑 週牌', targets: ultraW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
         }
     }
 
