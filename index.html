@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>三期牌 / 週牌</title>
+    <link rel="manifest" href="manifest.json">
     <style>
         /* =========================================
            現代化 UI 變數與亮色模式
@@ -137,9 +138,9 @@
         }
         .lottery-ball.target-ball { background: linear-gradient(135deg, #f87171, #dc2626); box-shadow: 0 3px 6px rgba(220, 38, 38, 0.3); }
         
-        /* 還原坐車提示球：三期牌(黃橘色) */
+        /* 坐車提示球：三期牌(黃橘色) */
         .lottery-ball.three-period-tip { border: 2px solid #fbbf24; box-shadow: 0 0 12px #fbbf24; background: linear-gradient(135deg, #f59e0b, #d97706); }
-        /* 還原坐車提示球：週牌(藍色) */
+        /* 坐車提示球：週牌(藍色) */
         .lottery-ball.weekly-tip { border: 2px solid #22d3ee; box-shadow: 0 0 12px #22d3ee; background: linear-gradient(135deg, #0ea5e9, #0284c7); }
 
         .heatmap-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
@@ -206,7 +207,7 @@
         <div class="control-group">
             <div id="manualUploadRow"><input type="file" id="csvFile" accept=".csv"></div>
             <select id="autoLoadCsv">
-                <option value="">-- 請選擇彩球類型及歷史紀錄 --</option>
+                <option value="">-- 請選擇彩球類型 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
                 <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
                 <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -270,7 +271,7 @@
                     else if(gameType === '539' && [8,9,11,15].includes(omi)) carTipClass = " three-period-tip";
                     else if(gameType === 'ghana' && [2,3,13,15].includes(omi)) carTipClass = " three-period-tip";
                 } else if (isWeekly) {
-                    // 週牌還原條件：0, 1, 2 期
+                    // 週牌條件：0, 1, 2 期
                     if([0,1,2].includes(omi)) carTipClass = " weekly-tip";
                 }
             }
