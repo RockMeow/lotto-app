@@ -180,8 +180,8 @@
     <div class="notice">
         <strong>大數據坐車提示：</strong><br>
         <span style="color: #f59e0b; font-weight: bold;">⭐ 橘黃發光 (三期牌)：</span> 抓中段回補 (常態勝率區間)。<br>
-        <span style="color: #ef4444; font-weight: bold;">🔥 焰紅發光 (539三期神球)：</span> 尾數極冷(0-1次)或極熱(6-8次)，必殺高勝率！<br>
-        <span style="color: #6b7280; font-weight: bold;">💀 灰黑發光 (539三期死區)：</span> 昨晚連莊>=2 或是 尾數陷阱(2-3次/超9次)，勝率0%請放棄！<br>
+        <span style="color: #ef4444; font-weight: bold;">🔥 焰紅發光 (三期神球)：</span> 觸發各彩種高勝率條件（熱尾/平衡連莊等），必殺！<br>
+        <span style="color: #6b7280; font-weight: bold;">💀 灰黑發光 (三期死區)：</span> 觸發各彩種必死陷阱（連莊壓制/透支），勝率極低請放棄！<br>
         <span style="color: #22c55e; font-weight: bold;">☘️ 綠色發光 (週牌)：</span> 抓極熱連莊 (未透支的健康熱號)。<br>
         <span style="color: #dc2626; font-weight: bold;">🚫 暗紅發光 (週牌過熱警告)：</span> 近10期已開4次以上，額度透支請避開！
     </div>
@@ -318,10 +318,21 @@
             if(isTarget && currentHistoryData.length > 0) {
                 let currentOmi = getOmission(numVal);
                 if (isThreePeriod) {
-                    if(gameType === 'daily4' && [8,9,10,11].includes(currentOmi)) carTipClass = " three-period-tip";
+                    let repeaters = getLatestRepeaters();
+                    let tailFreq = getTailFreqInLast10(numVal % 10);
+
+                    // 天天樂
+                    if(gameType === 'daily4' && [8,9,10,11].includes(currentOmi)) {
+                        if (repeaters >= 1 || tailFreq <= 2 || tailFreq >= 9) {
+                            carTipClass = " three-period-dead"; // 死區 (有連莊壓制或尾數過冷/透支)
+                        } else if (repeaters === 0 && (tailFreq === 6 || tailFreq === 7)) {
+                            carTipClass = " three-period-super"; // 神球 (大冷盤 + 極熱尾數)
+                        } else {
+                            carTipClass = " three-period-tip"; // 常規
+                        }
+                    }
+                    // 今彩 539
                     else if(gameType === '539' && [8,9,11,15].includes(currentOmi)) {
-                        let repeaters = getLatestRepeaters();
-                        let tailFreq = getTailFreqInLast10(numVal % 10);
                         if (repeaters >= 2 || (tailFreq >= 2 && tailFreq <= 3) || tailFreq >= 9) {
                             carTipClass = " three-period-dead"; // 死區或陷阱
                         } else if (tailFreq <= 1 || (tailFreq >= 6 && tailFreq <= 8)) {
@@ -330,7 +341,16 @@
                             carTipClass = " three-period-tip"; // 常規 (4-5次)
                         }
                     }
-                    else if(gameType === 'ghana' && [2,3,13,15].includes(currentOmi)) carTipClass = " three-period-tip";
+                    // 迦納彩
+                    else if(gameType === 'ghana' && [2,3,13,15].includes(currentOmi)) {
+                        if (repeaters === 2 || tailFreq === 3 || tailFreq >= 9) {
+                            carTipClass = " three-period-dead"; // 死區 (2連莊壓制或3次陷阱)
+                        } else if (tailFreq === 2 || repeaters === 1 || repeaters >= 3) {
+                            carTipClass = " three-period-super"; // 神球 (2次反彈或1/3連莊平衡爆走)
+                        } else {
+                            carTipClass = " three-period-tip"; // 常規
+                        }
+                    }
                 } else if (isWeekly) {
                     let isTargetOmi = false;
                     if(gameType === 'daily4' && [0,1,2].includes(currentOmi)) isTargetOmi = true;
