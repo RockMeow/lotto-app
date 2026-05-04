@@ -137,10 +137,10 @@
         }
         .lottery-ball.target-ball { background: linear-gradient(135deg, #f87171, #dc2626); box-shadow: 0 3px 6px rgba(220, 38, 38, 0.3); }
         
-        /* 坐車提示球：三期牌(霓虹紫) */
-        .lottery-ball.three-period-tip { border: 2px solid #e879f9; box-shadow: 0 0 12px #e879f9; background: linear-gradient(135deg, #a855f7, #7e22ce); }
-        /* 坐車提示球：週牌(螢光綠) */
-        .lottery-ball.weekly-tip { border: 2px solid #4ade80; box-shadow: 0 0 12px #4ade80; background: linear-gradient(135deg, #22c55e, #15803d); }
+        /* 還原坐車提示球：三期牌(黃橘色) */
+        .lottery-ball.three-period-tip { border: 2px solid #fbbf24; box-shadow: 0 0 12px #fbbf24; background: linear-gradient(135deg, #f59e0b, #d97706); }
+        /* 還原坐車提示球：週牌(藍色) */
+        .lottery-ball.weekly-tip { border: 2px solid #22d3ee; box-shadow: 0 0 12px #22d3ee; background: linear-gradient(135deg, #0ea5e9, #0284c7); }
 
         .heatmap-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
         .heatmap-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -173,8 +173,8 @@
 
     <div class="notice">
         <strong>大數據坐車提示：</strong><br>
-        <span style="color: #a855f7; font-weight: bold;">🔮 霓虹紫 (三期牌)：</span> 抓中段回補 (天天樂 8-11、539 8,9,11,15、迦納 1,2,3,15)。<br>
-        <span style="color: #22c55e; font-weight: bold;">☘️ 螢光綠 (週牌)：</span> 抓極熱連莊 (各彩種統一判定為漏 0, 1, 2, 3 期)。
+        <span style="color: #f59e0b; font-weight: bold;">⭐ 橘黃發光 (三期牌)：</span> 抓中段回補 (天天樂 8-11、539 8,9,11,15、迦納 2,3,13,15)。<br>
+        <span style="color: #0ea5e9; font-weight: bold;">💎 藍色發光 (週牌)：</span> 抓極熱連莊 (統一判定為漏 0, 1, 2 期)。
     </div>
 
     <div id="statsGrid" class="stats-grid">
@@ -258,8 +258,8 @@
 
     function formatBalls(numsArray, isTarget = false, historyIndex = -1, typeName = "") {
         const gameType = document.getElementById('gameType').value;
-        const isThreePeriod = typeName.includes('三期');
-        const isWeekly = typeName.includes('週牌');
+        const isThreePeriod = typeName && typeName.includes('三期');
+        const isWeekly = typeName && typeName.includes('週牌');
         
         let ballsHtml = numsArray.map(n => {
             let carTipClass = "";
@@ -268,9 +268,10 @@
                 if (isThreePeriod) {
                     if(gameType === 'daily4' && [8,9,10,11].includes(omi)) carTipClass = " three-period-tip";
                     else if(gameType === '539' && [8,9,11,15].includes(omi)) carTipClass = " three-period-tip";
-                    else if(gameType === 'ghana' && [1,2,3,15].includes(omi)) carTipClass = " three-period-tip";
+                    else if(gameType === 'ghana' && [2,3,13,15].includes(omi)) carTipClass = " three-period-tip";
                 } else if (isWeekly) {
-                    if([0,1,2,3].includes(omi)) carTipClass = " weekly-tip";
+                    // 週牌還原條件：0, 1, 2 期
+                    if([0,1,2].includes(omi)) carTipClass = " weekly-tip";
                 }
             }
             let ballClass = isTarget ? ("lottery-ball target-ball" + carTipClass) : "lottery-ball";
@@ -371,7 +372,7 @@
             allRecords.forEach(target => {
                 if(target.status === '進行中') {
                     const hits = target.targets.filter(n => draw.nums.includes(n));
-                    if(hits.length > 0) { target.status = '命中停止'; target.hitInfo = `${draw.date} 開出 ${formatBalls(hits)}`; } 
+                    if(hits.length > 0) { target.status = '命中停止'; target.hitInfo = `${draw.date} 開出 ${formatBalls(hits, false, -1, target.type)}`; } 
                     else { target.life--; if(target.life <= 0) { target.status = '未中結束'; target.hitInfo = '-'; } }
                 }
             });
