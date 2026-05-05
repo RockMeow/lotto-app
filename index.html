@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌 / 週牌</title>
+    <title>三期牌 / 週牌 (AI)</title>
     <link rel="manifest" href="manifest.json">
     <style>
         /* =========================================
@@ -156,6 +156,12 @@
             to { box-shadow: 0 0 20px #22c55e, 0 0 30px #ffffff; transform: scale(1.08); }
         }
 
+        /* --- 成本警示與停損視覺樣式 --- */
+        .row-high-cost { opacity: 0.6; filter: grayscale(30%); }
+        .badge-warning { background: var(--high-rate-color); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 6px; display: inline-block; vertical-align: middle; line-height: 1; }
+        .stop-loss-flash { color: var(--high-rate-color); font-weight: 900; animation: blink 0.8s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
         .heatmap-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
         .heatmap-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .heatmap-box {
@@ -183,7 +189,7 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>三期牌 / 週牌</h1>
+    <h1>三期牌 / 週牌 (AI)</h1>
 
     <div id="statsGrid" class="stats-grid">
         <div class="stat-card" id="godThreePeriodCard">
@@ -361,6 +367,43 @@
 
     function getOmission(num) { return getOmissionAt(num, currentHistoryData.length - 1); }
 
+    // ==========================================
+    // AI 動態滑動視窗校準引擎 (熱平衡算法)
+    // ==========================================
+    function getDynamicRules(drawIndex, gameType) {
+        let omiCounts = {}, tfCounts = {}, repCounts = {};
+        let mainCount = (gameType === '649' || gameType === 'mark6') ? 6 : 5;
+        
+        // 抓取近 30 期的歷史波段，動態捕捉當前開獎機物理慣性
+        let start = Math.max(1, drawIndex - 30);
+        
+        // 初期數據不足時的寬鬆保護機制
+        if (drawIndex < 5) return { bestOmis: [0,1,2,3,4,5], bestTFs: [2,3,4,5], bestRep: [0,1,2] };
+        
+        for (let k = start; k < drawIndex; k++) {
+            let winNums = currentHistoryData[k].nums.slice(0, mainCount);
+            let prevNums = currentHistoryData[k-1].nums.slice(0, mainCount);
+            let rep = winNums.filter(n => prevNums.includes(n)).length;
+            repCounts[rep] = (repCounts[rep] || 0) + 1;
+            
+            winNums.forEach(n => {
+                let omi = getOmissionAt(n, k - 1);
+                let tf = getTailFreqInLast10(n % 10, k - 1);
+                omiCounts[omi] = (omiCounts[omi] || 0) + 1;
+                tfCounts[tf] = (tfCounts[tf] || 0) + 1;
+            });
+        }
+        
+        // 提取出現頻率最高的動態特徵
+        let getTop = (obj, n) => Object.keys(obj).sort((a,b)=>obj[b]-obj[a]).slice(0,n).map(Number);
+        
+        return {
+            bestOmis: getTop(omiCounts, 6), // 當前勝率最高的前 6 大遺漏期數
+            bestTFs: getTop(tfCounts, 4),   // 當前勝率最高的前 4 大尾數熱度
+            bestRep: getTop(repCounts, 2)   // 當前最常發生的連莊型態
+        };
+    }
+
     document.getElementById('csvFile').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if(!file) return;
@@ -482,36 +525,29 @@
         const tc = {}; mainNums.map(n => n % 10).forEach(t => tc[t] = (tc[t] || 0) + 1);
         for(let t in tc) { if(tc[t] >= 2) { let tg = mainNums.filter(n => n % 10 == t); allRecords.push({ type: `三期牌 (${tc[t]}同尾)`, targets: tg, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); tg.forEach(n=>currentDraw3PNums.add(n)); } }
 
-        // 2. 獨立抽出「高機率(👑)」與「中機率(⭐)」三期牌
-        let ultra3P = []; let adv3P = []; let repeaters = getLatestRepeaters(drawIndex);
-        currentDraw3PNums.forEach(numVal => {
-            let omi = getOmissionAt(numVal, drawIndex); let tFreq = getTailFreqInLast10(numVal % 10, drawIndex);
-            let isUltra = false; let isAdv = false;
-            let isOdd = numVal % 2 !== 0;
+        // 2. 獨立抽出「高機率(👑)」與「中機率(⭐)」三期牌 (啟用動態引擎)
+        let ultra3P = []; let adv3P = []; 
+        let repeaters = getLatestRepeaters(drawIndex);
+        let dynRules = getDynamicRules(drawIndex, gameType);
 
-            if(gameType === '649') { 
-                if ([6,7,12].includes(omi) && repeaters === 0 && tFreq === 2 && isOdd) isUltra = true; 
-            }
-            else if(gameType === 'mark6') { 
-                if ([8,9,15].includes(omi) && repeaters <= 1 && [5,6,7].includes(tFreq) && numVal <= 25) isUltra = true; 
-            }
-            else if(gameType === 'daily4') { 
-                if ([8,9,10,11].includes(omi) && repeaters === 0 && [6, 7].includes(tFreq) && isOdd) isUltra = true; 
-                else if ([8,9,10,11].includes(omi) && repeaters <= 1 && [4,5,6,7].includes(tFreq)) isAdv = true;
-            }
-            else if(gameType === '539') { 
-                if ([8,9,11,15].includes(omi) && repeaters === 0 && [6, 7, 8].includes(tFreq)) isUltra = true; 
-                else if ([8,9,11,15].includes(omi) && repeaters <= 1 && [5,6,7,8].includes(tFreq)) isAdv = true;
-            }
-            else if(gameType === 'ghana') { 
-                if ([2,3,13,15].includes(omi) && repeaters >= 3 && [5, 6, 7].includes(tFreq)) isUltra = true; 
-                else if ([2,3,13,15].includes(omi) && repeaters >= 2 && [4,5,6,7].includes(tFreq)) isAdv = true;
-            }
+        currentDraw3PNums.forEach(numVal => {
+            let omi = getOmissionAt(numVal, drawIndex); 
+            let tFreq = getTailFreqInLast10(numVal % 10, drawIndex);
+            let isUltra = false; let isAdv = false;
+            
+            let matchOmi = dynRules.bestOmis.includes(omi);
+            let matchTf = dynRules.bestTFs.includes(tFreq);
+            let matchRep = dynRules.bestRep.includes(repeaters);
+
+            // 👑 神級：必須滿足當前盤勢的「遺漏熱區 + 尾數熱區 + 連莊慣性」三大完美共振
+            if (matchOmi && matchTf && matchRep) isUltra = true;
+            // ⭐ 高級：只需滿足其中兩項熱平衡指標即可
+            else if ((matchOmi && matchTf) || (matchOmi && matchRep) || (matchTf && matchRep)) isAdv = true;
             
             if (isUltra) ultra3P.push(numVal);
             else if (isAdv) adv3P.push(numVal);
         });
-        if (ultra3P.length > 0) { allRecords.push({ type: '👑 三期牌 (高機率)', targets: ultra3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
+        if (ultra3P.length > 0) { allRecords.push({ type: '👑 三期牌 (高機率) [AI]', targets: ultra3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
         if (adv3P.length > 0) { allRecords.push({ type: '⭐ 三期牌 (中機率)', targets: adv3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
 
         // 3. 產生原本的週牌
@@ -527,31 +563,18 @@
             allRecords.push({ type: `週牌 (第2組)`, targets: top6.slice(2,4), startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
             allRecords.push({ type: `週牌 (第3組)`, targets: top6.slice(4,6), startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
             
-            // 4. 獨立抽出「高機率(👑)」與「中機率(⭐)」週牌
+            // 4. 獨立抽出「高機率(👑)」與「中機率(⭐)」週牌 (啟用動態引擎)
             let ultraW = []; let advW = []; 
             top6.forEach(numVal => {
                 let omi = getOmissionAt(numVal, drawIndex); let freq = getFreqInLast10(numVal, drawIndex);
-                let isTargetOmi = (gameType === 'daily4' && [0,1,2].includes(omi)) || (gameType === '539' && [0,1].includes(omi)) || (gameType === 'ghana' && [0,1,2].includes(omi));
-                if (isTargetOmi) {
-                    let isWS = false; let isWA = false;
-                    if (gameType === 'daily4') {
-                        if ((freq === 5) || (freq === 4 && omi === 0) || (freq === 2 && omi === 1)) isWS = true;
-                        else if (freq === 4 || (freq === 3 && omi <= 1)) isWA = true;
-                    }
-                    else if (gameType === '539') {
-                        if ((freq === 2 && omi === 0) || (freq === 5 && omi === 0)) isWS = true;
-                        else if (freq === 3 || (freq === 4 && omi === 0)) isWA = true;
-                    }
-                    else if (gameType === 'ghana') {
-                        if ((freq === 2 && [1, 2].includes(omi)) || (freq === 4 && omi === 2)) isWS = true;
-                        else if (freq === 3 || freq === 5) isWA = true;
-                    }
-                    
-                    if (isWS) ultraW.push(numVal);
-                    else if (isWA) advW.push(numVal);
-                }
+                let matchOmi = dynRules.bestOmis.includes(omi);
+                let matchRep = dynRules.bestRep.includes(repeaters);
+                let isHot = freq >= 2;
+
+                if (matchOmi && matchRep && isHot) ultraW.push(numVal);
+                else if ((matchOmi && isHot) || (matchOmi && matchRep) || (isHot && matchRep)) advW.push(numVal);
             });
-            if (ultraW.length > 0) { allRecords.push({ type: '👑 週牌 (高機率)', targets: ultraW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
+            if (ultraW.length > 0) { allRecords.push({ type: '👑 週牌 (高機率) [AI]', targets: ultraW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
             if (advW.length > 0) { allRecords.push({ type: '⭐ 週牌 (中機率)', targets: advW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
         }
     }
@@ -579,12 +602,16 @@
                 }
             }
             const sClass = t.status === '進行中' ? 'status-active' : (t.status === '命中停止' ? 'status-hit' : 'status-miss');
+            const isHighCost = t.targets.length > 3;
+            const costBadge = isHighCost ? '<span class="badge-warning">⚠️ 成本過高</span>' : '';
+            const lifeCls = (t.status === '進行中' && t.life === 1) ? 'stop-loss-flash' : '';
+            
             let rowStyle = "";
             if (isG || isA) rowStyle = "background-color: var(--notice-bg);";
             
-            const rowHtml = `<td style="${rowStyle}"><span style="font-weight:700;">${t.type}</span></td><td style="${rowStyle}">${formatBalls(t.targets, true, t.type, t.drawIndex)}</td><td style="${rowStyle}">${t.startDate}</td><td style="${rowStyle}">${t.status === '進行中' ? t.life : '-'}</td><td style="${rowStyle}"><span class="${sClass}">${t.status}</span></td>`;
-            if(t.status === '進行中') { const tr = document.createElement('tr'); tr.innerHTML = rowHtml; activeBody.appendChild(tr); } 
-            else { const tr = document.createElement('tr'); tr.innerHTML = `<td style="${rowStyle}">${t.startDate}</td><td style="${rowStyle}"><span style="font-weight:700;">${t.type}</span></td><td style="${rowStyle}">${formatBalls(t.targets, true, t.type, t.drawIndex)}</td><td style="${rowStyle}"><span class="${sClass}">${t.status}</span></td><td style="${rowStyle}"><span style="font-size:0.9em;">${t.hitInfo || '-'}</span></td>`; historyBody.appendChild(tr); }
+            const rowHtml = `<td style="${rowStyle}"><span style="font-weight:700;">${t.type}</span>${costBadge}</td><td style="${rowStyle}">${formatBalls(t.targets, true, t.type, t.drawIndex)}</td><td style="${rowStyle}">${t.startDate}</td><td style="${rowStyle}"><span class="${lifeCls}">${t.status === '進行中' ? t.life : '-'}</span></td><td style="${rowStyle}"><span class="${sClass}">${t.status}</span></td>`;
+            if(t.status === '進行中') { const tr = document.createElement('tr'); if(isHighCost) tr.className="row-high-cost"; tr.innerHTML = rowHtml; activeBody.appendChild(tr); } 
+            else { const tr = document.createElement('tr'); if(isHighCost) tr.className="row-high-cost"; tr.innerHTML = `<td style="${rowStyle}">${t.startDate}</td><td style="${rowStyle}"><span style="font-weight:700;">${t.type}</span>${costBadge}</td><td style="${rowStyle}">${formatBalls(t.targets, true, t.type, t.drawIndex)}</td><td style="${rowStyle}"><span class="${sClass}">${t.status}</span></td><td style="${rowStyle}"><span style="font-size:0.9em;">${t.hitInfo || '-'}</span></td>`; historyBody.appendChild(tr); }
         });
         
         document.getElementById('threePeriodRate').innerText = tT > 0 ? ((tH / tT) * 100).toFixed(1) + '%' : '0%';
