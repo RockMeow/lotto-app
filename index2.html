@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>三期牌 / 週牌 (決策優化版)</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        /* =========================================
+           現代化 UI 變數與亮色模式
+           ========================================= */
+        :root {
+            --bg-color: #f1f5f9; 
+            --container-bg: #ffffff;
+            --text-color: #334155;
+            --heading-color: #2563eb;
+            --section-bg: #ffffff;
+            --section-border: #e2e8f0;
+            --card-bg: #f8fafc;
+            --card-border: #e2e8f0;
+            --th-bg: #f8fafc;
+            --td-border: #e2e8f0;
+            --tr-even: #ffffff;
+            --tr-hover: #f1f5f9;
+            --notice-bg: #fffbeb;
+            --notice-border: #f59e0b;
+            --notice-text: #92400e;
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --ball-bg: #cbd5e1;
+            --ball-text: #ffffff;
+            --high-rate-color: #ef4444; 
+            --warning-bg: #fef2f2;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --container-bg: #1e293b;
+            --text-color: #e2e8f0;
+            --heading-color: #60a5fa;
+            --section-bg: #1e293b;
+            --section-border: #334155;
+            --card-bg: #0f172a;
+            --card-border: #334155;
+            --th-bg: #0f172a;
+            --td-border: #334155;
+            --tr-even: #1e293b;
+            --input-bg: #0f172a;
+            --input-border: #475569;
+            --warning-bg: #451212;
+        }
+
+        body { font-family: 'Inter', system-ui, sans-serif; line-height: 1.6; padding: 20px 10px; background-color: var(--bg-color); color: var(--text-color); margin: 0; }
+        .container { max-width: 1000px; margin: auto; background: var(--container-bg); padding: 30px; border-radius: 24px; box-shadow: var(--shadow-lg); position: relative; }
+        h1 { color: var(--heading-color); text-align: center; font-size: 1.8em; font-weight: 800; margin-bottom: 25px; }
+
+        .theme-toggle { position: absolute; top: 25px; right: 25px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 50%; width: 40px; height: 40px; cursor: pointer; color: var(--text-color); display: flex; align-items: center; justify-content: center; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--card-border); padding: 12px; border-radius: 16px; text-align: center; }
+        .stat-value { font-size: 1.5em; font-weight: 800; margin: 2px 0; }
+        .stat-label { font-size: 0.85em; font-weight: 700; opacity: 0.8; }
+        .info-text { font-size: 0.75em; opacity: 0.6; }
+        .detailed-stats { margin-top: 8px; font-size: 0.8em; text-align: left; border-top: 1px dashed var(--card-border); padding-top: 5px; }
+        .detailed-stats-row { display: flex; justify-content: space-between; margin-bottom: 1px; }
+
+        .section { background: var(--section-bg); border: 1px solid var(--section-border); padding: 20px; border-radius: 16px; margin-bottom: 20px; }
+        .section-title { font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; }
+        .section-title::before { content: ""; width: 4px; height: 16px; background: var(--heading-color); margin-right: 8px; border-radius: 2px; }
+
+        .control-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+        select, input { padding: 10px; border-radius: 10px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); font-size: 14px; }
+        
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--td-border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; min-width: 550px; }
+        th, td { padding: 12px; text-align: center; border-bottom: 1px solid var(--td-border); }
+        th { background: var(--th-bg); font-weight: 700; }
+        tr:nth-child(even) { background-color: var(--tr-even); }
+
+        .ball-container { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
+        .lottery-ball { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: #cbd5e1; color: #334155; font-weight: 700; font-size: 13px; }
+
+        /* --- 球色分級 --- */
+        .ball-normal-3p { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; }
+        .ball-normal-weekly { background: linear-gradient(135deg, #64748b, #334155); color: #fff; }
+        .ball-adv-3p { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: 1px solid #fff; }
+        .ball-adv-weekly { background: linear-gradient(135deg, #06b6d4, #0891b2); color: #fff; border: 1px solid #fff; }
+        .ball-god-3p { background: linear-gradient(135deg, #a855f7, #6b21a8); color: #fff; border: 2px solid #fbbf24; animation: glow 1.5s infinite alternate; }
+        .ball-god-weekly { background: linear-gradient(135deg, #22c55e, #15803d); color: #fff; border: 2px solid #fff; animation: glow-g 1.5s infinite alternate; }
+        
+        @keyframes glow { from { transform: scale(1); } to { transform: scale(1.08); } }
+        @keyframes glow-g { from { transform: scale(1); } to { transform: scale(1.08); } }
+
+        /* --- 成本警示視覺樣式 --- */
+        .row-high-cost { opacity: 0.6; filter: grayscale(30%); }
+        .badge-warning { background: var(--high-rate-color); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 4px; }
+        .stop-loss-flash { color: var(--high-rate-color); font-weight: 900; animation: blink 0.8s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        .heatmap-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .heatmap-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; }
+        .heatmap-box { position: relative; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        .heatmap-badge { position: absolute; top: -5px; right: -5px; background: #000; color: #fff; border-radius: 50%; width: 14px; height: 14px; font-size: 9px; display: flex; align-items: center; justify-content: center; }
+
+        .status-active { color: #2563eb; font-weight: 700; }
+        .status-hit { color: #16a34a; font-weight: 700; }
+        .status-miss { color: #dc2626; font-weight: 700; }
+
+        @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+    <h1>三期牌 / 週牌 (決策優化版)</h1>
+
+    <div id="statsGrid" class="stats-grid">
+        <div class="stat-card"><div class="stat-label">👑 神級三期</div><div id="godT" class="stat-value" style="color:#a855f7;">0%</div><div id="godTD" class="info-text"></div><div id="godTB" class="detailed-stats"></div></div>
+        <div class="stat-card"><div class="stat-label">👑 神級週牌</div><div id="godW" class="stat-value" style="color:#22c55e;">0%</div><div id="godWD" class="info-text"></div><div id="godWB" class="detailed-stats"></div></div>
+        <div class="stat-card"><div class="stat-label">⭐ 高級三期</div><div id="advT" class="stat-value" style="color:#f59e0b;">0%</div><div id="advTD" class="info-text"></div><div id="advTB" class="detailed-stats"></div></div>
+        <div class="stat-card"><div class="stat-label">⭐ 高級週牌</div><div id="advW" class="stat-value" style="color:#06b6d4;">0%</div><div id="advWD" class="info-text"></div><div id="advWB" class="detailed-stats"></div></div>
+        <div class="stat-card"><div class="stat-label">常規三期</div><div id="norT" class="stat-value">0%</div><div id="norTD" class="info-text"></div><div id="norTB" class="detailed-stats"></div></div>
+        <div class="stat-card"><div class="stat-label">常規週牌</div><div id="norW" class="stat-value">0%</div><div id="norWD" class="info-text"></div><div id="norWB" class="detailed-stats"></div></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">數據載入</div>
+        <div class="control-group">
+            <select id="gameType">
+                <option value="mark6">🇭🇰 香港 六合彩</option>
+                <option value="649">🇹🇼 台灣 大樂透</option>
+                <option value="539" selected>🇹🇼 台灣 今彩 539</option>
+                <option value="daily4">🇺🇸 加州 天天樂</option>
+                <option value="ghana">🇬🇭 迦納彩</option>
+            </select>
+            <input type="file" id="csvFile" accept=".csv">
+            <select id="autoLoadCsv">
+                <option value="">-- 自動載入 --</option>
+                <option value="Six_history_2026.csv">香港 六合彩</option>
+                <option value="649_history_2026.csv">台灣 大樂透</option>
+                <option value="539_history_2026.csv">台灣 今彩 539</option>
+                <option value="Fan_history_2026.csv">加州 天天樂</option>
+                <option value="Ghana_history_2026.csv">迦納彩</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="section"><div class="section-title">熱度分佈 (10期)</div><div id="heatmapContainer" class="heatmap-container"></div></div>
+    <div class="section"><div class="section-title">當前狙擊中 (視覺提醒)</div><div class="table-responsive"><table><thead><tr><th>類型</th><th>號碼</th><th>起始</th><th>剩餘</th><th>狀態</th></tr></thead><tbody id="activeBody"></tbody></table></div></div>
+    <div class="section"><div class="section-title">歷史命中紀錄</div><div class="history-container table-responsive"><table><thead><tr><th>起始日期</th><th>類型</th><th>目標號碼</th><th>結果</th><th>詳情</th></tr></thead><tbody id="historyBody"></tbody></table></div></div>
+</div>
+
+<script>
+    let allRecords = []; let currentHistoryData = [];
+    function toggleTheme() { const b = document.body; const t = b.getAttribute('data-theme'); const btn = document.querySelector('.theme-toggle'); if (t === 'dark') { b.removeAttribute('data-theme'); btn.textContent = '🌙'; } else { b.setAttribute('data-theme', 'dark'); btn.textContent = '☀️'; } }
+    function getFreq(n, idx) { let s = Math.max(0, idx - 9), c = 0; for (let i = s; i <= idx; i++) if (currentHistoryData[i].nums.includes(n)) c++; return c; }
+    function getTFreq(tail, idx) { let s = Math.max(0, idx - 9), c = 0; for (let i = s; i <= idx; i++) currentHistoryData[i].nums.forEach(n => { if (n % 10 === tail) c++; }); return c; }
+    function getRep(idx) { if (idx < 1) return 0; let l = currentHistoryData[idx].nums, p = currentHistoryData[idx-1].nums; return l.filter(n => p.includes(n)).length; }
+    function getOmi(n, idx) { let o = 0; for (let i = idx; i >= 0; i--) { if (currentHistoryData[i].nums.includes(n)) return o; o++; } return o; }
+
+    function formatBalls(nums, isT, type) {
+        return `<div class="ball-container">${nums.map(n => {
+            let cls = "";
+            if (isT) {
+                if (type.includes('👑')) cls = type.includes('三期') ? " ball-god-3p" : " ball-god-weekly";
+                else if (type.includes('⭐')) cls = type.includes('三期') ? " ball-adv-3p" : " ball-adv-weekly";
+                else cls = type.includes('三期') ? " ball-normal-3p" : " ball-normal-weekly";
+            }
+            return `<span class="lottery-ball ${cls}">${n.toString().padStart(2, '0')}</span>`;
+        }).join('')}</div>`;
+    }
+
+    document.getElementById('autoLoadCsv').addEventListener('change', e => { if (e.target.value) fetch(e.target.value).then(r => r.text()).then(t => processCSV(t)); });
+    document.getElementById('csvFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) { const r = new FileReader(); r.onload = ev => processCSV(r.result); r.readAsText(f); } });
+    document.getElementById('gameType').addEventListener('change', () => { if(currentHistoryData.length) recalculateAll(); });
+
+    function processCSV(text) {
+        const lines = text.trim().split('\n'); currentHistoryData = [];
+        for(let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(','); if(cols.length >= 6) {
+                let ns = []; for(let c=1; c<cols.length; c++) { let v = parseInt(cols[c]); if(!isNaN(v)) ns.push(v); }
+                currentHistoryData.push({ date: cols[0].trim(), nums: ns });
+            }
+        } recalculateAll();
+    }
+
+    function recalculateAll() {
+        allRecords = [];
+        for(let i = 0; i < currentHistoryData.length; i++) {
+            const draw = currentHistoryData[i];
+            allRecords.forEach(r => { if(r.status === '進行中') { const hits = r.targets.filter(n => draw.nums.includes(n)); if(hits.length > 0) { r.status = '命中停止'; r.hitInfo = `${draw.date} 開出 ${hits.join(',')}`; } else { r.life--; if(r.life <= 0) { r.status = '未中結束'; r.hitInfo = '-'; } } } });
+            generateTargets(i);
+        } renderTables(); renderHeatmap();
+    }
+
+    function generateTargets(idx) {
+        const draw = currentHistoryData[idx]; const date = draw.date; const gt = document.getElementById('gameType').value;
+        let main = draw.nums.slice(0, (gt === '649' || gt === 'mark6' ? 6 : 5)).sort((a,b)=>a-b);
+        let pool3P = new Set();
+
+        // 1. 常規功能產生
+        for(let i=0; i<main.length-1; i++) {
+            let d = main[i+1]-main[i];
+            if(d>=4 && d<=6) { let t=[]; for(let k=1;k<d;k++) t.push(main[i]+k); allRecords.push({type:'三期牌 (連號)', targets:t, startDate:date, life:3, status:'進行中'}); t.forEach(n=>pool3P.add(n)); }
+        }
+        const tc = {}; main.map(n=>n%10).forEach(t=>tc[t]=(tc[t]||0)+1);
+        for(let t in tc) if(tc[t]>=2) { let tg=main.filter(n=>n%10==t); allRecords.push({type:'三期牌 (同尾)', targets:tg, startDate:date, life:3, status:'進行中'}); tg.forEach(n=>pool3P.add(n)); }
+
+        // 2. 神級/高級過濾
+        let god3P=[], adv3P=[], rep=getRep(idx);
+        pool3P.forEach(n => {
+            let o=getOmi(n,idx), tf=getTFreq(n%10,idx), isO=n%2!==0;
+            if(gt==='daily4' && o>=8 && o<=11) { if(rep===0 && [6,7].includes(tf) && isO) god3P.push(n); else if(rep<=1 && [4,5,6,7].includes(tf)) adv3P.push(n); }
+            else if(gt==='539' && o>=8 && o<=15) { if(rep===0 && [6,7,8].includes(tf)) god3P.push(n); else if(rep<=1 && [5,6,7,8].includes(tf)) adv3P.push(n); }
+            else if(gt==='ghana' && o>=2 && o<=15) { if(rep>=3 && [5,6,7].includes(tf)) god3P.push(n); else if(rep>=2 && [4,5,6,7].includes(tf)) adv3P.push(n); }
+            else if(gt==='649' && [6,7,12].includes(o) && rep===0 && tf===2 && isO) god3P.push(n);
+            else if(gt==='mark6' && [8,9,15].includes(o) && rep<=1 && [5,6,7].includes(tf) && n<=25) god3P.push(n);
+        });
+        if(god3P.length) allRecords.push({type:'👑 神級三期牌 (過擬合風險)', targets:god3P, startDate:date, life:3, status:'進行中'});
+        if(adv3P.length) allRecords.push({type:'⭐ 高級三期牌', targets:adv3P, startDate:date, life:3, status:'進行中'});
+
+        // 3. 週牌功能
+        const day = new Date("2026/"+date).getDay();
+        if((gt==='daily4' && day===0) || (['539','ghana'].includes(gt) && day===6)) {
+            let sIdx=Math.max(0, idx-9), past=[]; for(let k=sIdx;k<=idx;k++) past.push(...currentHistoryData[k].nums.slice(0,5));
+            let fq={}; past.forEach(n=>fq[n]=(fq[n]||0)+1);
+            let top6=Object.keys(fq).map(Number).sort((a,b)=>fq[b]-fq[a] || a-b).slice(0,6);
+            allRecords.push({type:'週牌 (常規)', targets:top6, startDate:date, life:6, status:'進行中'});
+            let godW=[], advW=[];
+            top6.forEach(n => {
+                let o=getOmi(n,idx), f=getFreq(n,idx);
+                if((gt==='daily4' && [0,1,2].includes(o)) || (gt==='539' && [0,1].includes(o)) || (gt==='ghana' && [0,1,2].includes(o))) {
+                    if(gt==='daily4') { if(f===5 || (f===4&&o===0) || (f===2&&o===1)) godW.push(n); else if(f===4 || (f===3&&o<=1)) advW.push(n); }
+                    else if(gt==='539') { if((f===2||f===5)&&o===0) godW.push(n); else if(f===3 || (f===4&&o===0)) advW.push(n); }
+                    else if(gt==='ghana') { if((f===2&&o>=1)||(f===4&&o===2)) godW.push(n); else if(f===3||f===5) advW.push(n); }
+                }
+            });
+            if(godW.length) allRecords.push({type:'👑 神級週牌 (過擬合風險)', targets:godW, startDate:date, life:6, status:'進行中'});
+            if(advW.length) allRecords.push({type:'⭐ 高級週牌', targets:advW, startDate:date, life:6, status:'進行中'});
+        }
+    }
+
+    function renderTables() {
+        const ab=document.getElementById('activeBody'); const hb=document.getElementById('historyBody'); ab.innerHTML=hb.innerHTML='';
+        let s={ godT:{t:0,h:0}, godW:{t:0,h:0}, advT:{t:0,h:0}, advW:{t:0,h:0}, norT:{t:0,h:0}, norW:{t:0,h:0} };
+        let bks={ godT:'godTB', godW:'godWB', advT:'advTB', advW:'advWB', norT:'norTB', norW:'norWB' };
+        Object.keys(bks).forEach(id=>document.getElementById(bks[id]).innerHTML='');
+        let typeStats={};
+
+        [...allRecords].reverse().forEach(r => {
+            const isG=r.type.includes('👑'), isA=r.type.includes('⭐'), is3=r.type.includes('三期');
+            const isHighCost = r.targets.length > 3;
+            
+            if(r.status!=='進行中'){
+                let k=(isG?'god':(isA?'adv':'nor'))+(is3?'T':'W'); s[k].t++;
+                if(r.status==='命中停止'){ s[k].h++; typeStats[r.type]=(typeStats[r.type]||{t:0,h:0}); typeStats[r.type].t++; typeStats[r.type].h++; }
+                else { typeStats[r.type]=(typeStats[r.type]||{t:0,h:0}); typeStats[r.type].t++; }
+            }
+            
+            const sCls=r.status==='進行中'?'status-active':(r.status==='命中停止'?'status-hit':'status-miss');
+            const lifeCls = (r.status==='進行中' && r.life === 1) ? 'stop-loss-flash' : '';
+            const costBadge = isHighCost ? '<span class="badge-warning">⚠️ 成本高</span>' : '';
+            const rowClass = isHighCost ? 'class="row-high-cost"' : '';
+
+            const row=`<td ${rowClass}><span style="font-weight:700;">${r.type}</span>${costBadge}</td><td ${rowClass}>${formatBalls(r.targets,true,r.type)}</td><td ${rowClass}>${r.startDate}</td><td ${rowClass}><span class="${lifeCls}">${r.status==='進行中'?r.life:'-'}</span></td><td><span class="${sCls}">${r.status}</span></td>`;
+            if(r.status==='進行中') ab.innerHTML+=`<tr>${row}</tr>`;
+            else hb.innerHTML+=`<tr><td>${r.startDate}</td>${row.replace(`<td>${r.startDate}</td>`,'')}<td>${r.hitInfo}</td></tr>`;
+        });
+
+        const update=(id,obj)=>{ document.getElementById(id).innerText=obj.t?(obj.h/obj.t*100).toFixed(1)+'%':'0%'; document.getElementById(id+'D').innerText=`結束:${obj.t}|命中:${obj.h}`; };
+        update('godT',s.godT); update('godW',s.godW); update('advT',s.advT); update('advW',s.advW); update('norT',s.norT); update('norW',s.norW);
+        
+        Object.keys(typeStats).forEach(type=>{
+            let st=typeStats[type], k=(type.includes('👑')?'god':(type.includes('⭐')?'adv':'nor'))+(type.includes('三期')?'T':'W');
+            document.getElementById(bks[k]).innerHTML+=`<div class="detailed-stats-row"><span>${type}</span><span>${st.h}/${st.t}</span></div>`;
+        });
+    }
+
+    function renderHeatmap() {
+        const container=document.getElementById('heatmapContainer'); container.innerHTML=''; if(!currentHistoryData.length) return;
+        const gt=document.getElementById('gameType').value; const maxN=(gt==='649'||gt==='mark6')?49:39;
+        const freq={}; for(let i=1; i<=maxN; i++) freq[i]=0;
+        currentHistoryData.slice(-10).forEach(d=>d.nums.forEach(n=>{if(n<=maxN) freq[n]++;}));
+        for(let i=1; i<=maxN; i++){
+            let c=freq[i], o=getOmi(i,currentHistoryData.length-1);
+            let bg=c===0?'#f1f5f9':(c===1?'#4ade80':(c===2?'#fbbf24':'#ef4444'));
+            container.innerHTML+=`<div class="heatmap-item"><div class="heatmap-box" style="background:${bg}; color:${c>0?'#fff':'#94a3b8'}">${i.toString().padStart(2,'0')}${c>0?`<span class="heatmap-badge">${c}</span>`:''}</div><span>漏${o}</span></div>`;
+        }
+    }
+</script>
+</body>
+</html>
