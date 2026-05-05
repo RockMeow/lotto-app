@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 星期慣性與馬可夫矩陣 (全表分析版)</title>
+    <title>AI 星期慣性與馬可夫矩陣 (純淨實戰版)</title>
     <style>
         /* =========================================
            現代化 UI 變數與亮色模式
@@ -24,8 +24,6 @@
             --tr-hover: #f1f5f9;
             --highlight-bg: #e0e7ff;
             --highlight-text: #3730a3;
-            --success-color: #16a34a;
-            --danger-color: #dc2626;
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -59,7 +57,7 @@
         }
         
         .container { 
-            max-width: 1000px; margin: auto; background: var(--container-bg); padding: 35px; border-radius: 20px; 
+            max-width: 900px; margin: auto; background: var(--container-bg); padding: 35px; border-radius: 20px; 
             box-shadow: var(--shadow-lg); position: relative;
         }
         
@@ -74,42 +72,39 @@
         .theme-toggle:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 
         .section { background: var(--section-bg); border: 1px solid var(--section-border); padding: 25px; border-radius: 16px; margin-bottom: 24px; box-shadow: var(--shadow-sm); }
-        .section-title { font-weight: 700; font-size: 1.25em; margin-bottom: 8px; color: var(--text-color); display: flex; align-items: center; }
+        .section-title { font-weight: 800; font-size: 1.3em; margin-bottom: 8px; color: var(--text-color); display: flex; align-items: center; }
         .section-title::before { content: ""; width: 6px; height: 20px; background: var(--primary-color); margin-right: 12px; border-radius: 6px; }
-        .section-desc { font-size: 0.9em; opacity: 0.7; margin-bottom: 20px; margin-left: 18px; }
+        .section-desc { font-size: 0.95em; opacity: 0.7; margin-bottom: 20px; margin-left: 18px; font-weight: 500;}
 
         .control-group { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; }
-        select { padding: 12px 16px; border-radius: 10px; border: 1px solid var(--card-border); font-size: 15px; color: var(--text-color); background-color: var(--container-bg); cursor: pointer; outline: none; transition: all 0.2s; font-weight: 600; width: 100%; max-width: 400px; }
+        select { padding: 12px 16px; border-radius: 10px; border: 1px solid var(--card-border); font-size: 15px; color: var(--text-color); background-color: var(--container-bg); cursor: pointer; outline: none; transition: all 0.2s; font-weight: 600; width: 100%; max-width: 400px; box-shadow: var(--shadow-sm); }
         select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
 
         /* 表格樣式 */
         .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--td-border); }
-        table { width: 100%; border-collapse: collapse; font-size: 0.95em; min-width: 600px; }
-        th, td { border-bottom: 1px solid var(--td-border); padding: 14px 12px; text-align: center; }
-        th { background-color: var(--th-bg); color: var(--text-color); font-weight: 700; white-space: nowrap; position: sticky; top: 0; z-index: 1; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.98em; min-width: 600px; }
+        th, td { border-bottom: 1px solid var(--td-border); padding: 16px 14px; text-align: center; }
+        th { background-color: var(--th-bg); color: var(--text-color); font-weight: 800; white-space: nowrap; position: sticky; top: 0; z-index: 1; }
         tr:nth-child(even) { background-color: var(--tr-even); }
         tr:hover { background-color: var(--tr-hover); }
 
-        /* 動能條樣式 */
-        .progress-bar-container { width: 100%; max-width: 150px; background: var(--card-border); border-radius: 8px; height: 10px; margin: 0 auto; overflow: hidden; }
-        .progress-bar { height: 100%; background: var(--primary-color); border-radius: 8px; }
-        .progress-hot { background: #f59e0b; }
-        .progress-cold { background: #3b82f6; opacity: 0.6; }
-
         /* 標籤樣式 */
-        .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85em; }
+        .badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-weight: 800; font-size: 0.95em; letter-spacing: 0.5px; }
         .badge-hot { background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid #fcd34d; }
-        .badge-cold { background: rgba(59, 130, 246, 0.1); color: #2563eb; border: 1px solid #bfdbfe; opacity: 0.8; }
-        .badge-normal { background: var(--highlight-bg); color: var(--highlight-text); }
-        .badge-pred { background: #10b981; color: white; padding: 6px 12px; border-radius: 8px; font-size: 1.1em; }
+        .badge-cold { background: rgba(220, 38, 38, 0.1); color: #dc2626; border: 1px solid #fca5a5; }
+        .badge-formula { background: var(--highlight-bg); color: var(--highlight-text); border: 1px solid rgba(79, 70, 229, 0.3); }
 
         [data-theme="dark"] .badge-hot { color: #fbbf24; border-color: #b45309; }
-        [data-theme="dark"] .badge-cold { color: #60a5fa; border-color: #1e3a8a; }
+        [data-theme="dark"] .badge-cold { color: #f87171; border-color: #991b1b; }
 
-        .rank-1 { font-size: 1.3em; font-weight: 900; color: #f59e0b; }
-        .rank-2 { font-size: 1.15em; font-weight: 800; color: #94a3b8; }
-        .rank-3 { font-size: 1.1em; font-weight: 800; color: #b45309; }
+        .weekday-col { font-size: 1.1em; font-weight: 900; color: var(--primary-color); }
+        .rate-col { font-weight: 900; color: #16a34a; font-size: 1.1em; }
+        .prob-text { font-weight: 800; margin-left: 6px; font-size: 0.9em; opacity: 0.8; }
 
+        @media (max-width: 768px) {
+            .container { padding: 25px 15px; }
+            h1 { font-size: 1.8em; }
+        }
     </style>
 </head>
 <body>
@@ -117,12 +112,12 @@
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
     <h1>AI 星期慣性 & 馬可夫矩陣</h1>
-    <div class="subtitle" id="targetDateInfo">請先載入歷史數據庫</div>
+    <div class="subtitle">動態量化預測看板 (獨立實戰版)</div>
 
     <div class="section" style="border: none; box-shadow: none; padding: 0 25px;">
         <div class="control-group">
             <select id="autoLoadCsv">
-                <option value="">-- 請選擇歷史數據庫載入 --</option>
+                <option value="">-- 請選擇歷史數據庫自動演算 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
                 <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
                 <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -133,19 +128,18 @@
     </div>
 
     <div class="section" id="formulaSection" style="display: none;">
-        <div class="section-title">🏆 專屬星期動態公式 (最強預測排名)</div>
-        <div class="section-desc">針對「下一期」的專屬星期，系統自動回測歷史數據，找出目前勝率最高的加減法公式。</div>
+        <div class="section-title">📅 每週七日專屬動態公式 (絕對最強)</div>
+        <div class="section-desc">系統動態掃描歷史，為星期一至星期日各別找出當下勝率「最高」的單一尾數加減法。</div>
         
-        <div class="table-responsive" style="max-height: 400px;">
+        <div class="table-responsive">
             <table id="formulaTable">
                 <thead>
                     <tr>
-                        <th>排名</th>
+                        <th>星期</th>
                         <th>參考基準</th>
-                        <th>計算公式</th>
+                        <th>最強計算公式</th>
                         <th>歷史勝率</th>
                         <th>命中/總次數</th>
-                        <th>👉 明天預測尾數</th>
                     </tr>
                 </thead>
                 <tbody id="formulaBody"></tbody>
@@ -154,17 +148,17 @@
     </div>
 
     <div class="section" id="markovSection" style="display: none;">
-        <div class="section-title">🧬 馬可夫鏈尾數傳染 (狀態轉移機率矩陣)</div>
-        <div class="section-desc" id="markovDesc">根據昨晚開出的尾數，動態計算所有尾數在「明天」被感染開出的真實機率。</div>
+        <div class="section-title">🧬 馬可夫鏈尾數傳染矩陣 (完整對照)</div>
+        <div class="section-desc">動態計算狀態轉移矩陣。根據今晚開出的尾數，對照下表尋找明天「最強被感染」與「最不可能開出」的尾數。</div>
         
         <div class="table-responsive">
             <table id="markovTable">
                 <thead>
                     <tr>
-                        <th>預測尾數</th>
-                        <th>綜合傳染機率</th>
-                        <th>機率動能條</th>
-                        <th>狀態評估</th>
+                        <th>如果今晚開出...</th>
+                        <th>🎯 明天最強傳染尾</th>
+                        <th>🎯 明天次強傳染尾</th>
+                        <th>❄️ 明天絕對死角 (避開)</th>
                     </tr>
                 </thead>
                 <tbody id="markovBody"></tbody>
@@ -176,7 +170,9 @@
 
 <script>
     let rawData = [];
-    const weekdayNames = ["日", "一", "二", "三", "四", "五", "六"];
+    // 定義星期的排序 (週一到週日)
+    const weekdayDisplayOrder = [1, 2, 3, 4, 5, 6, 0]; 
+    const weekdayNames = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
 
     function toggleTheme() {
         const body = document.body;
@@ -196,12 +192,6 @@
             return new Date(`2026-${m}-${d}T00:00:00`);
         }
         return new Date();
-    }
-    
-    function getNextDayInfo(dateStr) {
-        let d = parseDateObj(dateStr);
-        d.setDate(d.getDate() + 1);
-        return { wd: d.getDay(), str: `${d.getMonth()+1}/${d.getDate()}` };
     }
 
     document.getElementById('autoLoadCsv').addEventListener('change', function(e) {
@@ -223,15 +213,15 @@
         runAnalysis();
     }
 
-    // 核心 AI 1：找出所有動態公式並排序
-    function findAllDynamicFormulas(dataSlice, targetWd) {
+    // 核心 AI 1：找出單一星期的最佳公式
+    function findBestDynamicFormula(dataSlice, targetWd) {
         let evalDraws = [];
         for(let k=7; k<dataSlice.length; k++) {
             if(dataSlice[k].wd === targetWd) evalDraws.push(k);
         }
         
         let total = evalDraws.length;
-        if(total < 3) return []; 
+        if(total < 3) return null; 
 
         let rulesStats = {};
         for(let lagType of ['lag1', 'lag_wd']) {
@@ -263,44 +253,27 @@
             }
         });
 
-        let results = [];
+        let bestRuleKey = ""; let maxHits = -1;
         for(let key in rulesStats) {
-            let hits = rulesStats[key];
-            let rate = hits / total;
-            let parts = key.split('_');
-            let lagName = parts[0] === 'lag1' ? '昨晚(上期)' : '上週同日';
-            let opSymbol = parts[1] === 'add' ? '+' : '-';
-            let iIdx = parseInt(parts[2]); let jIdx = parseInt(parts[3]);
-            
-            results.push({
-                key: key, lagType: parts[0], op: parts[1], i: iIdx, j: jIdx,
-                lagName: lagName,
-                calcName: `第${jIdx+1}碼 ${opSymbol} 第${iIdx+1}碼`,
-                rate: rate, hits: hits, total: total
-            });
+            // 取勝率最高，若相同則由自然順序決定
+            if(rulesStats[key] > maxHits) { maxHits = rulesStats[key]; bestRuleKey = key; }
         }
         
-        results.sort((a, b) => b.rate !== a.rate ? b.rate - a.rate : b.hits - a.hits);
-        return results;
+        let rate = maxHits / total;
+        let parts = bestRuleKey.split('_');
+        let lagName = parts[0] === 'lag1' ? '昨晚 (上期)' : '上週同日';
+        let opSymbol = parts[1] === 'add' ? '+' : '-';
+        let iIdx = parseInt(parts[2]); let jIdx = parseInt(parts[3]);
+        
+        return {
+            lagName: lagName,
+            calcName: `第${jIdx+1}碼 ${opSymbol} 第${iIdx+1}碼`,
+            rate: rate, hits: maxHits, total: total
+        };
     }
 
-    function calculateTail(dataSlice, targetWd, rule) {
-        let L = dataSlice.length;
-        let refNums = [];
-        if(rule.lagType === 'lag1') {
-            refNums = dataSlice[L-1].nums;
-        } else {
-            for(let p=L-1; p>=0; p--) {
-                if(dataSlice[p].wd === targetWd) { refNums = dataSlice[p].nums; break; }
-            }
-        }
-        if(refNums.length === 0) return "-";
-        if(rule.op === 'add') return (refNums[rule.i] + refNums[rule.j]) % 10;
-        else return Math.abs(refNums[rule.j] - refNums[rule.i]) % 10;
-    }
-
-    // 核心 AI 2：馬可夫矩陣分數
-    function getMarkovScores(dataSlice) {
+    // 核心 AI 2：馬可夫狀態轉移矩陣
+    function getMarkovMatrixAll(dataSlice) {
         let trans = {}; let counts = {};
         for(let i=0; i<10; i++) { trans[i] = {}; counts[i] = 0; for(let j=0; j<10; j++) trans[i][j] = 0; }
         
@@ -310,24 +283,24 @@
             todayTails.forEach(t1 => { counts[t1]++; tmrwTails.forEach(t2 => { trans[t1][t2]++; }); });
         }
         
-        let lastTails = [...new Set(dataSlice[dataSlice.length-1].nums.map(n=>n%10))];
-        let scores = [];
-        
-        for(let tNext=0; tNext<10; tNext++) {
-            let totalProb = 0;
-            let validCount = 0;
-            lastTails.forEach(tPrev => {
-                if(counts[tPrev] > 0) {
-                    totalProb += (trans[tPrev][tNext] / counts[tPrev]);
-                    validCount++;
+        let results = [];
+        for(let t=0; t<10; t++) {
+            if(counts[t] > 0) {
+                let probs = [];
+                for(let nextT=0; nextT<10; nextT++) {
+                    probs.push({ tail: nextT, prob: trans[t][nextT] / counts[t] });
                 }
-            });
-            let avgProb = validCount > 0 ? (totalProb / validCount) : 0;
-            scores.push({ tail: tNext, prob: avgProb * 100 });
+                probs.sort((a,b) => b.prob - a.prob); // 降冪排序
+                
+                results.push({
+                    today: t,
+                    top1: probs[0],
+                    top2: probs[1],
+                    worst: probs[probs.length-1]
+                });
+            }
         }
-        
-        scores.sort((a,b) => b.prob - a.prob);
-        return { scores: scores, lastTails: lastTails.sort() };
+        return results;
     }
 
     function runAnalysis() {
@@ -337,57 +310,35 @@
         const L = rawData.length;
         if(L < 40) return;
 
-        let lastDraw = rawData[L-1];
-        let nextInfo = getNextDayInfo(lastDraw.date);
-        document.getElementById('targetDateInfo').innerText = `預測目標：${nextInfo.str} (星期${weekdayNames[nextInfo.wd]})`;
-        
-        // --- 渲染公式表 ---
-        let rules = findAllDynamicFormulas(rawData, nextInfo.wd);
+        // --- 1. 渲染每週七日公式表 ---
         let fHtml = '';
-        // 取前 15 名
-        rules.slice(0, 15).forEach((r, idx) => {
-            let predTail = calculateTail(rawData, nextInfo.wd, r);
-            let rankClass = idx === 0 ? 'rank-1' : (idx === 1 ? 'rank-2' : (idx === 2 ? 'rank-3' : ''));
-            let rankIcon = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : idx + 1));
-            
-            fHtml += `<tr>
-                <td class="${rankClass}">${rankIcon}</td>
-                <td style="font-weight:600;">${r.lagName}</td>
-                <td><span class="badge badge-normal">${r.calcName}</span></td>
-                <td style="font-weight:700; color:var(--primary-color);">${(r.rate*100).toFixed(1)}%</td>
-                <td style="opacity:0.8;">${r.hits} / ${r.total}</td>
-                <td><span class="badge badge-pred">${predTail} 尾</span></td>
-            </tr>`;
+        weekdayDisplayOrder.forEach(wd => {
+            let rule = findBestDynamicFormula(rawData, wd);
+            if(rule) {
+                fHtml += `<tr>
+                    <td class="weekday-col">${weekdayNames[wd]}</td>
+                    <td style="font-weight:700; opacity: 0.9;">${rule.lagName}</td>
+                    <td><span class="badge badge-formula">${rule.calcName}</span></td>
+                    <td class="rate-col">${(rule.rate*100).toFixed(1)}%</td>
+                    <td style="font-weight:600; opacity:0.8;">${rule.hits} / ${rule.total}</td>
+                </tr>`;
+            }
         });
         document.getElementById('formulaBody').innerHTML = fHtml;
 
-        // --- 渲染馬可夫表 ---
-        let markovData = getMarkovScores(rawData);
-        document.getElementById('markovDesc').innerHTML = `昨晚開出尾數：<strong style="color:var(--primary-color);">${markovData.lastTails.join(', ')}</strong>。以下是這包尾數在明天引發各尾數感染的綜合機率。`;
-        
+        // --- 2. 渲染馬可夫矩陣表 ---
+        let markovData = getMarkovMatrixAll(rawData);
         let mHtml = '';
-        let maxProb = markovData.scores[0].prob; // 用於進度條比例
-        
-        markovData.scores.forEach((item, idx) => {
-            let widthPct = (item.prob / maxProb) * 100;
-            let status = '';
-            let pBarClass = 'progress-bar';
-            
-            if(idx < 3) { status = '<span class="badge badge-hot">🔥 強勢傳染</span>'; pBarClass += ' progress-hot'; }
-            else if(idx > 6) { status = '<span class="badge badge-cold">❄️ 冰凍死區</span>'; pBarClass += ' progress-cold'; }
-            else { status = '<span style="opacity:0.6; font-size:0.9em;">一般</span>'; }
-            
+        for(let i=0; i<10; i++) {
+            let m = markovData.find(x => x.today === i);
+            if(!m) continue;
             mHtml += `<tr>
-                <td style="font-size:1.2em; font-weight:800;">${item.tail} 尾</td>
-                <td style="font-weight:700;">${item.prob.toFixed(1)}%</td>
-                <td>
-                    <div class="progress-bar-container">
-                        <div class="${pBarClass}" style="width: ${widthPct}%"></div>
-                    </div>
-                </td>
-                <td>${status}</td>
+                <td style="font-size:1.15em; font-weight:800;">有 <span style="color:var(--primary-color); font-size:1.2em;">${m.today}</span> 尾</td>
+                <td><span class="badge badge-hot">🔥 ${m.top1.tail} 尾</span> <span class="prob-text">(${(m.top1.prob*100).toFixed(1)}%)</span></td>
+                <td><span class="badge badge-hot" style="opacity:0.95;">🔥 ${m.top2.tail} 尾</span> <span class="prob-text">(${(m.top2.prob*100).toFixed(1)}%)</span></td>
+                <td><span class="badge badge-cold">❌ ${m.worst.tail} 尾</span> <span class="prob-text">(${(m.worst.prob*100).toFixed(1)}%)</span></td>
             </tr>`;
-        });
+        }
         document.getElementById('markovBody').innerHTML = mHtml;
     }
 </script>
