@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 星期慣性與馬可夫矩陣 (純淨實戰版)</title>
+    <title>星期慣性與馬可夫矩陣</title>
     <style>
         /* =========================================
            現代化 UI 變數與亮色模式
@@ -111,13 +111,13 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>AI 星期慣性 & 馬可夫矩陣</h1>
-    <div class="subtitle">動態量化預測看板 (獨立實戰版)</div>
+    <h1>星期慣性 & 馬可夫矩陣</h1>
+    <div class="subtitle">動態預測</div>
 
     <div class="section" style="border: none; box-shadow: none; padding: 0 25px;">
         <div class="control-group">
             <select id="autoLoadCsv">
-                <option value="">-- 請選擇歷史數據庫自動演算 --</option>
+                <option value="">-- 請選擇彩球類型 --</option>
                 <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
                 <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
                 <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -128,7 +128,7 @@
     </div>
 
     <div class="section" id="formulaSection" style="display: none;">
-        <div class="section-title">📅 每週七日專屬動態公式 (絕對最強)</div>
+        <div class="section-title">每星期專屬動態公式</div>
         <div class="section-desc">系統動態掃描歷史，為星期一至星期日各別找出當下勝率「最高」的單一尾數加減法。</div>
         
         <div class="table-responsive">
@@ -137,7 +137,7 @@
                     <tr>
                         <th>星期</th>
                         <th>參考基準</th>
-                        <th>最強計算公式</th>
+                        <th>計算公式</th>
                         <th>歷史勝率</th>
                         <th>命中/總次數</th>
                     </tr>
@@ -148,17 +148,17 @@
     </div>
 
     <div class="section" id="markovSection" style="display: none;">
-        <div class="section-title">🧬 馬可夫鏈尾數傳染矩陣 (完整對照)</div>
+        <div class="section-title">🧬 馬可夫鏈尾數傳染矩陣 (對照)</div>
         <div class="section-desc">動態計算狀態轉移矩陣。根據今晚開出的尾數，對照下表尋找明天「最強被感染」與「最不可能開出」的尾數。</div>
         
         <div class="table-responsive">
             <table id="markovTable">
                 <thead>
                     <tr>
-                        <th>如果今晚開出...</th>
-                        <th>🎯 明天最強傳染尾</th>
-                        <th>🎯 明天次強傳染尾</th>
-                        <th>❄️ 明天絕對死角 (避開)</th>
+                        <th>開出...</th>
+                        <th>🎯 明天最強尾數</th>
+                        <th>🎯 明天次強尾數</th>
+                        <th>❄️ 明天避開尾數</th>
                     </tr>
                 </thead>
                 <tbody id="markovBody"></tbody>
