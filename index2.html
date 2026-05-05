@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI 星期慣性與馬可夫鏈預測引擎</title>
+    <style>
+        /* =========================================
+           現代化 UI 變數與亮色模式
+           ========================================= */
+        :root {
+            --bg-color: #f8fafc; 
+            --container-bg: #ffffff;
+            --text-color: #334155;
+            --heading-color: #0f172a;
+            --primary-color: #4f46e5;
+            --section-bg: #ffffff;
+            --section-border: #e2e8f0;
+            --card-bg: #f1f5f9;
+            --card-border: #cbd5e1;
+            --th-bg: #f8fafc;
+            --td-border: #e2e8f0;
+            --tr-even: #ffffff;
+            --tr-hover: #f1f5f9;
+            --highlight-bg: #e0e7ff;
+            --highlight-text: #3730a3;
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* =========================================
+           深色模式設定
+           ========================================= */
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --container-bg: #1e293b;
+            --text-color: #f1f5f9;
+            --heading-color: #e2e8f0;
+            --primary-color: #818cf8;
+            --section-bg: #1e293b;
+            --section-border: #334155;
+            --card-bg: #0f172a;
+            --card-border: #334155;
+            --th-bg: #0f172a;
+            --td-border: #334155;
+            --tr-even: #1e293b;
+            --tr-hover: #334155;
+            --highlight-bg: #312e81;
+            --highlight-text: #c7d2fe;
+        }
+
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            line-height: 1.6; padding: 20px 10px; background-color: var(--bg-color); color: var(--text-color); margin: 0;
+            transition: all 0.3s;
+        }
+        
+        .container { 
+            max-width: 1000px; margin: auto; background: var(--container-bg); padding: 35px; border-radius: 20px; 
+            box-shadow: var(--shadow-lg); position: relative;
+        }
+        
+        h1 { color: var(--heading-color); text-align: center; margin-bottom: 5px; font-size: 2.2em; font-weight: 800; letter-spacing: -0.5px; }
+        .subtitle { text-align: center; color: var(--primary-color); font-weight: 600; margin-bottom: 30px; }
+
+        .theme-toggle {
+            position: absolute; top: 25px; right: 25px; background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 50%; width: 44px; height: 44px; font-size: 1.2em; cursor: pointer; color: var(--text-color);
+            display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); transition: transform 0.2s;
+        }
+        .theme-toggle:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+        .section { background: var(--section-bg); border: 1px solid var(--section-border); padding: 25px; border-radius: 16px; margin-bottom: 24px; box-shadow: var(--shadow-sm); }
+        .section-title { font-weight: 700; font-size: 1.25em; margin-bottom: 20px; color: var(--text-color); display: flex; align-items: center; }
+        .section-title::before { content: ""; width: 6px; height: 20px; background: var(--primary-color); margin-right: 12px; border-radius: 6px; }
+
+        .control-group { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; }
+        select { padding: 12px 16px; border-radius: 10px; border: 1px solid var(--card-border); font-size: 15px; color: var(--text-color); background-color: var(--container-bg); cursor: pointer; outline: none; transition: all 0.2s; font-weight: 600; }
+        select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
+        
+        /* 預測面板樣式 */
+        .prediction-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .pred-box { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; }
+        .pred-title { font-size: 0.9em; font-weight: 800; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display:flex; align-items: center; gap:8px;}
+        .pred-rule { font-size: 1.2em; font-weight: 700; margin-bottom: 8px; }
+        .pred-desc { font-size: 0.9em; opacity: 0.8; margin-bottom: 15px; line-height: 1.4; }
+        .pred-result { background: var(--highlight-bg); color: var(--highlight-text); padding: 12px 15px; border-radius: 10px; font-weight: 800; font-size: 1.2em; display: inline-block; border-left: 4px solid var(--primary-color); }
+        
+        .final-balls-box { grid-column: 1 / -1; background: linear-gradient(135deg, #4f46e5, #312e81); color: white; border-radius: 16px; padding: 25px; text-align: center; box-shadow: var(--shadow-md); position: relative; }
+        [data-theme="dark"] .final-balls-box { background: linear-gradient(135deg, #3730a3, #1e1b4b); border: 1px solid #4f46e5; }
+        .final-title { font-size: 1.2em; font-weight: 800; margin-bottom: 5px; color: #e0e7ff; }
+        .final-subtitle { font-size: 0.9em; opacity: 0.8; margin-bottom: 20px; }
+
+        .ball-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .lottery-ball {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 40px; height: 40px; border-radius: 50%;
+            background: #e2e8f0; color: #475569; font-weight: 800; font-size: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;
+        }
+        .lottery-ball:hover { transform: scale(1.1); }
+        
+        /* 推薦球樣式 */
+        .ball-match-1 { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: 2px solid #fef3c7; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4); }
+        .ball-match-2 { background: linear-gradient(135deg, #ec4899, #be185d); color: white; border: 2px solid #fce7f3; box-shadow: 0 0 15px #ec4899, 0 0 5px #fff; animation: pulse 1.5s infinite alternate; }
+        
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.08); } }
+
+        /* 表格樣式 */
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--td-border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; min-width: 600px; }
+        th, td { border-bottom: 1px solid var(--td-border); padding: 14px 12px; text-align: center; }
+        th { background-color: var(--th-bg); color: var(--text-color); font-weight: 700; white-space: nowrap; }
+        tr:nth-child(even) { background-color: var(--tr-even); }
+        tr:hover { background-color: var(--tr-hover); }
+
+        .hit-yes { color: var(--success-color); font-weight: 800; background: rgba(22, 163, 74, 0.1); padding: 4px 10px; border-radius: 6px; }
+        .hit-no { color: var(--danger-color); font-weight: 600; opacity: 0.7; }
+        
+        @media (max-width: 768px) {
+            .prediction-panel { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+    <h1>AI 星期慣性 & 馬可夫矩陣</h1>
+    <div class="subtitle">動態時間序列波段預測引擎 (獨立特化版)</div>
+
+    <div class="section">
+        <div class="control-group">
+            <select id="autoLoadCsv">
+                <option value="">-- 請選擇歷史數據庫載入 --</option>
+                <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
+                <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
+                <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
+                <option value="Fan_history_2026.csv">🇺🇸 加州 天天樂</option>
+                <option value="Ghana_history_2026.csv">🇬🇭 非洲 迦納彩</option>
+            </select>
+            <span style="font-size: 0.9em; opacity: 0.7;">載入瞬間將自動計算歷史最佳公式</span>
+        </div>
+    </div>
+
+    <div class="section" id="predictionSection" style="display: none;">
+        <div class="section-title">🔮 下一期精準預測指南</div>
+        <div id="targetDateInfo" style="font-size: 1.1em; font-weight: 700; margin-bottom: 20px; text-align: center; color: var(--primary-color);"></div>
+        
+        <div class="prediction-panel">
+            <div class="pred-box">
+                <div class="pred-title">🧮 專屬星期動態公式 (歷史最高勝率)</div>
+                <div id="mathRuleName" class="pred-rule">計算中...</div>
+                <div id="mathRuleDesc" class="pred-desc">系統正在掃描過去數據，尋找最強加減法...</div>
+                <div id="mathResult" class="pred-result">推算尾數：-</div>
+            </div>
+
+            <div class="pred-box">
+                <div class="pred-title">🧬 馬可夫鏈尾數傳染 (狀態轉移矩陣)</div>
+                <div class="pred-rule">基於昨晚的尾數動能</div>
+                <div id="markovDesc" class="pred-desc">分析多維度感染機率中...</div>
+                <div id="markovResult" class="pred-result">高機率傳染尾數：-</div>
+            </div>
+
+            <div class="final-balls-box">
+                <div class="final-title">🎯 終極推薦策略 (雙核過濾)</div>
+                <div class="final-subtitle">融合【動態公式】與【馬可夫傳染】的交集號碼，粉色閃爍為雙重命中之極品鐵牌。</div>
+                <div id="finalBalls" class="ball-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section" id="backtestSection" style="display: none;">
+        <div class="section-title">📊 近 30 期動態公式實戰回測 (證明絕無看未來)</div>
+        <div style="font-size: 0.85em; opacity: 0.8; margin-bottom: 15px;">此表模擬：在每一天開獎前，系統依據「當時」的歷史找出最佳公式，並對當天進行預測的真實結果。</div>
+        <div class="table-responsive">
+            <table id="backtestTable">
+                <thead>
+                    <tr>
+                        <th>預測日期</th>
+                        <th>星期</th>
+                        <th>當下最強公式</th>
+                        <th>預測尾數</th>
+                        <th>實際開出號碼</th>
+                        <th>結果</th>
+                    </tr>
+                </thead>
+                <tbody id="backtestBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let rawData = [];
+    const weekdayNames = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+
+    function toggleTheme() {
+        const body = document.body;
+        const currentTheme = body.getAttribute('data-theme');
+        const btn = document.querySelector('.theme-toggle');
+        if (currentTheme === 'dark') { body.removeAttribute('data-theme'); btn.textContent = '🌙'; } 
+        else { body.setAttribute('data-theme', 'dark'); btn.textContent = '☀️'; }
+    }
+
+    // 取得 JS Date 的 day (0=日, 1=一)
+    function parseDateObj(dateStr) {
+        let parts = dateStr.split('/');
+        if(parts.length === 2) {
+            let m = parts[0].padStart(2, '0'); let d = parts[1].padStart(2, '0');
+            return new Date(`2026-${m}-${d}T00:00:00`);
+        }
+        return new Date();
+    }
+    
+    // 取得下一天的日期物件與字串
+    function getNextDayInfo(dateStr) {
+        let d = parseDateObj(dateStr);
+        d.setDate(d.getDate() + 1);
+        return { wd: d.getDay(), str: `${d.getMonth()+1}/${d.getDate()}` };
+    }
+
+    document.getElementById('autoLoadCsv').addEventListener('change', function(e) {
+        const fileName = e.target.value; if (!fileName) return;
+        fetch(fileName).then(response => response.text()).then(text => { processCSV(text); });
+    });
+
+    function processCSV(text) {
+        const lines = text.trim().split('\n'); rawData = [];
+        for(let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',');
+            if(cols.length >= 6) {
+                let nums = [];
+                for(let c=1; c<cols.length; c++) { let val = parseInt(cols[c]); if(!isNaN(val)) nums.push(val); }
+                let dObj = parseDateObj(cols[0].trim());
+                rawData.push({ date: cols[0].trim(), wd: dObj.getDay(), nums: nums.sort((a,b)=>a-b) });
+            }
+        }
+        runAnalysis();
+    }
+
+    // 核心 AI 1：動態尋找歷史最佳加減法公式
+    function findBestDynamicFormula(dataSlice, targetWd) {
+        // dataSlice 模擬站在某一天看過去
+        let evalDraws = [];
+        for(let k=7; k<dataSlice.length; k++) {
+            if(dataSlice[k].wd === targetWd) evalDraws.push(k);
+        }
+        
+        let total = evalDraws.length;
+        if(total < 3) return null; // 樣本太少無法建立公式
+
+        let rulesStats = {};
+        // 定義所有可能的公式：上期(lag 1), 上週同日(尋找上一個同星期) 的 Ni +/- Nj
+        for(let lagType of ['lag1', 'lag_wd']) {
+            for(let i=0; i<4; i++) {
+                for(let j=i+1; j<5; j++) {
+                    rulesStats[`${lagType}_add_${i}_${j}`] = 0;
+                    rulesStats[`${lagType}_sub_${i}_${j}`] = 0;
+                }
+            }
+        }
+
+        evalDraws.forEach(k => {
+            let currTails = dataSlice[k].nums.map(n => n % 10);
+            
+            // 昨晚 (Lag 1)
+            let prev1 = dataSlice[k-1].nums;
+            // 上週同日 (尋找上一個出現該星期的 index)
+            let prevWdIdx = -1;
+            for(let p=k-1; p>=0; p--) { if(dataSlice[p].wd === targetWd) { prevWdIdx = p; break; } }
+            
+            for(let i=0; i<4; i++){
+                for(let j=i+1; j<5; j++){
+                    // Lag 1 check
+                    if(currTails.includes((prev1[i]+prev1[j])%10)) rulesStats[`lag1_add_${i}_${j}`]++;
+                    if(currTails.includes(Math.abs(prev1[j]-prev1[i])%10)) rulesStats[`lag1_sub_${i}_${j}`]++;
+                    
+                    // Lag Wd check
+                    if(prevWdIdx !== -1) {
+                        let pWd = dataSlice[prevWdIdx].nums;
+                        if(currTails.includes((pWd[i]+pWd[j])%10)) rulesStats[`lag_wd_add_${i}_${j}`]++;
+                        if(currTails.includes(Math.abs(pWd[j]-pWd[i])%10)) rulesStats[`lag_wd_sub_${i}_${j}`]++;
+                    }
+                }
+            }
+        });
+
+        // 找出最高勝率的公式
+        let bestRuleKey = ""; let maxHits = -1;
+        for(let key in rulesStats) {
+            if(rulesStats[key] > maxHits) { maxHits = rulesStats[key]; bestRuleKey = key; }
+        }
+        
+        let rate = maxHits / total;
+        let parts = bestRuleKey.split('_');
+        let lagName = parts[0] === 'lag1' ? '昨晚(上一期)' : '上週同日';
+        let opName = parts[1] === 'add' ? '加上' : '減去';
+        let opSymbol = parts[1] === 'add' ? '+' : '-';
+        let iIdx = parseInt(parts[2]); let jIdx = parseInt(parts[3]);
+        
+        return {
+            key: bestRuleKey, lagType: parts[0], op: parts[1], i: iIdx, j: jIdx,
+            desc: `取 ${lagName} 的 第${iIdx+1}碼 ${opName} 第${jIdx+1}碼`,
+            shortName: `${lagName} N${jIdx+1} ${opSymbol} N${iIdx+1}`,
+            rate: rate, hits: maxHits, total: total
+        };
+    }
+
+    // 計算特定公式在當下會得出什麼尾數
+    function calculateTail(dataSlice, targetWd, rule) {
+        let L = dataSlice.length;
+        let refNums = [];
+        if(rule.lagType === 'lag1') {
+            refNums = dataSlice[L-1].nums;
+        } else {
+            // 找上一個同星期
+            for(let p=L-1; p>=0; p--) {
+                if(dataSlice[p].wd === targetWd) { refNums = dataSlice[p].nums; break; }
+            }
+        }
+        if(refNums.length === 0) return -1;
+        
+        if(rule.op === 'add') return (refNums[rule.i] + refNums[rule.j]) % 10;
+        else return Math.abs(refNums[rule.j] - refNums[rule.i]) % 10;
+    }
+
+    // 核心 AI 2：馬可夫鏈傳染矩陣
+    function getMarkovTails(dataSlice) {
+        let trans = {}; let counts = {};
+        for(let i=0; i<10; i++) { trans[i] = {}; counts[i] = 0; for(let j=0; j<10; j++) trans[i][j] = 0; }
+        
+        for(let i=0; i<dataSlice.length-1; i++) {
+            let todayTails = [...new Set(dataSlice[i].nums.map(n=>n%10))];
+            let tmrwTails = [...new Set(dataSlice[i+1].nums.map(n=>n%10))];
+            todayTails.forEach(t1 => { counts[t1]++; tmrwTails.forEach(t2 => { trans[t1][t2]++; }); });
+        }
+        
+        // 取得最後一天的尾數來預測
+        let lastTails = [...new Set(dataSlice[dataSlice.length-1].nums.map(n=>n%10))];
+        let score = {}; for(let i=0; i<10; i++) score[i] = 0;
+        
+        lastTails.forEach(tPrev => {
+            if(counts[tPrev] > 0) {
+                for(let tNext=0; tNext<10; tNext++) {
+                    score[tNext] += (trans[tPrev][tNext] / counts[tPrev]);
+                }
+            }
+        });
+        
+        // 排序分數
+        let sortedTails = Object.keys(score).map(Number).sort((a,b)=>score[b]-score[a]);
+        return sortedTails.slice(0, 2); // 回傳最高傳染率的前兩個尾數
+    }
+
+    function runAnalysis() {
+        document.getElementById('predictionSection').style.display = 'block';
+        document.getElementById('backtestSection').style.display = 'block';
+        
+        const L = rawData.length;
+        if(L < 40) return;
+
+        // --- 1. 執行近 30 期動態回測 ---
+        let btHtml = '';
+        let startBt = L - 30;
+        for(let k = startBt; k < L; k++) {
+            let slice = rawData.slice(0, k); // 模擬站在 k-1 天看過去
+            let targetDraw = rawData[k];
+            
+            let rule = findBestDynamicFormula(slice, targetDraw.wd);
+            if(!rule) continue;
+            
+            let predTail = calculateTail(slice, targetDraw.wd, rule);
+            let actualTails = targetDraw.nums.map(n=>n%10);
+            let isHit = actualTails.includes(predTail);
+            
+            let resHtml = isHit ? `<span class="hit-yes">✔ 命中</span>` : `<span class="hit-no">✘ 未中</span>`;
+            let ballsHtml = targetDraw.nums.map(n=>String(n).padStart(2,'0')).join(', ');
+            
+            btHtml = `<tr>
+                <td>${targetDraw.date}</td>
+                <td>${weekdayNames[targetDraw.wd]}</td>
+                <td style="font-weight:600; color:var(--primary-color);">${rule.shortName}</td>
+                <td style="font-weight:800;">${predTail} 尾</td>
+                <td>${ballsHtml}</td>
+                <td>${resHtml}</td>
+            </tr>` + btHtml; // 反向插入，最新的在上面
+        }
+        document.getElementById('backtestBody').innerHTML = btHtml;
+
+        // --- 2. 執行最新一期(未來)的終極預測 ---
+        let lastDraw = rawData[L-1];
+        let nextInfo = getNextDayInfo(lastDraw.date);
+        
+        document.getElementById('targetDateInfo').innerText = `目前預測目標：${nextInfo.str} (${weekdayNames[nextInfo.wd]})`;
+        
+        // 尋找明天專屬公式
+        let bestRule = findBestDynamicFormula(rawData, nextInfo.wd);
+        let targetMathTail = calculateTail(rawData, nextInfo.wd, bestRule);
+        
+        document.getElementById('mathRuleName').innerText = bestRule.shortName;
+        document.getElementById('mathRuleDesc').innerHTML = `${bestRule.desc}<br><span style="font-size:0.9em; opacity:0.8;">(歷史套用此公式，勝率達 ${(bestRule.rate*100).toFixed(1)}%)</span>`;
+        document.getElementById('mathResult').innerText = `精算得出：【 ${targetMathTail} 尾 】`;
+        
+        // 馬可夫矩陣預測
+        let markovTails = getMarkovTails(rawData);
+        let prevTailsStr = [...new Set(lastDraw.nums.map(n=>n%10))].sort().join(',');
+        document.getElementById('markovDesc').innerHTML = `昨晚開出尾數 (${prevTailsStr})<br><span style="font-size:0.9em; opacity:0.8;">矩陣計算出最強感染率尾數</span>`;
+        document.getElementById('markovResult').innerText = `傳染首選：【 ${markovTails.join(' 尾, ')} 尾 】`;
+
+        // 生成 39 顆球的面板 (這裡假設是 39 選 5)
+        let ballsUI = '';
+        for(let i=1; i<=39; i++) {
+            let tail = i % 10;
+            let isMathHit = (tail === targetMathTail);
+            let isMarkovHit = markovTails.includes(tail);
+            
+            let bClass = 'lottery-ball';
+            if(isMathHit && isMarkovHit) bClass += ' ball-match-2'; // 雙重共振 (閃爍)
+            else if(isMathHit || isMarkovHit) bClass += ' ball-match-1'; // 單重命中
+            
+            ballsUI += `<div class="${bClass}">${String(i).padStart(2,'0')}</div>`;
+        }
+        document.getElementById('finalBalls').innerHTML = ballsUI;
+    }
+</script>
+</body>
+</html>
