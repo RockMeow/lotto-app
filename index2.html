@@ -261,7 +261,7 @@
         
         let rate = maxHits / total;
         let parts = bestRuleKey.split('_');
-        let lagName = parts[0] === 'lag1' ? '昨晚 (上期)' : '上週同日';
+        let lagName = parts[0] === 'lag1' ? ' (上期)' : '上週同星期';
         let opSymbol = parts[1] === 'add' ? '+' : '-';
         let iIdx = parseInt(parts[2]); let jIdx = parseInt(parts[3]);
         
