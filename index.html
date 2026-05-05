@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌 / 週牌 (AI)</title>
+    <title>三期牌 / 週牌 (動態)</title>
     <link rel="manifest" href="manifest.json">
     <style>
         /* =========================================
@@ -189,7 +189,7 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>三期牌 / 週牌 (AI)</h1>
+    <h1>三期牌 / 週牌 (動態)</h1>
 
     <div id="statsGrid" class="stats-grid">
         <div class="stat-card" id="godThreePeriodCard">
@@ -547,8 +547,8 @@
             if (isUltra) ultra3P.push(numVal);
             else if (isAdv) adv3P.push(numVal);
         });
-        if (ultra3P.length > 0) { allRecords.push({ type: '👑 三期牌 (高機率) [AI]', targets: ultra3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
-        if (adv3P.length > 0) { allRecords.push({ type: '⭐ 三期牌 (中機率) [AI]', targets: adv3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
+        if (ultra3P.length > 0) { allRecords.push({ type: '👑 三期牌 (高機率) [動態]', targets: ultra3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
+        if (adv3P.length > 0) { allRecords.push({ type: '⭐ 三期牌 (中機率) [動態]', targets: adv3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
 
         // 3. 產生原本的週牌
         const day = getWeekday(date); let shouldWeekly = false; let weeklyLife = 5;
@@ -574,8 +574,8 @@
                 if (matchOmi && matchRep && isHot) ultraW.push(numVal);
                 else if ((matchOmi && isHot) || (matchOmi && matchRep) || (isHot && matchRep)) advW.push(numVal);
             });
-            if (ultraW.length > 0) { allRecords.push({ type: '👑 週牌 (高機率) [AI]', targets: ultraW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
-            if (advW.length > 0) { allRecords.push({ type: '⭐ 週牌 (中機率) [AI]', targets: advW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
+            if (ultraW.length > 0) { allRecords.push({ type: '👑 週牌 (高機率) [動態]', targets: ultraW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
+            if (advW.length > 0) { allRecords.push({ type: '⭐ 週牌 (中機率) [動態]', targets: advW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
         }
     }
 
