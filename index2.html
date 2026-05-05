@@ -241,7 +241,6 @@
         </div>
     </div>
 
-    <!-- 新增：AI 慣性雷達區塊 -->
     <div class="section">
         <div class="section-title">🤖 AI 盤勢慣性雷達 (動態特徵提取)</div>
         <div id="radarContent">
@@ -277,9 +276,10 @@
 
 <script>
     let allRecords = []; 
+    let activeRecords = []; // 效能優化：只追蹤進行中的訂單
     let currentHistoryData = [];
 
-    // ====== 效能優化快取層 ======
+    // ====== 效能優化快取層 (解決卡死問題) ======
     let omiCache = [];
     let tfCache = [];
     let freqCache = [];
@@ -294,13 +294,12 @@
         for(let i=1; i<=49; i++) lastSeen[i] = -1;
 
         for (let i = 0; i < L; i++) {
-            let draw = currentHistoryData[i];
-            
-            draw.nums.forEach(n => lastSeen[n] = i);
+            // 優先更新最新開獎號碼的出現位置，確保計算 Omission 時的邏輯精準
+            currentHistoryData[i].nums.forEach(n => lastSeen[n] = i);
             
             let currentOmi = {};
             for(let n=1; n<=49; n++) {
-                currentOmi[n] = lastSeen[n] === -1 ? (i + 1) : (i - lastSeen[n]);
+                currentOmi[n] = lastSeen[n] === -1 ? i : (i - lastSeen[n]);
             }
             omiCache[i] = currentOmi;
 
@@ -375,9 +374,6 @@
         return `<div class="ball-container" style="display:inline-flex;">${ballsHtml}</div>`;
     }
 
-    // ==========================================
-    // AI 動態滑動視窗校準引擎 (熱平衡算法)
-    // ==========================================
     function getDynamicRules(drawIndex, gameType) {
         let omiCounts = {}, tfCounts = {}, repCounts = {};
         let mainCount = (gameType === '649' || gameType === 'mark6') ? 6 : 5;
@@ -401,9 +397,6 @@
         return { bestOmis: getTop(omiCounts, 6), bestTFs: getTop(tfCounts, 4), bestRep: getTop(repCounts, 2) };
     }
 
-    // ==========================================
-    // 🤖 AI 慣性雷達 (動態抓取熱冷號與伴生拖牌)
-    // ==========================================
     function generateAIRadar() {
         const container = document.getElementById('radarContent');
         if(currentHistoryData.length === 0) {
@@ -417,7 +410,6 @@
         const recent30 = currentHistoryData.slice(Math.max(0, L - 30), L);
         const latestDraw = currentHistoryData[L-1].nums.slice(0, (gameType==='649'||gameType==='mark6')?6:5);
 
-        // 1. 計算熱門與冷門
         let freq = {};
         for(let i=1; i<=maxNum; i++) freq[i] = 0;
         recent30.forEach(d => d.nums.slice(0, (gameType==='649'||gameType==='mark6')?6:5).forEach(n => { if(n<=maxNum) freq[n]++; }));
@@ -430,7 +422,6 @@
         let hotNums = sortedNums.slice(0, 5);
         let coldNums = sortedNums.slice(-5).reverse();
 
-        // 2. 計算昨晚開出號碼的「最強伴生號 (拖牌)」
         let companionInfo = [];
         latestDraw.forEach(targetNum => {
             let compFreq = {};
@@ -450,7 +441,6 @@
             }
         });
 
-        // 3. 渲染 HTML
         let html = `
             <div class="radar-box">
                 <div class="radar-row">
@@ -476,9 +466,6 @@
         container.innerHTML = html;
     }
 
-    // ==========================================
-    // 事件監聽與主程序
-    // ==========================================
     document.getElementById('csvFile').addEventListener('change', function(e) {
         const file = e.target.files[0]; if(!file) return;
         const reader = new FileReader(); reader.onload = function(event) { processCSV(event.target.result); }; reader.readAsText(file);
@@ -510,9 +497,15 @@
         recalculateAll();
     }
 
+    function addTarget(obj) {
+        allRecords.push(obj);
+        activeRecords.push(obj);
+    }
+
     function recalculateAll() {
-        buildCaches(); // 預先載入快取，避免計算量爆炸
+        buildCaches(); 
         allRecords = [];
+        activeRecords = [];
         const gameType = document.getElementById('gameType').value;
         const weeklyCard = document.getElementById('weeklyCard'); 
         const godWeeklyCard = document.getElementById('godWeeklyCard');
@@ -526,13 +519,26 @@
         
         for(let i = 0; i < currentHistoryData.length; i++) {
             const draw = currentHistoryData[i];
-            allRecords.forEach(target => {
-                if(target.status === '進行中') {
-                    const hits = target.targets.filter(n => draw.nums.includes(Number(n)));
-                    if(hits.length > 0) { target.status = '命中停止'; target.hitInfo = `${draw.date} 開出 ${formatBalls(hits, false, target.type)}`; } 
-                    else { target.life--; if(target.life <= 0) { target.status = '未中結束'; target.hitInfo = '-'; } }
+            
+            // 效能優化：只對"進行中"的訂單進行運算
+            let stillActive = [];
+            activeRecords.forEach(target => {
+                const hits = target.targets.filter(n => draw.nums.includes(Number(n)));
+                if(hits.length > 0) { 
+                    target.status = '命中停止'; 
+                    target.hitInfo = `${draw.date} 開出 ${formatBalls(hits, false, target.type)}`; 
+                } else { 
+                    target.life--; 
+                    if(target.life <= 0) { 
+                        target.status = '未中結束'; 
+                        target.hitInfo = '-'; 
+                    } else {
+                        stillActive.push(target);
+                    }
                 }
             });
+            activeRecords = stillActive;
+            
             generateTargets(i);
         }
         renderTables(); 
@@ -549,26 +555,24 @@
         else { mainNums = draw.nums.slice(0, 5).sort((a,b)=>a-b); }
         let currentDraw3PNums = new Set();
 
-        // 1. 產生常規三期牌
         for(let i=0; i<mainNums.length-1; i++) {
             let diff = mainNums[i+1] - mainNums[i];
             if (gameType === 'mark6') {
-                if(diff === 9) { let t = [mainNums[i], mainNums[i+1]]; allRecords.push({ type: '三期牌 (追原號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
-                else if(diff === 6) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4, mainNums[i]+5]; allRecords.push({ type: '三期牌 (5連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
+                if(diff === 9) { let t = [mainNums[i], mainNums[i+1]]; addTarget({ type: '三期牌 (追原號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
+                else if(diff === 6) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4, mainNums[i]+5]; addTarget({ type: '三期牌 (5連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
             } else if (gameType === '649') {
-                if(diff === 6) { let t = [mainNums[i], mainNums[i+1]]; allRecords.push({ type: '三期牌 (追原號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
-                else if(diff === 7) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4, mainNums[i]+5, mainNums[i]+6]; allRecords.push({ type: '三期牌 (6連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
+                if(diff === 6) { let t = [mainNums[i], mainNums[i+1]]; addTarget({ type: '三期牌 (追原號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
+                else if(diff === 7) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4, mainNums[i]+5, mainNums[i]+6]; addTarget({ type: '三期牌 (6連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
             } else if (['539','daily4','ghana'].includes(gameType)) {
-                if(diff === 4) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3]; allRecords.push({ type: '三期牌 (3連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
-                else if(diff === 5) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4]; allRecords.push({ type: '三期牌 (4連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); if(gameType === 'daily4') { let t2 = [mainNums[i], mainNums[i+1]]; allRecords.push({ type: '三期牌 (追原號)', targets: t2, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t2.forEach(n=>currentDraw3PNums.add(n)); } }
-                else if(diff === 6) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4, mainNums[i]+5]; allRecords.push({ type: '三期牌 (5連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
+                if(diff === 4) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3]; addTarget({ type: '三期牌 (3連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
+                else if(diff === 5) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4]; addTarget({ type: '三期牌 (4連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); if(gameType === 'daily4') { let t2 = [mainNums[i], mainNums[i+1]]; addTarget({ type: '三期牌 (追原號)', targets: t2, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t2.forEach(n=>currentDraw3PNums.add(n)); } }
+                else if(diff === 6) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4, mainNums[i]+5]; addTarget({ type: '三期牌 (5連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
             }
         }
-        if(specialNum !== null) { let t = [(specialNum % maxNum) + 1, ((specialNum + 1) % maxNum) + 1]; allRecords.push({ type: '三期牌 (特別號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
+        if(specialNum !== null) { let t = [(specialNum % maxNum) + 1, ((specialNum + 1) % maxNum) + 1]; addTarget({ type: '三期牌 (特別號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
         const tc = {}; mainNums.map(n => n % 10).forEach(t => tc[t] = (tc[t] || 0) + 1);
-        for(let t in tc) { if(tc[t] >= 2) { let tg = mainNums.filter(n => n % 10 == t); allRecords.push({ type: `三期牌 (${tc[t]}同尾)`, targets: tg, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); tg.forEach(n=>currentDraw3PNums.add(n)); } }
+        for(let t in tc) { if(tc[t] >= 2) { let tg = mainNums.filter(n => n % 10 == t); addTarget({ type: `三期牌 (${tc[t]}同尾)`, targets: tg, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); tg.forEach(n=>currentDraw3PNums.add(n)); } }
 
-        // 2. 動態引擎過濾 神級/高級三期
         let ultra3P = []; let adv3P = []; 
         let repeaters = getLatestRepeaters(drawIndex);
         let dynRules = getDynamicRules(drawIndex, gameType);
@@ -583,10 +587,9 @@
             if (matchOmi && matchTf && matchRep) ultra3P.push(numVal);
             else if ((matchOmi && matchTf) || (matchOmi && matchRep) || (matchTf && matchRep)) adv3P.push(numVal);
         });
-        if (ultra3P.length > 0) { allRecords.push({ type: '👑 三期牌 (高機率) [動態校準]', targets: ultra3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
-        if (adv3P.length > 0) { allRecords.push({ type: '⭐ 三期牌 (中機率)', targets: adv3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
+        if (ultra3P.length > 0) { addTarget({ type: '👑 三期牌 (高機率) [動態校準]', targets: ultra3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
+        if (adv3P.length > 0) { addTarget({ type: '⭐ 三期牌 (中機率)', targets: adv3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
 
-        // 3. 週牌處理
         const day = getWeekday(date); let shouldWeekly = false; let weeklyLife = 5;
         if (gameType === 'daily4' && day === 0) { shouldWeekly = true; weeklyLife = 7; } 
         else if (['539','ghana'].includes(gameType) && day === 6) { shouldWeekly = true; weeklyLife = 6; }
@@ -595,9 +598,9 @@
             past10.forEach(d => { allPast.push(...d.nums.slice(0, 5)); }); let fq = {}; allPast.forEach(n => fq[n] = (fq[n] || 0) + 1);
             let sorted = Object.keys(fq).map(Number).sort((a, b) => fq[b] !== fq[a] ? fq[b] - fq[a] : a - b);
             let top6 = sorted.slice(0, 6); while(top6.length < 6) { let f = 1; while(top6.includes(f)) f++; top6.push(f); }
-            allRecords.push({ type: `週牌 (第1組)`, targets: top6.slice(0,2), startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
-            allRecords.push({ type: `週牌 (第2組)`, targets: top6.slice(2,4), startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
-            allRecords.push({ type: `週牌 (第3組)`, targets: top6.slice(4,6), startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
+            addTarget({ type: `週牌 (第1組)`, targets: top6.slice(0,2), startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
+            addTarget({ type: `週牌 (第2組)`, targets: top6.slice(2,4), startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
+            addTarget({ type: `週牌 (第3組)`, targets: top6.slice(4,6), startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
             
             let ultraW = []; let advW = []; 
             top6.forEach(numVal => {
@@ -609,17 +612,21 @@
                 if (matchOmi && matchRep && isHot) ultraW.push(numVal);
                 else if ((matchOmi && isHot) || (matchOmi && matchRep) || (isHot && matchRep)) advW.push(numVal);
             });
-            if (ultraW.length > 0) { allRecords.push({ type: '👑 週牌 (高機率) [動態校準]', targets: ultraW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
-            if (advW.length > 0) { allRecords.push({ type: '⭐ 週牌 (中機率)', targets: advW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
+            if (ultraW.length > 0) { addTarget({ type: '👑 週牌 (高機率) [動態校準]', targets: ultraW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
+            if (advW.length > 0) { addTarget({ type: '⭐ 週牌 (中機率)', targets: advW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
         }
     }
 
+    // ====== 效能優化 DOM 渲染層 (解決畫面卡死問題) ======
     function renderTables() {
-        const activeBody = document.getElementById('activeBody'); const historyBody = document.getElementById('historyBody');
-        activeBody.innerHTML = ''; historyBody.innerHTML = ''; 
         let tT = 0, tH = 0, wT = 0, wH = 0, gTT = 0, gTH = 0, gWT = 0, gWH = 0, aTT = 0, aTH = 0, aWT = 0, aWH = 0, typeStats = {};
         
-        [...allRecords].reverse().forEach(t => {
+        let abHtml = '';
+        let hbHtml = '';
+        
+        // 批次字串拼接，徹底消除 createElement 的重繪負擔
+        for (let i = allRecords.length - 1; i >= 0; i--) {
+            let t = allRecords[i];
             const isT = t.type.includes('三期'), isG = t.type.includes('👑'), isA = t.type.includes('⭐');
             if(t.status !== '進行中') {
                 if (!typeStats[t.type]) typeStats[t.type] = { total: 0, hits: 0 }; typeStats[t.type].total++;
@@ -633,10 +640,18 @@
             const lifeCls = (t.status === '進行中' && t.life === 1) ? 'stop-loss-flash' : '';
             
             let rowStyle = (isG || isA) ? "background-color: var(--notice-bg);" : "";
-            const rowHtml = `<td style="${rowStyle}"><span style="font-weight:700;">${t.type}</span>${costBadge}</td><td style="${rowStyle}">${formatBalls(t.targets, true, t.type, t.drawIndex)}</td><td style="${rowStyle}">${t.startDate}</td><td style="${rowStyle}"><span class="${lifeCls}">${t.status === '進行中' ? t.life : '-'}</span></td><td style="${rowStyle}"><span class="${sClass}">${t.status}</span></td>`;
-            if(t.status === '進行中') { const tr = document.createElement('tr'); if(isHighCost) tr.className="row-high-cost"; tr.innerHTML = rowHtml; activeBody.appendChild(tr); } 
-            else { const tr = document.createElement('tr'); if(isHighCost) tr.className="row-high-cost"; tr.innerHTML = `<td style="${rowStyle}">${t.startDate}</td><td style="${rowStyle}"><span style="font-weight:700;">${t.type}</span>${costBadge}</td><td style="${rowStyle}">${formatBalls(t.targets, true, t.type, t.drawIndex)}</td><td style="${rowStyle}"><span class="${sClass}">${t.status}</span></td><td style="${rowStyle}"><span style="font-size:0.9em;">${t.hitInfo || '-'}</span></td>`; historyBody.appendChild(tr); }
-        });
+            let trClass = isHighCost ? ' class="row-high-cost"' : '';
+            
+            if(t.status === '進行中') { 
+                abHtml += `<tr${trClass}><td style="${rowStyle}"><span style="font-weight:700;">${t.type}</span>${costBadge}</td><td style="${rowStyle}">${formatBalls(t.targets, true, t.type, t.drawIndex)}</td><td style="${rowStyle}">${t.startDate}</td><td style="${rowStyle}"><span class="${lifeCls}">${t.life}</span></td><td style="${rowStyle}"><span class="${sClass}">${t.status}</span></td></tr>`;
+            } else { 
+                hbHtml += `<tr${trClass}><td style="${rowStyle}">${t.startDate}</td><td style="${rowStyle}"><span style="font-weight:700;">${t.type}</span>${costBadge}</td><td style="${rowStyle}">${formatBalls(t.targets, true, t.type, t.drawIndex)}</td><td style="${rowStyle}"><span class="${sClass}">${t.status}</span></td><td style="${rowStyle}"><span style="font-size:0.9em;">${t.hitInfo || '-'}</span></td></tr>`; 
+            }
+        }
+        
+        // 一次性寫入 DOM，享受光速載入
+        document.getElementById('activeBody').innerHTML = abHtml;
+        document.getElementById('historyBody').innerHTML = hbHtml;
         
         const update=(id, t, h)=>{ document.getElementById(id+'Rate').innerText = t>0 ? ((h/t)*100).toFixed(1)+'%' : '0%'; document.getElementById(id+'Detail').innerText = `已結束: ${t} | 命中: ${h}`; };
         update('threePeriod', tT, tH); update('godThreePeriod', gTT, gTH); update('advThreePeriod', aTT, aTH);
