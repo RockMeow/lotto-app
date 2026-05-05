@@ -224,7 +224,8 @@
         if(total < 3) return null; 
 
         let rulesStats = {};
-        for(let lagType of ['lag1', 'lag_wd']) {
+        // 修正字串切割 Bug：將 lag_wd 改為 lagWd
+        for(let lagType of ['lag1', 'lagWd']) {
             for(let i=0; i<4; i++) {
                 for(let j=i+1; j<5; j++) {
                     rulesStats[`${lagType}_add_${i}_${j}`] = 0;
@@ -246,8 +247,9 @@
                     
                     if(prevWdIdx !== -1) {
                         let pWd = dataSlice[prevWdIdx].nums;
-                        if(currTails.includes((pWd[i]+pWd[j])%10)) rulesStats[`lag_wd_add_${i}_${j}`]++;
-                        if(currTails.includes(Math.abs(pWd[j]-pWd[i])%10)) rulesStats[`lag_wd_sub_${i}_${j}`]++;
+                        // 對應修改儲存的 key 名稱
+                        if(currTails.includes((pWd[i]+pWd[j])%10)) rulesStats[`lagWd_add_${i}_${j}`]++;
+                        if(currTails.includes(Math.abs(pWd[j]-pWd[i])%10)) rulesStats[`lagWd_sub_${i}_${j}`]++;
                     }
                 }
             }
