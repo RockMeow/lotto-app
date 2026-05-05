@@ -131,17 +131,17 @@
         .lottery-ball.normal-3p { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #ffffff; box-shadow: 0 3px 6px rgba(37, 99, 235, 0.3); }
         .lottery-ball.normal-weekly { background: linear-gradient(135deg, #64748b, #334155); color: #ffffff; }
 
-        /* ⭐ 高級三期牌: 琥珀橙 */
+        /* ⭐ 三期牌(中機率): 琥珀橙 */
         .lottery-ball.adv-tier-3p { background: linear-gradient(135deg, #f59e0b, #d97706); color: #ffffff; box-shadow: 0 3px 6px rgba(217, 119, 6, 0.3); border: 1px solid #fff; }
-        /* ⭐ 高級週牌: 青藍 */
+        /* ⭐ 週牌(中機率): 青藍 */
         .lottery-ball.adv-tier-weekly { background: linear-gradient(135deg, #06b6d4, #0891b2); color: #ffffff; box-shadow: 0 3px 6px rgba(8, 145, 178, 0.3); border: 1px solid #fff; }
 
-        /* 👑 神級三期牌: 魅影紫 + 金邊 + 閃爍 */
+        /* 👑 三期牌(高機率): 魅影紫 + 金邊 + 閃爍 */
         .lottery-ball.god-tier-ball { 
             border: 2px solid #fbbf24; background: linear-gradient(135deg, #a855f7, #6b21a8); color: #ffffff;
             box-shadow: 0 0 15px #a855f7, 0 0 25px #fbbf24; animation: pulse-purple 1.5s infinite alternate; 
         }
-        /* 👑 神級週牌: 翡翠綠 + 白光 + 閃爍 */
+        /* 👑 週牌(高機率): 翡翠綠 + 白光 + 閃爍 */
         .lottery-ball.god-tier-weekly { 
             border: 2px solid #ffffff; background: linear-gradient(135deg, #22c55e, #15803d); color: #ffffff;
             box-shadow: 0 0 15px #22c55e, 0 0 25px #ffffff; animation: pulse-green 1.5s infinite alternate; 
@@ -187,37 +187,37 @@
 
     <div id="statsGrid" class="stats-grid">
         <div class="stat-card" id="godThreePeriodCard">
-            <div class="stat-label">👑 高機率三期牌 命中率</div>
+            <div class="stat-label">👑 三期牌(高機率) 命中率</div>
             <div id="godThreePeriodRate" class="stat-value" style="color:#a855f7;">0%</div>
             <div id="godThreePeriodDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="godThreePeriodBreakdown" class="detailed-stats"></div>
         </div>
         <div class="stat-card" id="godWeeklyCard">
-            <div class="stat-label">👑 高機率週牌 命中率</div>
+            <div class="stat-label">👑 週牌(高機率) 命中率</div>
             <div id="godWeeklyRate" class="stat-value" style="color:#22c55e;">0%</div>
             <div id="godWeeklyDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="godWeeklyBreakdown" class="detailed-stats"></div>
         </div>
         <div class="stat-card" id="advThreePeriodCard">
-            <div class="stat-label">⭐ 中機率三期牌 命中率</div>
+            <div class="stat-label">⭐ 三期牌(中機率) 命中率</div>
             <div id="advThreePeriodRate" class="stat-value" style="color:#f59e0b;">0%</div>
             <div id="advThreePeriodDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="advThreePeriodBreakdown" class="detailed-stats"></div>
         </div>
         <div class="stat-card" id="advWeeklyCard">
-            <div class="stat-label">⭐ 中機率週牌 命中率</div>
+            <div class="stat-label">⭐ 週牌(中機率) 命中率</div>
             <div id="advWeeklyRate" class="stat-value" style="color:#06b6d4;">0%</div>
             <div id="advWeeklyDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="advWeeklyBreakdown" class="detailed-stats"></div>
         </div>
         <div class="stat-card" id="threePeriodCard">
-            <div class="stat-label">常規三期牌 命中率</div>
+            <div class="stat-label">三期牌(常規) 命中率</div>
             <div id="threePeriodRate" class="stat-value">0%</div>
             <div id="threePeriodDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="threePeriodBreakdown" class="detailed-stats"></div>
         </div>
         <div class="stat-card" id="weeklyCard">
-            <div class="stat-label">常規週牌 命中率</div>
+            <div class="stat-label">週牌(常規) 命中率</div>
             <div id="weeklyRate" class="stat-value">0%</div>
             <div id="weeklyDetail" class="info-text">已結束: 0 | 命中: 0</div>
             <div id="weeklyBreakdown" class="detailed-stats"></div>
@@ -482,7 +482,7 @@
         const tc = {}; mainNums.map(n => n % 10).forEach(t => tc[t] = (tc[t] || 0) + 1);
         for(let t in tc) { if(tc[t] >= 2) { let tg = mainNums.filter(n => n % 10 == t); allRecords.push({ type: `三期牌 (${tc[t]}同尾)`, targets: tg, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); tg.forEach(n=>currentDraw3PNums.add(n)); } }
 
-        // 2. 獨立抽出「神級(👑)」與「高級(⭐)」三期牌
+        // 2. 獨立抽出「高機率(👑)」與「中機率(⭐)」三期牌
         let ultra3P = []; let adv3P = []; let repeaters = getLatestRepeaters(drawIndex);
         currentDraw3PNums.forEach(numVal => {
             let omi = getOmissionAt(numVal, drawIndex); let tFreq = getTailFreqInLast10(numVal % 10, drawIndex);
@@ -511,8 +511,8 @@
             if (isUltra) ultra3P.push(numVal);
             else if (isAdv) adv3P.push(numVal);
         });
-        if (ultra3P.length > 0) { allRecords.push({ type: '👑 高機率三期牌', targets: ultra3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
-        if (adv3P.length > 0) { allRecords.push({ type: '⭐ 中機率三期牌', targets: adv3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
+        if (ultra3P.length > 0) { allRecords.push({ type: '👑 三期牌(高機率)', targets: ultra3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
+        if (adv3P.length > 0) { allRecords.push({ type: '⭐ 三期牌(中機率)', targets: adv3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
 
         // 3. 產生原本的週牌
         const day = getWeekday(date); let shouldWeekly = false; let weeklyLife = 5;
@@ -527,7 +527,7 @@
             allRecords.push({ type: `週牌 (第2組)`, targets: top6.slice(2,4), startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
             allRecords.push({ type: `週牌 (第3組)`, targets: top6.slice(4,6), startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
             
-            // 4. 獨立抽出「神級(👑)」與「高級(⭐)」週牌
+            // 4. 獨立抽出「高機率(👑)」與「中機率(⭐)」週牌
             let ultraW = []; let advW = []; 
             top6.forEach(numVal => {
                 let omi = getOmissionAt(numVal, drawIndex); let freq = getFreqInLast10(numVal, drawIndex);
@@ -551,8 +551,8 @@
                     else if (isWA) advW.push(numVal);
                 }
             });
-            if (ultraW.length > 0) { allRecords.push({ type: '👑 高機率週牌', targets: ultraW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
-            if (advW.length > 0) { allRecords.push({ type: '⭐ 中機率週牌', targets: advW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
+            if (ultraW.length > 0) { allRecords.push({ type: '👑 週牌(高機率)', targets: ultraW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
+            if (advW.length > 0) { allRecords.push({ type: '⭐ 週牌(中機率)', targets: advW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
         }
     }
 
