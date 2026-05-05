@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>星期慣性與馬可夫矩陣</title>
+    <title>星期慣性與馬可夫鏈</title>
     <style>
         /* =========================================
            現代化 UI 變數與亮色模式
@@ -111,7 +111,7 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>星期慣性 & 馬可夫矩陣</h1>
+    <h1>星期慣性 & 馬可夫鏈</h1>
     <div class="subtitle">動態預測</div>
 
     <div class="section" style="border: none; box-shadow: none; padding: 0 25px;">
@@ -128,17 +128,16 @@
     </div>
 
     <div class="section" id="formulaSection" style="display: none;">
-        <div class="section-title">每星期專屬動態公式</div>
-        <div class="section-desc">系統動態掃描歷史，為星期一至星期日各別找出當下勝率「最高」的單一尾數加減法。</div>
+        <div class="section-title">星期專屬動態公式</div>
         
         <div class="table-responsive">
             <table id="formulaTable">
                 <thead>
                     <tr>
                         <th>星期</th>
-                        <th>參考基準</th>
-                        <th>計算公式</th>
-                        <th>歷史勝率</th>
+                        <th>基準</th>
+                        <th>公式</th>
+                        <th>勝率</th>
                         <th>命中/總次數</th>
                     </tr>
                 </thead>
@@ -148,17 +147,16 @@
     </div>
 
     <div class="section" id="markovSection" style="display: none;">
-        <div class="section-title">🧬 馬可夫鏈尾數傳染矩陣 (對照)</div>
-        <div class="section-desc">動態計算狀態轉移矩陣。根據今晚開出的尾數，對照下表尋找明天「最強被感染」與「最不可能開出」的尾數。</div>
+        <div class="section-title">馬可夫鏈</div>
         
         <div class="table-responsive">
             <table id="markovTable">
                 <thead>
                     <tr>
-                        <th>開出...</th>
-                        <th>🎯 明天最強尾數</th>
-                        <th>🎯 明天次強尾數</th>
-                        <th>❄️ 明天避開尾數</th>
+                        <th>如果開出...</th>
+                        <th>最強尾數</th>
+                        <th>次強尾數</th>
+                        <th>避開尾數</th>
                     </tr>
                 </thead>
                 <tbody id="markovBody"></tbody>
@@ -336,9 +334,9 @@
             if(!m) continue;
             mHtml += `<tr>
                 <td style="font-size:1.15em; font-weight:800;">有 <span style="color:var(--primary-color); font-size:1.2em;">${m.today}</span> 尾</td>
-                <td><span class="badge badge-hot">🔥 ${m.top1.tail} 尾</span> <span class="prob-text">(${(m.top1.prob*100).toFixed(1)}%)</span></td>
-                <td><span class="badge badge-hot" style="opacity:0.95;">🔥 ${m.top2.tail} 尾</span> <span class="prob-text">(${(m.top2.prob*100).toFixed(1)}%)</span></td>
-                <td><span class="badge badge-cold">❌ ${m.worst.tail} 尾</span> <span class="prob-text">(${(m.worst.prob*100).toFixed(1)}%)</span></td>
+                <td><span class="badge badge-hot"> ${m.top1.tail} 尾</span> <span class="prob-text">(${(m.top1.prob*100).toFixed(1)}%)</span></td>
+                <td><span class="badge badge-hot" style="opacity:0.95;"> ${m.top2.tail} 尾</span> <span class="prob-text">(${(m.top2.prob*100).toFixed(1)}%)</span></td>
+                <td><span class="badge badge-cold"> ${m.worst.tail} 尾</span> <span class="prob-text">(${(m.worst.prob*100).toFixed(1)}%)</span></td>
             </tr>`;
         }
         document.getElementById('markovBody').innerHTML = mHtml;
