@@ -548,7 +548,7 @@
             else if (isAdv) adv3P.push(numVal);
         });
         if (ultra3P.length > 0) { allRecords.push({ type: '👑 三期牌 (高機率) [AI]', targets: ultra3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
-        if (adv3P.length > 0) { allRecords.push({ type: '⭐ 三期牌 (中機率)', targets: adv3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
+        if (adv3P.length > 0) { allRecords.push({ type: '⭐ 三期牌 (中機率) [AI]', targets: adv3P, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); }
 
         // 3. 產生原本的週牌
         const day = getWeekday(date); let shouldWeekly = false; let weeklyLife = 5;
@@ -575,7 +575,7 @@
                 else if ((matchOmi && isHot) || (matchOmi && matchRep) || (isHot && matchRep)) advW.push(numVal);
             });
             if (ultraW.length > 0) { allRecords.push({ type: '👑 週牌 (高機率) [AI]', targets: ultraW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
-            if (advW.length > 0) { allRecords.push({ type: '⭐ 週牌 (中機率)', targets: advW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
+            if (advW.length > 0) { allRecords.push({ type: '⭐ 週牌 (中機率) [AI]', targets: advW, startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex }); }
         }
     }
 
