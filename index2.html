@@ -279,6 +279,47 @@
     let allRecords = []; 
     let currentHistoryData = [];
 
+    // ====== 效能優化快取層 ======
+    let omiCache = [];
+    let tfCache = [];
+    let freqCache = [];
+
+    function buildCaches() {
+        const L = currentHistoryData.length;
+        omiCache = new Array(L);
+        tfCache = new Array(L);
+        freqCache = new Array(L);
+        
+        let lastSeen = {};
+        for(let i=1; i<=49; i++) lastSeen[i] = -1;
+
+        for (let i = 0; i < L; i++) {
+            let draw = currentHistoryData[i];
+            
+            draw.nums.forEach(n => lastSeen[n] = i);
+            
+            let currentOmi = {};
+            for(let n=1; n<=49; n++) {
+                currentOmi[n] = lastSeen[n] === -1 ? (i + 1) : (i - lastSeen[n]);
+            }
+            omiCache[i] = currentOmi;
+
+            let tf = {}; let fq = {};
+            for(let t=0; t<=9; t++) tf[t] = 0;
+            for(let n=1; n<=49; n++) fq[n] = 0;
+
+            let start = Math.max(0, i - 9);
+            for(let k=start; k<=i; k++) {
+                currentHistoryData[k].nums.forEach(n => {
+                    tf[n % 10]++;
+                    fq[n]++;
+                });
+            }
+            tfCache[i] = tf;
+            freqCache[i] = fq;
+        }
+    }
+
     function toggleTheme() {
         const body = document.body;
         const currentTheme = body.getAttribute('data-theme');
@@ -290,20 +331,16 @@
         }
     }
 
-    function getFreqInLast10(num, evalIndex) {
-        if (!currentHistoryData || currentHistoryData.length === 0) return 0;
-        if (evalIndex === undefined) evalIndex = currentHistoryData.length - 1;
-        let startIdx = Math.max(0, evalIndex - 9); let count = 0;
-        for (let i = startIdx; i <= evalIndex; i++) { if (currentHistoryData[i].nums.includes(num)) count++; }
-        return count;
+    function getFreqInLast10(num, index) {
+        if (index === undefined) index = currentHistoryData.length - 1;
+        if (index < 0 || !freqCache[index]) return 0;
+        return freqCache[index][num] || 0;
     }
 
-    function getTailFreqInLast10(tail, evalIndex) {
-        if (!currentHistoryData || currentHistoryData.length === 0) return 0;
-        if (evalIndex === undefined) evalIndex = currentHistoryData.length - 1;
-        let startIdx = Math.max(0, evalIndex - 9); let count = 0;
-        for (let i = startIdx; i <= evalIndex; i++) { currentHistoryData[i].nums.forEach(n => { if (n % 10 === tail) count++; }); }
-        return count;
+    function getTailFreqInLast10(tail, index) {
+        if (index === undefined) index = currentHistoryData.length - 1;
+        if (index < 0 || !tfCache[index]) return 0;
+        return tfCache[index][tail] || 0;
     }
 
     function getLatestRepeaters(evalIndex) {
@@ -315,14 +352,10 @@
     }
 
     function getOmissionAt(num, index) {
-        if (!currentHistoryData || index < 0) return 0;
-        let omission = 0;
-        for (let i = index; i >= 0; i--) {
-            if (currentHistoryData[i].nums.includes(num)) return omission;
-            omission++;
-        }
-        return omission;
+        if (index < 0 || !omiCache[index]) return 0;
+        return omiCache[index][num] || 0;
     }
+    
     function getOmission(num) { return getOmissionAt(num, currentHistoryData.length - 1); }
 
     function formatBalls(numsArray, isTarget = false, typeName = "", evalIndex) {
@@ -390,8 +423,8 @@
         recent30.forEach(d => d.nums.slice(0, (gameType==='649'||gameType==='mark6')?6:5).forEach(n => { if(n<=maxNum) freq[n]++; }));
         
         let sortedNums = Object.keys(freq).map(Number).sort((a, b) => {
-            if(freq[b] !== freq[a]) return freq[b] - freq[a]; // 次數多的在前
-            return getOmission(a) - getOmission(b); // 次數一樣，遺漏短的在前
+            if(freq[b] !== freq[a]) return freq[b] - freq[a]; 
+            return getOmission(a) - getOmission(b); 
         });
 
         let hotNums = sortedNums.slice(0, 5);
@@ -411,7 +444,6 @@
                     });
                 }
             });
-            // 找第一名，且出過至少 2 次以上才有意義
             let bestComp = Object.keys(compFreq).map(Number).sort((a,b) => compFreq[b] - compFreq[a])[0];
             if(bestComp && compFreq[bestComp] >= 2) {
                 companionInfo.push(`【${targetNum.toString().padStart(2,'0')}】易帶出 ➜ <b>${bestComp.toString().padStart(2,'0')}</b> (${compFreq[bestComp]}次)`);
@@ -479,6 +511,7 @@
     }
 
     function recalculateAll() {
+        buildCaches(); // 預先載入快取，避免計算量爆炸
         allRecords = [];
         const gameType = document.getElementById('gameType').value;
         const weeklyCard = document.getElementById('weeklyCard'); 
@@ -504,7 +537,7 @@
         }
         renderTables(); 
         renderHeatmap();
-        generateAIRadar(); // 觸發 AI 雷達計算
+        generateAIRadar(); 
     }
 
     function generateTargets(drawIndex) {
