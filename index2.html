@@ -276,10 +276,10 @@
 
 <script>
     let allRecords = []; 
-    let activeRecords = []; // 效能優化：只追蹤進行中的訂單
+    let activeRecords = []; 
     let currentHistoryData = [];
 
-    // ====== 效能優化快取層 (解決卡死問題) ======
+    // ====== 效能優化快取層 ======
     let omiCache = [];
     let tfCache = [];
     let freqCache = [];
@@ -294,9 +294,7 @@
         for(let i=1; i<=49; i++) lastSeen[i] = -1;
 
         for (let i = 0; i < L; i++) {
-            // 優先更新最新開獎號碼的出現位置，確保計算 Omission 時的邏輯精準
             currentHistoryData[i].nums.forEach(n => lastSeen[n] = i);
-            
             let currentOmi = {};
             for(let n=1; n<=49; n++) {
                 currentOmi[n] = lastSeen[n] === -1 ? i : (i - lastSeen[n]);
@@ -328,6 +326,12 @@
         } else {
             body.setAttribute('data-theme', 'dark'); btn.textContent = '☀️';
         }
+    }
+
+    // ====== 找回遺失的工具函數 ======
+    function getWeekday(dateStr) { 
+        try { return new Date("2026/" + dateStr).getDay(); } 
+        catch (e) { return -1; } 
     }
 
     function getFreqInLast10(num, index) {
@@ -466,6 +470,32 @@
         container.innerHTML = html;
     }
 
+    // ====== 找回遺失的繪圖函數 ======
+    function renderHeatmap() {
+        const container = document.getElementById('heatmapContainer'); container.innerHTML = '';
+        if(currentHistoryData.length === 0) return;
+        const gameType = document.getElementById('gameType').value;
+        const maxNum = (gameType === '649' || gameType === 'mark6') ? 49 : 39;
+        const recentDraws = currentHistoryData.slice(-10);
+        const freq = {};
+        for(let i=1; i<=maxNum; i++) freq[i] = 0;
+        recentDraws.forEach(draw => { draw.nums.forEach(n => { if(n >= 1 && n <= maxNum) freq[n]++; }); });
+        
+        for(let i=1; i<=maxNum; i++) {
+            let count = freq[i]; let omission = getOmission(i);
+            let item = document.createElement('div'); item.className = 'heatmap-item';
+            let box = document.createElement('div'); box.className = 'heatmap-box';
+            if(count === 0) { box.style.background = 'var(--th-bg)'; box.style.opacity = '0.5'; } 
+            else if(count === 1) { box.style.background = 'linear-gradient(135deg, #4ade80, #16a34a)'; box.style.color = '#fff'; } 
+            else if(count === 2) { box.style.background = 'linear-gradient(135deg, #fbbf24, #d97706)'; box.style.color = '#fff'; } 
+            else { box.style.background = 'linear-gradient(135deg, #f87171, #dc2626)'; box.style.color = '#fff'; }
+            box.innerHTML = i.toString().padStart(2, '0');
+            if(count > 0) { let badge = document.createElement('span'); badge.className = 'heatmap-badge'; badge.innerHTML = count; box.appendChild(badge); }
+            let omiText = document.createElement('span'); omiText.className = 'omission-text' + (omission >= 20 ? ' omission-warn' : ''); omiText.innerHTML = `漏${omission}`;
+            item.appendChild(box); item.appendChild(omiText); container.appendChild(item);
+        }
+    }
+
     document.getElementById('csvFile').addEventListener('change', function(e) {
         const file = e.target.files[0]; if(!file) return;
         const reader = new FileReader(); reader.onload = function(event) { processCSV(event.target.result); }; reader.readAsText(file);
@@ -520,7 +550,6 @@
         for(let i = 0; i < currentHistoryData.length; i++) {
             const draw = currentHistoryData[i];
             
-            // 效能優化：只對"進行中"的訂單進行運算
             let stillActive = [];
             activeRecords.forEach(target => {
                 const hits = target.targets.filter(n => draw.nums.includes(Number(n)));
@@ -542,7 +571,7 @@
             generateTargets(i);
         }
         renderTables(); 
-        renderHeatmap();
+        renderHeatmap(); // 正確呼叫繪製函數
         generateAIRadar(); 
     }
 
@@ -617,14 +646,13 @@
         }
     }
 
-    // ====== 效能優化 DOM 渲染層 (解決畫面卡死問題) ======
+    // ====== 效能優化 DOM 渲染層 ======
     function renderTables() {
         let tT = 0, tH = 0, wT = 0, wH = 0, gTT = 0, gTH = 0, gWT = 0, gWH = 0, aTT = 0, aTH = 0, aWT = 0, aWH = 0, typeStats = {};
         
         let abHtml = '';
         let hbHtml = '';
         
-        // 批次字串拼接，徹底消除 createElement 的重繪負擔
         for (let i = allRecords.length - 1; i >= 0; i--) {
             let t = allRecords[i];
             const isT = t.type.includes('三期'), isG = t.type.includes('👑'), isA = t.type.includes('⭐');
@@ -649,7 +677,6 @@
             }
         }
         
-        // 一次性寫入 DOM，享受光速載入
         document.getElementById('activeBody').innerHTML = abHtml;
         document.getElementById('historyBody').innerHTML = hbHtml;
         
