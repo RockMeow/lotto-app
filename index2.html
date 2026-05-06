@@ -168,14 +168,6 @@
         .h-top { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; font-weight: 700; color: var(--text-muted); }
         .h-bot { font-size: 0.95em; display: flex; justify-content: space-between; align-items: center; }
         .cost-tag { font-size: 0.8em; font-weight: 700; background: var(--bg-card); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color);}
-
-        /* 遺漏期圖表區塊 */
-        .omission-bar-container { display: flex; align-items: flex-end; gap: 6px; height: 180px; padding-top: 20px; overflow-x: auto; padding-bottom: 10px; }
-        .o-col { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 25px; }
-        .o-bar { width: 100%; background: var(--primary); border-radius: 4px 4px 0 0; transition: height 0.3s; position: relative; }
-        .o-label { font-size: 0.75em; font-weight: 700; margin-top: 6px; color: var(--text-muted); }
-        .o-val { font-size: 0.75em; font-weight: 800; color: var(--text-main); margin-bottom: 4px; }
-        .o-bar:hover { background: var(--secondary); cursor: pointer; }
     </style>
 </head>
 <body>
@@ -200,7 +192,7 @@
     <div class="dashboard-grid">
         <div class="card">
             <div class="card-header">
-                <div style="font-size: 1.5em;">🛡️</div>
+                <div style="font-size: 1.5em;"></div>
                 <h2 class="card-title">精選四尾組合</h2>
             </div>
             <div class="card-desc">根據最新開獎趨勢與常連動的號碼，自動為您挑出 4 個推薦尾數。</div>
@@ -209,7 +201,7 @@
 
         <div class="card">
             <div class="card-header">
-                <div style="font-size: 1.5em;">🧬</div>
+                <div style="font-size: 1.5em;"></div>
                 <h2 class="card-title">尾數連動趨勢表</h2>
             </div>
             <div class="card-desc">上一期開出的尾數，在下一期帶出其他尾數的歷史機率。</div>
@@ -229,19 +221,10 @@
         </div>
     </div>
 
-    <div class="card" style="margin-top: 24px;">
-        <div class="card-header">
-            <div style="font-size: 1.5em;">📊</div>
-            <h2 class="card-title">歷史遺漏期數開出分析</h2>
-        </div>
-        <div class="card-desc">統計歷史所有開獎球中，各個「遺漏期數」被開出來的總次數分佈。</div>
-        <div class="omission-bar-container" id="omissionChart"></div>
-    </div>
-
     <div class="history-section">
         <div class="card">
             <div class="card-header">
-                <div style="font-size: 1.5em;">🔥</div>
+                <div style="font-size: 1.5em;"></div>
                 <h2 class="card-title">策略 A：溫號 ＋ 熱門號</h2>
             </div>
             <div class="card-desc">條件：挑選 <strong>0 ~ 9 期</strong> 內有開過的號碼 (覆蓋率極高)。</div>
@@ -250,7 +233,7 @@
 
         <div class="card">
             <div class="card-header">
-                <div style="font-size: 1.5em;">🧊</div>
+                <div style="font-size: 1.5em;"></div>
                 <h2 class="card-title">策略 B：極冷號 ＋ 熱門號</h2>
             </div>
             <div class="card-desc">條件：只挑極端號碼 <strong>(≥ 10 期 或 ≤ 2 期)</strong>，挑的顆數較少。</div>
@@ -259,7 +242,7 @@
 
         <div class="card">
             <div class="card-header">
-                <div style="font-size: 1.5em;">🌿</div>
+                <div style="font-size: 1.5em;"></div>
                 <h2 class="card-title">策略 C：溫號 ＋ 極冷號</h2>
             </div>
             <div class="card-desc">條件：挑選遺漏期數 <strong>≥ 3 期</strong> 的號碼 (專打斷層，避開近期熱門)。</div>
@@ -349,43 +332,6 @@
         let lastTails = [...new Set(lastDraw.nums.map(n => n % 10))]; 
         let maxNum = Math.max(39, ...rawData.map(d => Math.max(...d.nums)));
         let markovData = getMarkovMatrixAll(rawData);
-
-        // --- 0. 遺漏期數分佈圖表 ---
-        let omiDist = {};
-        for(let i=0; i<=25; i++) omiDist[i] = 0;
-        
-        for(let i=20; i<L; i++) {
-            let currentNums = rawData[i].nums;
-            let subData = rawData.slice(0, i);
-            let subL = subData.length;
-            
-            currentNums.forEach(num => {
-                let omi = 999;
-                for(let j=subL-1; j>=0; j--) {
-                    if(subData[j].nums.includes(num)) {
-                        omi = subL - 1 - j;
-                        break;
-                    }
-                }
-                if(omi === 999) omi = subL;
-                if(omi > 25) omi = 25; // 25 以上歸類在 25+
-                omiDist[omi]++;
-            });
-        }
-        
-        let maxOmiCount = Math.max(...Object.values(omiDist));
-        let chartHtml = '';
-        for(let i=0; i<=25; i++) {
-            let h = maxOmiCount > 0 ? (omiDist[i] / maxOmiCount) * 100 : 0;
-            let label = i === 25 ? '25+' : i;
-            let barColor = i <= 2 ? 'var(--hot-border)' : (i >= 10 ? 'var(--secondary)' : 'var(--primary)');
-            chartHtml += `<div class="o-col">
-                <div class="o-val">${omiDist[i]}</div>
-                <div class="o-bar" style="height: ${h}%; background: ${barColor};"></div>
-                <div class="o-label">${label}</div>
-            </div>`;
-        }
-        document.getElementById('omissionChart').innerHTML = chartHtml;
 
         // --- 1. 四尾聯動陣型 (最新一期預測) ---
         let scores = {}; for(let i=0; i<10; i++) scores[i] = 0;
