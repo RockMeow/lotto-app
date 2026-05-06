@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>馬可夫鏈 & 四尾聯動</title>
+    <title>馬可夫鏈 & 四尾聯動陣型</title>
     <style>
         /* =========================================
            現代化 UI 變數與亮色模式
@@ -98,12 +98,20 @@
         .badge-cold { background: rgba(220, 38, 38, 0.1); color: #dc2626; border: 1px solid #fca5a5; }
         .badge-formula { background: var(--highlight-bg); color: var(--highlight-text); border: 1px solid rgba(79, 70, 229, 0.3); }
         
+        .text-win { color: #16a34a; font-weight: 800; }
+        .text-lose { color: #dc2626; opacity: 0.6; font-weight: 700; }
+
         [data-theme="dark"] .badge-hot { color: #fbbf24; border-color: #b45309; }
         [data-theme="dark"] .badge-cold { color: #f87171; border-color: #991b1b; }
+        [data-theme="dark"] .text-win { color: #4ade80; }
+        [data-theme="dark"] .text-lose { color: #f87171; opacity: 0.8; }
 
         .prob-text { font-weight: 800; margin-left: 6px; font-size: 0.9em; opacity: 0.8; }
 
         .tag-info { font-size: 0.8em; opacity: 0.7; font-weight: 600; margin-top: 4px; display: block; }
+        
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
 
         @media (max-width: 768px) {
             .container { padding: 25px 15px; }
@@ -115,8 +123,8 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>馬可夫鏈 & 四尾聯動</h1>
-    <div class="subtitle">量化投組系統</div>
+    <h1>馬可夫鏈 & 四尾聯動陣型</h1>
+    <div class="subtitle">AI 量化投組系統</div>
 
     <div class="section" style="border: none; box-shadow: none; padding: 0 25px; margin-bottom: 10px;">
         <div class="control-group">
@@ -143,7 +151,7 @@
             <table id="markovTable">
                 <thead>
                     <tr>
-                        <th>開出尾數</th>
+                        <th>如果開出...</th>
                         <th>最強推薦</th>
                         <th>次強推薦</th>
                         <th>避開死角</th>
@@ -315,9 +323,79 @@
             filterHtml += `</table></div>`;
         });
         filterHtml += '</div>';
-        document.getElementById('aiFilterBody').innerHTML = filterHtml;
 
-        // --- 渲染馬可夫矩陣 ---
+        // --- 6. 歷史足跡回測 (產生完整的四尾命中紀錄) ---
+        let historyHtml = '<details style="margin-top: 20px; background: var(--card-bg); padding: 12px 18px; border-radius: 12px; border: 1px solid var(--card-border);"><summary style="cursor: pointer; color: var(--primary-color); font-weight: 800; outline: none; font-size: 1.05em;">📊 展開完整回測命中紀錄 (四尾陣型)</summary><div style="margin-top: 15px; font-size: 0.9em; max-height: 300px; overflow-y: auto; line-height: 1.8;">';
+        
+        let startIdx = 40; // 統一從第 41 期開始回測，保留前面的數據作為初始矩陣
+        for(let idx = L - 1; idx >= startIdx; idx--) { // 倒序排列：由新到舊
+            let subData = rawData.slice(0, idx);
+            let subL = subData.length;
+            
+            let c_counts = {}; let c_trans = {}; let c_co = {};
+            for(let i=0; i<10; i++) { c_counts[i]=0; c_trans[i]={}; c_co[i]={}; for(let j=0; j<10; j++) {c_trans[i][j]=0; c_co[i][j]=0;} }
+            for(let i=0; i<subL-1; i++) {
+                let t1s = [...new Set(subData[i].nums.map(n=>n%10))];
+                let t2s = [...new Set(subData[i+1].nums.map(n=>n%10))];
+                t1s.forEach(t1 => {
+                    c_counts[t1]++;
+                    t2s.forEach(t2 => { c_trans[t1][t2]++; });
+                    t1s.forEach(t2 => { if(t1!==t2) c_co[t1][t2]++; });
+                });
+            }
+            
+            let c_lastDraw = subData[subL-1];
+            let c_lastTails = [...new Set(c_lastDraw.nums.map(n=>n%10))];
+            let c_scores = {}; for(let i=0; i<10; i++) c_scores[i]=0;
+            c_lastTails.forEach(t => {
+                if(c_counts[t] > 0) {
+                    let probs = [];
+                    for(let nextT=0; nextT<10; nextT++) probs.push({t: nextT, p: c_trans[t][nextT]/c_counts[t]});
+                    probs.sort((a,b)=>b.p - a.p);
+                    c_scores[probs[0].t] += 2;
+                    c_scores[probs[1].t] += 1;
+                    c_scores[probs[9].t] -= 2;
+                }
+            });
+            
+            let sortedMarkov = Object.keys(c_scores).map(Number).sort((a,b)=>c_scores[b]-c_scores[a]);
+            let c_top1 = sortedMarkov[0];
+            let c_top2 = sortedMarkov[1];
+            
+            let c_companionScores = c_co[c_top1];
+            let c_bestCompanion = -1; let maxCo = -1;
+            for(let t=0; t<10; t++) {
+                if(t !== c_top1 && c_companionScores[t] > maxCo) { maxCo = c_companionScores[t]; c_bestCompanion = t; }
+            }
+            
+            let c_tailLastSeen = Array(10).fill(-1);
+            for(let i=0; i<subL; i++) {
+                subData[i].nums.forEach(n => { c_tailLastSeen[n%10] = i; });
+            }
+            let c_coldestTail = -1; let maxOmi = -1;
+            for(let t=0; t<10; t++) {
+                if(![c_top1, c_top2, c_bestCompanion].includes(t)) {
+                    let omi = c_tailLastSeen[t] === -1 ? 999 : (subL - 1 - c_tailLastSeen[t]);
+                    if(omi > maxOmi) { maxOmi = omi; c_coldestTail = t; }
+                }
+            }
+            
+            let targetTails = [c_top1, c_top2, c_bestCompanion, c_coldestTail];
+            let actualNums = rawData[idx].nums;
+            let hitNums = actualNums.filter(n => targetTails.includes(n%10));
+            
+            let hitText = hitNums.length > 0 ? `<span class="text-win">命中 ${hitNums.length} 顆號碼 (${hitNums.map(n=>n<10?'0'+n:n).join(', ')})</span>` : `<span class="text-lose">X 四尾全倒</span>`;
+            historyHtml += `<div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed var(--td-border); display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                <span style="font-weight: 800; min-width: 90px;">[${rawData[idx].date}]</span> 
+                <span style="opacity: 0.8; font-weight: 600;">目標陣型: [${targetTails.join(', ')}] 尾</span> 
+                <span>➔ ${hitText}</span>
+            </div>`;
+        }
+        historyHtml += '</div></details>';
+
+        document.getElementById('aiFilterBody').innerHTML = filterHtml + historyHtml;
+
+        // --- 7. 渲染馬可夫矩陣表 ---
         let mHtml = '';
         for(let i=0; i<10; i++) {
             let m = markovData.find(x => x.today === i);
