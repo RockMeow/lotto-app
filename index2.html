@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>馬可夫鏈與定膽過濾</title>
+    <title>馬可夫鏈 & 四尾聯動陣型</title>
     <style>
         /* =========================================
            現代化 UI 變數與亮色模式
@@ -103,6 +103,8 @@
 
         .prob-text { font-weight: 800; margin-left: 6px; font-size: 0.9em; opacity: 0.8; }
 
+        .tag-info { font-size: 0.8em; opacity: 0.7; font-weight: 600; margin-top: 4px; display: block; }
+
         @media (max-width: 768px) {
             .container { padding: 25px 15px; }
             h1 { font-size: 1.8em; }
@@ -113,8 +115,8 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>馬可夫鏈 & 智能定膽</h1>
-    <div class="subtitle">AI 動態過濾系統</div>
+    <h1>馬可夫鏈 & 四尾聯動陣型</h1>
+    <div class="subtitle">AI 量化投組系統</div>
 
     <div class="section" style="border: none; box-shadow: none; padding: 0 25px; margin-bottom: 10px;">
         <div class="control-group">
@@ -130,21 +132,21 @@
     </div>
 
     <div class="section" id="aiFilterSection" style="display: none;">
-        <div class="section-title">🤖 AI 深度過濾 (定膽推薦)</div>
-        <div class="section-desc">系統自動提取馬可夫鏈最強動能尾數，並計算遺漏值與斜連狀態。</div>
+        <div class="section-title">🛡️ 四尾強攻陣型 (高勝率組合)</div>
+        <div class="section-desc">根據馬可夫匯聚點與「伴生雷達」挑選出最容易共同開出的 4 個尾數。建議每個尾數選 1 顆主力。</div>
         <div id="aiFilterBody"></div>
     </div>
 
     <div class="section" id="markovSection" style="display: none;">
-        <div class="section-title">馬可夫鏈矩陣</div>
+        <div class="section-title">馬可夫鏈傳染矩陣</div>
         <div class="table-responsive">
             <table id="markovTable">
                 <thead>
                     <tr>
                         <th>如果開出...</th>
-                        <th>最強尾數</th>
-                        <th>次強尾數</th>
-                        <th>避開尾數</th>
+                        <th>最強推薦</th>
+                        <th>次強推薦</th>
+                        <th>避開死角</th>
                     </tr>
                 </thead>
                 <tbody id="markovBody"></tbody>
@@ -204,13 +206,11 @@
     function getMarkovMatrixAll(dataSlice) {
         let trans = {}; let counts = {};
         for(let i=0; i<10; i++) { trans[i] = {}; counts[i] = 0; for(let j=0; j<10; j++) trans[i][j] = 0; }
-        
         for(let i=0; i<dataSlice.length-1; i++) {
             let todayTails = [...new Set(dataSlice[i].nums.map(n=>n%10))];
             let tmrwTails = [...new Set(dataSlice[i+1].nums.map(n=>n%10))];
             todayTails.forEach(t1 => { counts[t1]++; tmrwTails.forEach(t2 => { trans[t1][t2]++; }); });
         }
-        
         let results = [];
         for(let t=0; t<10; t++) {
             if(counts[t] > 0) {
@@ -219,13 +219,7 @@
                     probs.push({ tail: nextT, prob: trans[t][nextT] / counts[t] });
                 }
                 probs.sort((a,b) => b.prob - a.prob); 
-                
-                results.push({
-                    today: t,
-                    top1: probs[0],
-                    top2: probs[1],
-                    worst: probs[probs.length-1]
-                });
+                results.push({ today: t, top1: probs[0], top2: probs[1], worst: probs[probs.length-1] });
             }
         }
         return results;
@@ -240,111 +234,101 @@
 
         let lastDraw = rawData[L-1];
         let lastTails = [...new Set(lastDraw.nums.map(n => n % 10))]; 
-
-        // 自動判斷球數上限 (例如大樂透49，天天樂/迦納彩39)
         let maxNum = Math.max(39, ...rawData.map(d => Math.max(...d.nums)));
-        
         let markovData = getMarkovMatrixAll(rawData);
 
-        // --- 1. AI 深度過濾定膽邏輯 ---
+        // --- 🚀 核心升級：四尾聯動陣型 🚀 ---
         
-        // A. 計算明天的目標馬可夫強勢尾數 (基於昨晚開出的所有尾數加總評分)
+        // 1. 馬可夫匯聚評分
         let scores = {};
         for(let i=0; i<10; i++) scores[i] = 0;
-        
         lastTails.forEach(t => {
             let m = markovData.find(x => x.today === t);
             if(m) {
-                scores[m.top1.tail] += 2;   // 最強傳染 +2
-                scores[m.top2.tail] += 1;   // 次強傳染 +1
-                scores[m.worst.tail] -= 2;  // 避開死角 -2
+                scores[m.top1.tail] += 2;
+                scores[m.top2.tail] += 1;
+                scores[m.worst.tail] -= 2;
             }
         });
-        
-        // 抓出分數最高的兩個尾數作為主力目標
-        let sortedTails = Object.keys(scores).map(Number).sort((a,b) => scores[b] - scores[a]);
-        let targetTails = [sortedTails[0], sortedTails[1]];
+        let sortedMarkov = Object.keys(scores).map(Number).sort((a,b) => scores[b] - scores[a]);
+        let top1 = sortedMarkov[0];
+        let top2 = sortedMarkov[1];
 
-        // B. 計算所有號碼的遺漏期數
+        // 2. 伴生好朋友雷達 (針對馬可夫 Top 1 尋找歷史伴生)
+        let companionScores = {};
+        for(let i=0; i<10; i++) companionScores[i] = 0;
+        rawData.forEach(d => {
+            let tails = d.nums.map(n => n % 10);
+            if (tails.includes(top1)) {
+                tails.forEach(t => { if(t !== top1) companionScores[t]++; });
+            }
+        });
+        let bestCompanion = Object.keys(companionScores).map(Number).sort((a,b) => companionScores[b] - companionScores[a])[0];
+
+        // 3. 遺漏回補尾 (全盤最冷尾數)
+        let tailLastSeen = Array(10).fill(-1);
+        for(let i=0; i<L; i++) {
+            rawData[i].nums.forEach(n => { tailLastSeen[n % 10] = i; });
+        }
+        let tailOmissions = tailLastSeen.map((last, idx) => (L - 1 - last));
+        let coldestTail = tailOmissions.map((omi, idx) => ({idx, omi}))
+                                       .filter(x => ![top1, top2, bestCompanion].includes(x.idx))
+                                       .sort((a,b) => b.omi - a.omi)[0].idx;
+
+        // 組成 4 尾陣型
+        let targets = [
+            { t: top1, label: "馬可夫榜首 (動能中心)", score: scores[top1] },
+            { t: top2, label: "馬可夫次席 (動能支撐)", score: scores[top2] },
+            { t: bestCompanion, label: "伴生雷達 (Top 1 最佳隊友)", score: companionScores[bestCompanion] },
+            { t: coldestTail, label: "均值回歸 (遺漏破冰點)", score: tailOmissions[coldestTail] }
+        ];
+
+        // 4. 計算單碼遺漏
         let omissions = {};
         for(let i=1; i<=maxNum; i++) omissions[i] = L;
         for(let i=0; i<L; i++) {
-            rawData[i].nums.forEach(n => {
-                omissions[n] = L - 1 - i;
-            });
+            rawData[i].nums.forEach(n => { omissions[n] = L - 1 - i; });
         }
 
-        // C. 渲染過濾報告
-        let filterHtml = '';
-        targetTails.forEach(tail => {
-            filterHtml += `<div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 15px; border-radius: 12px; margin-bottom: 15px;">`;
-            filterHtml += `<div style="font-weight: 800; color: var(--primary-color); font-size: 1.15em; margin-bottom: 12px;">🎯 目標鎖定：<span style="background: var(--primary-color); color: white; padding: 2px 8px; border-radius: 6px;">${tail} 尾</span></div>`;
-            filterHtml += `<table style="width:100%; border-collapse: collapse; font-size: 0.95em; text-align: center;">`;
-            filterHtml += `<tr style="border-bottom: 2px solid var(--td-border); opacity: 0.8;"><th style="padding-bottom:10px;">號碼</th><th style="padding-bottom:10px;">遺漏期數</th><th style="padding-bottom:10px;">斜連狀態</th><th style="padding-bottom:10px;">AI 判定</th></tr>`;
+        // 5. 渲染陣型 UI
+        let filterHtml = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px;">';
+        targets.forEach(tgt => {
+            filterHtml += `<div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 15px; border-radius: 12px; border-top: 4px solid var(--primary-color);">`;
+            filterHtml += `<div style="font-weight: 800; color: var(--primary-color); font-size: 1.1em;">${tgt.t} 尾 <span class="tag-info">${tgt.label}</span></div>`;
+            filterHtml += `<table style="width:100%; border-collapse: collapse; font-size: 0.9em; text-align: center; margin-top: 10px;">`;
+            filterHtml += `<tr style="opacity: 0.6; border-bottom: 1px solid var(--td-border);"><th>碼</th><th>遺漏</th><th>判定</th></tr>`;
             
-            let candidates = [];
-            for(let i=tail; i<=maxNum; i+=10) {
-                if(i === 0) continue;
-                candidates.push(i);
-            }
-            
-            candidates.forEach(num => {
+            for(let num=tgt.t; num<=maxNum; num+=10) {
+                if(num === 0) continue;
                 let omi = omissions[num];
                 let isNeighbor = lastDraw.nums.includes(num - 1) || lastDraw.nums.includes(num + 1);
-                
-                let advice = "";
-                let badgeClass = "";
-                
-                // 定膽規則：冷破冰、熱連莊、防守觀望
-                if (omi >= 10) { 
-                    advice = "冷號破冰"; 
-                    badgeClass = "badge-formula"; 
-                } else if (omi <= 2) { 
-                    advice = "熱號連莊"; 
-                    badgeClass = "badge-hot"; 
-                } else { 
-                    advice = "觀望區間"; 
-                    badgeClass = "badge-cold"; 
-                }
-                
-                // 鄰號加成判定
-                if (isNeighbor && omi >= 10) {
-                    advice = "🔥 極品鐵膽";
-                    badgeClass = "badge-hot";
-                } else if (isNeighbor) {
-                    advice += " (鄰號)";
-                }
-                
-                let neighborText = isNeighbor ? `<span style="color:var(--primary-color); font-weight:800;">有鄰號</span>` : "-";
-                let numStr = num < 10 ? '0' + num : num;
+                let advice = omi >= 10 ? "破冰" : (omi <= 2 ? "熱號" : "觀望");
+                let badgeClass = omi >= 10 ? "badge-formula" : (omi <= 2 ? "badge-hot" : "badge-cold");
+                if (isNeighbor) advice += "★";
                 
                 filterHtml += `<tr style="border-bottom: 1px dashed var(--td-border);">
-                    <td style="font-weight: 900; padding: 12px; font-size: 1.15em;">${numStr}</td>
-                    <td style="font-weight: 600; opacity: 0.8;">${omi} 期</td>
-                    <td>${neighborText}</td>
-                    <td><span class="badge ${badgeClass}">${advice}</span></td>
+                    <td style="font-weight: 900; padding: 8px;">${num < 10 ? '0'+num : num}</td>
+                    <td>${omi}</td>
+                    <td><span class="badge ${badgeClass}" style="font-size: 0.8em; padding: 2px 6px;">${advice}</span></td>
                 </tr>`;
-            });
+            }
             filterHtml += `</table></div>`;
         });
+        filterHtml += '</div>';
         document.getElementById('aiFilterBody').innerHTML = filterHtml;
 
-
-        // --- 2. 渲染馬可夫矩陣表 (自動高亮上期開出尾數) ---
+        // --- 渲染馬可夫矩陣 ---
         let mHtml = '';
         for(let i=0; i<10; i++) {
             let m = markovData.find(x => x.today === i);
             if(!m) continue;
-            
             let isTriggered = lastTails.includes(i);
             let trClass = isTriggered ? ' class="highlight-row"' : '';
-            let indicator = isTriggered ? '<br><span style="font-size:0.75em; color:var(--primary-color); background:var(--highlight-bg); padding:2px 6px; border-radius:4px; font-weight:800;">👉 上期有開</span>' : '';
-
             mHtml += `<tr${trClass}>
-                <td style="font-size:1.15em; font-weight:800;">有 <span style="color:var(--primary-color); font-size:1.2em;">${m.today}</span> 尾${indicator}</td>
-                <td><span class="badge badge-hot"> ${m.top1.tail} 尾</span> <span class="prob-text">(${(m.top1.prob*100).toFixed(1)}%)</span></td>
-                <td><span class="badge badge-hot" style="opacity:0.95;"> ${m.top2.tail} 尾</span> <span class="prob-text">(${(m.top2.prob*100).toFixed(1)}%)</span></td>
-                <td><span class="badge badge-cold"> ${m.worst.tail} 尾</span> <span class="prob-text">(${(m.worst.prob*100).toFixed(1)}%)</span></td>
+                <td style="font-size:1.1em; font-weight:800;">有 <span style="color:var(--primary-color);">${m.today}</span> 尾</td>
+                <td><span class="badge badge-hot"> ${m.top1.tail} </span> <span class="prob-text">(${(m.top1.prob*100).toFixed(1)}%)</span></td>
+                <td><span class="badge badge-hot" style="opacity:0.8;"> ${m.top2.tail} </span> <span class="prob-text">(${(m.top2.prob*100).toFixed(1)}%)</span></td>
+                <td><span class="badge badge-cold"> ${m.worst.tail} </span></td>
             </tr>`;
         }
         document.getElementById('markovBody').innerHTML = mHtml;
