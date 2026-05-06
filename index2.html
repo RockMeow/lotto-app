@@ -379,6 +379,10 @@
         let htmlA = ''; let htmlB = '';
         let startIdx = 40; 
         
+        let totalDraws = 0;
+        let hitsA_count = 0;
+        let hitsB_count = 0;
+
         for(let idx = L - 1; idx >= startIdx; idx--) {
             let subData = rawData.slice(0, idx);
             let subL = subData.length;
@@ -444,23 +448,46 @@
             let hitsA = actualNums.filter(n => numsA.includes(n));
             let hitsB = actualNums.filter(n => numsB.includes(n));
 
+            totalDraws++;
+            if (hitsA.length > 0) hitsA_count++;
+            if (hitsB.length > 0) hitsB_count++;
+
+            let tailsStr = c_targets.join(', ');
+
             // Generate HTML for A
             let resA = hitsA.length > 0 ? `<span class="text-win">命中 ${hitsA.length} 顆 (${hitsA.map(n=>n<10?'0'+n:n).join(', ')})</span>` : `<span class="text-lose">全倒</span>`;
             htmlA += `<div class="history-item">
-                <div class="h-top"><span>[${rawData[idx].date}]</span> <span class="cost-tag">成本 ${numsA.length} 顆</span></div>
+                <div class="h-top">
+                    <span>[${rawData[idx].date}] <span style="color:var(--primary); margin-left:6px;">🎯 ${tailsStr} 尾</span></span> 
+                    <span class="cost-tag">成本 ${numsA.length} 顆</span>
+                </div>
                 <div class="h-bot">${resA}</div>
             </div>`;
 
             // Generate HTML for B
             let resB = hitsB.length > 0 ? `<span class="text-win">命中 ${hitsB.length} 顆 (${hitsB.map(n=>n<10?'0'+n:n).join(', ')})</span>` : `<span class="text-lose">全倒</span>`;
             htmlB += `<div class="history-item">
-                <div class="h-top"><span>[${rawData[idx].date}]</span> <span class="cost-tag">成本 ${numsB.length} 顆</span></div>
+                <div class="h-top">
+                    <span>[${rawData[idx].date}] <span style="color:var(--primary); margin-left:6px;">🎯 ${tailsStr} 尾</span></span> 
+                    <span class="cost-tag">成本 ${numsB.length} 顆</span>
+                </div>
                 <div class="h-bot">${resB}</div>
             </div>`;
         }
         
-        document.getElementById('historyA').innerHTML = htmlA;
-        document.getElementById('historyB').innerHTML = htmlB;
+        // 組合勝率面板
+        let rateA = totalDraws > 0 ? ((hitsA_count / totalDraws) * 100).toFixed(1) : "0.0";
+        let summaryA = `<div style="margin-bottom: 12px; padding: 12px; background: var(--success-bg); color: var(--success); border-radius: 8px; font-weight: 800; text-align: center; border: 1px solid rgba(16, 185, 129, 0.3);">
+            整體回測：命中 ${hitsA_count} 次 / 共 ${totalDraws} 期 (勝率 ${rateA}%)
+        </div>`;
+
+        let rateB = totalDraws > 0 ? ((hitsB_count / totalDraws) * 100).toFixed(1) : "0.0";
+        let summaryB = `<div style="margin-bottom: 12px; padding: 12px; background: var(--success-bg); color: var(--success); border-radius: 8px; font-weight: 800; text-align: center; border: 1px solid rgba(16, 185, 129, 0.3);">
+            整體回測：命中 ${hitsB_count} 次 / 共 ${totalDraws} 期 (勝率 ${rateB}%)
+        </div>`;
+
+        document.getElementById('historyA').innerHTML = summaryA + htmlA;
+        document.getElementById('historyB').innerHTML = summaryB + htmlB;
     }
 </script>
 </body>
