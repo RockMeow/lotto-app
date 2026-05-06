@@ -242,7 +242,7 @@
         runAnalysis();
     }
 
-    // 核心 AI 1：找出單一星期的最佳公式 (包含歷史軌跡)
+    // 核心 AI 1：找出單一星期的最佳公式 (包含日期與歷史軌跡)
     function findBestDynamicFormula(dataSlice, targetWd) {
         let evalDraws = [];
         for(let k=7; k<dataSlice.length; k++) {
@@ -270,6 +270,8 @@
             let currTails = dataSlice[k].nums.map(n => n % 10);
             let prev1 = dataSlice[k-1].nums;
             let prevWdIdx = -1;
+            let drawDate = dataSlice[k].date; // 抓取當前開獎日期
+
             for(let p=k-1; p>=0; p--) { if(dataSlice[p].wd === targetWd) { prevWdIdx = p; break; } }
             
             for(let i=0; i<4; i++){
@@ -278,11 +280,11 @@
                     let addT1 = (prev1[i] + prev1[j]) % 10;
                     let subT1 = Math.abs(prev1[j] - prev1[i]) % 10;
                     
-                    if (currTails.includes(addT1)) { rulesStats[`lag1_add_${i}_${j}`]++; ruleHistory[`lag1_add_${i}_${j}`].push(true); } 
-                    else { ruleHistory[`lag1_add_${i}_${j}`].push(false); }
+                    if (currTails.includes(addT1)) { rulesStats[`lag1_add_${i}_${j}`]++; ruleHistory[`lag1_add_${i}_${j}`].push({ d: drawDate, hit: true }); } 
+                    else { ruleHistory[`lag1_add_${i}_${j}`].push({ d: drawDate, hit: false }); }
                     
-                    if (currTails.includes(subT1)) { rulesStats[`lag1_sub_${i}_${j}`]++; ruleHistory[`lag1_sub_${i}_${j}`].push(true); } 
-                    else { ruleHistory[`lag1_sub_${i}_${j}`].push(false); }
+                    if (currTails.includes(subT1)) { rulesStats[`lag1_sub_${i}_${j}`]++; ruleHistory[`lag1_sub_${i}_${j}`].push({ d: drawDate, hit: true }); } 
+                    else { ruleHistory[`lag1_sub_${i}_${j}`].push({ d: drawDate, hit: false }); }
                     
                     // Lag Wd (上週同日)
                     if(prevWdIdx !== -1) {
@@ -290,14 +292,14 @@
                         let addTW = (pWd[i] + pWd[j]) % 10;
                         let subTW = Math.abs(pWd[j] - pWd[i]) % 10;
                         
-                        if(currTails.includes(addTW)) { rulesStats[`lagWd_add_${i}_${j}`]++; ruleHistory[`lagWd_add_${i}_${j}`].push(true); } 
-                        else { ruleHistory[`lagWd_add_${i}_${j}`].push(false); }
+                        if(currTails.includes(addTW)) { rulesStats[`lagWd_add_${i}_${j}`]++; ruleHistory[`lagWd_add_${i}_${j}`].push({ d: drawDate, hit: true }); } 
+                        else { ruleHistory[`lagWd_add_${i}_${j}`].push({ d: drawDate, hit: false }); }
                         
-                        if(currTails.includes(subTW)) { rulesStats[`lagWd_sub_${i}_${j}`]++; ruleHistory[`lagWd_sub_${i}_${j}`].push(true); } 
-                        else { ruleHistory[`lagWd_sub_${i}_${j}`].push(false); }
+                        if(currTails.includes(subTW)) { rulesStats[`lagWd_sub_${i}_${j}`]++; ruleHistory[`lagWd_sub_${i}_${j}`].push({ d: drawDate, hit: true }); } 
+                        else { ruleHistory[`lagWd_sub_${i}_${j}`].push({ d: drawDate, hit: false }); }
                     } else {
-                        ruleHistory[`lagWd_add_${i}_${j}`].push(false);
-                        ruleHistory[`lagWd_sub_${i}_${j}`].push(false);
+                        ruleHistory[`lagWd_add_${i}_${j}`].push({ d: drawDate, hit: false });
+                        ruleHistory[`lagWd_sub_${i}_${j}`].push({ d: drawDate, hit: false });
                     }
                 }
             }
@@ -314,8 +316,10 @@
         let opSymbol = parts[1] === 'add' ? '+' : '-';
         let iIdx = parseInt(parts[2]); let jIdx = parseInt(parts[3]);
         
-        // 將布林陣列轉換為文字紀錄
-        let historyStr = ruleHistory[bestRuleKey].map(hit => hit ? '<span class="text-win">中</span>' : '<span class="text-lose">X</span>').join(' ');
+        // 將包含日期的物件陣列轉換為文字紀錄 (用 <br> 換行，適合放進 details 摺疊區塊)
+        let historyStr = ruleHistory[bestRuleKey].map(item => 
+            `[${item.d}] ${item.hit ? '<span class="text-win">中</span>' : '<span class="text-lose">X</span>'}`
+        ).join('<br>');
         
         return {
             lagType: parts[0],
@@ -405,7 +409,7 @@
                     <td>
                         <details>
                             <summary style="cursor: pointer; color: var(--primary-color); font-weight: 700; font-size: 0.85em; outline: none;">展開紀錄</summary>
-                            <div style="margin-top: 6px; font-size: 0.85em; line-height: 1.6; letter-spacing: 1px; max-width: 200px; display: inline-block; text-align: left;">${rule.history}</div>
+                            <div style="margin-top: 6px; font-size: 0.85em; line-height: 1.6; letter-spacing: 1px; max-width: 200px; display: inline-block; text-align: left; background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--card-border); max-height: 150px; overflow-y: auto;">${rule.history}</div>
                         </details>
                     </td>
                 </tr>`;
