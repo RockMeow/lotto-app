@@ -115,20 +115,20 @@
     <!-- AI 決策仲裁區 -->
     <div class="section" id="decisionSection" style="display: none;">
         <div class="section-title">智能裁決</div>
-        <div class="section-desc">系統已將「星期公式」與上期的「馬可夫」進行比對，為您解決訊號衝突。</div>
+        <div class="section-desc">系統已將「星期公式」與上期的「馬可夫鏈」進行比對，為您解決訊號衝突。</div>
         
         <div class="decision-panel">
             <div class="decision-header" id="targetNextDraw">目標：計算中...</div>
             <div class="decision-row">
-                <span class="decision-label">星期公式預測</span>
+                <span class="decision-label">星期公式</span>
                 <span class="decision-val" id="decFormula" style="color:var(--primary-color)">-</span>
             </div>
             <div class="decision-row">
-                <span class="decision-label">馬可夫最強尾數</span>
+                <span class="decision-label">馬可夫鏈最強尾數</span>
                 <span class="decision-val" id="decMarkovTop" style="color:#d97706">-</span>
             </div>
             <div class="decision-row">
-                <span class="decision-label">馬可夫避開尾數</span>
+                <span class="decision-label">馬可夫鏈避開尾數</span>
                 <span class="decision-val" id="decMarkovWorst" style="color:#dc2626">-</span>
             </div>
             <div id="finalVerdict" class="final-verdict">-</div>
@@ -304,7 +304,7 @@
 
         // --- 1. AI 決策仲裁 ---
         let nextWd = (rawData[L-1].wd + 1) % 7;
-        document.getElementById('targetNextDraw').innerText = `目標：下一期 (星期${weekdayNames[nextWd]})`;
+        document.getElementById('targetNextDraw').innerText = `目標：下一期 (${weekdayNames[nextWd]})`;
 
         let bestFormula = findBestDynamicFormula(rawData, nextWd);
         let predictedTail = calculateTail(rawData, nextWd, bestFormula);
