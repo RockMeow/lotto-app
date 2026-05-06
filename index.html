@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌 / 週牌</title>
+    <title>三期牌 / 週牌 (動態)</title>
     <link rel="manifest" href="manifest.json">
     <style>
         /* =========================================
@@ -387,13 +387,20 @@
         if (gameType === '649' || gameType === 'mark6') { mainNums = draw.nums.slice(0, 6).sort((a,b)=>a-b); specialNum = draw.nums[6] || null; } 
         else { mainNums = draw.nums.slice(0, 5).sort((a,b)=>a-b); }
 
-        // 1. 產生原本的三期牌目標 (僅保留三顆三期牌)
+        // 1. 產生原本的三期牌目標 (僅保留三顆三期牌: 3連號與3同尾)
         for(let i=0; i<mainNums.length-1; i++) {
             let diff = mainNums[i+1] - mainNums[i];
             if(diff === 4) { 
                 let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3]; 
                 allRecords.push({ type: '三期牌 (3連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); 
             }
+        }
+        const tc = {}; mainNums.map(n => n % 10).forEach(t => tc[t] = (tc[t] || 0) + 1);
+        for(let t in tc) { 
+            if(tc[t] === 3) { 
+                let tg = mainNums.filter(n => n % 10 == t); 
+                allRecords.push({ type: `三期牌 (3同尾)`, targets: tg, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); 
+            } 
         }
 
         // 2. 產生原本的週牌
