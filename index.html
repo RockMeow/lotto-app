@@ -386,28 +386,17 @@
         let mainNums = []; let specialNum = null; const maxNum = (gameType === '649' || gameType === 'mark6') ? 49 : 39;
         if (gameType === '649' || gameType === 'mark6') { mainNums = draw.nums.slice(0, 6).sort((a,b)=>a-b); specialNum = draw.nums[6] || null; } 
         else { mainNums = draw.nums.slice(0, 5).sort((a,b)=>a-b); }
-        let currentDraw3PNums = new Set();
 
-        // 1. 產生原本的三期牌目標
+        // 1. 產生原本的三期牌目標 (僅保留三顆三期牌)
         for(let i=0; i<mainNums.length-1; i++) {
             let diff = mainNums[i+1] - mainNums[i];
-            if (gameType === 'mark6') {
-                if(diff === 9) { let t = [mainNums[i], mainNums[i+1]]; allRecords.push({ type: '三期牌 (追原號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
-                else if(diff === 6) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4, mainNums[i]+5]; allRecords.push({ type: '三期牌 (5連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
-            } else if (gameType === '649') {
-                if(diff === 6) { let t = [mainNums[i], mainNums[i+1]]; allRecords.push({ type: '三期牌 (追原號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
-                else if(diff === 7) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4, mainNums[i]+5, mainNums[i]+6]; allRecords.push({ type: '三期牌 (6連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
-            } else if (['539','daily4','ghana'].includes(gameType)) {
-                if(diff === 4) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3]; allRecords.push({ type: '三期牌 (3連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
-                else if(diff === 5) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4]; allRecords.push({ type: '三期牌 (4連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); if(gameType === 'daily4') { let t2 = [mainNums[i], mainNums[i+1]]; allRecords.push({ type: '三期牌 (追原號)', targets: t2, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t2.forEach(n=>currentDraw3PNums.add(n)); } }
-                else if(diff === 6) { let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3, mainNums[i]+4, mainNums[i]+5]; allRecords.push({ type: '三期牌 (5連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
+            if(diff === 4) { 
+                let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3]; 
+                allRecords.push({ type: '三期牌 (3連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); 
             }
         }
-        if(specialNum !== null) { let t = [(specialNum % maxNum) + 1, ((specialNum + 1) % maxNum) + 1]; allRecords.push({ type: '三期牌 (特別號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); t.forEach(n=>currentDraw3PNums.add(n)); }
-        const tc = {}; mainNums.map(n => n % 10).forEach(t => tc[t] = (tc[t] || 0) + 1);
-        for(let t in tc) { if(tc[t] >= 2) { let tg = mainNums.filter(n => n % 10 == t); allRecords.push({ type: `三期牌 (${tc[t]}同尾)`, targets: tg, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); tg.forEach(n=>currentDraw3PNums.add(n)); } }
 
-        // 3. 產生原本的週牌
+        // 2. 產生原本的週牌
         const day = getWeekday(date); let shouldWeekly = false; let weeklyLife = 5;
         if (gameType === 'daily4' && day === 0) { shouldWeekly = true; weeklyLife = 7; } 
         else if (['539','ghana'].includes(gameType) && day === 6) { shouldWeekly = true; weeklyLife = 6; }
