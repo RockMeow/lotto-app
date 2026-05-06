@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>星期慣性與馬可夫鏈</title>
+    <title>馬可夫鏈與定膽過濾</title>
     <style>
         /* =========================================
            現代化 UI 變數與亮色模式
@@ -92,26 +92,16 @@
         .highlight-row { background-color: rgba(79, 70, 229, 0.08) !important; box-shadow: inset 4px 0 0 var(--primary-color); }
         [data-theme="dark"] .highlight-row { background-color: rgba(129, 140, 248, 0.15) !important; }
 
-        /* 標籤與足跡樣式 */
+        /* 標籤樣式 */
         .badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-weight: 800; font-size: 0.95em; letter-spacing: 0.5px; }
         .badge-hot { background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid #fcd34d; }
         .badge-cold { background: rgba(220, 38, 38, 0.1); color: #dc2626; border: 1px solid #fca5a5; }
         .badge-formula { background: var(--highlight-bg); color: var(--highlight-text); border: 1px solid rgba(79, 70, 229, 0.3); }
         
-        .text-win { color: #16a34a; font-weight: 800; }
-        .text-lose { color: #dc2626; opacity: 0.6; font-weight: 700; }
-
         [data-theme="dark"] .badge-hot { color: #fbbf24; border-color: #b45309; }
         [data-theme="dark"] .badge-cold { color: #f87171; border-color: #991b1b; }
-        [data-theme="dark"] .text-win { color: #4ade80; }
-        [data-theme="dark"] .text-lose { color: #f87171; opacity: 0.8; }
 
-        .weekday-col { font-size: 1.1em; font-weight: 900; color: var(--primary-color); }
-        .rate-col { font-weight: 900; color: #16a34a; font-size: 1.1em; }
         .prob-text { font-weight: 800; margin-left: 6px; font-size: 0.9em; opacity: 0.8; }
-
-        details > summary { list-style: none; }
-        details > summary::-webkit-details-marker { display: none; }
 
         @media (max-width: 768px) {
             .container { padding: 25px 15px; }
@@ -123,8 +113,8 @@
 
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>星期慣性 & 馬可夫鏈</h1>
-    <div class="subtitle">動態預測</div>
+    <h1>馬可夫鏈 & 智能定膽</h1>
+    <div class="subtitle">AI 動態過濾系統</div>
 
     <div class="section" style="border: none; box-shadow: none; padding: 0 25px; margin-bottom: 10px;">
         <div class="control-group">
@@ -139,31 +129,14 @@
         </div>
     </div>
 
-    <div class="section" id="formulaSection" style="display: none;">
-        <div class="section-title">星期專屬動態公式</div>
-        
-        <div class="table-responsive">
-            <table id="formulaTable">
-                <thead>
-                    <tr>
-                        <th>預測日期</th>
-                        <th>星期</th>
-                        <th>基準</th>
-                        <th>公式</th>
-                        <th>勝率</th>
-                        <th>命中/總次數</th>
-                        <th>預測尾數</th>
-                        <th>完整歷史足跡 (舊→新)</th>
-                    </tr>
-                </thead>
-                <tbody id="formulaBody"></tbody>
-            </table>
-        </div>
+    <div class="section" id="aiFilterSection" style="display: none;">
+        <div class="section-title">🤖 AI 深度過濾 (定膽推薦)</div>
+        <div class="section-desc">系統自動提取馬可夫鏈最強動能尾數，並計算遺漏值與斜連狀態。</div>
+        <div id="aiFilterBody"></div>
     </div>
 
     <div class="section" id="markovSection" style="display: none;">
-        <div class="section-title">馬可夫鏈</div>
-        
+        <div class="section-title">馬可夫鏈矩陣</div>
         <div class="table-responsive">
             <table id="markovTable">
                 <thead>
@@ -183,9 +156,6 @@
 
 <script>
     let rawData = [];
-    // 定義星期的排序 (週一到週日)
-    const weekdayDisplayOrder = [1, 2, 3, 4, 5, 6, 0]; 
-    const weekdayNames = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
 
     function toggleTheme() {
         const body = document.body;
@@ -212,17 +182,6 @@
         return isNaN(dateObj.getTime()) ? null : dateObj;
     }
 
-    function getNextTargetDate(lastDateStr, targetWd) {
-        let dObj = parseDateObj(lastDateStr);
-        if (!dObj) return "-";
-        let daysToAdd = (targetWd - dObj.getDay() + 7) % 7;
-        if (daysToAdd === 0) daysToAdd = 7; 
-        dObj.setDate(dObj.getDate() + daysToAdd);
-        let m = String(dObj.getMonth() + 1).padStart(2, '0');
-        let d = String(dObj.getDate()).padStart(2, '0');
-        return `${dObj.getFullYear()}/${m}/${d}`;
-    }
-
     document.getElementById('autoLoadCsv').addEventListener('change', function(e) {
         const fileName = e.target.value; if (!fileName) return;
         fetch(fileName).then(response => response.text()).then(text => { processCSV(text); });
@@ -240,107 +199,6 @@
             }
         }
         runAnalysis();
-    }
-
-    // 核心 AI 1：找出單一星期的最佳公式 (包含日期與歷史軌跡)
-    function findBestDynamicFormula(dataSlice, targetWd) {
-        let evalDraws = [];
-        for(let k=7; k<dataSlice.length; k++) {
-            if(dataSlice[k].wd === targetWd) evalDraws.push(k);
-        }
-        
-        let total = evalDraws.length;
-        if(total < 3) return null; 
-
-        let rulesStats = {};
-        let ruleHistory = {}; 
-        
-        for(let lagType of ['lag1', 'lagWd']) {
-            for(let i=0; i<4; i++) {
-                for(let j=i+1; j<5; j++) {
-                    rulesStats[`${lagType}_add_${i}_${j}`] = 0;
-                    rulesStats[`${lagType}_sub_${i}_${j}`] = 0;
-                    ruleHistory[`${lagType}_add_${i}_${j}`] = [];
-                    ruleHistory[`${lagType}_sub_${i}_${j}`] = [];
-                }
-            }
-        }
-
-        evalDraws.forEach(k => {
-            let currTails = dataSlice[k].nums.map(n => n % 10);
-            let prev1 = dataSlice[k-1].nums;
-            let prevWdIdx = -1;
-            let drawDate = dataSlice[k].date; // 抓取當前開獎日期
-
-            for(let p=k-1; p>=0; p--) { if(dataSlice[p].wd === targetWd) { prevWdIdx = p; break; } }
-            
-            for(let i=0; i<4; i++){
-                for(let j=i+1; j<5; j++){
-                    // Lag 1 (昨晚)
-                    let addT1 = (prev1[i] + prev1[j]) % 10;
-                    let subT1 = Math.abs(prev1[j] - prev1[i]) % 10;
-                    
-                    if (currTails.includes(addT1)) { rulesStats[`lag1_add_${i}_${j}`]++; ruleHistory[`lag1_add_${i}_${j}`].push({ d: drawDate, hit: true }); } 
-                    else { ruleHistory[`lag1_add_${i}_${j}`].push({ d: drawDate, hit: false }); }
-                    
-                    if (currTails.includes(subT1)) { rulesStats[`lag1_sub_${i}_${j}`]++; ruleHistory[`lag1_sub_${i}_${j}`].push({ d: drawDate, hit: true }); } 
-                    else { ruleHistory[`lag1_sub_${i}_${j}`].push({ d: drawDate, hit: false }); }
-                    
-                    // Lag Wd (上週同日)
-                    if(prevWdIdx !== -1) {
-                        let pWd = dataSlice[prevWdIdx].nums;
-                        let addTW = (pWd[i] + pWd[j]) % 10;
-                        let subTW = Math.abs(pWd[j] - pWd[i]) % 10;
-                        
-                        if(currTails.includes(addTW)) { rulesStats[`lagWd_add_${i}_${j}`]++; ruleHistory[`lagWd_add_${i}_${j}`].push({ d: drawDate, hit: true }); } 
-                        else { ruleHistory[`lagWd_add_${i}_${j}`].push({ d: drawDate, hit: false }); }
-                        
-                        if(currTails.includes(subTW)) { rulesStats[`lagWd_sub_${i}_${j}`]++; ruleHistory[`lagWd_sub_${i}_${j}`].push({ d: drawDate, hit: true }); } 
-                        else { ruleHistory[`lagWd_sub_${i}_${j}`].push({ d: drawDate, hit: false }); }
-                    } else {
-                        ruleHistory[`lagWd_add_${i}_${j}`].push({ d: drawDate, hit: false });
-                        ruleHistory[`lagWd_sub_${i}_${j}`].push({ d: drawDate, hit: false });
-                    }
-                }
-            }
-        });
-
-        let bestRuleKey = ""; let maxHits = -1;
-        for(let key in rulesStats) {
-            if(rulesStats[key] > maxHits) { maxHits = rulesStats[key]; bestRuleKey = key; }
-        }
-        
-        let rate = maxHits / total;
-        let parts = bestRuleKey.split('_');
-        let lagName = parts[0] === 'lag1' ? ' (上期)' : '上週同星期';
-        let opSymbol = parts[1] === 'add' ? '+' : '-';
-        let iIdx = parseInt(parts[2]); let jIdx = parseInt(parts[3]);
-        
-        // 將包含日期的物件陣列轉換為文字紀錄 (用 <br> 換行，適合放進 details 摺疊區塊)
-        let historyStr = ruleHistory[bestRuleKey].map(item => 
-            `[${item.d}] ${item.hit ? '<span class="text-win">中</span>' : '<span class="text-lose">X</span>'}`
-        ).join('<br>');
-        
-        return {
-            lagType: parts[0],
-            op: parts[1],
-            i: iIdx,
-            j: jIdx,
-            lagName: lagName,
-            calcName: `第${jIdx+1}碼 ${opSymbol} 第${iIdx+1}碼`,
-            rate: rate, 
-            hits: maxHits, 
-            total: total,
-            history: historyStr
-        };
-    }
-
-    function calculateTail(dataSlice, targetWd, rule) {
-        let L = dataSlice.length; let refNums = [];
-        if(rule.lagType === 'lag1') refNums = dataSlice[L-1].nums;
-        else { for(let p=L-1; p>=0; p--) { if(dataSlice[p].wd === targetWd) { refNums = dataSlice[p].nums; break; } } }
-        if(refNums.length === 0) return null;
-        return rule.op === 'add' ? (refNums[rule.i] + refNums[rule.j]) % 10 : Math.abs(refNums[rule.j] - refNums[rule.i]) % 10;
     }
 
     function getMarkovMatrixAll(dataSlice) {
@@ -374,51 +232,105 @@
     }
 
     function runAnalysis() {
-        document.getElementById('formulaSection').style.display = 'block';
+        document.getElementById('aiFilterSection').style.display = 'block';
         document.getElementById('markovSection').style.display = 'block';
         
         const L = rawData.length;
         if(L < 40) return;
 
         let lastDraw = rawData[L-1];
-        let lastDrawDate = lastDraw.date;
-        let nextWd = (lastDraw.wd + 1) % 7; 
         let lastTails = [...new Set(lastDraw.nums.map(n => n % 10))]; 
 
-        // --- 1. 渲染每週七日公式表 (自動高亮下一期 + 摺疊文字軌跡) ---
-        let fHtml = '';
-        weekdayDisplayOrder.forEach(wd => {
-            let rule = findBestDynamicFormula(rawData, wd);
-            if(rule) {
-                let targetDate = getNextTargetDate(lastDrawDate, wd);
-                let predictedTail = calculateTail(rawData, wd, rule);
-                let tailDisplay = predictedTail !== null ? `<span class="badge badge-hot">${predictedTail} 尾</span>` : '-';
+        // 自動判斷球數上限 (例如大樂透49，天天樂/迦納彩39)
+        let maxNum = Math.max(39, ...rawData.map(d => Math.max(...d.nums)));
+        
+        let markovData = getMarkovMatrixAll(rawData);
 
-                let isTriggered = (wd === nextWd);
-                let trClass = isTriggered ? ' class="highlight-row"' : '';
-                let indicator = isTriggered ? '<br><span style="font-size:0.75em; color:var(--primary-color); background:var(--highlight-bg); padding:2px 6px; border-radius:4px; font-weight:800;">👉</span>' : '';
-
-                fHtml += `<tr${trClass}>
-                    <td style="font-weight:700;">${targetDate}</td>
-                    <td class="weekday-col">${weekdayNames[wd]}${indicator}</td>
-                    <td style="font-weight:700; opacity: 0.9;">${rule.lagName}</td>
-                    <td><span class="badge badge-formula">${rule.calcName}</span></td>
-                    <td class="rate-col">${(rule.rate*100).toFixed(1)}%</td>
-                    <td style="font-weight:600; opacity:0.8;">${rule.hits} / ${rule.total}</td>
-                    <td>${tailDisplay}</td>
-                    <td>
-                        <details>
-                            <summary style="cursor: pointer; color: var(--primary-color); font-weight: 700; font-size: 0.85em; outline: none;">展開紀錄</summary>
-                            <div style="margin-top: 6px; font-size: 0.85em; line-height: 1.6; letter-spacing: 1px; max-width: 200px; display: inline-block; text-align: left; background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--card-border); max-height: 150px; overflow-y: auto;">${rule.history}</div>
-                        </details>
-                    </td>
-                </tr>`;
+        // --- 1. AI 深度過濾定膽邏輯 ---
+        
+        // A. 計算明天的目標馬可夫強勢尾數 (基於昨晚開出的所有尾數加總評分)
+        let scores = {};
+        for(let i=0; i<10; i++) scores[i] = 0;
+        
+        lastTails.forEach(t => {
+            let m = markovData.find(x => x.today === t);
+            if(m) {
+                scores[m.top1.tail] += 2;   // 最強傳染 +2
+                scores[m.top2.tail] += 1;   // 次強傳染 +1
+                scores[m.worst.tail] -= 2;  // 避開死角 -2
             }
         });
-        document.getElementById('formulaBody').innerHTML = fHtml;
+        
+        // 抓出分數最高的兩個尾數作為主力目標
+        let sortedTails = Object.keys(scores).map(Number).sort((a,b) => scores[b] - scores[a]);
+        let targetTails = [sortedTails[0], sortedTails[1]];
+
+        // B. 計算所有號碼的遺漏期數
+        let omissions = {};
+        for(let i=1; i<=maxNum; i++) omissions[i] = L;
+        for(let i=0; i<L; i++) {
+            rawData[i].nums.forEach(n => {
+                omissions[n] = L - 1 - i;
+            });
+        }
+
+        // C. 渲染過濾報告
+        let filterHtml = '';
+        targetTails.forEach(tail => {
+            filterHtml += `<div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 15px; border-radius: 12px; margin-bottom: 15px;">`;
+            filterHtml += `<div style="font-weight: 800; color: var(--primary-color); font-size: 1.15em; margin-bottom: 12px;">🎯 目標鎖定：<span style="background: var(--primary-color); color: white; padding: 2px 8px; border-radius: 6px;">${tail} 尾</span></div>`;
+            filterHtml += `<table style="width:100%; border-collapse: collapse; font-size: 0.95em; text-align: center;">`;
+            filterHtml += `<tr style="border-bottom: 2px solid var(--td-border); opacity: 0.8;"><th style="padding-bottom:10px;">號碼</th><th style="padding-bottom:10px;">遺漏期數</th><th style="padding-bottom:10px;">斜連狀態</th><th style="padding-bottom:10px;">AI 判定</th></tr>`;
+            
+            let candidates = [];
+            for(let i=tail; i<=maxNum; i+=10) {
+                if(i === 0) continue;
+                candidates.push(i);
+            }
+            
+            candidates.forEach(num => {
+                let omi = omissions[num];
+                let isNeighbor = lastDraw.nums.includes(num - 1) || lastDraw.nums.includes(num + 1);
+                
+                let advice = "";
+                let badgeClass = "";
+                
+                // 定膽規則：冷破冰、熱連莊、防守觀望
+                if (omi >= 10) { 
+                    advice = "冷號破冰"; 
+                    badgeClass = "badge-formula"; 
+                } else if (omi <= 2) { 
+                    advice = "熱號連莊"; 
+                    badgeClass = "badge-hot"; 
+                } else { 
+                    advice = "觀望區間"; 
+                    badgeClass = "badge-cold"; 
+                }
+                
+                // 鄰號加成判定
+                if (isNeighbor && omi >= 10) {
+                    advice = "🔥 極品鐵膽";
+                    badgeClass = "badge-hot";
+                } else if (isNeighbor) {
+                    advice += " (鄰號)";
+                }
+                
+                let neighborText = isNeighbor ? `<span style="color:var(--primary-color); font-weight:800;">有鄰號</span>` : "-";
+                let numStr = num < 10 ? '0' + num : num;
+                
+                filterHtml += `<tr style="border-bottom: 1px dashed var(--td-border);">
+                    <td style="font-weight: 900; padding: 12px; font-size: 1.15em;">${numStr}</td>
+                    <td style="font-weight: 600; opacity: 0.8;">${omi} 期</td>
+                    <td>${neighborText}</td>
+                    <td><span class="badge ${badgeClass}">${advice}</span></td>
+                </tr>`;
+            });
+            filterHtml += `</table></div>`;
+        });
+        document.getElementById('aiFilterBody').innerHTML = filterHtml;
+
 
         // --- 2. 渲染馬可夫矩陣表 (自動高亮上期開出尾數) ---
-        let markovData = getMarkovMatrixAll(rawData);
         let mHtml = '';
         for(let i=0; i<10; i++) {
             let m = markovData.find(x => x.today === i);
@@ -426,7 +338,7 @@
             
             let isTriggered = lastTails.includes(i);
             let trClass = isTriggered ? ' class="highlight-row"' : '';
-            let indicator = isTriggered ? '<br><span style="font-size:0.75em; color:var(--primary-color); background:var(--highlight-bg); padding:2px 6px; border-radius:4px; font-weight:800;">👉</span>' : '';
+            let indicator = isTriggered ? '<br><span style="font-size:0.75em; color:var(--primary-color); background:var(--highlight-bg); padding:2px 6px; border-radius:4px; font-weight:800;">👉 上期有開</span>' : '';
 
             mHtml += `<tr${trClass}>
                 <td style="font-size:1.15em; font-weight:800;">有 <span style="color:var(--primary-color); font-size:1.2em;">${m.today}</span> 尾${indicator}</td>
