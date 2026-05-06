@@ -57,7 +57,7 @@
         }
         
         .container { 
-            max-width: 950px; margin: auto; background: var(--container-bg); padding: 35px; border-radius: 20px; 
+            max-width: 1050px; margin: auto; background: var(--container-bg); padding: 35px; border-radius: 20px; 
             box-shadow: var(--shadow-lg); position: relative;
         }
         
@@ -92,11 +92,21 @@
         .highlight-row { background-color: rgba(79, 70, 229, 0.08) !important; box-shadow: inset 4px 0 0 var(--primary-color); }
         [data-theme="dark"] .highlight-row { background-color: rgba(129, 140, 248, 0.15) !important; }
 
-        /* 標籤樣式 */
+        /* 標籤與足跡樣式 */
         .badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-weight: 800; font-size: 0.95em; letter-spacing: 0.5px; }
         .badge-hot { background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid #fcd34d; }
         .badge-cold { background: rgba(220, 38, 38, 0.1); color: #dc2626; border: 1px solid #fca5a5; }
         .badge-formula { background: var(--highlight-bg); color: var(--highlight-text); border: 1px solid rgba(79, 70, 229, 0.3); }
+        
+        .history-dots { 
+            display: inline-flex; 
+            flex-wrap: wrap; 
+            gap: 2px; 
+            max-width: 180px; 
+            justify-content: flex-start;
+            font-size: 0.6em; /* 使用超小的圓點符號 */
+            letter-spacing: 1px;
+        }
 
         [data-theme="dark"] .badge-hot { color: #fbbf24; border-color: #b45309; }
         [data-theme="dark"] .badge-cold { color: #f87171; border-color: #991b1b; }
@@ -145,6 +155,7 @@
                         <th>勝率</th>
                         <th>命中/總次數</th>
                         <th>預測尾數</th>
+                        <th>完整歷史足跡 (舊→新)</th>
                     </tr>
                 </thead>
                 <tbody id="formulaBody"></tbody>
@@ -203,12 +214,11 @@
         return isNaN(dateObj.getTime()) ? null : dateObj;
     }
 
-    // 計算下一個特定星期幾的日期字串
     function getNextTargetDate(lastDateStr, targetWd) {
         let dObj = parseDateObj(lastDateStr);
         if (!dObj) return "-";
         let daysToAdd = (targetWd - dObj.getDay() + 7) % 7;
-        if (daysToAdd === 0) daysToAdd = 7; // 強制為下週的同一天
+        if (daysToAdd === 0) daysToAdd = 7; 
         dObj.setDate(dObj.getDate() + daysToAdd);
         let m = String(dObj.getMonth() + 1).padStart(2, '0');
         let d = String(dObj.getDate()).padStart(2, '0');
@@ -234,7 +244,7 @@
         runAnalysis();
     }
 
-    // 核心 AI 1：找出單一星期的最佳公式
+    // 核心 AI 1：找出單一星期的最佳公式 (包含歷史軌跡)
     function findBestDynamicFormula(dataSlice, targetWd) {
         let evalDraws = [];
         for(let k=7; k<dataSlice.length; k++) {
@@ -245,11 +255,15 @@
         if(total < 3) return null; 
 
         let rulesStats = {};
+        let ruleHistory = {}; // 儲存命中歷史的陣列
+        
         for(let lagType of ['lag1', 'lagWd']) {
             for(let i=0; i<4; i++) {
                 for(let j=i+1; j<5; j++) {
                     rulesStats[`${lagType}_add_${i}_${j}`] = 0;
                     rulesStats[`${lagType}_sub_${i}_${j}`] = 0;
+                    ruleHistory[`${lagType}_add_${i}_${j}`] = [];
+                    ruleHistory[`${lagType}_sub_${i}_${j}`] = [];
                 }
             }
         }
@@ -262,13 +276,31 @@
             
             for(let i=0; i<4; i++){
                 for(let j=i+1; j<5; j++){
-                    if(currTails.includes((prev1[i]+prev1[j])%10)) rulesStats[`lag1_add_${i}_${j}`]++;
-                    if(currTails.includes(Math.abs(prev1[j]-prev1[i])%10)) rulesStats[`lag1_sub_${i}_${j}`]++;
+                    // Lag 1 (昨晚)
+                    let addT1 = (prev1[i] + prev1[j]) % 10;
+                    let subT1 = Math.abs(prev1[j] - prev1[i]) % 10;
                     
+                    if (currTails.includes(addT1)) { rulesStats[`lag1_add_${i}_${j}`]++; ruleHistory[`lag1_add_${i}_${j}`].push(true); } 
+                    else { ruleHistory[`lag1_add_${i}_${j}`].push(false); }
+                    
+                    if (currTails.includes(subT1)) { rulesStats[`lag1_sub_${i}_${j}`]++; ruleHistory[`lag1_sub_${i}_${j}`].push(true); } 
+                    else { ruleHistory[`lag1_sub_${i}_${j}`].push(false); }
+                    
+                    // Lag Wd (上週同日)
                     if(prevWdIdx !== -1) {
                         let pWd = dataSlice[prevWdIdx].nums;
-                        if(currTails.includes((pWd[i]+pWd[j])%10)) rulesStats[`lagWd_add_${i}_${j}`]++;
-                        if(currTails.includes(Math.abs(pWd[j]-pWd[i])%10)) rulesStats[`lagWd_sub_${i}_${j}`]++;
+                        let addTW = (pWd[i] + pWd[j]) % 10;
+                        let subTW = Math.abs(pWd[j] - pWd[i]) % 10;
+                        
+                        if(currTails.includes(addTW)) { rulesStats[`lagWd_add_${i}_${j}`]++; ruleHistory[`lagWd_add_${i}_${j}`].push(true); } 
+                        else { ruleHistory[`lagWd_add_${i}_${j}`].push(false); }
+                        
+                        if(currTails.includes(subTW)) { rulesStats[`lagWd_sub_${i}_${j}`]++; ruleHistory[`lagWd_sub_${i}_${j}`].push(true); } 
+                        else { ruleHistory[`lagWd_sub_${i}_${j}`].push(false); }
+                    } else {
+                        // 如果當天找不到上週資料，就塞 false 填補長度，保持歷史線完整
+                        ruleHistory[`lagWd_add_${i}_${j}`].push(false);
+                        ruleHistory[`lagWd_sub_${i}_${j}`].push(false);
                     }
                 }
             }
@@ -285,6 +317,9 @@
         let opSymbol = parts[1] === 'add' ? '+' : '-';
         let iIdx = parseInt(parts[2]); let jIdx = parseInt(parts[3]);
         
+        // 將布林陣列轉換為圓圈圖示
+        let historyStr = ruleHistory[bestRuleKey].map(hit => hit ? '🟢' : '🔴').join('');
+        
         return {
             lagType: parts[0],
             op: parts[1],
@@ -292,11 +327,13 @@
             j: jIdx,
             lagName: lagName,
             calcName: `第${jIdx+1}碼 ${opSymbol} 第${iIdx+1}碼`,
-            rate: rate, hits: maxHits, total: total
+            rate: rate, 
+            hits: maxHits, 
+            total: total,
+            history: historyStr
         };
     }
 
-    // 根據公式推算預測尾數
     function calculateTail(dataSlice, targetWd, rule) {
         let L = dataSlice.length; let refNums = [];
         if(rule.lagType === 'lag1') refNums = dataSlice[L-1].nums;
@@ -305,7 +342,6 @@
         return rule.op === 'add' ? (refNums[rule.i] + refNums[rule.j]) % 10 : Math.abs(refNums[rule.j] - refNums[rule.i]) % 10;
     }
 
-    // 核心 AI 2：馬可夫狀態轉移矩陣
     function getMarkovMatrixAll(dataSlice) {
         let trans = {}; let counts = {};
         for(let i=0; i<10; i++) { trans[i] = {}; counts[i] = 0; for(let j=0; j<10; j++) trans[i][j] = 0; }
@@ -345,10 +381,10 @@
 
         let lastDraw = rawData[L-1];
         let lastDrawDate = lastDraw.date;
-        let nextWd = (lastDraw.wd + 1) % 7; // 自動判斷下一期的星期
-        let lastTails = [...new Set(lastDraw.nums.map(n => n % 10))]; // 抓取上期所有的尾數
+        let nextWd = (lastDraw.wd + 1) % 7; 
+        let lastTails = [...new Set(lastDraw.nums.map(n => n % 10))]; 
 
-        // --- 1. 渲染每週七日公式表 (自動高亮下一期) ---
+        // --- 1. 渲染每週七日公式表 (自動高亮下一期 + 歷史軌跡) ---
         let fHtml = '';
         weekdayDisplayOrder.forEach(wd => {
             let rule = findBestDynamicFormula(rawData, wd);
@@ -357,10 +393,9 @@
                 let predictedTail = calculateTail(rawData, wd, rule);
                 let tailDisplay = predictedTail !== null ? `<span class="badge badge-hot">${predictedTail} 尾</span>` : '-';
 
-                // 高亮邏輯
                 let isTriggered = (wd === nextWd);
                 let trClass = isTriggered ? ' class="highlight-row"' : '';
-                let indicator = isTriggered ? '<br><span style="font-size:0.75em; color:var(--primary-color); background:var(--highlight-bg); padding:2px 6px; border-radius:4px; font-weight:800;">👉 下期</span>' : '';
+                let indicator = isTriggered ? '<br><span style="font-size:0.75em; color:var(--primary-color); background:var(--highlight-bg); padding:2px 6px; border-radius:4px; font-weight:800;">👉 下期觸發</span>' : '';
 
                 fHtml += `<tr${trClass}>
                     <td style="font-weight:700;">${targetDate}</td>
@@ -370,6 +405,7 @@
                     <td class="rate-col">${(rule.rate*100).toFixed(1)}%</td>
                     <td style="font-weight:600; opacity:0.8;">${rule.hits} / ${rule.total}</td>
                     <td>${tailDisplay}</td>
+                    <td><div class="history-dots">${rule.history}</div></td>
                 </tr>`;
             }
         });
@@ -382,10 +418,9 @@
             let m = markovData.find(x => x.today === i);
             if(!m) continue;
             
-            // 高亮邏輯
             let isTriggered = lastTails.includes(i);
             let trClass = isTriggered ? ' class="highlight-row"' : '';
-            let indicator = isTriggered ? '<br><span style="font-size:0.75em; color:var(--primary-color); background:var(--highlight-bg); padding:2px 6px; border-radius:4px; font-weight:800;">👉 上期</span>' : '';
+            let indicator = isTriggered ? '<br><span style="font-size:0.75em; color:var(--primary-color); background:var(--highlight-bg); padding:2px 6px; border-radius:4px; font-weight:800;">👉 上期有開</span>' : '';
 
             mHtml += `<tr${trClass}>
                 <td style="font-size:1.15em; font-weight:800;">有 <span style="color:var(--primary-color); font-size:1.2em;">${m.today}</span> 尾${indicator}</td>
