@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>星期慣性與馬可夫鏈 (AI 仲裁版)</title>
+    <title>星期慣性與馬可夫鏈</title>
     <style>
         :root {
             --bg-color: #f8fafc; 
@@ -89,6 +89,10 @@
         
         [data-theme="dark"] .badge-hot { color: #fbbf24; border-color: #b45309; }
         [data-theme="dark"] .badge-cold { color: #f87171; border-color: #991b1b; }
+        
+        .weekday-col { font-size: 1.1em; font-weight: 900; color: var(--primary-color); }
+        .rate-col { font-weight: 900; color: #16a34a; font-size: 1.1em; }
+        .prob-text { font-weight: 800; margin-left: 6px; font-size: 0.9em; opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -96,11 +100,10 @@
 <div class="container">
     <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
     <h1>星期慣性 & 馬可夫鏈</h1>
-    <div class="subtitle">AI 雙核訊號仲裁版</div>
 
     <div class="section" style="border: none; box-shadow: none; padding: 0 25px; margin-bottom: 10px;">
         <select id="autoLoadCsv">
-            <option value="">-- 請選擇歷史數據庫 --</option>
+            <option value="">-- 請選擇彩球類型 --</option>
             <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
             <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
             <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
@@ -111,21 +114,21 @@
 
     <!-- AI 決策仲裁區 -->
     <div class="section" id="decisionSection" style="display: none;">
-        <div class="section-title">🧠 AI 決策大腦 (下期自動仲裁)</div>
-        <div class="section-desc">系統已將「星期公式」與昨晚的「馬可夫傳染」進行比對，為您解決訊號衝突。</div>
+        <div class="section-title">智能裁決</div>
+        <div class="section-desc">系統已將「星期公式」與上期的「馬可夫」進行比對，為您解決訊號衝突。</div>
         
         <div class="decision-panel">
             <div class="decision-header" id="targetNextDraw">目標：計算中...</div>
             <div class="decision-row">
-                <span class="decision-label">📅 星期公式預測</span>
+                <span class="decision-label">星期公式預測</span>
                 <span class="decision-val" id="decFormula" style="color:var(--primary-color)">-</span>
             </div>
             <div class="decision-row">
-                <span class="decision-label">🧬 馬可夫最強傳染</span>
+                <span class="decision-label">馬可夫最強尾數</span>
                 <span class="decision-val" id="decMarkovTop" style="color:#d97706">-</span>
             </div>
             <div class="decision-row">
-                <span class="decision-label">❄️ 馬可夫極度排斥 (死角)</span>
+                <span class="decision-label">馬可夫避開尾數</span>
                 <span class="decision-val" id="decMarkovWorst" style="color:#dc2626">-</span>
             </div>
             <div id="finalVerdict" class="final-verdict">-</div>
@@ -133,7 +136,7 @@
     </div>
 
     <div class="section" id="formulaSection" style="display: none;">
-        <div class="section-title">星期專屬動態公式 (總表)</div>
+        <div class="section-title">星期專屬動態公式</div>
         <div class="table-responsive">
             <table id="formulaTable">
                 <thead><tr><th>星期</th><th>基準</th><th>公式</th><th>勝率</th><th>命中/總次數</th></tr></thead>
@@ -143,7 +146,7 @@
     </div>
 
     <div class="section" id="markovSection" style="display: none;">
-        <div class="section-title">馬可夫鏈傳染矩陣 (總表)</div>
+        <div class="section-title">馬可夫鏈(總表)</div>
         <div class="table-responsive">
             <table id="markovTable">
                 <thead><tr><th>如果開出...</th><th>最強尾數</th><th>次強尾數</th><th>避開尾數</th></tr></thead>
@@ -337,13 +340,18 @@
         });
         document.getElementById('formulaBody').innerHTML = fHtml;
 
-        // --- 3. 渲染馬可夫總表 ---
+        // --- 3. 渲染馬可夫總表 (將百分比加回) ---
         let markovData = getMarkovMatrixAll(rawData);
         let mHtml = '';
         for(let i=0; i<10; i++) {
             let m = markovData.find(x => x.today === i);
             if(m) {
-                mHtml += `<tr><td style="font-size:1.15em; font-weight:800;">有 <span style="color:var(--primary-color);">${m.today}</span> 尾</td><td><span class="badge badge-hot"> ${m.top1.tail} 尾</span></td><td><span class="badge badge-hot" style="opacity:0.95;"> ${m.top2.tail} 尾</span></td><td><span class="badge badge-cold"> ${m.worst.tail} 尾</span></td></tr>`;
+                mHtml += `<tr>
+                    <td style="font-size:1.15em; font-weight:800;">有 <span style="color:var(--primary-color);">${m.today}</span> 尾</td>
+                    <td><span class="badge badge-hot"> ${m.top1.tail} 尾</span> <span class="prob-text">(${(m.top1.prob*100).toFixed(1)}%)</span></td>
+                    <td><span class="badge badge-hot" style="opacity:0.95;"> ${m.top2.tail} 尾</span> <span class="prob-text">(${(m.top2.prob*100).toFixed(1)}%)</span></td>
+                    <td><span class="badge badge-cold"> ${m.worst.tail} 尾</span> <span class="prob-text">(${(m.worst.prob*100).toFixed(1)}%)</span></td>
+                </tr>`;
             }
         }
         document.getElementById('markovBody').innerHTML = mHtml;
