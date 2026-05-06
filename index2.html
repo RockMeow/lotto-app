@@ -396,6 +396,7 @@
 
                 let isTriggered = (wd === nextWd);
                 let trClass = isTriggered ? ' class="highlight-row"' : '';
+                let indicator = isTriggered ? '<br><span style="font-size:0.75em; color:var(--primary-color); background:var(--highlight-bg); padding:2px 6px; border-radius:4px; font-weight:800;">👉</span>' : '';
 
                 fHtml += `<tr${trClass}>
                     <td style="font-weight:700;">${targetDate}</td>
@@ -425,6 +426,7 @@
             
             let isTriggered = lastTails.includes(i);
             let trClass = isTriggered ? ' class="highlight-row"' : '';
+            let indicator = isTriggered ? '<br><span style="font-size:0.75em; color:var(--primary-color); background:var(--highlight-bg); padding:2px 6px; border-radius:4px; font-weight:800;">👉</span>' : '';
 
             mHtml += `<tr${trClass}>
                 <td style="font-size:1.15em; font-weight:800;">有 <span style="color:var(--primary-color); font-size:1.2em;">${m.today}</span> 尾${indicator}</td>
