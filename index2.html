@@ -388,9 +388,10 @@
         let startIdx = 40; 
         
         let totalDraws = 0;
-        let hitsA_count = 0;
-        let hitsB_count = 0;
-        let hitsC_count = 0;
+        let hitsA_count = 0, hitsB_count = 0, hitsC_count = 0;
+        let hitsA_2 = 0, hitsA_3 = 0, hitsA_4 = 0;
+        let hitsB_2 = 0, hitsB_3 = 0, hitsB_4 = 0;
+        let hitsC_2 = 0, hitsC_3 = 0, hitsC_4 = 0;
 
         for(let idx = L - 1; idx >= startIdx; idx--) {
             let subData = rawData.slice(0, idx);
@@ -460,9 +461,18 @@
             let hitsC = actualNums.filter(n => numsC.includes(n));
 
             totalDraws++;
+            
+            // 策略 A 統計
             if (hitsA.length > 0) hitsA_count++;
+            if (hitsA.length === 2) hitsA_2++; else if (hitsA.length === 3) hitsA_3++; else if (hitsA.length >= 4) hitsA_4++;
+
+            // 策略 B 統計
             if (hitsB.length > 0) hitsB_count++;
+            if (hitsB.length === 2) hitsB_2++; else if (hitsB.length === 3) hitsB_3++; else if (hitsB.length >= 4) hitsB_4++;
+
+            // 策略 C 統計
             if (hitsC.length > 0) hitsC_count++;
+            if (hitsC.length === 2) hitsC_2++; else if (hitsC.length === 3) hitsC_3++; else if (hitsC.length >= 4) hitsC_4++;
 
             let tailsStr = c_targets.join(', ');
 
@@ -500,17 +510,20 @@
         // 組合勝率面板
         let rateA = totalDraws > 0 ? ((hitsA_count / totalDraws) * 100).toFixed(1) : "0.0";
         let summaryA = `<div style="margin-bottom: 12px; padding: 12px; background: var(--success-bg); color: var(--success); border-radius: 8px; font-weight: 800; text-align: center; border: 1px solid rgba(16, 185, 129, 0.3);">
-            整體回測：命中 ${hitsA_count} 次 / 共 ${totalDraws} 期 (勝率 ${rateA}%)
+            <div>整體回測：命中 ${hitsA_count} 次 / 共 ${totalDraws} 期 (勝率 ${rateA}%)</div>
+            <div style="font-size: 0.85em; margin-top: 6px; opacity: 0.9; font-weight: 700;">📌 其中包含：二星 ${hitsA_2} 次 ｜ 三星 ${hitsA_3} 次 ｜ 四星以上 ${hitsA_4} 次</div>
         </div>`;
 
         let rateB = totalDraws > 0 ? ((hitsB_count / totalDraws) * 100).toFixed(1) : "0.0";
         let summaryB = `<div style="margin-bottom: 12px; padding: 12px; background: var(--success-bg); color: var(--success); border-radius: 8px; font-weight: 800; text-align: center; border: 1px solid rgba(16, 185, 129, 0.3);">
-            整體回測：命中 ${hitsB_count} 次 / 共 ${totalDraws} 期 (勝率 ${rateB}%)
+            <div>整體回測：命中 ${hitsB_count} 次 / 共 ${totalDraws} 期 (勝率 ${rateB}%)</div>
+            <div style="font-size: 0.85em; margin-top: 6px; opacity: 0.9; font-weight: 700;">📌 其中包含：二星 ${hitsB_2} 次 ｜ 三星 ${hitsB_3} 次 ｜ 四星以上 ${hitsB_4} 次</div>
         </div>`;
 
         let rateC = totalDraws > 0 ? ((hitsC_count / totalDraws) * 100).toFixed(1) : "0.0";
         let summaryC = `<div style="margin-bottom: 12px; padding: 12px; background: var(--success-bg); color: var(--success); border-radius: 8px; font-weight: 800; text-align: center; border: 1px solid rgba(16, 185, 129, 0.3);">
-            整體回測：命中 ${hitsC_count} 次 / 共 ${totalDraws} 期 (勝率 ${rateC}%)
+            <div>整體回測：命中 ${hitsC_count} 次 / 共 ${totalDraws} 期 (勝率 ${rateC}%)</div>
+            <div style="font-size: 0.85em; margin-top: 6px; opacity: 0.9; font-weight: 700;">📌 其中包含：二星 ${hitsC_2} 次 ｜ 三星 ${hitsC_3} 次 ｜ 四星以上 ${hitsC_4} 次</div>
         </div>`;
 
         document.getElementById('historyA').innerHTML = summaryA + htmlA;
