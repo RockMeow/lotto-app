@@ -3,162 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>馬可夫鏈 & 四尾聯動陣型</title>
+    <title>AI 雙軌量化投組系統</title>
     <style>
         /* =========================================
-           現代化 UI 變數與亮色模式
+           全新 Dashboard UI 變數 (預設亮色質感)
            ========================================= */
         :root {
-            --bg-color: #f8fafc; 
-            --container-bg: #ffffff;
-            --text-color: #334155;
-            --heading-color: #0f172a;
-            --primary-color: #4f46e5;
-            --section-bg: #ffffff;
-            --section-border: #e2e8f0;
-            --card-bg: #f1f5f9;
-            --card-border: #cbd5e1;
-            --th-bg: #f8fafc;
-            --td-border: #e2e8f0;
-            --tr-even: #ffffff;
-            --tr-hover: #f1f5f9;
-            --highlight-bg: #e0e7ff;
-            --highlight-text: #3730a3;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-header: #ffffff;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #0ea5e9;
+            --success: #10b981;
+            --success-bg: #d1fae5;
+            --danger: #ef4444;
+            --danger-bg: #fee2e2;
+            --hot-bg: #fef3c7;
+            --hot-text: #d97706;
+            --hot-border: #fcd34d;
+            --cold-bg: #f3f4f6;
+            --cold-text: #475569;
+            --cold-border: #cbd5e1;
+            --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --shadow-header: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            --radius-lg: 16px;
+            --radius-md: 12px;
         }
 
         /* =========================================
-           深色模式設定
+           深色模式設定 (一鍵切換)
            ========================================= */
         [data-theme="dark"] {
-            --bg-color: #0f172a;
-            --container-bg: #1e293b;
-            --text-color: #f1f5f9;
-            --heading-color: #e2e8f0;
-            --primary-color: #818cf8;
-            --section-bg: #1e293b;
-            --section-border: #334155;
-            --card-bg: #0f172a;
-            --card-border: #334155;
-            --th-bg: #0f172a;
-            --td-border: #334155;
-            --tr-even: #1e293b;
-            --tr-hover: #334155;
-            --highlight-bg: #312e81;
-            --highlight-text: #c7d2fe;
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --bg-header: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --primary: #6366f1;
+            --primary-hover: #818cf8;
+            --success-bg: rgba(16, 185, 129, 0.15);
+            --danger-bg: rgba(239, 68, 68, 0.15);
+            --hot-bg: rgba(245, 158, 11, 0.15);
+            --hot-text: #fbbf24;
+            --hot-border: #b45309;
+            --cold-bg: rgba(71, 85, 105, 0.2);
+            --cold-text: #94a3b8;
+            --cold-border: #475569;
+            --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+            --shadow-header: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
         }
 
+        * { box-sizing: border-box; }
         body { 
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            line-height: 1.6; padding: 20px 10px; background-color: var(--bg-color); color: var(--text-color); margin: 0;
-            transition: all 0.3s;
+            line-height: 1.6; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 0;
+            transition: background-color 0.3s, color 0.3s;
         }
-        
-        .container { 
-            max-width: 1050px; margin: auto; background: var(--container-bg); padding: 35px; border-radius: 20px; 
-            box-shadow: var(--shadow-lg); position: relative;
-        }
-        
-        h1 { color: var(--heading-color); text-align: center; margin-bottom: 5px; font-size: 2.2em; font-weight: 800; letter-spacing: -0.5px; }
-        .subtitle { text-align: center; color: var(--primary-color); font-weight: 600; margin-bottom: 30px; font-size: 1.1em; }
 
+        /* 導覽列 */
+        .header {
+            background: var(--bg-header); padding: 16px 24px; box-shadow: var(--shadow-header);
+            display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100;
+        }
+        .header h1 { margin: 0; font-size: 1.5em; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .header h1 span { color: var(--primary); }
+        .controls { display: flex; gap: 12px; align-items: center; }
+        
+        select { 
+            padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 14px; 
+            background: var(--bg-body); color: var(--text-main); cursor: pointer; font-weight: 600; outline: none;
+            transition: border-color 0.2s;
+        }
+        select:focus { border-color: var(--primary); }
+        
         .theme-toggle {
-            position: absolute; top: 25px; right: 25px; background: var(--card-bg); border: 1px solid var(--card-border);
-            border-radius: 50%; width: 44px; height: 44px; font-size: 1.2em; cursor: pointer; color: var(--text-color);
-            display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); transition: transform 0.2s;
+            background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 50%; 
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-main); font-size: 1.2em; transition: all 0.2s;
         }
-        .theme-toggle:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .theme-toggle:hover { background: var(--border-color); }
 
-        .section { background: var(--section-bg); border: 1px solid var(--section-border); padding: 25px; border-radius: 16px; margin-bottom: 24px; box-shadow: var(--shadow-sm); }
-        .section-title { font-weight: 800; font-size: 1.3em; margin-bottom: 8px; color: var(--text-color); display: flex; align-items: center; }
-        .section-title::before { content: ""; width: 6px; height: 20px; background: var(--primary-color); margin-right: 12px; border-radius: 6px; }
-        .section-desc { font-size: 0.95em; opacity: 0.7; margin-bottom: 20px; margin-left: 18px; font-weight: 500;}
+        /* 主佈局 */
+        .container { max-width: 1400px; margin: 24px auto; padding: 0 20px; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; }
+        @media (max-width: 1024px) { .dashboard-grid { grid-template-columns: 1fr; } }
 
-        .control-group { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; }
-        select { padding: 12px 16px; border-radius: 10px; border: 1px solid var(--card-border); font-size: 15px; color: var(--text-color); background-color: var(--container-bg); cursor: pointer; outline: none; transition: all 0.2s; font-weight: 600; width: 100%; max-width: 400px; box-shadow: var(--shadow-sm); }
-        select:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
+        /* 卡片樣式 */
+        .card { 
+            background: var(--bg-card); border-radius: var(--radius-lg); padding: 24px; 
+            box-shadow: var(--shadow-card); border: 1px solid var(--border-color);
+        }
+        .card-header { display: flex; align-items: center; margin-bottom: 16px; gap: 10px; }
+        .card-title { font-size: 1.2em; font-weight: 800; margin: 0; color: var(--text-main); }
+        .card-desc { font-size: 0.85em; color: var(--text-muted); margin-bottom: 16px; font-weight: 500;}
+
+        /* 四尾陣型小卡 */
+        .tail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .tail-box { 
+            background: var(--bg-body); border-radius: var(--radius-md); padding: 16px; 
+            border: 1px solid var(--border-color); border-top: 4px solid var(--primary);
+        }
+        .tail-box-header { font-weight: 800; font-size: 1.1em; color: var(--primary); display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;}
+        .tail-box-label { font-size: 0.75em; font-weight: 700; color: var(--text-muted); background: var(--bg-card); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color);}
+        
+        .num-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--border-color); }
+        .num-row:last-child { border-bottom: none; }
+        .num-val { font-weight: 900; font-size: 1.1em; }
 
         /* 表格樣式 */
-        .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--td-border); }
-        table { width: 100%; border-collapse: collapse; font-size: 0.98em; min-width: 600px; }
-        th, td { border-bottom: 1px solid var(--td-border); padding: 16px 14px; text-align: center; }
-        th { background-color: var(--th-bg); color: var(--text-color); font-weight: 800; white-space: nowrap; position: sticky; top: 0; z-index: 1; }
-        tr:nth-child(even) { background-color: var(--tr-even); }
-        tr:hover { background-color: var(--tr-hover); }
-
-        /* 高亮樣式 */
-        .highlight-row { background-color: rgba(79, 70, 229, 0.08) !important; box-shadow: inset 4px 0 0 var(--primary-color); }
-        [data-theme="dark"] .highlight-row { background-color: rgba(129, 140, 248, 0.15) !important; }
-
-        /* 標籤樣式 */
-        .badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-weight: 800; font-size: 0.95em; letter-spacing: 0.5px; }
-        .badge-hot { background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid #fcd34d; }
-        .badge-cold { background: rgba(220, 38, 38, 0.1); color: #dc2626; border: 1px solid #fca5a5; }
-        .badge-formula { background: var(--highlight-bg); color: var(--highlight-text); border: 1px solid rgba(79, 70, 229, 0.3); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
+        th, td { padding: 14px 12px; text-align: center; border-bottom: 1px solid var(--border-color); }
+        th { font-weight: 800; color: var(--text-muted); position: sticky; top: 0; }
+        tr:last-child td { border-bottom: none; }
         
-        .text-win { color: #16a34a; font-weight: 800; }
-        .text-lose { color: #dc2626; opacity: 0.6; font-weight: 700; }
+        /* 標籤 */
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 0.8em; font-weight: 800; }
+        .badge-hot { background: var(--hot-bg); color: var(--hot-text); border: 1px solid var(--hot-border); }
+        .badge-cold { background: var(--cold-bg); color: var(--cold-text); border: 1px solid var(--cold-border); }
+        .badge-ice { background: var(--primary); color: #fff; }
 
-        [data-theme="dark"] .badge-hot { color: #fbbf24; border-color: #b45309; }
-        [data-theme="dark"] .badge-cold { color: #f87171; border-color: #991b1b; }
-        [data-theme="dark"] .text-win { color: #4ade80; }
-        [data-theme="dark"] .text-lose { color: #f87171; opacity: 0.8; }
+        .text-win { color: var(--success); font-weight: 800; }
+        .text-lose { color: var(--danger); font-weight: 600; opacity: 0.8; }
+        .highlight-row { background: rgba(79, 70, 229, 0.05); border-left: 3px solid var(--primary); }
+        [data-theme="dark"] .highlight-row { background: rgba(99, 102, 241, 0.1); }
 
-        .prob-text { font-weight: 800; margin-left: 6px; font-size: 0.9em; opacity: 0.8; }
-
-        .tag-info { font-size: 0.8em; opacity: 0.7; font-weight: 600; margin-top: 4px; display: block; }
+        /* 雙軌歷史回測區 */
+        .history-section { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; }
+        @media (max-width: 768px) { .history-section { grid-template-columns: 1fr; } }
+        .history-list { max-height: 400px; overflow-y: auto; padding-right: 10px; }
+        .history-list::-webkit-scrollbar { width: 6px; }
+        .history-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
         
-        details > summary { list-style: none; }
-        details > summary::-webkit-details-marker { display: none; }
-
-        @media (max-width: 768px) {
-            .container { padding: 25px 15px; }
-            h1 { font-size: 1.8em; }
+        .history-item { 
+            display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; 
+            background: var(--bg-body); border-radius: var(--radius-md); margin-bottom: 10px;
+            border: 1px solid var(--border-color);
         }
+        .h-top { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; font-weight: 700; color: var(--text-muted); }
+        .h-bot { font-size: 0.95em; display: flex; justify-content: space-between; align-items: center; }
+        .cost-tag { font-size: 0.8em; font-weight: 700; background: var(--bg-card); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color);}
     </style>
 </head>
 <body>
 
-<div class="container">
-    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>馬可夫鏈 & 四尾聯動陣型</h1>
-    <div class="subtitle">AI 量化投組系統</div>
+<header class="header">
+    <h1>📊 AI <span>量化雙軌系統</span></h1>
+    <div class="controls">
+        <select id="autoLoadCsv">
+            <option value="">-- 請選擇彩球類型 --</option>
+            <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
+            <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
+            <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
+            <option value="Fan_history_2026.csv">🇺🇸 加州 天天樂</option>
+            <option value="Ghana_history_2026.csv">🇬🇭 非洲 迦納彩</option>
+        </select>
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
+    </div>
+</header>
 
-    <div class="section" style="border: none; box-shadow: none; padding: 0 25px; margin-bottom: 10px;">
-        <div class="control-group">
-            <select id="autoLoadCsv">
-                <option value="">-- 請選擇彩球類型 --</option>
-                <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
-                <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
-                <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
-                <option value="Fan_history_2026.csv">🇺🇸 加州 天天樂</option>
-                <option value="Ghana_history_2026.csv">🇬🇭 非洲 迦納彩</option>
-            </select>
+<div class="container" id="mainContainer" style="display: none;">
+    
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="card-header">
+                <div style="font-size: 1.5em;">🛡️</div>
+                <h2 class="card-title">四尾強攻陣型</h2>
+            </div>
+            <div class="card-desc">依據最新馬可夫匯聚點與伴生雷達推算，自動列出 4 大作戰尾數。</div>
+            <div class="tail-grid" id="aiFilterBody"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div style="font-size: 1.5em;">🧬</div>
+                <h2 class="card-title">馬可夫鏈傳染矩陣</h2>
+            </div>
+            <div class="card-desc">上一期開出尾數，對下一期造成的物理傳染機率。</div>
+            <div style="overflow-x: auto;">
+                <table id="markovTable">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding-left: 20px;">如果上期開出...</th>
+                            <th>最強推薦</th>
+                            <th>次強推薦</th>
+                            <th>避開死角</th>
+                        </tr>
+                    </thead>
+                    <tbody id="markovBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <div class="section" id="aiFilterSection" style="display: none;">
-        <div class="section-title">🛡️ 四尾強攻陣型 (高勝率組合)</div>
-        <div class="section-desc">根據馬可夫匯聚點與「伴生雷達」挑選出最容易共同開出的 4 個尾數。建議每個尾數選 1 顆主力。</div>
-        <div id="aiFilterBody"></div>
-    </div>
+    <div class="history-section">
+        <div class="card">
+            <div class="card-header">
+                <div style="font-size: 1.5em;">🔥</div>
+                <h2 class="card-title">策略 A：觀望 ＋ 熱門</h2>
+            </div>
+            <div class="card-desc">條件：在 4 個目標尾數中，挑選遺漏期數 <strong>0 ~ 9 期</strong> 的號碼 (覆蓋率極高)。</div>
+            <div class="history-list" id="historyA"></div>
+        </div>
 
-    <div class="section" id="markovSection" style="display: none;">
-        <div class="section-title">馬可夫鏈傳染矩陣</div>
-        <div class="table-responsive">
-            <table id="markovTable">
-                <thead>
-                    <tr>
-                        <th>如果開出...</th>
-                        <th>最強推薦</th>
-                        <th>次強推薦</th>
-                        <th>避開死角</th>
-                    </tr>
-                </thead>
-                <tbody id="markovBody"></tbody>
-            </table>
+        <div class="card">
+            <div class="card-header">
+                <div style="font-size: 1.5em;">🧊</div>
+                <h2 class="card-title">策略 B：破冰 ＋ 熱門</h2>
+            </div>
+            <div class="card-desc">條件：在 4 個目標尾數中，挑選遺漏期數 <strong>≥ 10 期 或 ≤ 2 期</strong> 的號碼 (成本極低)。</div>
+            <div class="history-list" id="historyB"></div>
         </div>
     </div>
 
@@ -169,12 +228,13 @@
 
     function toggleTheme() {
         const body = document.body;
+        const btn = document.getElementById('themeBtn');
         if (body.getAttribute('data-theme') === 'dark') { 
             body.removeAttribute('data-theme'); 
-            document.querySelector('.theme-toggle').textContent = '🌙'; 
+            btn.textContent = '🌙'; 
         } else { 
             body.setAttribute('data-theme', 'dark'); 
-            document.querySelector('.theme-toggle').textContent = '☀️'; 
+            btn.textContent = '☀️'; 
         }
     }
 
@@ -234,8 +294,7 @@
     }
 
     function runAnalysis() {
-        document.getElementById('aiFilterSection').style.display = 'block';
-        document.getElementById('markovSection').style.display = 'block';
+        document.getElementById('mainContainer').style.display = 'block';
         
         const L = rawData.length;
         if(L < 40) return;
@@ -245,93 +304,86 @@
         let maxNum = Math.max(39, ...rawData.map(d => Math.max(...d.nums)));
         let markovData = getMarkovMatrixAll(rawData);
 
-        // --- 🚀 核心升級：四尾聯動陣型 🚀 ---
-        
-        // 1. 馬可夫匯聚評分
-        let scores = {};
-        for(let i=0; i<10; i++) scores[i] = 0;
+        // --- 1. 四尾聯動陣型 (最新一期預測) ---
+        let scores = {}; for(let i=0; i<10; i++) scores[i] = 0;
         lastTails.forEach(t => {
             let m = markovData.find(x => x.today === t);
-            if(m) {
-                scores[m.top1.tail] += 2;
-                scores[m.top2.tail] += 1;
-                scores[m.worst.tail] -= 2;
-            }
+            if(m) { scores[m.top1.tail] += 2; scores[m.top2.tail] += 1; scores[m.worst.tail] -= 2; }
         });
         let sortedMarkov = Object.keys(scores).map(Number).sort((a,b) => scores[b] - scores[a]);
-        let top1 = sortedMarkov[0];
-        let top2 = sortedMarkov[1];
+        let top1 = sortedMarkov[0]; let top2 = sortedMarkov[1];
 
-        // 2. 伴生好朋友雷達 (針對馬可夫 Top 1 尋找歷史伴生)
-        let companionScores = {};
-        for(let i=0; i<10; i++) companionScores[i] = 0;
+        let companionScores = {}; for(let i=0; i<10; i++) companionScores[i] = 0;
         rawData.forEach(d => {
             let tails = d.nums.map(n => n % 10);
-            if (tails.includes(top1)) {
-                tails.forEach(t => { if(t !== top1) companionScores[t]++; });
-            }
+            if (tails.includes(top1)) tails.forEach(t => { if(t !== top1) companionScores[t]++; });
         });
         let bestCompanion = Object.keys(companionScores).map(Number).sort((a,b) => companionScores[b] - companionScores[a])[0];
 
-        // 3. 遺漏回補尾 (全盤最冷尾數)
         let tailLastSeen = Array(10).fill(-1);
-        for(let i=0; i<L; i++) {
-            rawData[i].nums.forEach(n => { tailLastSeen[n % 10] = i; });
-        }
+        for(let i=0; i<L; i++) rawData[i].nums.forEach(n => { tailLastSeen[n % 10] = i; });
         let tailOmissions = tailLastSeen.map((last, idx) => (L - 1 - last));
         let coldestTail = tailOmissions.map((omi, idx) => ({idx, omi}))
                                        .filter(x => ![top1, top2, bestCompanion].includes(x.idx))
                                        .sort((a,b) => b.omi - a.omi)[0].idx;
 
-        // 組成 4 尾陣型
         let targets = [
-            { t: top1, label: "馬可夫榜首 (動能中心)", score: scores[top1] },
-            { t: top2, label: "馬可夫次席 (動能支撐)", score: scores[top2] },
-            { t: bestCompanion, label: "伴生雷達 (Top 1 最佳隊友)", score: companionScores[bestCompanion] },
-            { t: coldestTail, label: "均值回歸 (遺漏破冰點)", score: tailOmissions[coldestTail] }
+            { t: top1, label: "榜首" }, { t: top2, label: "次席" },
+            { t: bestCompanion, label: "伴生" }, { t: coldestTail, label: "回補" }
         ];
 
-        // 4. 計算單碼遺漏
         let omissions = {};
         for(let i=1; i<=maxNum; i++) omissions[i] = L;
-        for(let i=0; i<L; i++) {
-            rawData[i].nums.forEach(n => { omissions[n] = L - 1 - i; });
-        }
+        for(let i=0; i<L; i++) rawData[i].nums.forEach(n => { omissions[n] = L - 1 - i; });
 
-        // 5. 渲染陣型 UI
-        let filterHtml = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px;">';
+        let filterHtml = '';
         targets.forEach(tgt => {
-            filterHtml += `<div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 15px; border-radius: 12px; border-top: 4px solid var(--primary-color);">`;
-            filterHtml += `<div style="font-weight: 800; color: var(--primary-color); font-size: 1.1em;">${tgt.t} 尾 <span class="tag-info">${tgt.label}</span></div>`;
-            filterHtml += `<table style="width:100%; border-collapse: collapse; font-size: 0.9em; text-align: center; margin-top: 10px;">`;
-            filterHtml += `<tr style="opacity: 0.6; border-bottom: 1px solid var(--td-border);"><th>碼</th><th>遺漏</th><th>判定</th></tr>`;
-            
+            filterHtml += `<div class="tail-box">
+                <div class="tail-box-header"><span>${tgt.t} 尾</span><span class="tail-box-label">${tgt.label}</span></div>`;
             for(let num=tgt.t; num<=maxNum; num+=10) {
                 if(num === 0) continue;
                 let omi = omissions[num];
                 let isNeighbor = lastDraw.nums.includes(num - 1) || lastDraw.nums.includes(num + 1);
                 let advice = omi >= 10 ? "破冰" : (omi <= 2 ? "熱號" : "觀望");
-                let badgeClass = omi >= 10 ? "badge-formula" : (omi <= 2 ? "badge-hot" : "badge-cold");
-                if (isNeighbor) advice += "★";
+                let badgeClass = omi >= 10 ? "badge-ice" : (omi <= 2 ? "badge-hot" : "badge-cold");
+                if (isNeighbor) advice += " ★";
                 
-                filterHtml += `<tr style="border-bottom: 1px dashed var(--td-border);">
-                    <td style="font-weight: 900; padding: 8px;">${num < 10 ? '0'+num : num}</td>
-                    <td>${omi}</td>
-                    <td><span class="badge ${badgeClass}" style="font-size: 0.8em; padding: 2px 6px;">${advice}</span></td>
-                </tr>`;
+                filterHtml += `<div class="num-row">
+                    <span class="num-val">${num < 10 ? '0'+num : num}</span>
+                    <span style="font-size:0.85em; opacity:0.7;">遺漏 ${omi}</span>
+                    <span class="badge ${badgeClass}">${advice}</span>
+                </div>`;
             }
-            filterHtml += `</table></div>`;
+            filterHtml += `</div>`;
         });
-        filterHtml += '</div>';
+        document.getElementById('aiFilterBody').innerHTML = filterHtml;
 
-        // --- 6. 歷史足跡回測 (產生完整的四尾命中紀錄) ---
-        let historyHtml = '<details style="margin-top: 20px; background: var(--card-bg); padding: 12px 18px; border-radius: 12px; border: 1px solid var(--card-border);"><summary style="cursor: pointer; color: var(--primary-color); font-weight: 800; outline: none; font-size: 1.05em;">📊 展開完整回測命中紀錄 (四尾陣型)</summary><div style="margin-top: 15px; font-size: 0.9em; max-height: 300px; overflow-y: auto; line-height: 1.8;">';
+        // --- 2. 渲染馬可夫矩陣表 ---
+        let mHtml = '';
+        for(let i=0; i<10; i++) {
+            let m = markovData.find(x => x.today === i);
+            if(!m) continue;
+            let isTriggered = lastTails.includes(i);
+            let trClass = isTriggered ? ' class="highlight-row"' : '';
+            let indicator = isTriggered ? ' <span style="font-size:0.8em; color:var(--primary); font-weight:800;">(上期)</span>' : '';
+            mHtml += `<tr${trClass}>
+                <td style="text-align: left; padding-left: 20px; font-weight:800;">${m.today} 尾${indicator}</td>
+                <td><span class="badge badge-hot" style="font-size:1em;">${m.top1.tail} 尾</span> <span style="font-size:0.85em; font-weight:700; opacity:0.7;">${(m.top1.prob*100).toFixed(1)}%</span></td>
+                <td><span class="badge badge-hot" style="opacity:0.8;">${m.top2.tail} 尾</span> <span style="font-size:0.85em; font-weight:700; opacity:0.7;">${(m.top2.prob*100).toFixed(1)}%</span></td>
+                <td><span class="badge badge-cold">${m.worst.tail} 尾</span></td>
+            </tr>`;
+        }
+        document.getElementById('markovBody').innerHTML = mHtml;
+
+        // --- 3. 雙軌歷史足跡回測 ---
+        let htmlA = ''; let htmlB = '';
+        let startIdx = 40; 
         
-        let startIdx = 40; // 統一從第 41 期開始回測，保留前面的數據作為初始矩陣
-        for(let idx = L - 1; idx >= startIdx; idx--) { // 倒序排列：由新到舊
+        for(let idx = L - 1; idx >= startIdx; idx--) {
             let subData = rawData.slice(0, idx);
             let subL = subData.length;
             
+            // 重新計算當下的馬可夫與四尾
             let c_counts = {}; let c_trans = {}; let c_co = {};
             for(let i=0; i<10; i++) { c_counts[i]=0; c_trans[i]={}; c_co[i]={}; for(let j=0; j<10; j++) {c_trans[i][j]=0; c_co[i][j]=0;} }
             for(let i=0; i<subL-1; i++) {
@@ -352,26 +404,19 @@
                     let probs = [];
                     for(let nextT=0; nextT<10; nextT++) probs.push({t: nextT, p: c_trans[t][nextT]/c_counts[t]});
                     probs.sort((a,b)=>b.p - a.p);
-                    c_scores[probs[0].t] += 2;
-                    c_scores[probs[1].t] += 1;
-                    c_scores[probs[9].t] -= 2;
+                    c_scores[probs[0].t] += 2; c_scores[probs[1].t] += 1; c_scores[probs[9].t] -= 2;
                 }
             });
             
             let sortedMarkov = Object.keys(c_scores).map(Number).sort((a,b)=>c_scores[b]-c_scores[a]);
-            let c_top1 = sortedMarkov[0];
-            let c_top2 = sortedMarkov[1];
+            let c_top1 = sortedMarkov[0]; let c_top2 = sortedMarkov[1];
             
             let c_companionScores = c_co[c_top1];
             let c_bestCompanion = -1; let maxCo = -1;
-            for(let t=0; t<10; t++) {
-                if(t !== c_top1 && c_companionScores[t] > maxCo) { maxCo = c_companionScores[t]; c_bestCompanion = t; }
-            }
+            for(let t=0; t<10; t++) { if(t !== c_top1 && c_companionScores[t] > maxCo) { maxCo = c_companionScores[t]; c_bestCompanion = t; } }
             
             let c_tailLastSeen = Array(10).fill(-1);
-            for(let i=0; i<subL; i++) {
-                subData[i].nums.forEach(n => { c_tailLastSeen[n%10] = i; });
-            }
+            for(let i=0; i<subL; i++) subData[i].nums.forEach(n => { c_tailLastSeen[n%10] = i; });
             let c_coldestTail = -1; let maxOmi = -1;
             for(let t=0; t<10; t++) {
                 if(![c_top1, c_top2, c_bestCompanion].includes(t)) {
@@ -380,36 +425,42 @@
                 }
             }
             
-            let targetTails = [c_top1, c_top2, c_bestCompanion, c_coldestTail];
-            let actualNums = rawData[idx].nums;
-            let hitNums = actualNums.filter(n => targetTails.includes(n%10));
+            let c_targets = [c_top1, c_top2, c_bestCompanion, c_coldestTail];
+            let numsA = []; let numsB = [];
             
-            let hitText = hitNums.length > 0 ? `<span class="text-win">命中 ${hitNums.length} 顆號碼 (${hitNums.map(n=>n<10?'0'+n:n).join(', ')})</span>` : `<span class="text-lose">X 四尾全倒</span>`;
-            historyHtml += `<div style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed var(--td-border); display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-                <span style="font-weight: 800; min-width: 90px;">[${rawData[idx].date}]</span> 
-                <span style="opacity: 0.8; font-weight: 600;">目標陣型: [${targetTails.join(', ')}] 尾</span> 
-                <span>➔ ${hitText}</span>
+            c_targets.forEach(tail => {
+                for(let num=tail; num<=maxNum; num+=10) {
+                    if(num === 0) continue;
+                    let omi = 999;
+                    for(let i=subL-1; i>=0; i--) { if(subData[i].nums.includes(num)) { omi = subL - 1 - i; break; } }
+                    if(omi === 999) omi = subL;
+                    
+                    if(omi <= 9) numsA.push(num); // 觀望+熱門
+                    if(omi <= 2 || omi >= 10) numsB.push(num); // 破冰+熱門
+                }
+            });
+
+            let actualNums = rawData[idx].nums;
+            let hitsA = actualNums.filter(n => numsA.includes(n));
+            let hitsB = actualNums.filter(n => numsB.includes(n));
+
+            // Generate HTML for A
+            let resA = hitsA.length > 0 ? `<span class="text-win">命中 ${hitsA.length} 顆 (${hitsA.map(n=>n<10?'0'+n:n).join(', ')})</span>` : `<span class="text-lose">全倒</span>`;
+            htmlA += `<div class="history-item">
+                <div class="h-top"><span>[${rawData[idx].date}]</span> <span class="cost-tag">成本 ${numsA.length} 顆</span></div>
+                <div class="h-bot">${resA}</div>
+            </div>`;
+
+            // Generate HTML for B
+            let resB = hitsB.length > 0 ? `<span class="text-win">命中 ${hitsB.length} 顆 (${hitsB.map(n=>n<10?'0'+n:n).join(', ')})</span>` : `<span class="text-lose">全倒</span>`;
+            htmlB += `<div class="history-item">
+                <div class="h-top"><span>[${rawData[idx].date}]</span> <span class="cost-tag">成本 ${numsB.length} 顆</span></div>
+                <div class="h-bot">${resB}</div>
             </div>`;
         }
-        historyHtml += '</div></details>';
-
-        document.getElementById('aiFilterBody').innerHTML = filterHtml + historyHtml;
-
-        // --- 7. 渲染馬可夫矩陣表 ---
-        let mHtml = '';
-        for(let i=0; i<10; i++) {
-            let m = markovData.find(x => x.today === i);
-            if(!m) continue;
-            let isTriggered = lastTails.includes(i);
-            let trClass = isTriggered ? ' class="highlight-row"' : '';
-            mHtml += `<tr${trClass}>
-                <td style="font-size:1.1em; font-weight:800;">有 <span style="color:var(--primary-color);">${m.today}</span> 尾</td>
-                <td><span class="badge badge-hot"> ${m.top1.tail} </span> <span class="prob-text">(${(m.top1.prob*100).toFixed(1)}%)</span></td>
-                <td><span class="badge badge-hot" style="opacity:0.8;"> ${m.top2.tail} </span> <span class="prob-text">(${(m.top2.prob*100).toFixed(1)}%)</span></td>
-                <td><span class="badge badge-cold"> ${m.worst.tail} </span></td>
-            </tr>`;
-        }
-        document.getElementById('markovBody').innerHTML = mHtml;
+        
+        document.getElementById('historyA').innerHTML = htmlA;
+        document.getElementById('historyB').innerHTML = htmlB;
     }
 </script>
 </body>
