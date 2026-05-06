@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 雙軌量化投組系統</title>
+    <title>AI 雙策略選號系統</title>
     <style>
         /* =========================================
            全新 Dashboard UI 變數 (預設亮色質感)
@@ -153,7 +153,7 @@
 <body>
 
 <header class="header">
-    <h1>📊 AI <span>量化雙軌系統</span></h1>
+    <h1>📊 AI <span>雙策略選號系統</span></h1>
     <div class="controls">
         <select id="autoLoadCsv">
             <option value="">-- 請選擇彩球類型 --</option>
@@ -173,18 +173,18 @@
         <div class="card">
             <div class="card-header">
                 <div style="font-size: 1.5em;">🛡️</div>
-                <h2 class="card-title">四尾強攻陣型</h2>
+                <h2 class="card-title">精選四尾組合</h2>
             </div>
-            <div class="card-desc">依據最新馬可夫匯聚點與伴生雷達推算，自動列出 4 大作戰尾數。</div>
+            <div class="card-desc">根據最新開獎趨勢與常連動的號碼，自動為您挑出 4 個推薦尾數。</div>
             <div class="tail-grid" id="aiFilterBody"></div>
         </div>
 
         <div class="card">
             <div class="card-header">
                 <div style="font-size: 1.5em;">🧬</div>
-                <h2 class="card-title">馬可夫鏈傳染矩陣</h2>
+                <h2 class="card-title">尾數連動趨勢表</h2>
             </div>
-            <div class="card-desc">上一期開出尾數，對下一期造成的物理傳染機率。</div>
+            <div class="card-desc">上一期開出的尾數，在下一期帶出其他尾數的歷史機率。</div>
             <div style="overflow-x: auto;">
                 <table id="markovTable">
                     <thead>
@@ -205,18 +205,18 @@
         <div class="card">
             <div class="card-header">
                 <div style="font-size: 1.5em;">🔥</div>
-                <h2 class="card-title">策略 A：觀望 ＋ 熱門</h2>
+                <h2 class="card-title">策略 A：溫號 ＋ 熱門號</h2>
             </div>
-            <div class="card-desc">條件：在 4 個目標尾數中，挑選遺漏期數 <strong>0 ~ 9 期</strong> 的號碼 (覆蓋率極高)。</div>
+            <div class="card-desc">條件：在 4 個目標尾數中，挑選幾期內有開過的號碼 <strong>(0 ~ 9 期)</strong>，涵蓋範圍較廣。</div>
             <div class="history-list" id="historyA"></div>
         </div>
 
         <div class="card">
             <div class="card-header">
                 <div style="font-size: 1.5em;">🧊</div>
-                <h2 class="card-title">策略 B：破冰 ＋ 熱門</h2>
+                <h2 class="card-title">策略 B：極冷號 ＋ 熱門號</h2>
             </div>
-            <div class="card-desc">條件：在 4 個目標尾數中，挑選遺漏期數 <strong>≥ 10 期 或 ≤ 2 期</strong> 的號碼 (成本極低)。</div>
+            <div class="card-desc">條件：在 4 個目標尾數中，只挑極端號碼 <strong>(≥ 10 期 或 ≤ 2 期)</strong>，挑的顆數較少。</div>
             <div class="history-list" id="historyB"></div>
         </div>
     </div>
@@ -328,8 +328,8 @@
                                        .sort((a,b) => b.omi - a.omi)[0].idx;
 
         let targets = [
-            { t: top1, label: "榜首" }, { t: top2, label: "次席" },
-            { t: bestCompanion, label: "伴生" }, { t: coldestTail, label: "回補" }
+            { t: top1, label: "第一推薦" }, { t: top2, label: "第二推薦" },
+            { t: bestCompanion, label: "好朋友尾數" }, { t: coldestTail, label: "極冷回補" }
         ];
 
         let omissions = {};
@@ -344,7 +344,7 @@
                 if(num === 0) continue;
                 let omi = omissions[num];
                 let isNeighbor = lastDraw.nums.includes(num - 1) || lastDraw.nums.includes(num + 1);
-                let advice = omi >= 10 ? "破冰" : (omi <= 2 ? "熱號" : "觀望");
+                let advice = omi >= 10 ? "極冷" : (omi <= 2 ? "熱門" : "溫號");
                 let badgeClass = omi >= 10 ? "badge-ice" : (omi <= 2 ? "badge-hot" : "badge-cold");
                 if (isNeighbor) advice += " ★";
                 
@@ -387,7 +387,7 @@
             let subData = rawData.slice(0, idx);
             let subL = subData.length;
             
-            // 重新計算當下的馬可夫與四尾
+            // 重新計算當下推薦
             let c_counts = {}; let c_trans = {}; let c_co = {};
             for(let i=0; i<10; i++) { c_counts[i]=0; c_trans[i]={}; c_co[i]={}; for(let j=0; j<10; j++) {c_trans[i][j]=0; c_co[i][j]=0;} }
             for(let i=0; i<subL-1; i++) {
@@ -439,8 +439,8 @@
                     for(let i=subL-1; i>=0; i--) { if(subData[i].nums.includes(num)) { omi = subL - 1 - i; break; } }
                     if(omi === 999) omi = subL;
                     
-                    if(omi <= 9) numsA.push(num); // 觀望+熱門
-                    if(omi <= 2 || omi >= 10) numsB.push(num); // 破冰+熱門
+                    if(omi <= 9) numsA.push(num); // 溫號+熱門號
+                    if(omi <= 2 || omi >= 10) numsB.push(num); // 極冷號+熱門號
                 }
             });
 
@@ -459,7 +459,7 @@
             htmlA += `<div class="history-item">
                 <div class="h-top">
                     <span>[${rawData[idx].date}] <span style="color:var(--primary); margin-left:6px;">🎯 ${tailsStr} 尾</span></span> 
-                    <span class="cost-tag">成本 ${numsA.length} 顆</span>
+                    <span class="cost-tag">挑選 ${numsA.length} 顆</span>
                 </div>
                 <div class="h-bot">${resA}</div>
             </div>`;
@@ -469,7 +469,7 @@
             htmlB += `<div class="history-item">
                 <div class="h-top">
                     <span>[${rawData[idx].date}] <span style="color:var(--primary); margin-left:6px;">🎯 ${tailsStr} 尾</span></span> 
-                    <span class="cost-tag">成本 ${numsB.length} 顆</span>
+                    <span class="cost-tag">挑選 ${numsB.length} 顆</span>
                 </div>
                 <div class="h-bot">${resB}</div>
             </div>`;
