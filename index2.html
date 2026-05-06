@@ -98,22 +98,20 @@
         .badge-cold { background: rgba(220, 38, 38, 0.1); color: #dc2626; border: 1px solid #fca5a5; }
         .badge-formula { background: var(--highlight-bg); color: var(--highlight-text); border: 1px solid rgba(79, 70, 229, 0.3); }
         
-        .history-dots { 
-            display: inline-flex; 
-            flex-wrap: wrap; 
-            gap: 2px; 
-            max-width: 180px; 
-            justify-content: flex-start;
-            font-size: 0.6em; /* 使用超小的圓點符號 */
-            letter-spacing: 1px;
-        }
+        .text-win { color: #16a34a; font-weight: 800; }
+        .text-lose { color: #dc2626; opacity: 0.6; font-weight: 700; }
 
         [data-theme="dark"] .badge-hot { color: #fbbf24; border-color: #b45309; }
         [data-theme="dark"] .badge-cold { color: #f87171; border-color: #991b1b; }
+        [data-theme="dark"] .text-win { color: #4ade80; }
+        [data-theme="dark"] .text-lose { color: #f87171; opacity: 0.8; }
 
         .weekday-col { font-size: 1.1em; font-weight: 900; color: var(--primary-color); }
         .rate-col { font-weight: 900; color: #16a34a; font-size: 1.1em; }
         .prob-text { font-weight: 800; margin-left: 6px; font-size: 0.9em; opacity: 0.8; }
+
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
 
         @media (max-width: 768px) {
             .container { padding: 25px 15px; }
@@ -255,7 +253,7 @@
         if(total < 3) return null; 
 
         let rulesStats = {};
-        let ruleHistory = {}; // 儲存命中歷史的陣列
+        let ruleHistory = {}; 
         
         for(let lagType of ['lag1', 'lagWd']) {
             for(let i=0; i<4; i++) {
@@ -298,7 +296,6 @@
                         if(currTails.includes(subTW)) { rulesStats[`lagWd_sub_${i}_${j}`]++; ruleHistory[`lagWd_sub_${i}_${j}`].push(true); } 
                         else { ruleHistory[`lagWd_sub_${i}_${j}`].push(false); }
                     } else {
-                        // 如果當天找不到上週資料，就塞 false 填補長度，保持歷史線完整
                         ruleHistory[`lagWd_add_${i}_${j}`].push(false);
                         ruleHistory[`lagWd_sub_${i}_${j}`].push(false);
                     }
@@ -317,8 +314,8 @@
         let opSymbol = parts[1] === 'add' ? '+' : '-';
         let iIdx = parseInt(parts[2]); let jIdx = parseInt(parts[3]);
         
-        // 將布林陣列轉換為圓圈圖示
-        let historyStr = ruleHistory[bestRuleKey].map(hit => hit ? '🟢' : '🔴').join('');
+        // 將布林陣列轉換為文字紀錄
+        let historyStr = ruleHistory[bestRuleKey].map(hit => hit ? '<span class="text-win">中</span>' : '<span class="text-lose">X</span>').join(' ');
         
         return {
             lagType: parts[0],
@@ -384,7 +381,7 @@
         let nextWd = (lastDraw.wd + 1) % 7; 
         let lastTails = [...new Set(lastDraw.nums.map(n => n % 10))]; 
 
-        // --- 1. 渲染每週七日公式表 (自動高亮下一期 + 歷史軌跡) ---
+        // --- 1. 渲染每週七日公式表 (自動高亮下一期 + 摺疊文字軌跡) ---
         let fHtml = '';
         weekdayDisplayOrder.forEach(wd => {
             let rule = findBestDynamicFormula(rawData, wd);
@@ -405,7 +402,12 @@
                     <td class="rate-col">${(rule.rate*100).toFixed(1)}%</td>
                     <td style="font-weight:600; opacity:0.8;">${rule.hits} / ${rule.total}</td>
                     <td>${tailDisplay}</td>
-                    <td><div class="history-dots">${rule.history}</div></td>
+                    <td>
+                        <details>
+                            <summary style="cursor: pointer; color: var(--primary-color); font-weight: 700; font-size: 0.85em; outline: none;">展開紀錄</summary>
+                            <div style="margin-top: 6px; font-size: 0.85em; line-height: 1.6; letter-spacing: 1px; max-width: 200px; display: inline-block; text-align: left;">${rule.history}</div>
+                        </details>
+                    </td>
                 </tr>`;
             }
         });
