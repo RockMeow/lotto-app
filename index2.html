@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 雙策略選號系統</title>
+    <title>量化多策略選號系統</title>
     <style>
         /* =========================================
            全新 Dashboard UI 變數 (預設亮色質感)
@@ -133,9 +133,8 @@
         .highlight-row { background: rgba(79, 70, 229, 0.05); border-left: 3px solid var(--primary); }
         [data-theme="dark"] .highlight-row { background: rgba(99, 102, 241, 0.1); }
 
-        /* 雙軌歷史回測區 */
-        .history-section { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; }
-        @media (max-width: 768px) { .history-section { grid-template-columns: 1fr; } }
+        /* 多軌歷史回測區 */
+        .history-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-top: 24px; }
         .history-list { max-height: 400px; overflow-y: auto; padding-right: 10px; }
         .history-list::-webkit-scrollbar { width: 6px; }
         .history-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
@@ -153,7 +152,7 @@
 <body>
 
 <header class="header">
-    <h1>📊 AI <span>雙策略選號系統</span></h1>
+    <h1>📊 量化 <span>多策略選號系統</span></h1>
     <div class="controls">
         <select id="autoLoadCsv">
             <option value="">-- 請選擇彩球類型 --</option>
@@ -207,7 +206,7 @@
                 <div style="font-size: 1.5em;">🔥</div>
                 <h2 class="card-title">策略 A：溫號 ＋ 熱門號</h2>
             </div>
-            <div class="card-desc">條件：在 4 個目標尾數中，挑選幾期內有開過的號碼 <strong>(0 ~ 9 期)</strong>，涵蓋範圍較廣。</div>
+            <div class="card-desc">條件：挑選 <strong>0 ~ 9 期</strong> 內有開過的號碼 (覆蓋率極高)。</div>
             <div class="history-list" id="historyA"></div>
         </div>
 
@@ -216,8 +215,17 @@
                 <div style="font-size: 1.5em;">🧊</div>
                 <h2 class="card-title">策略 B：極冷號 ＋ 熱門號</h2>
             </div>
-            <div class="card-desc">條件：在 4 個目標尾數中，只挑極端號碼 <strong>(≥ 10 期 或 ≤ 2 期)</strong>，挑的顆數較少。</div>
+            <div class="card-desc">條件：只挑極端號碼 <strong>(≥ 10 期 或 ≤ 2 期)</strong>，挑的顆數較少。</div>
             <div class="history-list" id="historyB"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div style="font-size: 1.5em;">🌿</div>
+                <h2 class="card-title">策略 C：溫號 ＋ 極冷號</h2>
+            </div>
+            <div class="card-desc">條件：挑選遺漏期數 <strong>≥ 3 期</strong> 的號碼 (專打斷層，避開近期熱門)。</div>
+            <div class="history-list" id="historyC"></div>
         </div>
     </div>
 
@@ -375,13 +383,14 @@
         }
         document.getElementById('markovBody').innerHTML = mHtml;
 
-        // --- 3. 雙軌歷史足跡回測 ---
-        let htmlA = ''; let htmlB = '';
+        // --- 3. 多軌歷史足跡回測 ---
+        let htmlA = ''; let htmlB = ''; let htmlC = '';
         let startIdx = 40; 
         
         let totalDraws = 0;
         let hitsA_count = 0;
         let hitsB_count = 0;
+        let hitsC_count = 0;
 
         for(let idx = L - 1; idx >= startIdx; idx--) {
             let subData = rawData.slice(0, idx);
@@ -430,7 +439,7 @@
             }
             
             let c_targets = [c_top1, c_top2, c_bestCompanion, c_coldestTail];
-            let numsA = []; let numsB = [];
+            let numsA = []; let numsB = []; let numsC = [];
             
             c_targets.forEach(tail => {
                 for(let num=tail; num<=maxNum; num+=10) {
@@ -441,16 +450,19 @@
                     
                     if(omi <= 9) numsA.push(num); // 溫號+熱門號
                     if(omi <= 2 || omi >= 10) numsB.push(num); // 極冷號+熱門號
+                    if(omi >= 3) numsC.push(num); // 溫號+極冷號
                 }
             });
 
             let actualNums = rawData[idx].nums;
             let hitsA = actualNums.filter(n => numsA.includes(n));
             let hitsB = actualNums.filter(n => numsB.includes(n));
+            let hitsC = actualNums.filter(n => numsC.includes(n));
 
             totalDraws++;
             if (hitsA.length > 0) hitsA_count++;
             if (hitsB.length > 0) hitsB_count++;
+            if (hitsC.length > 0) hitsC_count++;
 
             let tailsStr = c_targets.join(', ');
 
@@ -473,6 +485,16 @@
                 </div>
                 <div class="h-bot">${resB}</div>
             </div>`;
+
+            // Generate HTML for C
+            let resC = hitsC.length > 0 ? `<span class="text-win">命中 ${hitsC.length} 顆 (${hitsC.map(n=>n<10?'0'+n:n).join(', ')})</span>` : `<span class="text-lose">全倒</span>`;
+            htmlC += `<div class="history-item">
+                <div class="h-top">
+                    <span>[${rawData[idx].date}] <span style="color:var(--primary); margin-left:6px;">🎯 ${tailsStr} 尾</span></span> 
+                    <span class="cost-tag">挑選 ${numsC.length} 顆</span>
+                </div>
+                <div class="h-bot">${resC}</div>
+            </div>`;
         }
         
         // 組合勝率面板
@@ -486,8 +508,14 @@
             整體回測：命中 ${hitsB_count} 次 / 共 ${totalDraws} 期 (勝率 ${rateB}%)
         </div>`;
 
+        let rateC = totalDraws > 0 ? ((hitsC_count / totalDraws) * 100).toFixed(1) : "0.0";
+        let summaryC = `<div style="margin-bottom: 12px; padding: 12px; background: var(--success-bg); color: var(--success); border-radius: 8px; font-weight: 800; text-align: center; border: 1px solid rgba(16, 185, 129, 0.3);">
+            整體回測：命中 ${hitsC_count} 次 / 共 ${totalDraws} 期 (勝率 ${rateC}%)
+        </div>`;
+
         document.getElementById('historyA').innerHTML = summaryA + htmlA;
         document.getElementById('historyB').innerHTML = summaryB + htmlB;
+        document.getElementById('historyC').innerHTML = summaryC + htmlC;
     }
 </script>
 </body>
