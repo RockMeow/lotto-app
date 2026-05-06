@@ -88,6 +88,10 @@
         tr:nth-child(even) { background-color: var(--tr-even); }
         tr:hover { background-color: var(--tr-hover); }
 
+        /* 高亮樣式 */
+        .highlight-row { background-color: rgba(79, 70, 229, 0.08) !important; box-shadow: inset 4px 0 0 var(--primary-color); }
+        [data-theme="dark"] .highlight-row { background-color: rgba(129, 140, 248, 0.15) !important; }
+
         /* 標籤樣式 */
         .badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-weight: 800; font-size: 0.95em; letter-spacing: 0.5px; }
         .badge-hot { background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid #fcd34d; }
@@ -339,9 +343,12 @@
         const L = rawData.length;
         if(L < 40) return;
 
-        let lastDrawDate = rawData[L-1].date;
+        let lastDraw = rawData[L-1];
+        let lastDrawDate = lastDraw.date;
+        let nextWd = (lastDraw.wd + 1) % 7; // 自動判斷下一期的星期
+        let lastTails = [...new Set(lastDraw.nums.map(n => n % 10))]; // 抓取上期所有的尾數
 
-        // --- 1. 渲染每週七日公式表 ---
+        // --- 1. 渲染每週七日公式表 (自動高亮下一期) ---
         let fHtml = '';
         weekdayDisplayOrder.forEach(wd => {
             let rule = findBestDynamicFormula(rawData, wd);
@@ -350,9 +357,14 @@
                 let predictedTail = calculateTail(rawData, wd, rule);
                 let tailDisplay = predictedTail !== null ? `<span class="badge badge-hot">${predictedTail} 尾</span>` : '-';
 
-                fHtml += `<tr>
+                // 高亮邏輯
+                let isTriggered = (wd === nextWd);
+                let trClass = isTriggered ? ' class="highlight-row"' : '';
+                let indicator = isTriggered ? '<br><span style="font-size:0.75em; color:var(--primary-color); background:var(--highlight-bg); padding:2px 6px; border-radius:4px; font-weight:800;">👉 下期觸發</span>' : '';
+
+                fHtml += `<tr${trClass}>
                     <td style="font-weight:700;">${targetDate}</td>
-                    <td class="weekday-col">${weekdayNames[wd]}</td>
+                    <td class="weekday-col">${weekdayNames[wd]}${indicator}</td>
                     <td style="font-weight:700; opacity: 0.9;">${rule.lagName}</td>
                     <td><span class="badge badge-formula">${rule.calcName}</span></td>
                     <td class="rate-col">${(rule.rate*100).toFixed(1)}%</td>
@@ -363,14 +375,20 @@
         });
         document.getElementById('formulaBody').innerHTML = fHtml;
 
-        // --- 2. 渲染馬可夫矩陣表 ---
+        // --- 2. 渲染馬可夫矩陣表 (自動高亮上期開出尾數) ---
         let markovData = getMarkovMatrixAll(rawData);
         let mHtml = '';
         for(let i=0; i<10; i++) {
             let m = markovData.find(x => x.today === i);
             if(!m) continue;
-            mHtml += `<tr>
-                <td style="font-size:1.15em; font-weight:800;">有 <span style="color:var(--primary-color); font-size:1.2em;">${m.today}</span> 尾</td>
+            
+            // 高亮邏輯
+            let isTriggered = lastTails.includes(i);
+            let trClass = isTriggered ? ' class="highlight-row"' : '';
+            let indicator = isTriggered ? '<br><span style="font-size:0.75em; color:var(--primary-color); background:var(--highlight-bg); padding:2px 6px; border-radius:4px; font-weight:800;">👉 上期有開</span>' : '';
+
+            mHtml += `<tr${trClass}>
+                <td style="font-size:1.15em; font-weight:800;">有 <span style="color:var(--primary-color); font-size:1.2em;">${m.today}</span> 尾${indicator}</td>
                 <td><span class="badge badge-hot"> ${m.top1.tail} 尾</span> <span class="prob-text">(${(m.top1.prob*100).toFixed(1)}%)</span></td>
                 <td><span class="badge badge-hot" style="opacity:0.95;"> ${m.top2.tail} 尾</span> <span class="prob-text">(${(m.top2.prob*100).toFixed(1)}%)</span></td>
                 <td><span class="badge badge-cold"> ${m.worst.tail} 尾</span> <span class="prob-text">(${(m.worst.prob*100).toFixed(1)}%)</span></td>
