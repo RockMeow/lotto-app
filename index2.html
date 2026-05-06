@@ -168,7 +168,6 @@
 
 <script>
     let rawData = [];
-    // 定義星期的排序 (週一到週日)
     const weekdayDisplayOrder = [1, 2, 3, 4, 5, 6, 0]; 
     const weekdayNames = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
 
@@ -183,13 +182,38 @@
         }
     }
 
+    // 🚀 全裝甲防護的日期解析器 🚀
     function parseDateObj(dateStr) {
-        let parts = dateStr.split('/');
-        if(parts.length === 2) {
-            let m = parts[0].padStart(2, '0'); let d = parts[1].padStart(2, '0');
-            return new Date(`2026-${m}-${d}T00:00:00`);
+        let s = dateStr.trim().replace(/-/g, '/');
+        let parts = s.split('/');
+        
+        let y = 2026, m = 1, d = 1;
+        
+        if (parts.length === 3) {
+            y = parseInt(parts[0]);
+            m = parseInt(parts[1]);
+            d = parseInt(parts[2]);
+        } else if (parts.length === 2) {
+            m = parseInt(parts[0]);
+            d = parseInt(parts[1]);
+        } else {
+            return null; // 格式完全無法辨識
         }
-        return new Date();
+        
+        if (isNaN(y) || isNaN(m) || isNaN(d)) return null;
+        
+        let mStr = String(m).padStart(2, '0');
+        let dStr = String(d).padStart(2, '0');
+        
+        // 優先嘗試標準 ISO 格式
+        let dateObj = new Date(`${y}-${mStr}-${dStr}T00:00:00`);
+        
+        // 為了防範 Safari 等瀏覽器的相容性問題
+        if (isNaN(dateObj.getTime())) {
+            dateObj = new Date(`${y}/${mStr}/${dStr} 00:00:00`);
+        }
+        
+        return isNaN(dateObj.getTime()) ? null : dateObj;
     }
 
     document.getElementById('autoLoadCsv').addEventListener('change', function(e) {
@@ -204,8 +228,11 @@
             if(cols.length >= 6) {
                 let nums = [];
                 for(let c=1; c<cols.length; c++) { let val = parseInt(cols[c]); if(!isNaN(val)) nums.push(val); }
-                let dObj = parseDateObj(cols[0].trim());
-                rawData.push({ date: cols[0].trim(), wd: dObj.getDay(), nums: nums.sort((a,b)=>a-b) });
+                
+                let dObj = parseDateObj(cols[0]);
+                if (dObj && nums.length >= 5) {
+                    rawData.push({ date: cols[0].trim(), wd: dObj.getDay(), nums: nums.sort((a,b)=>a-b) });
+                }
             }
         }
         runAnalysis();
@@ -222,7 +249,6 @@
         if(total < 3) return null; 
 
         let rulesStats = {};
-        // 修正字串切割 Bug：將 lag_wd 改為 lagWd
         for(let lagType of ['lag1', 'lagWd']) {
             for(let i=0; i<4; i++) {
                 for(let j=i+1; j<5; j++) {
@@ -245,7 +271,6 @@
                     
                     if(prevWdIdx !== -1) {
                         let pWd = dataSlice[prevWdIdx].nums;
-                        // 對應修改儲存的 key 名稱
                         if(currTails.includes((pWd[i]+pWd[j])%10)) rulesStats[`lagWd_add_${i}_${j}`]++;
                         if(currTails.includes(Math.abs(pWd[j]-pWd[i])%10)) rulesStats[`lagWd_sub_${i}_${j}`]++;
                     }
@@ -255,7 +280,6 @@
 
         let bestRuleKey = ""; let maxHits = -1;
         for(let key in rulesStats) {
-            // 取勝率最高，若相同則由自然順序決定
             if(rulesStats[key] > maxHits) { maxHits = rulesStats[key]; bestRuleKey = key; }
         }
         
@@ -290,7 +314,7 @@
                 for(let nextT=0; nextT<10; nextT++) {
                     probs.push({ tail: nextT, prob: trans[t][nextT] / counts[t] });
                 }
-                probs.sort((a,b) => b.prob - a.prob); // 降冪排序
+                probs.sort((a,b) => b.prob - a.prob);
                 
                 results.push({
                     today: t,
@@ -308,7 +332,10 @@
         document.getElementById('markovSection').style.display = 'block';
         
         const L = rawData.length;
-        if(L < 40) return;
+        if(L < 40) {
+            alert("錯誤：讀取到的有效歷史數據不足 40 筆，請檢查 CSV 檔案格式。");
+            return;
+        }
 
         // --- 1. 渲染每週七日公式表 ---
         let fHtml = '';
