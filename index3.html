@@ -5,88 +5,237 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>坐車公式自動計算系統</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-            color: #333;
+        :root {
+            --primary-color: #2c3e50;
+            --primary-hover: #1a252f;
+            --bg-color: #f5f5f5;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            --hit-bg: #e8f5e9;
+            --hit-text: #d32f2f;
+            --pred-bg: #fff8e1;
+            --pred-border: #ffa000;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
-            padding: 20px;
+            padding: 0;
         }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            line-height: 1.5;
+            padding: 10px;
+        }
+
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
-            background: #fff;
-            padding: 25px;
-            border-radius: 6px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+
         h2 {
-            margin-top: 0;
-            border-bottom: 2px solid #333;
+            font-size: 1.25rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--primary-color);
             padding-bottom: 10px;
         }
+
         .controls {
             background: #eef2f5;
             padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+            border-radius: 6px;
+            margin-bottom: 15px;
             display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 15px;
         }
+
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 8px;
         }
+
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #fff;
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .radio-group input[type="radio"]:checked + label {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
         button {
-            padding: 8px 16px;
-            background-color: #2c3e50;
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background-color 0.2s;
         }
+
         button:hover {
-            background-color: #1a252f;
+            background-color: var(--primary-hover);
         }
+
+        /* 預測區塊響應式優化 */
+        #predictionArea > div {
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 5px solid var(--pred-border);
+            margin-bottom: 15px;
+        }
+
+        #predictionArea h3 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        #predictionArea p {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .summary {
+            background: #eef2f5;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        /* 表格響應式設計：在手機上轉為卡片式顯示 */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 14px;
+            font-size: 0.85rem;
+            white-space: nowrap;
         }
+
         th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
+            border: 1px solid var(--border-color);
+            padding: 8px 6px;
             text-align: center;
         }
+
         th {
-            background-color: #2c3e50;
+            background-color: var(--primary-color);
             color: white;
+            position: sticky;
+            top: 0;
         }
+
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-        tr:hover {
-            background-color: #f1f1f1;
-        }
+
         .hit-row {
-            background-color: #e8f5e9 !important;
+            background-color: var(--hit-bg) !important;
         }
+
         .hit-text {
-            color: #d32f2f;
+            color: var(--hit-text);
             font-weight: bold;
         }
-        .summary {
-            margin-bottom: 15px;
-            font-weight: bold;
-            color: #2c3e50;
-            line-height: 1.6;
-        }
-        #predictionArea {
-            margin-bottom: 20px;
+
+        /* 手機版樣式斷點 */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+            .container {
+                border-radius: 0;
+                box-shadow: none;
+            }
+            
+            /* 將表格轉換為卡片式佈局，方便手機垂直滾動查看 */
+            table, thead, tbody, th, td, tr { 
+                display: block; 
+            }
+            
+            thead tr { 
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+            
+            tr { 
+                border: 1px solid var(--border-color);
+                border-radius: 6px;
+                margin-bottom: 10px;
+                background: #fff;
+                padding: 5px;
+            }
+            
+            td { 
+                border: none;
+                border-bottom: 1px solid #eee; 
+                position: relative;
+                padding-left: 50%; 
+                text-align: right;
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+            
+            td:last-child {
+                border-bottom: 0;
+            }
+            
+            td:before { 
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                width: 45%; 
+                padding-right: 10px; 
+                white-space: nowrap;
+                text-align: left;
+                font-weight: bold;
+                color: #555;
+            }
+
+            /* 加入標題標籤 */
+            td:nth-of-type(1):before { content: "日期"; }
+            td:nth-of-type(2):before { content: "星期"; }
+            td:nth-of-type(3):before { content: "基準 (前週)"; }
+            td:nth-of-type(4):before { content: "預測 (公式)"; }
+            td:nth-of-type(5):before { content: "預測 (策略)"; }
+            td:nth-of-type(6):before { content: "當期開獎 (順球)"; }
+            td:nth-of-type(7):before { content: "公式結果"; }
+            td:nth-of-type(8):before { content: "公式命中"; }
+            td:nth-of-type(9):before { content: "策略結果"; }
         }
     </style>
 </head>
@@ -98,46 +247,48 @@
     <div class="controls">
         <div class="form-group">
             <label><strong>1. 選擇遊戲類型：</strong></label>
-            <div>
-                <input type="radio" id="game539" name="gameType" value="539" checked>
+            <div class="radio-group">
+                <input type="radio" id="game539" name="gameType" value="539" checked style="display:none;">
                 <label for="game539">今彩 539</label>
-                &nbsp;&nbsp;
-                <input type="radio" id="gameFan" name="gameType" value="fan">
+                
+                <input type="radio" id="gameFan" name="gameType" value="fan" style="display:none;">
                 <label for="gameFan">天天樂</label>
-                &nbsp;&nbsp;
-                <input type="radio" id="gameGhana" name="gameType" value="ghana">
+                
+                <input type="radio" id="gameGhana" name="gameType" value="ghana" style="display:none;">
                 <label for="gameGhana">迦納彩</label>
             </div>
         </div>
 
-        <div class="form-group" style="margin-top: auto;">
+        <div class="form-group">
             <button onclick="processData()">讀取並計算</button>
         </div>
     </div>
 
     <div id="predictionArea"></div>
-    <div id="summaryArea" class="summary"></div>
+    <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <table id="resultTable">
-        <thead>
-            <tr>
-                <th>日期</th>
-                <th>星期</th>
-                <th>基準 (前週)</th>
-                <th>預測號碼 (公式)</th>
-                <th>預測號碼 (策略)</th>
-                <th>當期開獎號碼 (順球)</th>
-                <th>公式結果</th>
-                <th>公式命中號碼</th>
-                <th>策略結果</th>
-            </tr>
-        </thead>
-        <tbody id="resultBody">
-            <tr>
-                <td colspan="9">點擊上方按鈕載入資料</td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="table-container">
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>日期</th>
+                    <th>星期</th>
+                    <th>基準 (前週)</th>
+                    <th>預測號碼 (公式)</th>
+                    <th>預測號碼 (策略)</th>
+                    <th>當期開獎號碼 (順球)</th>
+                    <th>公式結果</th>
+                    <th>公式命中號碼</th>
+                    <th>策略結果</th>
+                </tr>
+            </thead>
+            <tbody id="resultBody">
+                <tr>
+                    <td colspan="9" style="text-align:center; padding-left:10px;">點擊上方按鈕載入資料</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>
@@ -357,10 +508,10 @@
                 let coldNum = freqArr[freqArr.length - 1].num;
 
                 predictionArea.innerHTML = `
-                    <div style="background-color: #fff8e1; padding: 15px; border-radius: 5px; border-left: 5px solid #ffa000;">
-                        <h3 style="margin-top:0; color: #ff8f00;">下期預測：${nextDate.toLocaleDateString()} (${nextDayName})</h3>
-                        <p><strong>坐車公式預測：</strong> 基準為上週${nextDayName}順${fNext.rank}(${formatNum(baseVal)})，預測號碼為 <span style="color: #d32f2f; font-weight: bold; font-size: 1.1em;">${formatNum(p1)}, ${formatNum(p2)}</span></p>
-                        <p style="margin-bottom: 0;"><strong>策略 (溫搭冷) 預測：</strong> <span style="color: #1976d2; font-weight: bold;">${formatNum(warmNum)}, ${formatNum(coldNum)}</span></p>
+                    <div style="background-color: var(--pred-bg); padding: 15px; border-radius: 6px; border-left: 5px solid var(--pred-border);">
+                        <h3 style="margin-top:0; color: var(--pred-border);">下期預測：${nextDate.toLocaleDateString()} (${nextDayName})</h3>
+                        <p><strong>公式預測：</strong> 基準為上週${nextDayName}順${fNext.rank}(${formatNum(baseVal)})，預測為 <span style="color: var(--hit-text); font-weight: bold; font-size: 1.1em;">${formatNum(p1)}, ${formatNum(p2)}</span></p>
+                        <p style="margin-bottom: 0;"><strong>策略預測：</strong> <span style="color: #1976d2; font-weight: bold;">${formatNum(warmNum)}, ${formatNum(coldNum)}</span></p>
                     </div>
                 `;
             } else {
@@ -373,7 +524,7 @@
         resultBody.innerHTML = '';
         results.forEach(r => {
             let tr = document.createElement('tr');
-            if (r.isHit) tr.className = 'hit-row';
+            if (r.isHit || r.cIsHit) tr.className = 'hit-row'; // 只要有命中就高亮整行
             
             tr.innerHTML = `
                 <td>${r.date}</td>
@@ -392,9 +543,10 @@
         let hitRate = totalCalc > 0 ? ((totalHit / totalCalc) * 100).toFixed(1) : 0;
         let cHitRate = strategyCCalcCount > 0 ? ((strategyCHitCount / strategyCCalcCount) * 100).toFixed(1) : 0;
         
+        summaryArea.style.display = 'block';
         summaryArea.innerHTML = `
-            <div><strong>公式勝率：</strong> 共計算 ${totalCalc} 期，成功命中 ${totalHit} 期 (平均勝率：${hitRate}%)</div>
-            <div style="margin-top: 5px; color: #555;"><strong>策略勝率：</strong> 共計算 ${strategyCCalcCount} 期，成功命中 ${strategyCHitCount} 期 (平均勝率：${cHitRate}%)</div>
+            <div style="margin-bottom: 5px;"><strong>公式勝率：</strong> 測 ${totalCalc} 期，中 ${totalHit} 期 (${hitRate}%)</div>
+            <div style="color: #555;"><strong>策略勝率：</strong> 測 ${strategyCCalcCount} 期，中 ${strategyCHitCount} 期 (${cHitRate}%)</div>
         `;
     }
 </script>
