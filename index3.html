@@ -232,11 +232,9 @@
             td:nth-of-type(2):before { content: "星期"; }
             td:nth-of-type(3):before { content: "基準 (前週)"; }
             td:nth-of-type(4):before { content: "預測 (公式)"; }
-            td:nth-of-type(5):before { content: "預測 (策略)"; }
-            td:nth-of-type(6):before { content: "當期開獎 (順球)"; }
-            td:nth-of-type(7):before { content: "公式結果"; }
-            td:nth-of-type(8):before { content: "公式命中"; }
-            td:nth-of-type(9):before { content: "策略結果"; }
+            td:nth-of-type(5):before { content: "當期開獎 (順球)"; }
+            td:nth-of-type(6):before { content: "公式結果"; }
+            td:nth-of-type(7):before { content: "公式命中"; }
         }
     </style>
 </head>
@@ -274,18 +272,16 @@
                 <tr>
                     <th>日期</th>
                     <th>星期</th>
-                    <th>基準 (前週)</th>
+                    <th>基準 (上週)</th>
                     <th>預測號碼 (公式)</th>
-                    <th>預測號碼 (策略)</th>
                     <th>當期開獎號碼 (順球)</th>
                     <th>公式結果</th>
                     <th>公式命中號碼</th>
-                    <th>策略結果</th>
                 </tr>
             </thead>
             <tbody id="resultBody">
                 <tr>
-                    <td colspan="9" style="text-align:center; padding-left:10px;">點擊上方按鈕載入資料</td>
+                    <td colspan="7" style="text-align:center; padding-left:10px;">點擊上方按鈕載入資料</td>
                 </tr>
             </tbody>
         </table>
@@ -361,10 +357,6 @@
         const lines = text.trim().split('\n');
         let parsedData = [];
         
-        // 用於計算下期預測的全局頻率
-        let numFreq = {};
-        for(let i=1; i<=39; i++) numFreq[i] = 0;
-
         for (let i = 1; i < lines.length; i++) {
             let cols = lines[i].split(',').map(c => c.trim());
             if (cols.length < 6) continue;
@@ -379,8 +371,6 @@
             
             let sortedNums = [...nums].sort((a, b) => a - b);
             parsedData.push({ dateStr, fullDate, pyDay, sortedNums });
-            
-            sortedNums.forEach(num => numFreq[num]++);
         }
 
         parsedData.sort((a, b) => a.fullDate - b.fullDate);
@@ -396,51 +386,9 @@
         let totalHit = 0;
         let totalCalc = 0;
 
-        // 策略 動態計算變數
-        let runningFreq = {};
-        for(let i=1; i<=39; i++) runningFreq[i] = 0;
-        let strategyCHitCount = 0;
-        let strategyCCalcCount = 0;
-
         for (let row of parsedData) {
             let pyDay = row.pyDay;
             let f = activeFormulas[pyDay];
-
-            // 動態運算：策略 (依據當下累積的歷史數據)
-            let totalDraws = Object.values(runningFreq).reduce((a, b) => a + b, 0) / 5;
-            let cPredStr = '-';
-            let cHitStr = '-';
-            let cIsHit = false;
-
-            if (totalDraws >= 10) {
-                let freqArr = Object.keys(runningFreq).map(k => ({ num: parseInt(k), count: runningFreq[k] }));
-                freqArr.sort((a, b) => {
-                    if (b.count !== a.count) return b.count - a.count;
-                    return b.num - a.num; // 次數相同時以號碼大到小排序
-                });
-                
-                let warmNum = freqArr[Math.floor(freqArr.length / 2)].num;
-                let coldNum = freqArr[freqArr.length - 1].num;
-                cPredStr = `${formatNum(warmNum)}, ${formatNum(coldNum)}`;
-
-                let hitW = row.sortedNums.includes(warmNum);
-                let hitC = row.sortedNums.includes(coldNum);
-                cIsHit = hitW || hitC;
-                
-                let cHitNums = [];
-                if(hitW) cHitNums.push(formatNum(warmNum));
-                if(hitC) cHitNums.push(formatNum(coldNum));
-
-                if (cIsHit) {
-                    cHitStr = `命中 (${cHitNums.join(', ')})`;
-                    strategyCHitCount++;
-                } else {
-                    cHitStr = '未中';
-                }
-                strategyCCalcCount++;
-            } else {
-                cPredStr = '累積資料不足';
-            }
 
             // 動態運算：公式
             if (f && history[pyDay]) {
@@ -465,18 +413,14 @@
                     dayName: dayNames[pyDay],
                     baseStr: `順${f.rank} (${formatNum(baseVal)})`,
                     predStr: `${formatNum(pred1)}, ${formatNum(pred2)}`,
-                    cPredStr: cPredStr,
                     actualStr: row.sortedNums.map(formatNum).join(', '),
                     isHit: isHit,
-                    hitStr: isHit ? hitNums.join(', ') : '-',
-                    cIsHit: cIsHit,
-                    cHitStr: cHitStr
+                    hitStr: isHit ? hitNums.join(', ') : '-'
                 });
             }
             
-            // 更新歷史與頻率供下一次迴圈使用
+            // 更新歷史供下一次迴圈使用
             history[pyDay] = row.sortedNums;
-            row.sortedNums.forEach(num => runningFreq[num]++);
         }
 
         // --- 未來一期預測邏輯 ---
@@ -500,19 +444,10 @@
                 let p1 = addMod(baseVal, fNext.c1);
                 let p2 = addMod(baseVal, fNext.c2);
 
-                let freqArr = Object.keys(numFreq).map(k => ({ num: parseInt(k), count: numFreq[k] }));
-                freqArr.sort((a, b) => {
-                    if (b.count !== a.count) return b.count - a.count;
-                    return b.num - a.num;
-                });
-                let warmNum = freqArr[Math.floor(freqArr.length / 2)].num;
-                let coldNum = freqArr[freqArr.length - 1].num;
-
                 predictionArea.innerHTML = `
                     <div style="background-color: var(--pred-bg); padding: 15px; border-radius: 6px; border-left: 5px solid var(--pred-border);">
                         <h3 style="margin-top:0; color: var(--pred-border);">下期預測：${nextDate.toLocaleDateString()} (${nextDayName})</h3>
-                        <p><strong>公式預測：</strong> 基準為上週${nextDayName}順${fNext.rank}(${formatNum(baseVal)})，預測為 <span style="color: var(--hit-text); font-weight: bold; font-size: 1.1em;">${formatNum(p1)}, ${formatNum(p2)}</span></p>
-                        <p style="margin-bottom: 0;"><strong>策略預測：</strong> <span style="color: #1976d2; font-weight: bold;">${formatNum(warmNum)}, ${formatNum(coldNum)}</span></p>
+                        <p style="margin-bottom: 0;"><strong>公式預測：</strong> 基準為上週${nextDayName}順${fNext.rank}(${formatNum(baseVal)})，預測為 <span style="color: var(--hit-text); font-weight: bold; font-size: 1.1em;">${formatNum(p1)}, ${formatNum(p2)}</span></p>
                     </div>
                 `;
             } else {
@@ -525,29 +460,25 @@
         resultBody.innerHTML = '';
         results.forEach(r => {
             let tr = document.createElement('tr');
-            if (r.isHit || r.cIsHit) tr.className = 'hit-row'; // 只要有命中就高亮整行
+            if (r.isHit) tr.className = 'hit-row'; 
             
             tr.innerHTML = `
                 <td>${r.date}</td>
                 <td>${r.dayName}</td>
                 <td>${r.baseStr}</td>
                 <td class="${r.isHit ? 'hit-text' : ''}">${r.predStr}</td>
-                <td class="${r.cIsHit ? 'hit-text' : ''}">${r.cPredStr}</td>
                 <td>${r.actualStr}</td>
                 <td class="${r.isHit ? 'hit-text' : ''}">${r.isHit ? '命中' : '未中'}</td>
                 <td class="${r.isHit ? 'hit-text' : ''}">${r.hitStr}</td>
-                <td class="${r.cIsHit ? 'hit-text' : ''}">${r.cHitStr}</td>
             `;
             resultBody.appendChild(tr);
         });
 
         let hitRate = totalCalc > 0 ? ((totalHit / totalCalc) * 100).toFixed(1) : 0;
-        let cHitRate = strategyCCalcCount > 0 ? ((strategyCHitCount / strategyCCalcCount) * 100).toFixed(1) : 0;
         
         summaryArea.style.display = 'block';
         summaryArea.innerHTML = `
-            <div style="margin-bottom: 5px;"><strong>公式勝率：</strong> 測 ${totalCalc} 期，中 ${totalHit} 期 (${hitRate}%)</div>
-            <div style="color: #555;"><strong>策略勝率：</strong> 測 ${strategyCCalcCount} 期，中 ${strategyCHitCount} 期 (${cHitRate}%)</div>
+            <div style="margin-bottom: 0;"><strong>公式勝率：</strong> 測 ${totalCalc} 期，中 ${totalHit} 期 (${hitRate}%)</div>
         `;
     }
 </script>
