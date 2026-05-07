@@ -104,6 +104,9 @@
                 &nbsp;&nbsp;
                 <input type="radio" id="gameFan" name="gameType" value="fan">
                 <label for="gameFan">天天樂</label>
+                &nbsp;&nbsp;
+                <input type="radio" id="gameGhana" name="gameType" value="ghana">
+                <label for="gameGhana">迦納彩</label>
             </div>
         </div>
 
@@ -157,12 +160,20 @@
         6: { rank: 4, c1: 2, c2: 4 }
     };
 
+    const formulasGhana = {
+        0: { rank: 2, c1: 3, c2: 20 },
+        1: { rank: 2, c1: 5, c2: 15 },
+        2: { rank: 1, c1: 6, c2: 10 },
+        3: { rank: 5, c1: 35, c2: 37 },
+        4: { rank: 1, c1: 11, c2: 28 },
+        5: { rank: 3, c1: 17, c2: 33 }
+    };
+
     const dayNames = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"];
 
     document.querySelectorAll('input[name="gameType"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
-            document.getElementById('fileNameDisplay').innerText = 
-                e.target.value === '539' ? '539_history_2026.csv' : 'Fan_history_2026.csv';
+            // 這個區塊原本有顯示檔名邏輯，因介面移除 fileNameDisplay 故保留為空，確保其他功能正常運作
         });
     });
 
@@ -177,7 +188,10 @@
 
     async function processData() {
         const gameType = document.querySelector('input[name="gameType"]:checked').value;
-        const fileName = gameType === '539' ? '539_history_2026.csv' : 'Fan_history_2026.csv';
+        let fileName = '539_history_2026.csv';
+        if (gameType === 'fan') fileName = 'Fan_history_2026.csv';
+        if (gameType === 'ghana') fileName = 'Ghana_history_2026.csv';
+
         const resultBody = document.getElementById('resultBody');
         const summaryArea = document.getElementById('summaryArea');
         const predictionArea = document.getElementById('predictionArea');
@@ -219,7 +233,10 @@
 
         parsedData.sort((a, b) => a.fullDate - b.fullDate);
 
-        const activeFormulas = gameType === '539' ? formulas539 : formulasFan;
+        let activeFormulas = formulas539;
+        if (gameType === 'fan') activeFormulas = formulasFan;
+        if (gameType === 'ghana') activeFormulas = formulasGhana;
+
         let history = {}; 
         let results = [];
         
@@ -227,7 +244,7 @@
         let totalHit = 0;
         let totalCalc = 0;
 
-        // 策略C 動態計算變數
+        // 策略 動態計算變數
         let runningFreq = {};
         for(let i=1; i<=39; i++) runningFreq[i] = 0;
         let strategyCHitCount = 0;
@@ -237,7 +254,7 @@
             let pyDay = row.pyDay;
             let f = activeFormulas[pyDay];
 
-            // 動態運算：策略C (依據當下累積的歷史數據)
+            // 動態運算：策略 (依據當下累積的歷史數據)
             let totalDraws = Object.values(runningFreq).reduce((a, b) => a + b, 0) / 5;
             let cPredStr = '-';
             let cHitStr = '-';
@@ -273,7 +290,7 @@
                 cPredStr = '累積資料不足';
             }
 
-            // 動態運算：公式A
+            // 動態運算：公式
             if (f && history[pyDay]) {
                 let prevNums = history[pyDay];
                 let baseVal = prevNums[f.rank - 1];
@@ -316,7 +333,7 @@
             let nextDate = new Date(lastRow.fullDate);
             nextDate.setDate(nextDate.getDate() + 1);
             
-            if (gameType === '539' && nextDate.getDay() === 0) {
+            if ((gameType === '539' || gameType === 'ghana') && nextDate.getDay() === 0) {
                 nextDate.setDate(nextDate.getDate() + 1);
             }
             
