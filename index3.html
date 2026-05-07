@@ -100,16 +100,11 @@
             <label><strong>1. 選擇遊戲類型：</strong></label>
             <div>
                 <input type="radio" id="game539" name="gameType" value="539" checked>
-                <label for="game539">今彩 539 (2026 版公式)</label>
+                <label for="game539">今彩 539</label>
                 &nbsp;&nbsp;
                 <input type="radio" id="gameFan" name="gameType" value="fan">
-                <label for="gameFan">天天樂 (2026 版公式)</label>
+                <label for="gameFan">天天樂</label>
             </div>
-        </div>
-
-        <div class="form-group">
-            <label><strong>2. 資料來源：</strong></label>
-            <div style="font-size: 14px; color: #555;">自動讀取同資料夾下的 <code id="fileNameDisplay">539_history_2026.csv</code></div>
         </div>
 
         <div class="form-group" style="margin-top: auto;">
@@ -127,8 +122,8 @@
                 <th>星期</th>
                 <th>基準 (前週)</th>
                 <th>預測號碼 (公式)</th>
-                <th>預測號碼 (策略C)</th>
-                <th>當期開獎號碼 (由小到大)</th>
+                <th>預測號碼 (策略)</th>
+                <th>當期開獎號碼 (順球)</th>
                 <th>公式結果</th>
                 <th>公式命中號碼</th>
                 <th>策略C結果</th>
@@ -346,9 +341,9 @@
 
                 predictionArea.innerHTML = `
                     <div style="background-color: #fff8e1; padding: 15px; border-radius: 5px; border-left: 5px solid #ffa000;">
-                        <h3 style="margin-top:0; color: #ff8f00;">🔮 下期預測：${nextDate.toLocaleDateString()} (${nextDayName})</h3>
+                        <h3 style="margin-top:0; color: #ff8f00;">下期預測：${nextDate.toLocaleDateString()} (${nextDayName})</h3>
                         <p><strong>坐車公式預測：</strong> 基準為上週${nextDayName}順${fNext.rank}(${formatNum(baseVal)})，預測號碼為 <span style="color: #d32f2f; font-weight: bold; font-size: 1.1em;">${formatNum(p1)}, ${formatNum(p2)}</span></p>
-                        <p style="margin-bottom: 0;"><strong>策略C (溫搭冷) 預測：</strong> <span style="color: #1976d2; font-weight: bold;">${formatNum(warmNum)}, ${formatNum(coldNum)}</span></p>
+                        <p style="margin-bottom: 0;"><strong>策略 (溫搭冷) 預測：</strong> <span style="color: #1976d2; font-weight: bold;">${formatNum(warmNum)}, ${formatNum(coldNum)}</span></p>
                     </div>
                 `;
             } else {
@@ -381,8 +376,8 @@
         let cHitRate = strategyCCalcCount > 0 ? ((strategyCHitCount / strategyCCalcCount) * 100).toFixed(1) : 0;
         
         summaryArea.innerHTML = `
-            <div>👉 <strong>公式勝率：</strong> 共計算 ${totalCalc} 期，成功命中 ${totalHit} 期 (平均勝率：${hitRate}%)</div>
-            <div style="margin-top: 5px; color: #555;">👉 <strong>策略C勝率：</strong> 共計算 ${strategyCCalcCount} 期，成功命中 ${strategyCHitCount} 期 (平均勝率：${cHitRate}%)</div>
+            <div><strong>公式勝率：</strong> 共計算 ${totalCalc} 期，成功命中 ${totalHit} 期 (平均勝率：${hitRate}%)</div>
+            <div style="margin-top: 5px; color: #555;"><strong>策略勝率：</strong> 共計算 ${strategyCCalcCount} 期，成功命中 ${strategyCHitCount} 期 (平均勝率：${cHitRate}%)</div>
         `;
     }
 </script>
