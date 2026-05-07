@@ -4,7 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>坐車公式自動計算系統</title>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" id="pwa-manifest">
+    <script>
+        const manifestData = {
+          "name": "坐車",
+          "short_name": "坐車",
+          "start_url": "./index.html",
+          "display": "standalone",
+          "background_color": "#f1f5f9",
+          "theme_color": "#3b82f6",
+          "icons": [
+            { "src": "icon.png", "sizes": "192x192", "type": "image/png" },
+            { "src": "icon.png", "sizes": "512x512", "type": "image/png" }
+          ]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/manifest+json' });
+        document.getElementById('pwa-manifest').href = URL.createObjectURL(manifestBlob);
     <style>
         :root {
             --primary-color: #2c3e50;
