@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>坐車公式自動計算系統</title>
-    <link rel="manifest" href="manifest3.json">
+    <link rel="manifest" href="manifest.json">
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -230,7 +230,7 @@
             /* 加入標題標籤 */
             td:nth-of-type(1):before { content: "日期"; }
             td:nth-of-type(2):before { content: "星期"; }
-            td:nth-of-type(3):before { content: "基準 (上週)"; }
+            td:nth-of-type(3):before { content: "基準 (前週)"; }
             td:nth-of-type(4):before { content: "預測 (公式)"; }
             td:nth-of-type(5):before { content: "當期開獎 (順球)"; }
             td:nth-of-type(6):before { content: "公式結果"; }
@@ -272,7 +272,7 @@
                 <tr>
                     <th>日期</th>
                     <th>星期</th>
-                    <th>基準 (上週)</th>
+                    <th>基準 (前週)</th>
                     <th>預測號碼 (公式)</th>
                     <th>當期開獎號碼 (順球)</th>
                     <th>公式結果</th>
@@ -290,31 +290,31 @@
 
 <script>
     const formulas539 = {
-        0: { rank: 1, c1: 24, c2: 28 },
-        1: { rank: 1, c1: 5, c2: 20 },
-        2: { rank: 2, c1: 34, c2: 37 },
-        3: { rank: 1, c1: 1, c2: 4 },
-        4: { rank: 1, c1: 15, c2: 37 },
+        0: { rank: 1, c1: 18, c2: 25 },
+        1: { rank: 1, c1: 10, c2: 16 },
+        2: { rank: 1, c1: 7, c2: 36 },
+        3: { rank: 4, c1: 20, c2: 23 },
+        4: { rank: 1, c1: 17, c2: 33 },
         5: { rank: 2, c1: 5, c2: 34 }
     };
 
     const formulasFan = {
-        0: { rank: 5, c1: 14, c2: 16 },
-        1: { rank: 1, c1: 3, c2: 33 },
-        2: { rank: 2, c1: 3, c2: 33 },
-        3: { rank: 2, c1: 15, c2: 25 },
-        4: { rank: 4, c1: 13, c2: 38 },
-        5: { rank: 1, c1: 14, c2: 33 },
-        6: { rank: 5, c1: 9, c2: 25 }
+        0: { rank: 1, c1: 18, c2: 30 },
+        1: { rank: 5, c1: 3, c2: 5 },
+        2: { rank: 1, c1: 4, c2: 12 },
+        3: { rank: 3, c1: 3, c2: 20 },
+        4: { rank: 3, c1: 19, c2: 30 },
+        5: { rank: 1, c1: 17, c2: 20 },
+        6: { rank: 4, c1: 2, c2: 4 }
     };
 
     const formulasGhana = {
-        0: { rank: 2, c1: 22, c2: 36 },
-        1: { rank: 1, c1: 25, c2: 29 },
-        2: { rank: 1, c1: 5, c2: 10 },
-        3: { rank: 3, c1: 7, c2: 29 },
-        4: { rank: 1, c1: 17, c2: 28 },
-        5: { rank: 1, c1: 20, c2: 34 }
+        0: { rank: 2, c1: 3, c2: 20 },
+        1: { rank: 2, c1: 5, c2: 15 },
+        2: { rank: 1, c1: 6, c2: 10 },
+        3: { rank: 5, c1: 35, c2: 37 },
+        4: { rank: 1, c1: 11, c2: 28 },
+        5: { rank: 3, c1: 17, c2: 33 }
     };
 
     const dayNames = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"];
