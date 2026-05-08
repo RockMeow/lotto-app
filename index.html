@@ -52,11 +52,21 @@
 
         .table-container { width: 100%; overflow-x: auto; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: #fff; }
-        th, td { border: 1px solid var(--border-color); padding: 12px 8px; text-align: center; vertical-align: middle; line-height: 1.8; }
+        th, td { border: 1px solid var(--border-color); padding: 12px 8px; text-align: center; vertical-align: middle; }
         th { background-color: var(--primary-color); color: white; position: sticky; top: 0; white-space: nowrap; }
         
-        #resultTable td { white-space: normal !important; word-break: break-word; }
-        .hit-item { margin-bottom: 5px; padding: 2px 0; }
+        /* 解決重疊問題：核心修正區 */
+        #resultTable td { 
+            white-space: normal !important; 
+            word-break: break-word; 
+            line-height: 2.0; /* 增加行高防止重疊 */
+        }
+        .hit-item { 
+            display: block;
+            margin-bottom: 12px; /* 增加間距 */
+            padding: 4px 0;
+            min-height: 1.6em;
+        }
         .hit-item:last-child { margin-bottom: 0; }
 
         tr:nth-child(even) { background-color: #fcfcfc; }
@@ -69,7 +79,7 @@
             table, thead, tbody, th, td, tr { display: block; }
             thead tr { display: none; }
             tr { border: 1px solid var(--border-color); margin-bottom: 15px; border-radius: 8px; overflow: hidden; }
-            td { text-align: right; padding-left: 45%; position: relative; border-bottom: 1px solid #f0f0f0; min-height: 40px; }
+            td { text-align: right; padding-left: 45%; position: relative; border-bottom: 1px solid #f0f0f0; min-height: 50px; }
             td:before { position: absolute; left: 12px; width: 40%; text-align: left; font-weight: bold; color: #666; }
             td:nth-of-type(1):before { content: "開獎日期"; }
             td:nth-of-type(2):before { content: "開出號碼"; }
@@ -91,8 +101,8 @@
     </h2>
     
     <div class="controls">
-        <label><strong>資料狀態：</strong> <span id="dataStatus">等待載入同目錄下的 Fan_history_2026.csv...</span></label>
-        <button onclick="processData()">手動重新整理計算</button>
+        <label><strong>資料狀態：</strong> <span id="dataStatus">等待讀取...</span></label>
+        <button onclick="processData()">重新整理計算</button>
     </div>
 
     <h2 style="font-size: 1.2rem; margin-top: 25px;">目前追蹤中</h2>
@@ -184,15 +194,12 @@
         return rawPatterns;
     }
 
-    // 改為自動抓取同目錄下的檔案
     async function processData() {
         const fileName = 'Fan_history_2026.csv';
         const statusEl = document.getElementById('dataStatus');
-        
         try {
             const response = await fetch(fileName);
-            if (!response.ok) throw new Error('找不到檔案，請確認檔案在同資料夾內且透過伺服器開啟。');
-            
+            if (!response.ok) throw new Error('找不到檔案');
             const text = await response.text();
             const lines = text.trim().split('\n');
             parsedData = [];
@@ -203,16 +210,14 @@
                 if (!nums.some(isNaN)) parsedData.push({ date: cols[0], nums: nums });
             }
             if(parsedData.length > 0) {
-                statusEl.innerText = `✅ 已自動讀取檔案：${fileName}`;
+                statusEl.innerText = `✅ 已讀取：${fileName}`;
                 runAnalysis();
             }
         } catch (error) {
-            statusEl.innerHTML = `<span style="color:red;">❌ 讀取失敗：${error.message}</span>`;
-            console.error(error);
+            statusEl.innerHTML = `<span style="color:red;">❌ 失敗：${error.message}</span>`;
         }
     }
 
-    // 頁面載入後自動執行一次
     window.onload = processData;
 
     function runAnalysis() {
@@ -226,7 +231,6 @@
 
         for (let i = 0; i < parsedData.length; i++) {
             let patterns = getSmartPatterns(parsedData[i].nums, i, parsedData);
-            
             patterns.forEach(p => {
                 stats.total++;
                 let foundHit = false;
@@ -246,7 +250,6 @@
                         }
                     }
                 }
-
                 let age = parsedData.length - 1 - i;
                 if (!foundHit && age < 6) {
                     currentlyTracking.push({
