@@ -2,470 +2,296 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌 / 週牌</title>
-    <link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加州天天樂 版路預測分析系統</title>
     <style>
-        /* =========================================
-           現代化 UI 變數與亮色模式
-           ========================================= */
         :root {
-            --bg-color: #f1f5f9; 
-            --container-bg: #ffffff;
-            --text-color: #334155;
-            --heading-color: #2563eb;
-            --section-bg: #ffffff;
-            --section-border: #e2e8f0;
-            --card-bg: #f8fafc;
-            --card-border: #e2e8f0;
-            --th-bg: #f8fafc;
-            --td-border: #e2e8f0;
-            --tr-even: #ffffff;
-            --tr-hover: #f1f5f9;
-            --notice-bg: #fffbeb;
-            --notice-border: #f59e0b;
-            --notice-text: #92400e;
-            --input-bg: #ffffff;
-            --input-border: #cbd5e1;
-            --ball-bg: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            --ball-text: #ffffff;
-            --ball-shadow: rgba(37, 99, 235, 0.3);
-            --high-rate-color: #ef4444; 
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --base-font-size: 16px;
         }
-
-        /* =========================================
-           深色模式設定
-           ========================================= */
-        [data-theme="dark"] {
-            --bg-color: #0f172a;
-            --container-bg: #1e293b;
-            --text-color: #e2e8f0;
-            --heading-color: #60a5fa;
-            --section-bg: #1e293b;
-            --section-border: #334155;
-            --card-bg: #0f172a;
-            --card-border: #334155;
-            --th-bg: #0f172a;
-            --td-border: #334155;
-            --tr-even: #1e293b;
-            --tr-hover: #334155;
-            --input-bg: #0f172a;
-            --input-border: #475569;
-            --ball-bg: linear-gradient(135deg, #60a5fa, #2563eb);
-            --ball-shadow: rgba(96, 165, 250, 0.2);
-            --high-rate-color: #f87171; 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            font-size: var(--base-font-size);
+            transition: font-size 0.2s ease;
         }
-
-        body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
-            line-height: 1.6; padding: 20px 10px; background-color: var(--bg-color); color: var(--text-color); margin: 0;
-            -webkit-font-smoothing: antialiased; transition: background-color 0.3s, color 0.3s;
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            position: relative;
         }
-        
-        .container { 
-            max-width: 1000px; margin: auto; background: var(--container-bg); padding: 40px; border-radius: 24px; 
-            box-shadow: var(--shadow-lg); transition: background-color 0.3s; position: relative;
+        /* 字體調整控制區 */
+        .font-control {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: flex;
+            gap: 5px;
+            align-items: center;
         }
-        
-        h1 { color: var(--heading-color); text-align: center; margin-top: 10px; margin-bottom: 35px; font-size: 2em; font-weight: 800; letter-spacing: -0.5px; }
-
-        .theme-toggle {
-            position: absolute; top: 25px; right: 25px; background: var(--card-bg); border: 1px solid var(--card-border);
-            border-radius: 50%; width: 44px; height: 44px; font-size: 1.2em; cursor: pointer; color: var(--text-color);
-            display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s;
+        .font-control span {
+            font-size: 0.9em;
+            color: #666;
+            margin-right: 5px;
         }
-        .theme-toggle:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-
-        .section { background: var(--section-bg); border: 1px solid var(--section-border); padding: 25px; border-radius: 16px; margin-bottom: 24px; box-shadow: var(--shadow-sm); transition: background-color 0.3s, border-color 0.3s; }
-        .section-title { font-weight: 700; font-size: 1.25em; margin-bottom: 20px; color: var(--text-color); display: flex; align-items: center; }
-        .section-title::before { content: ""; width: 6px; height: 20px; background: var(--heading-color); margin-right: 12px; border-radius: 6px; }
-
-        .control-group { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; }
-        #gameTypeRow, #manualUploadRow { display: none !important; }
-        
-        select { padding: 12px 16px; border-radius: 10px; border: 1px solid var(--input-border); font-size: 16px; color: var(--text-color); background-color: var(--input-bg); cursor: pointer; outline: none; box-shadow: var(--shadow-sm); transition: all 0.2s; }
-        select:focus { border-color: var(--heading-color); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
-        
-        #autoLoadCsv { width: 100%; max-width: 450px; }
-
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; align-items: start; }
-        .stat-card { background: var(--card-bg); border: 1px solid var(--card-border); padding: 25px 20px; border-radius: 16px; text-align: center; box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s; }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
-        .stat-value { font-size: 2.2em; font-weight: 800; color: var(--heading-color); margin: 8px 0; letter-spacing: -1px; }
-        .stat-label { font-size: 1em; font-weight: 700; opacity: 0.8; }
-        .detailed-stats { margin-top: 15px; font-size: 0.9em; text-align: left; border-top: 1px dashed var(--card-border); padding-top: 12px; display: grid; grid-template-columns: 1fr; gap: 8px; }
-        .detailed-stats-row { display: flex; justify-content: space-between; align-items: center; }
-        
-        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid var(--td-border); box-shadow: var(--shadow-sm); }
-        table { width: 100%; border-collapse: collapse; font-size: 0.95em; min-width: 550px; }
-        th, td { border-bottom: 1px solid var(--td-border); padding: 16px 12px; text-align: center; }
-        th { background-color: var(--th-bg); color: var(--text-color); font-weight: 700; white-space: nowrap; }
-        tr:last-child td { border-bottom: none; }
-        tr:nth-child(even) { background-color: var(--tr-even); }
-        tr:hover { background-color: var(--tr-hover); }
-        
-        .status-active { color: #1d4ed8; font-weight: 600; background: #dbeafe; border-radius: 20px; padding: 6px 14px; display: inline-block; font-size: 0.9em;}
-        .status-hit { color: #166534; font-weight: 600; background: #dcfce7; border-radius: 20px; padding: 6px 14px; display: inline-block; font-size: 0.9em;}
-        .status-miss { color: #b91c1c; font-weight: 600; background: #fee2e2; border-radius: 20px; padding: 6px 14px; display: inline-block; font-size: 0.9em;}
-        
-        [data-theme="dark"] .status-active { background: rgba(37,99,235,0.2); color: #93c5fd; }
-        [data-theme="dark"] .status-hit { background: rgba(22,101,52,0.3); color: #86efac; }
-        [data-theme="dark"] .status-miss { background: rgba(185,28,28,0.2); color: #fca5a5; }
-
-        .info-text { font-size: 0.85em; opacity: 0.7; margin-top: 8px; }
-        .history-container { max-height: 500px; overflow-y: auto; }
-        
-        .ball-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-        .lottery-ball {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 34px; height: 34px; border-radius: 50%;
-            background: #cbd5e1; color: #475569;
-            font-weight: 700; font-size: 14px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .font-control button {
+            background: #eee;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #333;
+            transition: 0.2s;
         }
-
-        /* --- 球色區分設定 --- */
-        .lottery-ball.normal-3p { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #ffffff; box-shadow: 0 3px 6px rgba(37, 99, 235, 0.3); }
-        .lottery-ball.normal-weekly { background: linear-gradient(135deg, #64748b, #334155); color: #ffffff; }
-
-        /* --- 成本警示與停損視覺樣式 --- */
-        .row-high-cost { opacity: 0.6; filter: grayscale(30%); }
-        .badge-warning { background: var(--high-rate-color); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 6px; display: inline-block; vertical-align: middle; line-height: 1; }
-        .stop-loss-flash { color: var(--high-rate-color); font-weight: 900; animation: blink 0.8s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-
-        .heatmap-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
-        .heatmap-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .heatmap-box {
-            position: relative; display: inline-flex; align-items: center; justify-content: center;
-            width: 42px; height: 42px; border-radius: 12px; font-weight: 700; font-size: 15px; transition: transform 0.2s, box-shadow 0.2s;
+        .font-control button:hover {
+            background: #ddd;
         }
-        .heatmap-box:hover { transform: scale(1.1); z-index: 2; box-shadow: var(--shadow-md); }
-        .heatmap-badge {
-            position: absolute; top: -8px; right: -8px; background: #111; color: #fff;
-            font-size: 10px; font-weight: bold; border-radius: 50%; width: 18px; height: 18px;
-            display: flex; align-items: center; justify-content: center; border: 2px solid var(--section-bg); box-shadow: var(--shadow-sm);
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+            font-size: 1.8em;
         }
-        .omission-text { font-size: 11px; font-weight: 600; opacity: 0.8; }
-        .omission-warn { color: #ef4444; font-weight: 800; }
-
-        @media (max-width: 768px) {
-            .container { padding: 25px 20px; }
-            h1 { font-size: 1.6em; }
-            .stats-grid { grid-template-columns: 1fr; }
-            #autoLoadCsv { max-width: 100%; }
+        .author-note {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-left: 5px solid #ffeeba;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+        }
+        .input-group {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        input[type="number"] {
+            width: 70px;
+            padding: 10px;
+            font-size: 1.2em;
+            text-align: center;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+        }
+        button.calc-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button.calc-btn:hover {
+            background-color: #0056b3;
+        }
+        .results {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-box {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .result-box h3 {
+            margin-top: 0;
+            color: #17a2b8;
+            border-bottom: 2px solid #17a2b8;
+            padding-bottom: 10px;
+            font-size: 1.3em;
+        }
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        li {
+            padding: 10px 0;
+            border-bottom: 1px dashed #ccc;
+            font-size: 1.1em;
+        }
+        li:last-child {
+            border-bottom: none;
+        }
+        .highlight {
+            color: #dc3545;
+            font-weight: bold;
+            font-size: 1.2em;
+            letter-spacing: 2px;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
-    <h1>三期牌 / 週牌</h1>
-
-    <div id="statsGrid" class="stats-grid">
-        <div class="stat-card" id="threePeriodCard">
-            <div class="stat-label">三期牌 命中率</div>
-            <div id="threePeriodRate" class="stat-value">0%</div>
-            <div id="threePeriodDetail" class="info-text">已結束: 0 | 命中: 0</div>
-            <div id="threePeriodBreakdown" class="detailed-stats"></div>
-        </div>
-        <div class="stat-card" id="weeklyCard">
-            <div class="stat-label">週牌 命中率</div>
-            <div id="weeklyRate" class="stat-value">0%</div>
-            <div id="weeklyDetail" class="info-text">已結束: 0 | 命中: 0</div>
-            <div id="weeklyBreakdown" class="detailed-stats"></div>
-        </div>
+    <!-- 字體大小調整工具 -->
+    <div class="font-control">
+        <span>字體調整：</span>
+        <button onclick="changeFontSize(-1)">A-</button>
+        <button onclick="changeFontSize(0)">預設</button>
+        <button onclick="changeFontSize(1)">A+</button>
     </div>
 
-    <div class="section">
-        <div class="section-title">開獎數據</div>
-        <div class="control-group" id="gameTypeRow">
-            <select id="gameType">
-                <option value="mark6">🇭🇰 香港 六合彩 6/49</option>
-                <option value="649">🇹🇼 台灣 大樂透 6/49</option>
-                <option value="539">🇹🇼 台灣 今彩 5/39</option>
-                <option value="daily4">🇺🇸 加州 天天樂 5/39</option>
-                <option value="ghana">🇬🇭 非洲 迦納彩 5/39</option>
-            </select>
-        </div>
-        <div class="control-group">
-            <div id="manualUploadRow"><input type="file" id="csvFile" accept=".csv"></div>
-            <select id="autoLoadCsv">
-                <option value="">-- 請選擇彩球類型 --</option>
-                <option value="Six_history_2026.csv">🇭🇰 香港 六合彩</option>
-                <option value="649_history_2026.csv">🇹🇼 台灣 大樂透</option>
-                <option value="539_history_2026.csv">🇹🇼 台灣 今彩 539</option>
-                <option value="Fan_history_2026.csv">🇺🇸 加州 天天樂</option>
-                <option value="Ghana_history_2026.csv">🇬🇭 非洲 迦納彩</option>
-            </select>
-        </div>
+    <h1>加州天天樂 版路自動推算系統</h1>
+    <div class="author-note">
+        💡 程式作者策略提示：追蹤下方推算版路，<strong>三期內可開出 1~3 號，六期內可開出 1~6 號</strong>。建議搭配籌碼分配進行養牌。
     </div>
 
-    <div class="section">
-        <div class="section-title">近 10 期熱門號與遺漏期分佈</div>
-        <div id="heatmapContainer" class="heatmap-container"></div>
-    </div>
-
-    <div class="section">
-        <div class="section-title">目前追蹤中的牌組 (中一即停)</div>
-        <div class="table-responsive">
-            <table id="activeTable">
-                <thead><tr><th>類型</th><th>目標號碼</th><th>起始日期</th><th>剩餘期數</th><th>狀態</th></tr></thead>
-                <tbody id="activeBody"></tbody>
-            </table>
+    <div class="input-group">
+        <label>請輸入最新一期開獎號碼 (5 個數字，範圍 1~39)：</label>
+        <div class="inputs">
+            <input type="number" id="n1" min="1" max="39" placeholder="N1">
+            <input type="number" id="n2" min="1" max="39" placeholder="N2">
+            <input type="number" id="n3" min="1" max="39" placeholder="N3">
+            <input type="number" id="n4" min="1" max="39" placeholder="N4">
+            <input type="number" id="n5" min="1" max="39" placeholder="N5">
         </div>
+        <button class="calc-btn" onclick="calculate()">執行程式推測</button>
     </div>
 
-    <div class="section">
-        <div class="section-title">完整歷史命中紀錄</div>
-        <div class="history-container table-responsive">
-            <table id="historyTable">
-                <thead><tr><th>起始日期</th><th>類型</th><th>目標號碼</th><th>結果</th><th>命中詳情</th></tr></thead>
-                <tbody id="historyBody"></tbody>
-            </table>
+    <div class="results" id="results">
+        <h2>預測結果分析</h2>
+        <div class="result-box">
+            <h3>📌 版路一：N+1 延伸連號 (間距1)</h3>
+            <ul id="logic1-list"></ul>
+        </div>
+        <div class="result-box">
+            <h3>📌 版路二：六宮格漏牌補位 (間距6)</h3>
+            <ul id="logic2-list"></ul>
         </div>
     </div>
 </div>
 
 <script>
-    let allRecords = []; 
-    let currentHistoryData = [];
+    // --- 字體大小控制與記憶功能 ---
+    let currentSize = 16;
+    
+    function initFontSize() {
+        const savedSize = localStorage.getItem('appFontSize');
+        if (savedSize) {
+            currentSize = parseInt(savedSize);
+            document.documentElement.style.setProperty('--base-font-size', currentSize + 'px');
+        }
+    }
 
-    function toggleTheme() {
-        const body = document.body;
-        const currentTheme = body.getAttribute('data-theme');
-        const btn = document.querySelector('.theme-toggle');
-        if (currentTheme === 'dark') {
-            body.removeAttribute('data-theme');
-            btn.textContent = '🌙';
+    function changeFontSize(step) {
+        if (step === 0) {
+            currentSize = 16; // 回復預設
         } else {
-            body.setAttribute('data-theme', 'dark');
-            btn.textContent = '☀️';
+            currentSize += (step * 2);
+            // 設定極限值防呆
+            if (currentSize < 12) currentSize = 12;
+            if (currentSize > 28) currentSize = 28;
         }
+        document.documentElement.style.setProperty('--base-font-size', currentSize + 'px');
+        localStorage.setItem('appFontSize', currentSize); // 記憶設定
     }
 
-    function getFreqInLast10(num, evalIndex) {
-        if (!currentHistoryData || currentHistoryData.length === 0) return 0;
-        if (evalIndex === undefined) evalIndex = currentHistoryData.length - 1;
-        let startIdx = Math.max(0, evalIndex - 9);
-        let count = 0;
-        for (let i = startIdx; i <= evalIndex; i++) {
-            if (currentHistoryData[i].nums.includes(num)) count++;
-        }
-        return count;
-    }
+    // 網頁載入時初始化字體設定
+    initFontSize();
 
-    function formatBalls(numsArray, isTarget = false, typeName = "", evalIndex) {
-        if (evalIndex === undefined && currentHistoryData.length > 0) {
-            evalIndex = currentHistoryData.length - 1;
-        }
-        let ballsHtml = numsArray.map(n => {
-            let numVal = Number(n);
-            let carTipClass = "";
-            if(isTarget) {
-                if (typeName.includes('三期')) carTipClass = " normal-3p";
-                else carTipClass = " normal-weekly";
+    // --- 預測核心邏輯 ---
+    const modGroups = {
+        1: [1, 7, 13, 19, 25, 31, 37],
+        2: [2, 8, 14, 20, 26, 32, 38],
+        3: [3, 9, 15, 21, 27, 33, 39],
+        4: [4, 10, 16, 22, 28, 34],
+        5: [5, 11, 17, 23, 29, 35],
+        0: [6, 12, 18, 24, 30, 36]
+    };
+
+    function calculate() {
+        let nums = [];
+        for (let i = 1; i <= 5; i++) {
+            let val = parseInt(document.getElementById('n' + i).value);
+            if (isNaN(val) || val < 1 || val > 39) {
+                alert("請確保 5 個欄位都已填寫，且數字落在 1 到 39 之間！");
+                return;
             }
-            let ballClass = isTarget ? ("lottery-ball target-ball" + carTipClass) : "lottery-ball";
-            return `<span class="${ballClass}">${numVal.toString().padStart(2, '0')}</span>`;
-        }).join('');
-        return `<div class="ball-container">${ballsHtml}</div>`;
-    }
-
-    function getOmissionAt(num, index) {
-        if (!currentHistoryData || index < 0) return 0;
-        let omission = 0;
-        for (let i = index; i >= 0; i--) {
-            if (currentHistoryData[i].nums.includes(num)) return omission;
-            omission++;
+            nums.push(val);
         }
-        return omission;
-    }
 
-    function getOmission(num) { return getOmissionAt(num, currentHistoryData.length - 1); }
+        // 過濾重複數字並排序
+        let uniqueNums = [...new Set(nums)].sort((a, b) => a - b);
+        if (uniqueNums.length !== 5) {
+            alert("請勿輸入重複的號碼！");
+            return;
+        }
 
-    document.getElementById('csvFile').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = function(event) { processCSV(event.target.result); };
-        reader.readAsText(file);
-    });
-
-    document.getElementById('autoLoadCsv').addEventListener('change', function(e) {
-        const fileName = e.target.value;
-        if (!fileName) return;
-        const lowerName = fileName.toLowerCase();
-        const gameTypeSelect = document.getElementById('gameType');
-        if (lowerName.includes('six')) gameTypeSelect.value = 'mark6';
-        else if (lowerName.includes('649')) gameTypeSelect.value = '649';
-        else if (lowerName.includes('fan') || lowerName.includes('daily')) gameTypeSelect.value = 'daily4';
-        else if (lowerName.includes('ghana')) gameTypeSelect.value = 'ghana';
-        else gameTypeSelect.value = '539';
-        fetch(fileName).then(response => response.text()).then(text => { processCSV(text); });
-    });
-
-    document.getElementById('gameType').addEventListener('change', function() { if(currentHistoryData.length > 0) recalculateAll(); });
-
-    function getWeekday(dateStr) { try { return new Date("2026/" + dateStr).getDay(); } catch (e) { return -1; } }
-
-    function processCSV(text) {
-        const lines = text.trim().split('\n');
-        currentHistoryData = [];
-        for(let i = 1; i < lines.length; i++) {
-            const cols = lines[i].split(',');
-            if(cols.length >= 6) {
-                let nums = [];
-                for(let c=1; c<cols.length; c++) {
-                    let val = parseInt(cols[c]);
-                    if(!isNaN(val)) nums.push(val);
+        // 邏輯一：N+1 延伸連號
+        let logic1Html = "";
+        uniqueNums.forEach(num => {
+            if (num >= 36) {
+                logic1Html += `<li>由 <strong>${num}</strong> 觸發極端大號歸零 ➔ 推薦組合：<span class="highlight">[01, 02, 03]</span></li>`;
+            } else {
+                let n1 = String(num + 1).padStart(2, '0');
+                let n2 = String(num + 2).padStart(2, '0');
+                let n3 = String(num + 3).padStart(2, '0');
+                if ((num + 3) <= 39) {
+                     logic1Html += `<li>由 <strong>${num}</strong> 順勢觸發連號 ➔ 推薦組合：<span class="highlight">[${n1}, ${n2}, ${n3}]</span></li>`;
                 }
-                currentHistoryData.push({ date: cols[0].trim(), nums: nums });
             }
-        }
-        recalculateAll();
-    }
-
-    function renderHeatmap() {
-        const container = document.getElementById('heatmapContainer'); container.innerHTML = '';
-        if(currentHistoryData.length === 0) return;
-        const gameType = document.getElementById('gameType').value;
-        const maxNum = (gameType === '649' || gameType === 'mark6') ? 49 : 39;
-        const recentDraws = currentHistoryData.slice(-10);
-        const freq = {};
-        for(let i=1; i<=maxNum; i++) freq[i] = 0;
-        recentDraws.forEach(draw => { draw.nums.forEach(n => { if(n >= 1 && n <= maxNum) freq[n]++; }); });
-        for(let i=1; i<=maxNum; i++) {
-            let count = freq[i]; let omission = getOmission(i);
-            let item = document.createElement('div'); item.className = 'heatmap-item';
-            let box = document.createElement('div'); box.className = 'heatmap-box';
-            if(count === 0) { box.style.background = 'var(--th-bg)'; box.style.opacity = '0.5'; } 
-            else if(count === 1) { box.style.background = 'linear-gradient(135deg, #4ade80, #16a34a)'; box.style.color = '#fff'; } 
-            else if(count === 2) { box.style.background = 'linear-gradient(135deg, #fbbf24, #d97706)'; box.style.color = '#fff'; } 
-            else { box.style.background = 'linear-gradient(135deg, #f87171, #dc2626)'; box.style.color = '#fff'; }
-            box.innerHTML = i.toString().padStart(2, '0');
-            if(count > 0) { let badge = document.createElement('span'); badge.className = 'heatmap-badge'; badge.innerHTML = count; box.appendChild(badge); }
-            let omiText = document.createElement('span'); omiText.className = 'omission-text' + (omission >= 20 ? ' omission-warn' : ''); omiText.innerHTML = `漏${omission}`;
-            item.appendChild(box); item.appendChild(omiText); container.appendChild(item);
-        }
-    }
-
-    function recalculateAll() {
-        allRecords = [];
-        const gameType = document.getElementById('gameType').value;
-        const weeklyCard = document.getElementById('weeklyCard'); 
-        
-        if (gameType === '649' || gameType === 'mark6') { 
-            weeklyCard.style.display = 'none';
-        } 
-        else { 
-            weeklyCard.style.display = 'block';
-        }
-        for(let i = 0; i < currentHistoryData.length; i++) {
-            const draw = currentHistoryData[i];
-            allRecords.forEach(target => {
-                if(target.status === '進行中') {
-                    const hits = target.targets.filter(n => draw.nums.includes(Number(n)));
-                    if(hits.length > 0) { target.status = '命中停止'; target.hitInfo = `${draw.date} 開出 ${formatBalls(hits, false, target.type)}`; } 
-                    else { target.life--; if(target.life <= 0) { target.status = '未中結束'; target.hitInfo = '-'; } }
-                }
-            });
-            generateTargets(i);
-        }
-        renderTables(); renderHeatmap();
-    }
-
-    function generateTargets(drawIndex) {
-        let draw = currentHistoryData[drawIndex]; 
-        const date = draw.date; 
-        const gameType = document.getElementById('gameType').value;
-        let mainNums = []; let specialNum = null; const maxNum = (gameType === '649' || gameType === 'mark6') ? 49 : 39;
-        if (gameType === '649' || gameType === 'mark6') { mainNums = draw.nums.slice(0, 6).sort((a,b)=>a-b); specialNum = draw.nums[6] || null; } 
-        else { mainNums = draw.nums.slice(0, 5).sort((a,b)=>a-b); }
-
-        // 1. 產生原本的三期牌目標 (僅保留三顆三期牌: 3連號與3同尾)
-        for(let i=0; i<mainNums.length-1; i++) {
-            let diff = mainNums[i+1] - mainNums[i];
-            if(diff === 4) { 
-                let t = [mainNums[i]+1, mainNums[i]+2, mainNums[i]+3]; 
-                allRecords.push({ type: '三期牌 (3連號)', targets: t, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); 
-            }
-        }
-        const tc = {}; mainNums.map(n => n % 10).forEach(t => tc[t] = (tc[t] || 0) + 1);
-        for(let t in tc) { 
-            if(tc[t] === 3) { 
-                let tg = mainNums.filter(n => n % 10 == t); 
-                allRecords.push({ type: `三期牌 (3同尾)`, targets: tg, startDate: date, life: 3, status: '進行中', drawIndex: drawIndex }); 
-            } 
-        }
-
-        // 2. 產生原本的週牌
-        const day = getWeekday(date); let shouldWeekly = false; let weeklyLife = 5;
-        if (gameType === 'daily4' && day === 0) { shouldWeekly = true; weeklyLife = 7; } 
-        else if (['539','ghana'].includes(gameType) && day === 6) { shouldWeekly = true; weeklyLife = 6; }
-        if(shouldWeekly) { 
-            let startIdx = Math.max(0, drawIndex - 9); let past10 = currentHistoryData.slice(startIdx, drawIndex + 1); let allPast = [];
-            past10.forEach(d => { allPast.push(...d.nums.slice(0, 5)); }); let fq = {}; allPast.forEach(n => fq[n] = (fq[n] || 0) + 1);
-            let sorted = Object.keys(fq).map(Number).sort((a, b) => fq[b] !== fq[a] ? fq[b] - fq[a] : a - b);
-            let top6 = sorted.slice(0, 6); while(top6.length < 6) { let f = 1; while(top6.includes(f)) f++; top6.push(f); }
-            allRecords.push({ type: `週牌 (第1組)`, targets: top6.slice(0,2), startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
-            allRecords.push({ type: `週牌 (第2組)`, targets: top6.slice(2,4), startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
-            allRecords.push({ type: `週牌 (第3組)`, targets: top6.slice(4,6), startDate: date, life: weeklyLife, status: '進行中', drawIndex: drawIndex });
-        }
-    }
-
-    function renderTables() {
-        const activeBody = document.getElementById('activeBody'); const historyBody = document.getElementById('historyBody');
-        activeBody.innerHTML = ''; historyBody.innerHTML = ''; 
-        let tT = 0, tH = 0, wT = 0, wH = 0, typeStats = {};
-        
-        [...allRecords].reverse().forEach(t => {
-            const isT = t.type.includes('三期'), isW = t.type.includes('週牌');
-            if(t.status !== '進行中') {
-                if (!typeStats[t.type]) typeStats[t.type] = { total: 0, hits: 0 }; typeStats[t.type].total++;
-                if(isT) { tT++; if(t.status === '命中停止') { tH++; typeStats[t.type].hits++; } } 
-                else { wT++; if(t.status === '命中停止') { wH++; typeStats[t.type].hits++; } } 
-            }
-            const sClass = t.status === '進行中' ? 'status-active' : (t.status === '命中停止' ? 'status-hit' : 'status-miss');
-            const isHighCost = t.targets.length > 3;
-            const costBadge = isHighCost ? '<span class="badge-warning">⚠️ 成本過高</span>' : '';
-            const lifeCls = (t.status === '進行中' && t.life === 1) ? 'stop-loss-flash' : '';
-            
-            let rowStyle = "";
-            
-            const rowHtml = `<td style="${rowStyle}"><span style="font-weight:700;">${t.type}</span>${costBadge}</td><td style="${rowStyle}">${formatBalls(t.targets, true, t.type, t.drawIndex)}</td><td style="${rowStyle}">${t.startDate}</td><td style="${rowStyle}"><span class="${lifeCls}">${t.status === '進行中' ? t.life : '-'}</span></td><td style="${rowStyle}"><span class="${sClass}">${t.status}</span></td>`;
-            if(t.status === '進行中') { const tr = document.createElement('tr'); if(isHighCost) tr.className="row-high-cost"; tr.innerHTML = rowHtml; activeBody.appendChild(tr); } 
-            else { const tr = document.createElement('tr'); if(isHighCost) tr.className="row-high-cost"; tr.innerHTML = `<td style="${rowStyle}">${t.startDate}</td><td style="${rowStyle}"><span style="font-weight:700;">${t.type}</span>${costBadge}</td><td style="${rowStyle}">${formatBalls(t.targets, true, t.type, t.drawIndex)}</td><td style="${rowStyle}"><span class="${sClass}">${t.status}</span></td><td style="${rowStyle}"><span style="font-size:0.9em;">${t.hitInfo || '-'}</span></td>`; historyBody.appendChild(tr); }
         });
-        
-        document.getElementById('threePeriodRate').innerText = tT > 0 ? ((tH / tT) * 100).toFixed(1) + '%' : '0%';
-        document.getElementById('threePeriodDetail').innerText = `已結束: ${tT} | 命中: ${tH}`;
 
-        const gameType = document.getElementById('gameType').value;
-        if (!['649','mark6'].includes(gameType)) { 
-            document.getElementById('weeklyRate').innerText = wT > 0 ? ((wH / wT) * 100).toFixed(1) + '%' : '0%'; 
-            document.getElementById('weeklyDetail').innerText = `已結束: ${wT} | 命中: ${wH}`; 
-        }
+        // 邏輯二：六宮格漏牌追蹤
+        let logic2Html = "";
+        let appearedMods = new Set(uniqueNums.map(n => n % 6));
+        let allMods = [0, 1, 2, 3, 4, 5];
         
-        let tb = '', wb = '';
-        Object.keys(typeStats).sort((a, b) => (typeStats[b].hits / typeStats[b].total) - (typeStats[a].hits / typeStats[a].total)).forEach(type => {
-            let s = typeStats[type], r = ((s.hits / s.total) * 100).toFixed(1) + '%';
-            let ns = "color: var(--text-color); font-weight: 500;";
-            
-            let row = `<div class="detailed-stats-row"><span class="type-name" style="${ns}">${type.replace('三期牌 (', '').replace(')', '').replace('週牌 (', '')}</span><span class="type-rate ${(s.hits/s.total)>=0.6?'high-rate':''}">${s.hits}/${s.total} (${r})</span></div>`;
-            
-            if (type.includes('三期')) tb += row; else wb += row;
+        // 找出沒開出的餘數
+        let missingMods = allMods.filter(m => !appearedMods.has(m));
+
+        missingMods.forEach(mod => {
+            let group = modGroups[mod];
+            if (group.length >= 3) {
+                let p1 = group.slice(0, 3).map(n => String(n).padStart(2, '0')).join(', ');
+                logic2Html += `<li>餘數 ${mod} 區間漏牌 (前段補位) ➔ 推薦組合：<span class="highlight">[${p1}]</span></li>`;
+            }
+            if (group.length >= 6) {
+                let p2 = group.slice(3, 6).map(n => String(n).padStart(2, '0')).join(', ');
+                logic2Html += `<li>餘數 ${mod} 區間漏牌 (後段補位) ➔ 推薦組合：<span class="highlight">[${p2}]</span></li>`;
+            }
         });
-        
-        document.getElementById('threePeriodBreakdown').innerHTML = tb; 
-        if (!['649','mark6'].includes(gameType)) { 
-            document.getElementById('weeklyBreakdown').innerHTML = wb; 
-        }
+
+        // 若無邏輯結果的防呆處理
+        if (logic1Html === "") logic1Html = "<li>本期無符合邊界的連號版路。</li>";
+        if (logic2Html === "") logic2Html = "<li>本期餘數分佈平均，無明顯漏牌區間。</li>";
+
+        // 更新畫面並顯示結果區塊
+        document.getElementById("logic1-list").innerHTML = logic1Html;
+        document.getElementById("logic2-list").innerHTML = logic2Html;
+        document.getElementById("results").style.display = "block";
     }
 </script>
+
 </body>
 </html>
