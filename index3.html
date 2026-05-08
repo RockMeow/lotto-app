@@ -411,7 +411,7 @@
                 results.push({
                     date: row.dateStr,
                     dayName: dayNames[pyDay],
-                    baseStr: `順${f.rank} (${formatNum(baseVal)})`,
+                    baseStr: `順$ {f.rank} (${formatNum(baseVal)})`,
                     predStr: `${formatNum(pred1)}, ${formatNum(pred2)}`,
                     actualStr: row.sortedNums.map(formatNum).join(', '),
                     isHit: isHit,
