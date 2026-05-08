@@ -52,20 +52,18 @@
 
         .table-container { width: 100%; overflow-x: auto; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: #fff; }
-        th, td { border: 1px solid var(--border-color); padding: 12px 8px; text-align: center; vertical-align: middle; }
+        th, td { border: 1px solid var(--border-color); padding: 12px 8px; text-align: center; vertical-align: middle; line-height: 1.8; }
         th { background-color: var(--primary-color); color: white; position: sticky; top: 0; white-space: nowrap; }
         
-        /* 解決重疊問題：核心修正區 */
         #resultTable td { 
             white-space: normal !important; 
             word-break: break-word; 
-            line-height: 2.0; /* 增加行高防止重疊 */
         }
         .hit-item { 
             display: block;
-            margin-bottom: 12px; /* 增加間距 */
-            padding: 4px 0;
-            min-height: 1.6em;
+            margin-bottom: 8px;
+            padding: 2px 0;
+            min-height: 1.5em;
         }
         .hit-item:last-child { margin-bottom: 0; }
 
@@ -79,7 +77,7 @@
             table, thead, tbody, th, td, tr { display: block; }
             thead tr { display: none; }
             tr { border: 1px solid var(--border-color); margin-bottom: 15px; border-radius: 8px; overflow: hidden; }
-            td { text-align: right; padding-left: 45%; position: relative; border-bottom: 1px solid #f0f0f0; min-height: 50px; }
+            td { text-align: right; padding-left: 45%; position: relative; border-bottom: 1px solid #f0f0f0; min-height: 40px; }
             td:before { position: absolute; left: 12px; width: 40%; text-align: left; font-weight: bold; color: #666; }
             td:nth-of-type(1):before { content: "開獎日期"; }
             td:nth-of-type(2):before { content: "開出號碼"; }
@@ -102,7 +100,7 @@
     
     <div class="controls">
         <label><strong>開獎數據：</strong> <span id="dataStatus">等待讀取...</span></label>
-        <button onclick="processData()">重新整理計算</button>
+        <button onclick="processData()">手動重新整理計算</button>
     </div>
 
     <h2 style="font-size: 1.2rem; margin-top: 25px;">目前追蹤中</h2>
@@ -119,7 +117,7 @@
                 <tr>
                     <th>開獎日期</th>
                     <th>開出號碼</th>
-                    <th>命中版路 (觸發日)</th>
+                    <th style="text-align: right; padding-right: 20px;">命中版路 (觸發日)</th>
                     <th>命中號碼</th>
                     <th>狀態</th>
                 </tr>
@@ -210,7 +208,7 @@
                 if (!nums.some(isNaN)) parsedData.push({ date: cols[0], nums: nums });
             }
             if(parsedData.length > 0) {
-                statusEl.innerText = `已讀取`;
+                statusEl.innerText = `✅ 已讀取`;
                 runAnalysis();
             }
         } catch (error) {
@@ -283,7 +281,7 @@
             <tr>
                 <td>${d.date}</td>
                 <td>${d.actual.map(fNum).join(', ')}</td>
-                <td style="text-align:left; padding-left:15px;">${triggerInfo}</td>
+                <td style="text-align: right; padding-right: 20px;">${triggerInfo}</td>
                 <td>${hitNumsInfo}</td>
                 <td>${statusInfo}</td>
             </tr>`;
