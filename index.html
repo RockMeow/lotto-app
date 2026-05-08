@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>天天樂/539 動態演算法預測系統</title>
+    <title>天天樂/539 全自動預測掃描系統 (無限制全開版)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -27,35 +27,29 @@
             border-bottom: 1px solid #3c3c3c;
             padding-bottom: 15px;
         }
-        .upload-section, .input-section {
+        .upload-section {
             background-color: #2d2d2d;
             padding: 20px;
             border-radius: 6px;
             margin-bottom: 20px;
             border: 1px solid #3c3c3c;
         }
-        input[type="file"], input[type="text"] {
+        input[type="file"] {
             color: #d4d4d4;
             margin: 10px 0;
             font-size: 1.1em;
-        }
-        input[type="text"] {
-            background: #1e1e1e;
-            border: 1px solid #007acc;
-            padding: 8px;
-            width: 80%;
-            border-radius: 4px;
         }
         button {
             background-color: #007acc;
             color: white;
             border: none;
-            padding: 10px 20px;
-            font-size: 1.1em;
+            padding: 12px 25px;
+            font-size: 1.2em;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            margin-top: 10px;
+            margin-top: 15px;
+            width: 100%;
         }
         button:hover {
             background-color: #0098ff;
@@ -65,7 +59,7 @@
         }
         textarea {
             width: 100%;
-            height: 150px;
+            height: 200px;
             background-color: #1e1e1e;
             color: #ce9178;
             border: 1px solid #3c3c3c;
@@ -78,7 +72,7 @@
         }
         .log-area {
             width: 100%;
-            height: 200px;
+            height: 250px;
             background-color: #1e1e1e;
             color: #9cdcfe;
             border: 1px solid #3c3c3c;
@@ -95,32 +89,33 @@
             font-size: 0.9em;
             margin-top: 10px;
         }
+        .highlight-info {
+            color: #4fc1ff;
+            font-weight: bold;
+            margin-top: 10px;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🚀 動態演算法預測系統 (自動運算版)</h1>
+    <h1>🚀 全自動預測掃描系統 (無限制全開版)</h1>
     
     <div class="upload-section">
-        <label>1. 載入歷史資料 (作為大數據回測母體)：</label><br>
+        <label>1. 載入歷史資料 (Fan_history_2026.csv)：</label><br>
+        <div class="note">* 系統會自動抓取最後一期號碼作為基準，並計算所有版路的歷史勝率。</div>
         <input type="file" id="csvFileInput" accept=".csv">
-        <div class="note">* 系統會使用這份資料來計算每一種版路的「歷史拖牌勝率」。</div>
-    </div>
-
-    <div class="input-section">
-        <label>2. 輸入最新一期的開獎日期與號碼：</label><br>
-        <div class="note">格式範例：5/10,1,14,21,33,39 (日期後接5個號碼，用逗號隔開)</div>
-        <input type="text" id="latestDrawInput" placeholder="例如：5/10,1,14,21,33,39">
         <br>
-        <button onclick="runPrediction()">3. 產生預測號碼</button>
+        <button onclick="runPrediction()">2. 自動抓取最新期數並產生預測</button>
+        <div id="statusMsg" class="highlight-info"></div>
     </div>
 
     <div class="output-area">
-        <label>🎯 最終預測結果 (輸出勝率最高的 1~2 組)：</label>
-        <textarea id="outputText" readonly></textarea>
+        <label>🎯 所有版路預測結果 (已依歷史勝率高 -> 低排序)：</label>
+        <textarea id="outputText" readonly placeholder="產生的號碼會顯示在這裡..."></textarea>
         
-        <label style="display:block; margin-top:15px;">📊 系統運算日誌 (供參考)：</label>
+        <label style="display:block; margin-top:15px;">📊 系統分析與勝率日誌：</label>
         <textarea id="logText" class="log-area" readonly></textarea>
     </div>
 </div>
@@ -145,7 +140,7 @@
         const reader = new FileReader();
         reader.onload = function(event) {
             parseCSV(event.target.result);
-            alert("歷史資料載入成功！共 " + historicalData.length + " 筆。");
+            document.getElementById('statusMsg').innerText = `✅ 資料載入成功！共讀取 ${historicalData.length} 期歷史紀錄。可以點擊下方按鈕開始預測。`;
         };
         reader.readAsText(file);
     });
@@ -169,33 +164,29 @@
         }
     }
 
-    // 計算未來三天日期 (如 5/10 -> 5/11~5/13)
+    // 計算未來三天日期
     function getNext3DaysRange(dateStr) {
         let parts = dateStr.split('/');
         let month = parseInt(parts[0]);
         let day = parseInt(parts[1]);
         
         let d = new Date(2026, month - 1, day);
-        
         let startD = new Date(d);
         startD.setDate(d.getDate() + 1);
-        
         let endD = new Date(d);
         endD.setDate(d.getDate() + 3);
         
         return `${startD.getMonth()+1}/${startD.getDate()}~${endD.getMonth()+1}/${endD.getDate()}`;
     }
 
-    // 核心算法：評估拖牌勝率
-    // type: 'N+1' 或 'Mod6'
-    // triggerVal: 觸發號碼(N+1) 或 漏牌餘數(Mod6)
-    // targetNums: 預測的3顆號碼
+    // 評估拖牌勝率
     function evaluateWinRate(type, triggerVal, targetNums) {
-        if (historicalData.length === 0) return 100; // 沒資料就不打分數
+        if (historicalData.length === 0) return 100; 
         
         let triggerCount = 0;
         let hitCount = 0;
 
+        // 計算歷史資料 (不含最後三天，避免抓不到未來三期造成勝率失真)
         for (let i = 0; i < historicalData.length - 3; i++) {
             let triggered = false;
             let currentNums = historicalData[i].nums;
@@ -209,7 +200,6 @@
 
             if (triggered) {
                 triggerCount++;
-                // 檢查未來三期有沒有開出 targetNums 裡的任何一號
                 let isHit = false;
                 for (let j = 1; j <= 3; j++) {
                     let nextDraw = historicalData[i+j].nums;
@@ -223,31 +213,26 @@
         }
 
         if (triggerCount === 0) return 0;
-        return (hitCount / triggerCount) * 100; // 回傳勝率百分比
+        return (hitCount / triggerCount) * 100;
     }
 
     function runPrediction() {
-        const inputStr = document.getElementById('latestDrawInput').value.trim();
-        if (!inputStr) {
-            alert('請輸入最新開獎結果！');
+        if (historicalData.length === 0) {
+            alert('請先選擇並載入 CSV 檔案！');
             return;
         }
 
-        const parts = inputStr.split(',');
-        if (parts.length < 6) {
-            alert('格式錯誤，請確認包含日期與5個號碼。');
-            return;
-        }
+        // 自動抓取陣列中的最後一筆資料作為「最新期數」
+        const latestDraw = historicalData[historicalData.length - 1];
+        const dateStr = latestDraw.date;
+        const nums = latestDraw.nums;
 
-        const dateStr = parts[0].trim();
-        const nums = [
-            parseInt(parts[1]), parseInt(parts[2]), 
-            parseInt(parts[3]), parseInt(parts[4]), parseInt(parts[5])
-        ];
+        let numsStr = nums.map(n => String(n).padStart(2, '0')).join(',');
+        document.getElementById('statusMsg').innerText = `🔎 已自動抓取最新一期：[${dateStr}] 號碼為 ${numsStr}，運算中...`;
         
         let candidates = [];
 
-        // 產生邏輯一所有可能 (N+1)
+        // 邏輯一 (N+1)
         nums.forEach(n => {
             if (n >= 36) {
                 candidates.push({ type: 'N+1', trigger: n, target: [1, 2, 3], name: `大號 ${n} 歸零` });
@@ -256,7 +241,7 @@
             }
         });
 
-        // 產生邏輯二所有可能 (Mod 6)
+        // 邏輯二 (Mod 6)
         let appearedMods = new Set(nums.map(n => n % 6));
         let allMods = [0, 1, 2, 3, 4, 5];
         let missingMods = allMods.filter(m => !appearedMods.has(m));
@@ -264,38 +249,39 @@
         missingMods.forEach(mod => {
             let group = modGroups[mod];
             if (group.length >= 3) {
-                // 前段3顆
                 candidates.push({ type: 'Mod6', trigger: mod, target: group.slice(0, 3), name: `餘數 ${mod} 漏牌(前段)` });
-                // 後段3顆 (如果群組夠長)
                 if (group.length >= 6) {
                     candidates.push({ type: 'Mod6', trigger: mod, target: group.slice(-3), name: `餘數 ${mod} 漏牌(後段)` });
                 }
             }
         });
 
-        // 打分數
+        // 打分數並記錄 Log
         let logs = [];
+        logs.push(`===== 最新期數 [${dateStr}] 號碼: ${numsStr} =====\n`);
+        
         candidates.forEach(c => {
             c.winRate = evaluateWinRate(c.type, c.trigger, c.target);
-            let targetStr = c.target.map(n => String(n).padStart(2, '0')).join(',');
-            logs.push(`掃描 [${c.name}] => 候選組合 ${targetStr}，歷史勝率: ${c.winRate.toFixed(1)}%`);
         });
 
-        // 依照勝率排序，只取前 2 名
+        // 依照勝率排序 (不限制數量，全部顯示)
         candidates.sort((a, b) => b.winRate - a.winRate);
-        let finalPicks = candidates.slice(0, 2);
 
-        // 產生輸出結果
         let dateRange = getNext3DaysRange(dateStr);
         let outputLines = [];
         
-        finalPicks.forEach(pick => {
+        candidates.forEach(pick => {
             let targetStr = pick.target.map(n => String(n).padStart(2, '0')).join(',');
+            
+            // 加入到純文字輸出區塊 (原版作者格式)
             outputLines.push(`${dateRange} ${targetStr}`);
+            
+            // 加入到日誌區塊 (附帶勝率)
+            logs.push(`[${pick.name}] => 候選: ${targetStr} | 歷史三期開出勝率: ${pick.winRate.toFixed(1)}%`);
         });
 
         document.getElementById('outputText').value = outputLines.join('\n');
-        document.getElementById('logText').value = logs.join('\n') + '\n\n✅ 篩選完成，已挑選歷史勝率最高的號碼輸出。';
+        document.getElementById('logText').value = logs.join('\n') + '\n\n✅ 分析完成！已列出所有符合的版路。';
     }
 </script>
 
