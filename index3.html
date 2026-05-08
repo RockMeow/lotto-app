@@ -411,7 +411,7 @@
                 results.push({
                     date: row.dateStr,
                     dayName: dayNames[pyDay],
-                    baseStr: `順$ {f.rank} (${formatNum(baseVal)})`,
+                    baseStr: `順${f.rank} (${formatNum(baseVal)})`,
                     predStr: `${formatNum(pred1)}, ${formatNum(pred2)}`,
                     actualStr: row.sortedNums.map(formatNum).join(', '),
                     isHit: isHit,
@@ -447,7 +447,7 @@
                 predictionArea.innerHTML = `
                     <div style="background-color: var(--pred-bg); padding: 15px; border-radius: 6px; border-left: 5px solid var(--pred-border);">
                         <h3 style="margin-top:0; color: var(--pred-border);">下期預測：${nextDate.toLocaleDateString()} (${nextDayName})</h3>
-                        <p style="margin-bottom: 0;"><strong>公式預測：</strong> 基準為上週${nextDayName}順${fNext.rank}(${formatNum(baseVal)})，預測號碼為 <span style="color: var(--hit-text); font-weight: bold; font-size: 1.1em;">${formatNum(p1)}, ${formatNum(p2)}</span></p>
+                        <p style="margin-bottom: 0;"><strong>公式預測：</strong> 基準為上週${nextDayName}順${fNext.rank} (${formatNum(baseVal)})，預測號碼為 <span style="color: var(--hit-text); font-weight: bold; font-size: 1.1em;">${formatNum(p1)}, ${formatNum(p2)}</span></p>
                     </div>
                 `;
             } else {
