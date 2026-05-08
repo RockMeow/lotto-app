@@ -11,20 +11,14 @@
             --bg-color: #f0f2f5;
             --card-bg: #fff;
             --border-color: #e0e0e0;
-            
-            /* 1~3 期配色 (黃/橘/綠) */
             --hit-1-3-bg: #e8f5e9;
             --hit-1-3-text: #2e7d32;
             --track-1-3-bg: #fff8e1;
             --track-1-3-border: #f57c00;
-            
-            /* 4~6 期配色 (藍/紫) */
             --hit-4-6-bg: #e3f2fd;
             --hit-4-6-text: #1565c0;
             --track-4-6-bg: #f3e5f5;
             --track-4-6-border: #8e24aa;
-            
-            /* 失敗配色 */
             --fail-bg: #fafafa;
             --fail-text: #9e9e9e;
         }
@@ -257,19 +251,24 @@
             </div>
         `).join('') : '<div style="padding: 10px; color: #666;">無追蹤中版路。</div>';
 
+        // 整合回測表格：同日期合併顯示
         let hitTableHtml = dailyResults.slice().reverse().filter(d => d.hits.length > 0).map(d => {
-            return d.hits.map(h => {
-                let statusClass = h.period <= 3 ? 'row-hit-1-3' : 'row-hit-4-6';
-                let statusText = h.period <= 3 ? `1~3期內命中 (${h.period})` : `4~6期內命中 (${h.period})`;
-                return `
-                <tr class="${statusClass}">
-                    <td>${d.date}</td>
-                    <td>${d.actual.map(fNum).join(', ')}</td>
-                    <td>${h.type} (${h.triggerDate})</td>
-                    <td>${h.hitNums.map(fNum).join(', ')}</td>
-                    <td>${statusText}</td>
-                </tr>`;
-            }).join('');
+            let triggerInfo = d.hits.map(h => `${h.type} (${h.triggerDate})`).join('<br>');
+            let hitNumsInfo = d.hits.map(h => h.hitNums.map(fNum).join(', ')).join('<br>');
+            let statusInfo = d.hits.map(h => {
+                let text = h.period <= 3 ? `1~3期內命中 (${h.period})` : `4~6期內命中 (${h.period})`;
+                let colorClass = h.period <= 3 ? 'row-hit-1-3' : 'row-hit-4-6';
+                return `<span class="${colorClass}">${text}</span>`;
+            }).join('<br>');
+
+            return `
+            <tr>
+                <td>${d.date}</td>
+                <td>${d.actual.map(fNum).join(', ')}</td>
+                <td style="text-align:left; padding-left:15px;">${triggerInfo}</td>
+                <td>${hitNumsInfo}</td>
+                <td>${statusInfo}</td>
+            </tr>`;
         }).join('');
         
         resultBody.innerHTML = hitTableHtml || '<tr><td colspan="5" style="text-align:center;">尚無命中紀錄</td></tr>';
