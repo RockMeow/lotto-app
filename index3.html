@@ -230,11 +230,11 @@
             /* 加入標題標籤 */
             td:nth-of-type(1):before { content: "日期"; }
             td:nth-of-type(2):before { content: "星期"; }
-            td:nth-of-type(3):before { content: "基準 (前週)"; }
+            td:nth-of-type(3):before { content: "基準 (上週)"; }
             td:nth-of-type(4):before { content: "預測 (公式)"; }
             td:nth-of-type(5):before { content: "當期開獎 (順球)"; }
-            td:nth-of-type(6):before { content: "公式結果"; }
-            td:nth-of-type(7):before { content: "公式命中"; }
+            td:nth-of-type(6):before { content: "結果"; }
+            td:nth-of-type(7):before { content: "命中"; }
         }
     </style>
 </head>
@@ -272,11 +272,11 @@
                 <tr>
                     <th>日期</th>
                     <th>星期</th>
-                    <th>基準 (前週)</th>
+                    <th>基準 (上週)</th>
                     <th>預測號碼 (公式)</th>
                     <th>當期開獎號碼 (順球)</th>
-                    <th>公式結果</th>
-                    <th>公式命中號碼</th>
+                    <th>結果</th>
+                    <th>命中</th>
                 </tr>
             </thead>
             <tbody id="resultBody">
@@ -447,7 +447,7 @@
                 predictionArea.innerHTML = `
                     <div style="background-color: var(--pred-bg); padding: 15px; border-radius: 6px; border-left: 5px solid var(--pred-border);">
                         <h3 style="margin-top:0; color: var(--pred-border);">下期預測：${nextDate.toLocaleDateString()} (${nextDayName})</h3>
-                        <p style="margin-bottom: 0;"><strong>公式預測：</strong> 基準為上週${nextDayName}順${fNext.rank}(${formatNum(baseVal)})，預測為 <span style="color: var(--hit-text); font-weight: bold; font-size: 1.1em;">${formatNum(p1)}, ${formatNum(p2)}</span></p>
+                        <p style="margin-bottom: 0;"><strong>公式預測：</strong> 基準為上週${nextDayName}順${fNext.rank}(${formatNum(baseVal)})，預測號碼為 <span style="color: var(--hit-text); font-weight: bold; font-size: 1.1em;">${formatNum(p1)}, ${formatNum(p2)}</span></p>
                     </div>
                 `;
             } else {
@@ -492,7 +492,7 @@
 
         summaryArea.style.display = 'block';
         summaryArea.innerHTML = `
-            <div style="margin-bottom: 8px;"><strong>歷史總體勝率：</strong> 測 ${totalCalc} 期，中 ${totalHit} 期 (${hitRate}%)</div>
+            <div style="margin-bottom: 8px;"><strong>歷史總勝率：</strong> 測 ${totalCalc} 期，中 ${totalHit} 期 (${hitRate}%)</div>
             <div style="margin-bottom: 0;"><strong>近 30 期勝率：</strong> 測 ${recentCalc} 期，中 ${recentHit} 期 <span style="color: ${statusColor}; font-weight: bold;">(${recentHitRate}%)</span>${warningText}</div>
         `;
     }
