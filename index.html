@@ -3,223 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加州天天樂 版路預測分析系統</title>
+    <title>加州天天樂 (Fantasy 5) 版路追蹤回測系統</title>
     <style>
-        :root {
-            --base-font-size: 16px;
-        }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
+            background-color: #f0f2f5;
             color: #333;
             margin: 0;
             padding: 20px;
-            font-size: var(--base-font-size);
-            transition: font-size 0.2s ease;
         }
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             background: #fff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            position: relative;
-        }
-        /* 字體調整控制區 */
-        .font-control {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            display: flex;
-            gap: 5px;
-            align-items: center;
-        }
-        .font-control span {
-            font-size: 0.9em;
-            color: #666;
-            margin-right: 5px;
-        }
-        .font-control button {
-            background: #eee;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            color: #333;
-            transition: 0.2s;
-        }
-        .font-control button:hover {
-            background: #ddd;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         h1 {
-            color: #2c3e50;
+            color: #1a73e8;
             margin-top: 0;
-            font-size: 1.8em;
+            border-bottom: 2px solid #e8eaed;
+            padding-bottom: 10px;
         }
-        .author-note {
-            background-color: #fff3cd;
-            color: #856404;
-            padding: 15px;
-            border-left: 5px solid #ffeeba;
-            border-radius: 4px;
-            font-weight: bold;
-            margin-bottom: 25px;
-            font-size: 1.1em;
-        }
-        .input-group {
-            background-color: #e9ecef;
+        .upload-section {
+            background-color: #e8f0fe;
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 25px;
-        }
-        .input-group label {
-            display: block;
-            margin-bottom: 15px;
-            font-weight: bold;
-            font-size: 1.1em;
-        }
-        .inputs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-        input[type="number"] {
-            width: 70px;
-            padding: 10px;
-            font-size: 1.2em;
+            border: 2px dashed #1a73e8;
             text-align: center;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
         }
-        button.calc-btn {
-            background-color: #007bff;
+        input[type="file"] {
+            font-size: 1.1em;
+            margin: 10px 0;
+        }
+        .btn {
+            background-color: #1a73e8;
             color: white;
             border: none;
-            padding: 12px 25px;
+            padding: 10px 20px;
             font-size: 1.1em;
-            border-radius: 6px;
+            border-radius: 5px;
             cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn:hover {
+            background-color: #1557b0;
+        }
+        h2 {
+            color: #202124;
+            margin-top: 30px;
+        }
+        .current-patterns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .pattern-card {
+            background: #fff;
+            border: 1px solid #dadce0;
+            border-left: 5px solid #34a853;
+            padding: 15px;
+            border-radius: 6px;
+            width: calc(50% - 20px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .pattern-card h4 {
+            margin: 0 0 10px 0;
+            color: #5f6368;
+        }
+        .nums {
+            font-size: 1.4em;
             font-weight: bold;
-            transition: background 0.3s;
-        }
-        button.calc-btn:hover {
-            background-color: #0056b3;
-        }
-        .results {
-            display: none;
-            animation: fadeIn 0.5s;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .result-box {
-            background: #fafafa;
-            border: 1px solid #ddd;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .result-box h3 {
-            margin-top: 0;
-            color: #17a2b8;
-            border-bottom: 2px solid #17a2b8;
-            padding-bottom: 10px;
-            font-size: 1.3em;
-        }
-        ul {
-            list-style-type: none;
-            padding-left: 0;
-        }
-        li {
-            padding: 10px 0;
-            border-bottom: 1px dashed #ccc;
-            font-size: 1.1em;
-        }
-        li:last-child {
-            border-bottom: none;
-        }
-        .highlight {
-            color: #dc3545;
-            font-weight: bold;
-            font-size: 1.2em;
+            color: #d93025;
             letter-spacing: 2px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.95em;
+        }
+        th, td {
+            border: 1px solid #dadce0;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #5f6368;
+            position: sticky;
+            top: 0;
+        }
+        .success { color: #188038; font-weight: bold; }
+        .fail { color: #d93025; }
+        .waiting { color: #f29900; }
+        .hit-detail { font-size: 0.9em; color: #1a73e8; margin-top: 4px; }
+        .table-wrapper {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #dadce0;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- 字體大小調整工具 -->
-    <div class="font-control">
-        <span>字體調整：</span>
-        <button onclick="changeFontSize(-1)">A-</button>
-        <button onclick="changeFontSize(0)">預設</button>
-        <button onclick="changeFontSize(1)">A+</button>
+    <h1>📊 加州天天樂版路追蹤與回測系統</h1>
+    
+    <div class="upload-section">
+        <h3>📂 自動讀取 Fan_history_2026.csv</h3>
+        <p>請選擇你電腦中的歷史開獎資料 (格式須包含 Date,N1,N2,N3,N4,N5)</p>
+        <input type="file" id="csvFileInput" accept=".csv">
+        <br><br>
+        <button class="btn" onclick="processFile()">開始執行分析</button>
     </div>
 
-    <h1>加州天天樂 版路自動推算系統</h1>
-    <div class="author-note">
-        💡 程式作者策略提示：追蹤下方推算版路，<strong>三期內可開出 1~3 號，六期內可開出 1~6 號</strong>。建議搭配籌碼分配進行養牌。
-    </div>
-
-    <div class="input-group">
-        <label>請輸入最新一期開獎號碼 (5 個數字，範圍 1~39)：</label>
-        <div class="inputs">
-            <input type="number" id="n1" min="1" max="39" placeholder="N1">
-            <input type="number" id="n2" min="1" max="39" placeholder="N2">
-            <input type="number" id="n3" min="1" max="39" placeholder="N3">
-            <input type="number" id="n4" min="1" max="39" placeholder="N4">
-            <input type="number" id="n5" min="1" max="39" placeholder="N5">
+    <div id="dashboard" style="display: none;">
+        <h2>🎯 目前追蹤中版路 (最新一期預測)</h2>
+        <div class="current-patterns" id="currentPatterns">
+            <!-- 最新版路會渲染在這裡 -->
         </div>
-        <button class="calc-btn" onclick="calculate()">執行程式推測</button>
-    </div>
 
-    <div class="results" id="results">
-        <h2>預測結果分析</h2>
-        <div class="result-box">
-            <h3>📌 版路一：N+1 延伸連號 (間距1)</h3>
-            <ul id="logic1-list"></ul>
-        </div>
-        <div class="result-box">
-            <h3>📌 版路二：六宮格漏牌補位 (間距6)</h3>
-            <ul id="logic2-list"></ul>
+        <h2>📜 完整命中紀錄 (三期內開出)</h2>
+        <div class="table-wrapper">
+            <table id="historyTable">
+                <thead>
+                    <tr>
+                        <th>觸發日期</th>
+                        <th>版路類型</th>
+                        <th>預測號碼 (1組3顆)</th>
+                        <th>3期內開出紀錄</th>
+                        <th>狀態</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody">
+                    <!-- 回測紀錄會渲染在這裡 -->
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
 <script>
-    // --- 字體大小控制與記憶功能 ---
-    let currentSize = 16;
-    
-    function initFontSize() {
-        const savedSize = localStorage.getItem('appFontSize');
-        if (savedSize) {
-            currentSize = parseInt(savedSize);
-            document.documentElement.style.setProperty('--base-font-size', currentSize + 'px');
-        }
-    }
-
-    function changeFontSize(step) {
-        if (step === 0) {
-            currentSize = 16; // 回復預設
-        } else {
-            currentSize += (step * 2);
-            // 設定極限值防呆
-            if (currentSize < 12) currentSize = 12;
-            if (currentSize > 28) currentSize = 28;
-        }
-        document.documentElement.style.setProperty('--base-font-size', currentSize + 'px');
-        localStorage.setItem('appFontSize', currentSize); // 記憶設定
-    }
-
-    // 網頁載入時初始化字體設定
-    initFontSize();
-
-    // --- 預測核心邏輯 ---
+    // 定義六宮格分組
     const modGroups = {
         1: [1, 7, 13, 19, 25, 31, 37],
         2: [2, 8, 14, 20, 26, 32, 38],
@@ -229,67 +158,165 @@
         0: [6, 12, 18, 24, 30, 36]
     };
 
-    function calculate() {
-        let nums = [];
-        for (let i = 1; i <= 5; i++) {
-            let val = parseInt(document.getElementById('n' + i).value);
-            if (isNaN(val) || val < 1 || val > 39) {
-                alert("請確保 5 個欄位都已填寫，且數字落在 1 到 39 之間！");
-                return;
-            }
-            nums.push(val);
-        }
+    let lotteryData = [];
 
-        // 過濾重複數字並排序
-        let uniqueNums = [...new Set(nums)].sort((a, b) => a - b);
-        if (uniqueNums.length !== 5) {
-            alert("請勿輸入重複的號碼！");
+    // 處理檔案上傳
+    function processFile() {
+        const fileInput = document.getElementById('csvFileInput');
+        if (fileInput.files.length === 0) {
+            alert('請先選擇一個 CSV 檔案！');
             return;
         }
 
-        // 邏輯一：N+1 延伸連號
-        let logic1Html = "";
-        uniqueNums.forEach(num => {
-            if (num >= 36) {
-                logic1Html += `<li>由 <strong>${num}</strong> 觸發極端大號歸零 ➔ 推薦組合：<span class="highlight">[01, 02, 03]</span></li>`;
-            } else {
-                let n1 = String(num + 1).padStart(2, '0');
-                let n2 = String(num + 2).padStart(2, '0');
-                let n3 = String(num + 3).padStart(2, '0');
-                if ((num + 3) <= 39) {
-                     logic1Html += `<li>由 <strong>${num}</strong> 順勢觸發連號 ➔ 推薦組合：<span class="highlight">[${n1}, ${n2}, ${n3}]</span></li>`;
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const text = e.target.result;
+            parseCSV(text);
+        };
+
+        reader.readAsText(file);
+    }
+
+    // 解析 CSV 內容
+    function parseCSV(text) {
+        const lines = text.split('\n');
+        lotteryData = [];
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line || line.toLowerCase().includes('date')) continue; // 略過標題與空行
+            
+            const cols = line.split(',');
+            if (cols.length >= 6) {
+                const date = cols[0].trim();
+                const nums = [
+                    parseInt(cols[1]), parseInt(cols[2]), 
+                    parseInt(cols[3]), parseInt(cols[4]), parseInt(cols[5])
+                ].filter(n => !isNaN(n));
+                
+                if (nums.length === 5) {
+                    lotteryData.push({ date: date, nums: nums });
                 }
+            }
+        }
+
+        if (lotteryData.length === 0) {
+            alert("讀取失敗：找不到有效的號碼資料，請確認 CSV 格式。");
+            return;
+        }
+
+        runAnalysis();
+    }
+
+    // 根據單期號碼產生「1組3顆」的預測
+    function getPredictions(nums) {
+        let preds = [];
+
+        // 邏輯一：N+1 連號 (嚴格取 3 顆)
+        nums.forEach(n => {
+            if (n >= 36) {
+                preds.push({ type: `N+1連號 (由 ${n} 歸零)`, target: [1, 2, 3] });
+            } else if (n + 3 <= 39) {
+                preds.push({ type: `N+1連號 (由 ${n} 觸發)`, target: [n + 1, n + 2, n + 3] });
             }
         });
 
-        // 邏輯二：六宮格漏牌追蹤
-        let logic2Html = "";
-        let appearedMods = new Set(uniqueNums.map(n => n % 6));
+        // 邏輯二：六宮格漏牌 (嚴格切割為 1組3顆)
+        let appearedMods = new Set(nums.map(n => n % 6));
         let allMods = [0, 1, 2, 3, 4, 5];
-        
-        // 找出沒開出的餘數
         let missingMods = allMods.filter(m => !appearedMods.has(m));
 
         missingMods.forEach(mod => {
             let group = modGroups[mod];
-            if (group.length >= 3) {
-                let p1 = group.slice(0, 3).map(n => String(n).padStart(2, '0')).join(', ');
-                logic2Html += `<li>餘數 ${mod} 區間漏牌 (前段補位) ➔ 推薦組合：<span class="highlight">[${p1}]</span></li>`;
-            }
-            if (group.length >= 6) {
-                let p2 = group.slice(3, 6).map(n => String(n).padStart(2, '0')).join(', ');
-                logic2Html += `<li>餘數 ${mod} 區間漏牌 (後段補位) ➔ 推薦組合：<span class="highlight">[${p2}]</span></li>`;
+            // 將漏牌群組切割成每組剛好 3 顆
+            for (let k = 0; k < group.length; k += 3) {
+                let chunk = group.slice(k, k + 3);
+                if (chunk.length === 3) {
+                    preds.push({
+                        type: `六宮格補位 (餘數 ${mod})`,
+                        target: chunk
+                    });
+                }
             }
         });
 
-        // 若無邏輯結果的防呆處理
-        if (logic1Html === "") logic1Html = "<li>本期無符合邊界的連號版路。</li>";
-        if (logic2Html === "") logic2Html = "<li>本期餘數分佈平均，無明顯漏牌區間。</li>";
+        return preds;
+    }
 
-        // 更新畫面並顯示結果區塊
-        document.getElementById("logic1-list").innerHTML = logic1Html;
-        document.getElementById("logic2-list").innerHTML = logic2Html;
-        document.getElementById("results").style.display = "block";
+    // 執行分析與渲染
+    function runAnalysis() {
+        document.getElementById('dashboard').style.display = 'block';
+        
+        // 1. 渲染最新一期追蹤版路
+        const latestDraw = lotteryData[lotteryData.length - 1];
+        const currentPreds = getPredictions(latestDraw.nums);
+        let patternsHtml = '';
+        
+        currentPreds.forEach(p => {
+            let targetStr = p.target.map(n => String(n).padStart(2, '0')).join(', ');
+            patternsHtml += `
+                <div class="pattern-card">
+                    <h4>📝 ${p.type}</h4>
+                    <div class="nums">[ ${targetStr} ]</div>
+                </div>
+            `;
+        });
+        document.getElementById('currentPatterns').innerHTML = patternsHtml;
+
+        // 2. 回測完整命中紀錄 (往後看3期)
+        let tbodyHtml = '';
+        // 反轉陣列讓最新日期的回測排在最上面
+        for (let i = lotteryData.length - 2; i >= 0; i--) {
+            let draw = lotteryData[i];
+            let preds = getPredictions(draw.nums);
+
+            // 抓取未來 3 期的開獎資料
+            let futureDraws = [];
+            for (let j = 1; j <= 3; j++) {
+                if (i + j < lotteryData.length) {
+                    futureDraws.push(lotteryData[i + j]);
+                }
+            }
+
+            preds.forEach(p => {
+                let hitDetails = [];
+                let isHit = false;
+
+                futureDraws.forEach(fd => {
+                    let intersection = p.target.filter(n => fd.nums.includes(n));
+                    if (intersection.length > 0) {
+                        isHit = true;
+                        let hitNums = intersection.map(n => String(n).padStart(2, '0')).join(', ');
+                        hitDetails.push(`[${fd.date}] 開出 <strong>${hitNums}</strong>`);
+                    }
+                });
+
+                let statusHtml = '';
+                if (isHit) {
+                    statusHtml = '<span class="success">✅ 命中</span>';
+                } else if (futureDraws.length === 3) {
+                    statusHtml = '<span class="fail">❌ 未中</span>';
+                } else {
+                    statusHtml = '<span class="waiting">⏳ 追蹤中 (剩餘期數)</span>';
+                }
+
+                let targetStr = p.target.map(n => String(n).padStart(2, '0')).join(', ');
+                let hitText = hitDetails.length > 0 ? hitDetails.join('<br>') : '---';
+
+                tbodyHtml += `
+                    <tr>
+                        <td><strong>${draw.date}</strong></td>
+                        <td>${p.type}</td>
+                        <td style="color:#d93025; font-weight:bold;">${targetStr}</td>
+                        <td class="hit-detail">${hitText}</td>
+                        <td>${statusHtml}</td>
+                    </tr>
+                `;
+            });
+        }
+        document.getElementById('historyBody').innerHTML = tbodyHtml;
     }
 </script>
 
