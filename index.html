@@ -33,8 +33,7 @@
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 23, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0); } }
 
         .controls { background: #e8eaf6; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c5cae9; }
-        input[type="file"] { background: #fff; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); width: 100%; margin-top: 10px; }
-        button { width: 100%; padding: 14px; background-color: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1.1rem; font-weight: bold; margin-top: 15px; transition: 0.2s; }
+        button { width: 100%; padding: 14px; background-color: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: 0.2s; }
         button:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
 
         #predictionArea { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
@@ -56,7 +55,6 @@
         th, td { border: 1px solid var(--border-color); padding: 12px 8px; text-align: center; vertical-align: middle; line-height: 1.8; }
         th { background-color: var(--primary-color); color: white; position: sticky; top: 0; white-space: nowrap; }
         
-        /* 解決重疊問題：允許表格單元格換行並設定字體高度 */
         #resultTable td { white-space: normal !important; word-break: break-word; }
         .hit-item { margin-bottom: 5px; padding: 2px 0; }
         .hit-item:last-child { margin-bottom: 0; }
@@ -93,14 +91,13 @@
     </h2>
     
     <div class="controls">
-        <label><strong>載入歷史資料：</strong></label>
-        <input type="file" id="csvFileInput" accept=".csv">
-        <button onclick="processData()">執行計算</button>
+        <label><strong>資料狀態：</strong> <span id="dataStatus">等待載入同目錄下的 Fan_history_2026.csv...</span></label>
+        <button onclick="processData()">手動重新整理計算</button>
     </div>
 
     <h2 style="font-size: 1.2rem; margin-top: 25px;">目前追蹤中</h2>
     <div id="predictionArea">
-        <div style="padding: 10px; color: #666;">載入資料後將顯示號碼...</div>
+        <div style="padding: 10px; color: #666;">系統自動解析中...</div>
     </div>
     
     <div id="summaryArea" class="summary" style="display:none;"></div>
@@ -118,7 +115,7 @@
                 </tr>
             </thead>
             <tbody id="resultBody">
-                <tr><td colspan="5" style="text-align:center;">請載入資料並點擊計算</td></tr>
+                <tr><td colspan="5" style="text-align:center;">正在讀取 CSV 檔案...</td></tr>
             </tbody>
         </table>
     </div>
@@ -187,12 +184,17 @@
         return rawPatterns;
     }
 
+    // 改為自動抓取同目錄下的檔案
     async function processData() {
-        const fileInput = document.getElementById('csvFileInput');
-        if (fileInput.files.length === 0) { alert('請先選擇 CSV 檔案！'); return; }
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const lines = e.target.result.trim().split('\n');
+        const fileName = 'Fan_history_2026.csv';
+        const statusEl = document.getElementById('dataStatus');
+        
+        try {
+            const response = await fetch(fileName);
+            if (!response.ok) throw new Error('找不到檔案，請確認檔案在同資料夾內且透過伺服器開啟。');
+            
+            const text = await response.text();
+            const lines = text.trim().split('\n');
             parsedData = [];
             for (let i = 0; i < lines.length; i++) {
                 let cols = lines[i].split(',').map(c => c.trim());
@@ -200,10 +202,18 @@
                 let nums = [parseInt(cols[1]), parseInt(cols[2]), parseInt(cols[3]), parseInt(cols[4]), parseInt(cols[5])];
                 if (!nums.some(isNaN)) parsedData.push({ date: cols[0], nums: nums });
             }
-            if(parsedData.length > 0) runAnalysis();
-        };
-        reader.readAsText(fileInput.files[0]);
+            if(parsedData.length > 0) {
+                statusEl.innerText = `✅ 已自動讀取檔案：${fileName}`;
+                runAnalysis();
+            }
+        } catch (error) {
+            statusEl.innerHTML = `<span style="color:red;">❌ 讀取失敗：${error.message}</span>`;
+            console.error(error);
+        }
     }
+
+    // 頁面載入後自動執行一次
+    window.onload = processData;
 
     function runAnalysis() {
         const resultBody = document.getElementById('resultBody');
@@ -257,7 +267,6 @@
             </div>
         `).join('') : '<div style="padding: 10px; color: #666;">無追蹤中版路。</div>';
 
-        // 整合回測表格：修正重疊
         let hitTableHtml = dailyResults.slice().reverse().filter(d => d.hits.length > 0).map(d => {
             let triggerInfo = d.hits.map(h => `<div class="hit-item">${h.type} (${h.triggerDate})</div>`).join('');
             let hitNumsInfo = d.hits.map(h => `<div class="hit-item">${h.hitNums.map(fNum).join(', ')}</div>`).join('');
