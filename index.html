@@ -3,127 +3,281 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>天天樂/539 全自動預測掃描系統 (無限制全開版)</title>
+    <title>版路自動追蹤計算系統 (三期牌/六期牌)</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1e1e1e;
-            color: #d4d4d4;
+        :root {
+            --primary-color: #2c3e50;
+            --primary-hover: #1a252f;
+            --bg-color: #f5f5f5;
+            --card-bg: #fff;
+            --border-color: #ddd;
+            
+            /* 1~3 期配色 (黃/橘/綠) */
+            --hit-1-3-bg: #e8f5e9;
+            --hit-1-3-text: #2e7d32;
+            --track-1-3-bg: #fff8e1;
+            --track-1-3-border: #f57c00;
+            
+            /* 4~6 期配色 (藍/紫) */
+            --hit-4-6-bg: #e3f2fd;
+            --hit-4-6-text: #1565c0;
+            --track-4-6-bg: #f3e5f5;
+            --track-4-6-border: #8e24aa;
+            
+            /* 失敗配色 */
+            --fail-bg: #fafafa;
+            --fail-text: #9e9e9e;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
-            padding: 20px;
+            padding: 0;
         }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            line-height: 1.5;
+            padding: 10px;
+        }
+
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
-            background: #252526;
-            padding: 30px;
+            background: var(--card-bg);
+            padding: 15px;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        h1 {
-            color: #4fc1ff;
-            margin-top: 0;
-            font-size: 1.8em;
-            border-bottom: 1px solid #3c3c3c;
-            padding-bottom: 15px;
+
+        h2 {
+            font-size: 1.25rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
         }
-        .upload-section {
-            background-color: #2d2d2d;
-            padding: 20px;
+
+        .controls {
+            background: #eef2f5;
+            padding: 15px;
             border-radius: 6px;
-            margin-bottom: 20px;
-            border: 1px solid #3c3c3c;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
         input[type="file"] {
-            color: #d4d4d4;
-            margin: 10px 0;
-            font-size: 1.1em;
+            background: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
         }
+
         button {
-            background-color: #007acc;
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 12px 25px;
-            font-size: 1.2em;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
+            font-size: 1rem;
             font-weight: bold;
-            margin-top: 15px;
-            width: 100%;
+            transition: background-color 0.2s;
         }
+
         button:hover {
-            background-color: #0098ff;
+            background-color: var(--primary-hover);
         }
-        .output-area {
-            margin-top: 20px;
+
+        /* 預測區塊 (追蹤中版路) */
+        #predictionArea {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
         }
-        textarea {
-            width: 100%;
-            height: 200px;
-            background-color: #1e1e1e;
-            color: #ce9178;
-            border: 1px solid #3c3c3c;
-            padding: 15px;
-            font-size: 1.4em;
-            font-family: 'Courier New', Courier, monospace;
-            resize: vertical;
-            border-radius: 4px;
-            box-sizing: border-box;
+
+        .pred-card {
+            padding: 12px;
+            border-radius: 6px;
+            width: calc(50% - 5px);
+            background: var(--card-bg);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
         }
-        .log-area {
-            width: 100%;
-            height: 250px;
-            background-color: #1e1e1e;
-            color: #9cdcfe;
-            border: 1px solid #3c3c3c;
-            padding: 10px;
-            font-size: 0.9em;
-            font-family: 'Courier New', Courier, monospace;
-            resize: vertical;
-            border-radius: 4px;
-            box-sizing: border-box;
-            margin-top: 10px;
+
+        .pred-card h3 {
+            font-size: 1rem;
+            margin-bottom: 5px;
         }
-        .note {
-            color: #808080;
-            font-size: 0.9em;
-            margin-top: 10px;
+
+        .pred-card p {
+            font-size: 0.95rem;
+            margin-bottom: 4px;
         }
-        .highlight-info {
-            color: #4fc1ff;
+
+        .nums-highlight {
+            font-size: 1.2em;
             font-weight: bold;
-            margin-top: 10px;
-            display: inline-block;
+            letter-spacing: 1px;
+        }
+
+        /* 狀態顏色類別 */
+        .t1-3 { border-left: 5px solid var(--track-1-3-border); background-color: var(--track-1-3-bg); }
+        .t1-3 .nums-highlight { color: var(--track-1-3-border); }
+        
+        .t4-6 { border-left: 5px solid var(--track-4-6-border); background-color: var(--track-4-6-bg); }
+        .t4-6 .nums-highlight { color: var(--track-4-6-border); }
+
+        .summary {
+            background: #eef2f5;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .summary span { font-weight: bold; }
+
+        /* 表格樣式 */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 8px 6px;
+            text-align: center;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:nth-child(even) { background-color: #f9f9f9; }
+
+        /* 表格列狀態顏色 */
+        .row-hit-1-3 { background-color: var(--hit-1-3-bg) !important; color: var(--hit-1-3-text); font-weight: bold; }
+        .row-hit-4-6 { background-color: var(--hit-4-6-bg) !important; color: var(--hit-4-6-text); font-weight: bold; }
+        .row-fail { color: var(--fail-text); }
+
+        /* 手機版樣式斷點 */
+        @media screen and (max-width: 768px) {
+            body { padding: 0; }
+            .container { border-radius: 0; box-shadow: none; }
+            .pred-card { width: 100%; }
+            
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            
+            tr { 
+                border: 1px solid var(--border-color);
+                border-radius: 6px;
+                margin-bottom: 10px;
+                background: #fff;
+                padding: 5px;
+            }
+            
+            td { 
+                border: none;
+                border-bottom: 1px solid #eee; 
+                position: relative;
+                padding-left: 45%; 
+                text-align: right;
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+            
+            td:last-child { border-bottom: 0; }
+            
+            td:before { 
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                width: 40%; 
+                padding-right: 10px; 
+                white-space: nowrap;
+                text-align: left;
+                font-weight: bold;
+                color: #555;
+            }
+
+            td:nth-of-type(1):before { content: "觸發日期"; }
+            td:nth-of-type(2):before { content: "版路類型"; }
+            td:nth-of-type(3):before { content: "預測 (1組3顆)"; }
+            td:nth-of-type(4):before { content: "狀態 (期數)"; }
+            td:nth-of-type(5):before { content: "開出紀錄"; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🚀 全自動預測掃描系統 (無限制全開版)</h1>
+    <h2>🎯 版路自動追蹤計算系統</h2>
     
-    <div class="upload-section">
-        <label>1. 載入歷史資料 (Fan_history_2026.csv)：</label><br>
-        <div class="note">* 系統會自動抓取最後一期號碼作為基準，並計算所有版路的歷史勝率。</div>
-        <input type="file" id="csvFileInput" accept=".csv">
-        <br>
-        <button onclick="runPrediction()">2. 自動抓取最新期數並產生預測</button>
-        <div id="statusMsg" class="highlight-info"></div>
+    <div class="controls">
+        <div class="form-group">
+            <label><strong>1. 載入歷史資料 (CSV檔案)：</strong></label>
+            <input type="file" id="csvFileInput" accept=".csv">
+        </div>
+
+        <div class="form-group">
+            <button onclick="processData()">執行版路解析</button>
+        </div>
     </div>
 
-    <div class="output-area">
-        <label>🎯 所有版路預測結果 (已依歷史勝率高 -> 低排序)：</label>
-        <textarea id="outputText" readonly placeholder="產生的號碼會顯示在這裡..."></textarea>
-        
-        <label style="display:block; margin-top:15px;">📊 系統分析與勝率日誌：</label>
-        <textarea id="logText" class="log-area" readonly></textarea>
+    <h2 style="font-size: 1.1rem; margin-top: 20px;">🔥 目前追蹤中版路 (未開出)</h2>
+    <div id="predictionArea">
+        <div style="padding: 10px; color: #666;">載入資料後將顯示目前追蹤中的號碼...</div>
+    </div>
+    
+    <div id="summaryArea" class="summary" style="display:none;"></div>
+
+    <h2 style="font-size: 1.1rem; margin-top: 20px;">📜 歷史開出回測紀錄</h2>
+    <div class="table-container">
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>觸發日期</th>
+                    <th>版路類型</th>
+                    <th>預測 (1組3顆)</th>
+                    <th>狀態 (期數)</th>
+                    <th>開出紀錄</th>
+                </tr>
+            </thead>
+            <tbody id="resultBody">
+                <tr>
+                    <td colspan="5" style="text-align:center; padding-left:10px;">請載入資料並點擊計算</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
 <script>
-    let historicalData = [];
-
-    // 六宮格字典
     const modGroups = {
         1: [1, 7, 13, 19, 25, 31, 37],
         2: [2, 8, 14, 20, 26, 32, 38],
@@ -133,155 +287,191 @@
         0: [6, 12, 18, 24, 30, 36]
     };
 
-    // 讀取 CSV
-    document.getElementById('csvFileInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            parseCSV(event.target.result);
-            document.getElementById('statusMsg').innerText = `✅ 資料載入成功！共讀取 ${historicalData.length} 期歷史紀錄。可以點擊下方按鈕開始預測。`;
-        };
-        reader.readAsText(file);
-    });
+    let parsedData = [];
 
-    function parseCSV(text) {
-        historicalData = [];
-        const lines = text.split('\n');
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line || line.toLowerCase().includes('date')) continue;
-            const cols = line.split(',');
-            if (cols.length >= 6) {
-                const nums = [
-                    parseInt(cols[1]), parseInt(cols[2]), 
-                    parseInt(cols[3]), parseInt(cols[4]), parseInt(cols[5])
-                ].filter(n => !isNaN(n));
-                if (nums.length === 5) {
-                    historicalData.push({ date: cols[0].trim(), nums: nums });
-                }
+    // 格式化數字
+    function fNum(n) { return String(n).padStart(2, '0'); }
+
+    // 產生版路
+    function getPatterns(nums) {
+        let patterns = [];
+        nums.forEach(n => {
+            if (n >= 36) patterns.push({ type: `歸零連號 (${n})`, target: [1, 2, 3] });
+            else if (n + 3 <= 39) patterns.push({ type: `順勢連號 (${n})`, target: [n + 1, n + 2, n + 3] });
+        });
+
+        let mods = new Set(nums.map(n => n % 6));
+        [0, 1, 2, 3, 4, 5].forEach(m => {
+            if (!mods.has(m)) {
+                let g = modGroups[m];
+                if (g.length >= 3) patterns.push({ type: `漏牌補位 (餘${m}前)`, target: g.slice(0, 3) });
+                if (g.length >= 6) patterns.push({ type: `漏牌補位 (餘${m}後)`, target: g.slice(3, 6) });
             }
-        }
+        });
+        return patterns;
     }
 
-    // 計算未來三天日期
-    function getNext3DaysRange(dateStr) {
-        let parts = dateStr.split('/');
-        let month = parseInt(parts[0]);
-        let day = parseInt(parts[1]);
-        
-        let d = new Date(2026, month - 1, day);
-        let startD = new Date(d);
-        startD.setDate(d.getDate() + 1);
-        let endD = new Date(d);
-        endD.setDate(d.getDate() + 3);
-        
-        return `${startD.getMonth()+1}/${startD.getDate()}~${endD.getMonth()+1}/${endD.getDate()}`;
+    // 求交集
+    function intersect(arr1, arr2) {
+        return arr1.filter(value => arr2.includes(value));
     }
 
-    // 評估拖牌勝率
-    function evaluateWinRate(type, triggerVal, targetNums) {
-        if (historicalData.length === 0) return 100; 
-        
-        let triggerCount = 0;
-        let hitCount = 0;
-
-        // 計算歷史資料 (不含最後三天，避免抓不到未來三期造成勝率失真)
-        for (let i = 0; i < historicalData.length - 3; i++) {
-            let triggered = false;
-            let currentNums = historicalData[i].nums;
-
-            if (type === 'N+1') {
-                triggered = currentNums.includes(triggerVal);
-            } else if (type === 'Mod6') {
-                let mods = currentNums.map(n => n % 6);
-                triggered = !mods.includes(triggerVal);
-            }
-
-            if (triggered) {
-                triggerCount++;
-                let isHit = false;
-                for (let j = 1; j <= 3; j++) {
-                    let nextDraw = historicalData[i+j].nums;
-                    if (targetNums.some(num => nextDraw.includes(num))) {
-                        isHit = true;
-                        break;
-                    }
-                }
-                if (isHit) hitCount++;
-            }
-        }
-
-        if (triggerCount === 0) return 0;
-        return (hitCount / triggerCount) * 100;
-    }
-
-    function runPrediction() {
-        if (historicalData.length === 0) {
-            alert('請先選擇並載入 CSV 檔案！');
+    async function processData() {
+        const fileInput = document.getElementById('csvFileInput');
+        if (fileInput.files.length === 0) {
+            alert('請先選擇 CSV 檔案！');
             return;
         }
 
-        // 自動抓取陣列中的最後一筆資料作為「最新期數」
-        const latestDraw = historicalData[historicalData.length - 1];
-        const dateStr = latestDraw.date;
-        const nums = latestDraw.nums;
+        const file = fileInput.files[0];
+        const reader = new FileReader();
 
-        let numsStr = nums.map(n => String(n).padStart(2, '0')).join(',');
-        document.getElementById('statusMsg').innerText = `🔎 已自動抓取最新一期：[${dateStr}] 號碼為 ${numsStr}，運算中...`;
-        
-        let candidates = [];
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const lines = text.trim().split('\n');
+            parsedData = [];
 
-        // 邏輯一 (N+1)
-        nums.forEach(n => {
-            if (n >= 36) {
-                candidates.push({ type: 'N+1', trigger: n, target: [1, 2, 3], name: `大號 ${n} 歸零` });
-            } else if (n + 3 <= 39) {
-                candidates.push({ type: 'N+1', trigger: n, target: [n+1, n+2, n+3], name: `號碼 ${n} 拖牌` });
+            for (let i = 0; i < lines.length; i++) {
+                let cols = lines[i].split(',').map(c => c.trim());
+                if (!cols[0] || cols[0].toLowerCase().includes('date') || cols.length < 6) continue;
+
+                let nums = [parseInt(cols[1]), parseInt(cols[2]), parseInt(cols[3]), parseInt(cols[4]), parseInt(cols[5])];
+                if (nums.some(isNaN)) continue;
+
+                parsedData.push({ date: cols[0], nums: nums });
             }
-        });
 
-        // 邏輯二 (Mod 6)
-        let appearedMods = new Set(nums.map(n => n % 6));
-        let allMods = [0, 1, 2, 3, 4, 5];
-        let missingMods = allMods.filter(m => !appearedMods.has(m));
+            if(parsedData.length > 0) runAnalysis();
+        };
+        reader.readAsText(file);
+    }
 
-        missingMods.forEach(mod => {
-            let group = modGroups[mod];
-            if (group.length >= 3) {
-                candidates.push({ type: 'Mod6', trigger: mod, target: group.slice(0, 3), name: `餘數 ${mod} 漏牌(前段)` });
-                if (group.length >= 6) {
-                    candidates.push({ type: 'Mod6', trigger: mod, target: group.slice(-3), name: `餘數 ${mod} 漏牌(後段)` });
+    function runAnalysis() {
+        const resultBody = document.getElementById('resultBody');
+        const predictionArea = document.getElementById('predictionArea');
+        const summaryArea = document.getElementById('summaryArea');
+
+        let results = [];
+        let currentlyTracking = [];
+        let stats = { total: 0, hit13: 0, hit46: 0, fail: 0 };
+
+        for (let i = 0; i < parsedData.length; i++) {
+            let patterns = getPatterns(parsedData[i].nums);
+            
+            patterns.forEach(p => {
+                let hit1_3 = null;
+                let hit4_6 = null;
+
+                // 檢查 1~3 期
+                for (let j = 1; j <= 3; j++) {
+                    if (i + j < parsedData.length) {
+                        let inter = intersect(p.target, parsedData[i + j].nums);
+                        if (inter.length > 0) { hit1_3 = { date: parsedData[i + j].date, nums: inter, period: j }; break; }
+                    }
                 }
-            }
-        });
 
-        // 打分數並記錄 Log
-        let logs = [];
-        logs.push(`===== 最新期數 [${dateStr}] 號碼: ${numsStr} =====\n`);
+                // 檢查 4~6 期
+                if (!hit1_3) {
+                    for (let j = 4; j <= 6; j++) {
+                        if (i + j < parsedData.length) {
+                            let inter = intersect(p.target, parsedData[i + j].nums);
+                            if (inter.length > 0) { hit4_6 = { date: parsedData[i + j].date, nums: inter, period: j }; break; }
+                        }
+                    }
+                }
+
+                let age = parsedData.length - 1 - i; // 已經過了幾期
+                let status = '';
+                let hitStr = '';
+                let rowClass = '';
+
+                stats.total++;
+
+                if (hit1_3) {
+                    status = `1~3期內命中 (第${hit1_3.period}期)`;
+                    hitStr = `[${hit1_3.date}] 開出 ${hit1_3.nums.map(fNum).join(',')}`;
+                    rowClass = 'row-hit-1-3';
+                    stats.hit13++;
+                } else if (hit4_6) {
+                    status = `4~6期內命中 (第${hit4_6.period}期)`;
+                    hitStr = `[${hit4_6.date}] 開出 ${hit4_6.nums.map(fNum).join(',')}`;
+                    rowClass = 'row-hit-4-6';
+                    stats.hit46++;
+                } else {
+                    if (age < 6) {
+                        status = `⏳ 追蹤中 (目前第 ${age + 1} 期)`;
+                        hitStr = '-';
+                        let isPhase1 = age < 3;
+                        rowClass = ''; // 表格不特別上色
+                        
+                        // 加入上方追蹤卡片
+                        currentlyTracking.push({
+                            triggerDate: parsedData[i].date,
+                            age: age + 1,
+                            type: p.type,
+                            targetStr: p.target.map(fNum).join(', '),
+                            cardClass: isPhase1 ? 't1-3' : 't4-6',
+                            phaseText: isPhase1 ? '1~3期 黃金追蹤' : '4~6期 延伸追蹤'
+                        });
+                    } else {
+                        status = '❌ 失敗 (超過6期)';
+                        hitStr = '-';
+                        rowClass = 'row-fail';
+                        stats.fail++;
+                    }
+                }
+
+                results.push({
+                    date: parsedData[i].date,
+                    type: p.type,
+                    targetStr: p.target.map(fNum).join(', '),
+                    status: status,
+                    hitStr: hitStr,
+                    rowClass: rowClass
+                });
+            });
+        }
+
+        // 渲染上方追蹤卡片 (最新的排前面)
+        currentlyTracking.reverse();
+        if (currentlyTracking.length > 0) {
+            predictionArea.innerHTML = currentlyTracking.map(t => `
+                <div class="pred-card ${t.cardClass}">
+                    <h3 style="display:flex; justify-content:space-between;">
+                        <span>${t.type}</span>
+                        <span style="font-size:0.8em; padding:2px 6px; border-radius:4px; background:rgba(0,0,0,0.05);">${t.phaseText}</span>
+                    </h3>
+                    <p>觸發日期：${t.triggerDate} (邁入第 ${t.age} 期)</p>
+                    <p>公式預測：<span class="nums-highlight">${t.targetStr}</span></p>
+                </div>
+            `).join('');
+        } else {
+            predictionArea.innerHTML = '<div style="padding: 10px; color: #666;">目前無任何版路處於追蹤期內。</div>';
+        }
+
+        // 渲染表格 (最新的排前面)
+        results.reverse();
+        resultBody.innerHTML = results.map(r => `
+            <tr class="${r.rowClass}">
+                <td>${r.date}</td>
+                <td>${r.type}</td>
+                <td><strong>${r.targetStr}</strong></td>
+                <td>${r.status}</td>
+                <td>${r.hitStr}</td>
+            </tr>
+        `).join('');
+
+        // 渲染統計
+        summaryArea.style.display = 'flex';
+        let hitRate13 = stats.total > 0 ? ((stats.hit13 / stats.total) * 100).toFixed(1) : 0;
+        let hitRateTotal = stats.total > 0 ? (((stats.hit13 + stats.hit46) / stats.total) * 100).toFixed(1) : 0;
         
-        candidates.forEach(c => {
-            c.winRate = evaluateWinRate(c.type, c.trigger, c.target);
-        });
-
-        // 依照勝率排序 (不限制數量，全部顯示)
-        candidates.sort((a, b) => b.winRate - a.winRate);
-
-        let dateRange = getNext3DaysRange(dateStr);
-        let outputLines = [];
-        
-        candidates.forEach(pick => {
-            let targetStr = pick.target.map(n => String(n).padStart(2, '0')).join(',');
-            
-            // 加入到純文字輸出區塊 (原版作者格式)
-            outputLines.push(`${dateRange} ${targetStr}`);
-            
-            // 加入到日誌區塊 (附帶勝率)
-            logs.push(`[${pick.name}] => 候選: ${targetStr} | 歷史三期開出勝率: ${pick.winRate.toFixed(1)}%`);
-        });
-
-        document.getElementById('outputText').value = outputLines.join('\n');
-        document.getElementById('logText').value = logs.join('\n') + '\n\n✅ 分析完成！已列出所有符合的版路。';
+        summaryArea.innerHTML = `
+            <div style="width: 100%;"><strong>📊 大數據統計：</strong> 共產生 ${stats.total} 組版路</div>
+            <div style="color: var(--track-1-3-border);"><span>● 1~3期內命中：</span> ${stats.hit13} 組 (佔 ${hitRate13}%)</div>
+            <div style="color: var(--track-4-6-border);"><span>● 4~6期內命中：</span> ${stats.hit46} 組</div>
+            <div><span>● 總體6期內開出率：</span> ${hitRateTotal}%</div>
+        `;
     }
 </script>
 
