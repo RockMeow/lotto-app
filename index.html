@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加州天天樂 三期牌</title>
+    <title>三期牌</title>
     <style>
         :root {
             --primary-color: #1a237e;
@@ -33,6 +33,10 @@
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 23, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0); } }
 
         .controls { background: #e8eaf6; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c5cae9; }
+        
+        /* 下拉選單樣式 */
+        select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); margin-top: 8px; margin-bottom: 15px; font-size: 1rem; background-color: #fff; cursor: pointer; }
+        
         button { width: 100%; padding: 14px; background-color: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: 0.2s; }
         button:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
 
@@ -91,7 +95,7 @@
 
 <div class="container">
     <h2>
-        <span>加州天天樂 三期牌</span>
+        <span>三期牌分析系統</span>
         <div class="ai-status">
             <span id="aiBadge" class="ai-badge" style="display:none;">過濾中</span>
             <div id="toggleFilter" class="toggle-btn toggle-off" onclick="toggleFilter()">過濾 OFF</div>
@@ -99,8 +103,15 @@
     </h2>
     
     <div class="controls">
-        <label><strong>開獎數據：</strong> <span id="dataStatus">等待讀取...</span></label>
-        <button onclick="processData()">重新計算</button>
+        <label><strong>選擇彩球類型：</strong></label>
+        <select id="csvSelect" onchange="processData()">
+            <option value="Fan_history_2026.csv">加州天天樂</option>
+            <option value="539_history_2026.csv">今彩539</option>
+            <option value="Ghana_history_2026.csv">迦納彩</option>
+        </select>
+        
+        <label style="display:block;"><strong>資料狀態：</strong> <span id="dataStatus" style="color:#1a237e; font-weight:bold;">等待讀取...</span></label>
+        <button onclick="processData()" style="margin-top: 15px;">執行計算</button>
     </div>
 
     <h2 style="font-size: 1.2rem; margin-top: 25px;">目前追蹤中</h2>
@@ -193,8 +204,10 @@
     }
 
     async function processData() {
-        const fileName = 'Fan_history_2026.csv';
+        // 從下拉選單取得檔名
+        const fileName = document.getElementById('csvSelect').value;
         const statusEl = document.getElementById('dataStatus');
+        
         try {
             const response = await fetch(fileName);
             if (!response.ok) throw new Error('找不到檔案');
@@ -208,11 +221,14 @@
                 if (!nums.some(isNaN)) parsedData.push({ date: cols[0], nums: nums });
             }
             if(parsedData.length > 0) {
-                statusEl.innerText = `✅ 已讀取`;
+                statusEl.innerText = `✅ 已成功讀取：${fileName}`;
                 runAnalysis();
             }
         } catch (error) {
-            statusEl.innerHTML = `<span style="color:red;">❌ 失敗：${error.message}</span>`;
+            statusEl.innerHTML = `<span style="color:red;">❌ 失敗：${error.message} (請確認檔案是否在同資料夾內)</span>`;
+            document.getElementById('resultBody').innerHTML = '<tr><td colspan="5" style="text-align:center;">檔案讀取失敗</td></tr>';
+            document.getElementById('predictionArea').innerHTML = '<div style="padding: 10px; color: #666;">無法解析版路，請檢查檔案狀態。</div>';
+            document.getElementById('summaryArea').style.display = 'none';
         }
     }
 
