@@ -455,6 +455,7 @@
             }
         }
 
+        // 倒轉陣列，讓最新日期顯示在最上方
         results.reverse();
 
         resultBody.innerHTML = '';
@@ -474,11 +475,25 @@
             resultBody.appendChild(tr);
         });
 
+        // --- 勝率計算與顯示 ---
         let hitRate = totalCalc > 0 ? ((totalHit / totalCalc) * 100).toFixed(1) : 0;
         
+        // 新增：計算近 30 期勝率 (此時 results 已經 reverse，所以最新的在前面 index 0~29)
+        let recentCalc = Math.min(30, results.length);
+        let recentHit = 0;
+        for (let i = 0; i < recentCalc; i++) {
+            if (results[i].isHit) recentHit++;
+        }
+        let recentHitRate = recentCalc > 0 ? ((recentHit / recentCalc) * 100).toFixed(1) : 0;
+        
+        // 根據近 30 期勝率決定顏色與警示字眼
+        let statusColor = recentHitRate >= 40 ? "green" : (recentHitRate >= 30 ? "#ffa000" : "red");
+        let warningText = (recentHitRate < 30 && recentCalc >= 10) ? ' <span style="color: red; font-size: 0.9em;">(⚠️ 跌破30%，強烈建議更新參數)</span>' : '';
+
         summaryArea.style.display = 'block';
         summaryArea.innerHTML = `
-            <div style="margin-bottom: 0;"><strong>公式勝率：</strong> 測 ${totalCalc} 期，中 ${totalHit} 期 (${hitRate}%)</div>
+            <div style="margin-bottom: 8px;"><strong>歷史總體勝率：</strong> 測 ${totalCalc} 期，中 ${totalHit} 期 (${hitRate}%)</div>
+            <div style="margin-bottom: 0;"><strong>近 30 期勝率：</strong> 測 ${recentCalc} 期，中 ${recentHit} 期 <span style="color: ${statusColor}; font-weight: bold;">(${recentHitRate}%)</span>${warningText}</div>
         `;
     }
 </script>
