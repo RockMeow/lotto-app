@@ -105,7 +105,7 @@
     <div class="controls">
         <label><strong>選擇彩球類型：</strong></label>
         <select id="csvSelect" onchange="processData()">
-            <option value="Fan_history_2026.csv">加州天天樂</option>
+            <option value="Fan_history_2026.csv">天天樂</option>
             <option value="539_history_2026.csv">今彩539</option>
             <option value="Ghana_history_2026.csv">迦納彩</option>
         </select>
@@ -221,7 +221,7 @@
                 if (!nums.some(isNaN)) parsedData.push({ date: cols[0], nums: nums });
             }
             if(parsedData.length > 0) {
-                statusEl.innerText = `✅ 已成功讀取：${fileName}`;
+                statusEl.innerText = `✅ 已成功讀取`;
                 runAnalysis();
             }
         } catch (error) {
