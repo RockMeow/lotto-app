@@ -84,7 +84,7 @@
         <span>加州天天樂 三期牌</span>
         <div class="ai-status">
             <span id="aiBadge" class="ai-badge" style="display:none;">過濾中</span>
-            <div id="toggleFilter" class="toggle-btn toggle-off" onclick="toggleFilter()">二次過濾 OFF</div>
+            <div id="toggleFilter" class="toggle-btn toggle-off" onclick="toggleFilter()">過濾 OFF</div>
         </div>
     </h2>
     
@@ -101,7 +101,7 @@
     
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <h2 style="font-size: 1.2rem; margin-top: 25px;">回測紀錄 (按開獎日期)</h2>
+    <h2 style="font-size: 1.2rem; margin-top: 25px;">回測紀錄</h2>
     <div class="table-container">
         <table id="resultTable">
             <thead>
@@ -276,7 +276,7 @@
         summaryArea.style.display = 'flex';
         let totalHits = stats.hit13 + stats.hit46;
         summaryArea.innerHTML = `
-            <div style="width: 100%;"><strong>回測統計：</strong> 共產生 ${stats.total} 組牌</div>
+            <div style="width: 100%;"><strong>回測統計：</strong> 共產生 ${stats.total} 組號碼</div>
             <div style="color: var(--track-1-3-border);"><span>● 1~3期內命中：</span> ${stats.hit13} 組</div>
             <div style="color: var(--track-4-6-border);"><span>● 4~6期內命中：</span> ${stats.hit46} 組</div>
             <div><span>● 總命中率：</span> ${stats.total > 0 ? ((totalHits/stats.total)*100).toFixed(1) : 0}%</div>
