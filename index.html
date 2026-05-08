@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加州天天樂 (Fantasy 5) 版路追蹤回測系統</title>
+    <title>加州天天樂 (Fantasy 5) 版路追蹤回測系統 - 嚴選版</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -51,6 +51,15 @@
         .btn:hover {
             background-color: #1557b0;
         }
+        .filter-note {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 0.95em;
+            display: inline-block;
+        }
         h2 {
             color: #202124;
             margin-top: 30px;
@@ -64,20 +73,32 @@
         .pattern-card {
             background: #fff;
             border: 1px solid #dadce0;
-            border-left: 5px solid #34a853;
+            border-left: 5px solid #d93025;
             padding: 15px;
             border-radius: 6px;
             width: calc(50% - 20px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
         }
         .pattern-card h4 {
             margin: 0 0 10px 0;
             color: #5f6368;
         }
+        .score-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #fce8e6;
+            color: #d93025;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
         .nums {
             font-size: 1.4em;
             font-weight: bold;
-            color: #d93025;
+            color: #1a73e8;
             letter-spacing: 2px;
         }
         table {
@@ -98,7 +119,7 @@
             top: 0;
         }
         .success { color: #188038; font-weight: bold; }
-        .fail { color: #d93025; }
+        .fail { color: #5f6368; }
         .waiting { color: #f29900; }
         .hit-detail { font-size: 0.9em; color: #1a73e8; margin-top: 4px; }
         .table-wrapper {
@@ -111,29 +132,33 @@
 <body>
 
 <div class="container">
-    <h1>📊 加州天天樂版路追蹤與回測系統</h1>
+    <h1>📊 加州天天樂版路追蹤與回測 (每日 Top 2 嚴選版)</h1>
     
     <div class="upload-section">
         <h3>📂 自動讀取 Fan_history_2026.csv</h3>
-        <p>請選擇你電腦中的歷史開獎資料 (格式須包含 Date,N1,N2,N3,N4,N5)</p>
+        <p>請選擇歷史開獎資料，系統會自動掃描並過濾出每日最強的 2 組版路</p>
         <input type="file" id="csvFileInput" accept=".csv">
         <br><br>
-        <button class="btn" onclick="processFile()">開始執行分析</button>
+        <button class="btn" onclick="processFile()">開始執行智能分析</button>
+        <br>
+        <div class="filter-note">
+            💡 <strong>智能過濾機制啟用：</strong> 系統會考量版路優先權與近 20 期冷熱號權重，將 6~8 組候選名單精簡至勝率最高的 Top 2。
+        </div>
     </div>
 
     <div id="dashboard" style="display: none;">
-        <h2>🎯 目前追蹤中版路 (最新一期預測)</h2>
+        <h2>🎯 目前追蹤中最強版路 (最新一期預測)</h2>
         <div class="current-patterns" id="currentPatterns">
             <!-- 最新版路會渲染在這裡 -->
         </div>
 
-        <h2>📜 完整命中紀錄 (三期內開出)</h2>
+        <h2>📜 完整命中紀錄 (3期內開出檢驗)</h2>
         <div class="table-wrapper">
             <table id="historyTable">
                 <thead>
                     <tr>
                         <th>觸發日期</th>
-                        <th>版路類型</th>
+                        <th>嚴選版路類型</th>
                         <th>預測號碼 (1組3顆)</th>
                         <th>3期內開出紀錄</th>
                         <th>狀態</th>
@@ -172,10 +197,8 @@
         const reader = new FileReader();
 
         reader.onload = function(e) {
-            const text = e.target.result;
-            parseCSV(text);
+            parseCSV(e.target.result);
         };
-
         reader.readAsText(file);
     }
 
@@ -186,7 +209,7 @@
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
-            if (!line || line.toLowerCase().includes('date')) continue; // 略過標題與空行
+            if (!line || line.toLowerCase().includes('date')) continue;
             
             const cols = line.split(',');
             if (cols.length >= 6) {
@@ -203,46 +226,65 @@
         }
 
         if (lotteryData.length === 0) {
-            alert("讀取失敗：找不到有效的號碼資料，請確認 CSV 格式。");
+            alert("讀取失敗：找不到有效的號碼資料。");
             return;
         }
 
         runAnalysis();
     }
 
-    // 根據單期號碼產生「1組3顆」的預測
-    function getPredictions(nums) {
-        let preds = [];
+    // 計算版路權重分數 (近20期熱度)
+    function calculateScore(targetNums, currentIndex) {
+        let score = 0;
+        let start = Math.max(0, currentIndex - 20); // 往回推 20 期
+        for (let i = start; i < currentIndex; i++) {
+            targetNums.forEach(n => {
+                if (lotteryData[i].nums.includes(n)) {
+                    score += 1;
+                }
+            });
+        }
+        return score;
+    }
 
-        // 邏輯一：N+1 連號 (嚴格取 3 顆)
+    // 取得嚴選後的預測 (限制回傳 Top 2)
+    function getFilteredPredictions(nums, currentIndex) {
+        let rawPreds = [];
+
+        // 邏輯一：N+1 連號
         nums.forEach(n => {
             if (n >= 36) {
-                preds.push({ type: `N+1連號 (由 ${n} 歸零)`, target: [1, 2, 3] });
+                rawPreds.push({ type: `歸零連號 (由 ${n} 觸發)`, target: [1, 2, 3], baseScore: 50 }); // 大號歸零優先權極高
             } else if (n + 3 <= 39) {
-                preds.push({ type: `N+1連號 (由 ${n} 觸發)`, target: [n + 1, n + 2, n + 3] });
+                rawPreds.push({ type: `順勢連號 (由 ${n} 觸發)`, target: [n + 1, n + 2, n + 3], baseScore: 0 });
             }
         });
 
-        // 邏輯二：六宮格漏牌 (嚴格切割為 1組3顆)
+        // 邏輯二：六宮格漏牌
         let appearedMods = new Set(nums.map(n => n % 6));
         let allMods = [0, 1, 2, 3, 4, 5];
         let missingMods = allMods.filter(m => !appearedMods.has(m));
 
         missingMods.forEach(mod => {
             let group = modGroups[mod];
-            // 將漏牌群組切割成每組剛好 3 顆
             for (let k = 0; k < group.length; k += 3) {
                 let chunk = group.slice(k, k + 3);
                 if (chunk.length === 3) {
-                    preds.push({
-                        type: `六宮格補位 (餘數 ${mod})`,
-                        target: chunk
-                    });
+                    // 六宮格漏牌結構性強，給予基礎分 20
+                    rawPreds.push({ type: `六宮格補位 (餘數 ${mod})`, target: chunk, baseScore: 20 });
                 }
             }
         });
 
-        return preds;
+        // 打分機制：基礎分 + 近期熱度分
+        rawPreds.forEach(p => {
+            let hotScore = calculateScore(p.target, currentIndex);
+            p.finalScore = p.baseScore + hotScore;
+        });
+
+        // 依照最終分數由高到低排序，並只切出前 2 名
+        rawPreds.sort((a, b) => b.finalScore - a.finalScore);
+        return rawPreds.slice(0, 2);
     }
 
     // 執行分析與渲染
@@ -250,14 +292,16 @@
         document.getElementById('dashboard').style.display = 'block';
         
         // 1. 渲染最新一期追蹤版路
-        const latestDraw = lotteryData[lotteryData.length - 1];
-        const currentPreds = getPredictions(latestDraw.nums);
-        let patternsHtml = '';
+        const lastIndex = lotteryData.length - 1;
+        const latestDraw = lotteryData[lastIndex];
+        const currentPreds = getFilteredPredictions(latestDraw.nums, lastIndex);
         
+        let patternsHtml = '';
         currentPreds.forEach(p => {
             let targetStr = p.target.map(n => String(n).padStart(2, '0')).join(', ');
             patternsHtml += `
                 <div class="pattern-card">
+                    <span class="score-badge">權重分: ${p.finalScore}</span>
                     <h4>📝 ${p.type}</h4>
                     <div class="nums">[ ${targetStr} ]</div>
                 </div>
@@ -265,19 +309,15 @@
         });
         document.getElementById('currentPatterns').innerHTML = patternsHtml;
 
-        // 2. 回測完整命中紀錄 (往後看3期)
+        // 2. 回測完整命中紀錄
         let tbodyHtml = '';
-        // 反轉陣列讓最新日期的回測排在最上面
         for (let i = lotteryData.length - 2; i >= 0; i--) {
             let draw = lotteryData[i];
-            let preds = getPredictions(draw.nums);
+            let preds = getFilteredPredictions(draw.nums, i); // 用當下那一期的視角去算分數與預測
 
-            // 抓取未來 3 期的開獎資料
             let futureDraws = [];
             for (let j = 1; j <= 3; j++) {
-                if (i + j < lotteryData.length) {
-                    futureDraws.push(lotteryData[i + j]);
-                }
+                if (i + j < lotteryData.length) futureDraws.push(lotteryData[i + j]);
             }
 
             preds.forEach(p => {
@@ -299,7 +339,7 @@
                 } else if (futureDraws.length === 3) {
                     statusHtml = '<span class="fail">❌ 未中</span>';
                 } else {
-                    statusHtml = '<span class="waiting">⏳ 追蹤中 (剩餘期數)</span>';
+                    statusHtml = '<span class="waiting">⏳ 追蹤中</span>';
                 }
 
                 let targetStr = p.target.map(n => String(n).padStart(2, '0')).join(', ');
@@ -308,8 +348,8 @@
                 tbodyHtml += `
                     <tr>
                         <td><strong>${draw.date}</strong></td>
-                        <td>${p.type}</td>
-                        <td style="color:#d93025; font-weight:bold;">${targetStr}</td>
+                        <td>${p.type} (分:${p.finalScore})</td>
+                        <td style="color:#1a73e8; font-weight:bold;">${targetStr}</td>
                         <td class="hit-detail">${hitText}</td>
                         <td>${statusHtml}</td>
                     </tr>
