@@ -52,9 +52,10 @@
         .summary span { font-weight: bold; }
 
         .table-container { width: 100%; overflow-x: auto; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; white-space: nowrap; background: #fff; }
-        th, td { border: 1px solid var(--border-color); padding: 12px 8px; text-align: center; }
-        th { background-color: var(--primary-color); color: white; position: sticky; top: 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: #fff; }
+        th, td { border: 1px solid var(--border-color); padding: 12px 8px; text-align: center; vertical-align: middle; line-height: 1.6; }
+        th { background-color: var(--primary-color); color: white; position: sticky; top: 0; white-space: nowrap; }
+        td { white-space: normal; word-break: break-all; } /* 修正文字重疊關鍵 */
         tr:nth-child(even) { background-color: #fcfcfc; }
 
         .row-hit-1-3 { color: var(--hit-1-3-text); font-weight: bold; }
@@ -65,7 +66,7 @@
             table, thead, tbody, th, td, tr { display: block; }
             thead tr { display: none; }
             tr { border: 1px solid var(--border-color); margin-bottom: 15px; border-radius: 8px; overflow: hidden; }
-            td { text-align: right; padding-left: 45%; position: relative; border-bottom: 1px solid #f0f0f0; }
+            td { text-align: right; padding-left: 45%; position: relative; border-bottom: 1px solid #f0f0f0; min-height: 40px; }
             td:before { position: absolute; left: 12px; width: 40%; text-align: left; font-weight: bold; color: #666; }
             td:nth-of-type(1):before { content: "開獎日期"; }
             td:nth-of-type(2):before { content: "開出號碼"; }
@@ -251,15 +252,14 @@
             </div>
         `).join('') : '<div style="padding: 10px; color: #666;">無追蹤中版路。</div>';
 
-        // 整合回測表格：同日期合併顯示
         let hitTableHtml = dailyResults.slice().reverse().filter(d => d.hits.length > 0).map(d => {
             let triggerInfo = d.hits.map(h => `${h.type} (${h.triggerDate})`).join('<br>');
             let hitNumsInfo = d.hits.map(h => h.hitNums.map(fNum).join(', ')).join('<br>');
             let statusInfo = d.hits.map(h => {
                 let text = h.period <= 3 ? `1~3期內命中 (${h.period})` : `4~6期內命中 (${h.period})`;
                 let colorClass = h.period <= 3 ? 'row-hit-1-3' : 'row-hit-4-6';
-                return `<span class="${colorClass}">${text}</span>`;
-            }).join('<br>');
+                return `<div class="${colorClass}">${text}</div>`;
+            }).join('');
 
             return `
             <tr>
