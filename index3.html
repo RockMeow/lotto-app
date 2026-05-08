@@ -255,6 +255,12 @@
                 
                 <input type="radio" id="gameGhana" name="gameType" value="ghana" style="display:none;">
                 <label for="gameGhana">迦納彩</label>
+
+                <input type="radio" id="gameLotto" name="gameType" value="lotto" style="display:none;">
+                <label for="gameLotto">大樂透</label>
+
+                <input type="radio" id="gameMarkSix" name="gameType" value="markSix" style="display:none;">
+                <label for="gameMarkSix">六合彩</label>
             </div>
         </div>
 
@@ -317,6 +323,17 @@
         5: { rank: 3, c1: 17, c2: 33 }
     };
 
+    const formulasLotto = {
+        1: { rank: 4, c1: 8,  c2: 32 }, // 星期二
+        4: { rank: 4, c1: 34, c2: 44 }  // 星期五
+    };
+
+    const formulasMarkSix = {
+        1: { rank: 4, c1: 3,  c2: 15 }, // 星期二
+        3: { rank: 1, c1: 1,  c2: 40 }, // 星期四
+        5: { rank: 6, c1: 23, c2: 39 }  // 星期六
+    };
+
     const dayNames = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"];
 
     document.querySelectorAll('input[name="gameType"]').forEach(radio => {
@@ -325,9 +342,9 @@
         });
     });
 
-    function addMod(val, offset) {
-        let res = (val + offset) % 39;
-        return res === 0 ? 39 : res;
+    function addMod(val, offset, maxNum = 39) {
+        let res = (val + offset) % maxNum;
+        return res === 0 ? maxNum : res;
     }
 
     function formatNum(num) {
@@ -337,8 +354,13 @@
     async function processData() {
         const gameType = document.querySelector('input[name="gameType"]:checked').value;
         let fileName = '539_history_2026.csv';
+        let maxNum = 39;
+        let ballCount = 5;
+
         if (gameType === 'fan') fileName = 'Fan_history_2026.csv';
         if (gameType === 'ghana') fileName = 'Ghana_history_2026.csv';
+        if (gameType === 'lotto') { fileName = 'Lotto_history_2026.csv'; maxNum = 49; ballCount = 6; }
+        if (gameType === 'markSix') { fileName = 'MarkSix_history_2026.csv'; maxNum = 49; ballCount = 6; }
 
         const resultBody = document.getElementById('resultBody');
         const summaryArea = document.getElementById('summaryArea');
@@ -359,10 +381,14 @@
         
         for (let i = 1; i < lines.length; i++) {
             let cols = lines[i].split(',').map(c => c.trim());
-            if (cols.length < 6) continue;
+            if (cols.length < ballCount + 1) continue;
 
             let dateStr = cols[0];
-            let nums = [parseInt(cols[1]), parseInt(cols[2]), parseInt(cols[3]), parseInt(cols[4]), parseInt(cols[5])];
+            
+            let nums = [];
+            for (let b = 1; b <= ballCount; b++) {
+                nums.push(parseInt(cols[b]));
+            }
             if (nums.some(isNaN)) continue;
 
             let fullDate = new Date('2026/' + dateStr);
@@ -378,6 +404,8 @@
         let activeFormulas = formulas539;
         if (gameType === 'fan') activeFormulas = formulasFan;
         if (gameType === 'ghana') activeFormulas = formulasGhana;
+        if (gameType === 'lotto') activeFormulas = formulasLotto;
+        if (gameType === 'markSix') activeFormulas = formulasMarkSix;
 
         let history = {}; 
         let results = [];
@@ -394,8 +422,8 @@
             if (f && history[pyDay]) {
                 let prevNums = history[pyDay];
                 let baseVal = prevNums[f.rank - 1];
-                let pred1 = addMod(baseVal, f.c1);
-                let pred2 = addMod(baseVal, f.c2);
+                let pred1 = addMod(baseVal, f.c1, maxNum);
+                let pred2 = addMod(baseVal, f.c2, maxNum);
 
                 let hit1 = row.sortedNums.includes(pred1);
                 let hit2 = row.sortedNums.includes(pred2);
@@ -429,8 +457,18 @@
             let nextDate = new Date(lastRow.fullDate);
             nextDate.setDate(nextDate.getDate() + 1);
             
-            if ((gameType === '539' || gameType === 'ghana') && nextDate.getDay() === 0) {
-                nextDate.setDate(nextDate.getDate() + 1);
+            if (gameType === 'lotto') {
+                while(nextDate.getDay() !== 2 && nextDate.getDay() !== 5) {
+                    nextDate.setDate(nextDate.getDate() + 1);
+                }
+            } else if (gameType === 'markSix') {
+                while(nextDate.getDay() !== 2 && nextDate.getDay() !== 4 && nextDate.getDay() !== 6) {
+                    nextDate.setDate(nextDate.getDate() + 1);
+                }
+            } else if (gameType === '539' || gameType === 'ghana') {
+                if (nextDate.getDay() === 0) {
+                    nextDate.setDate(nextDate.getDate() + 1);
+                }
             }
             
             let nextJsDay = nextDate.getDay();
@@ -441,8 +479,8 @@
             if (fNext && history[nextPyDay]) {
                 let prevNums = history[nextPyDay];
                 let baseVal = prevNums[fNext.rank - 1];
-                let p1 = addMod(baseVal, fNext.c1);
-                let p2 = addMod(baseVal, fNext.c2);
+                let p1 = addMod(baseVal, fNext.c1, maxNum);
+                let p2 = addMod(baseVal, fNext.c2, maxNum);
 
                 predictionArea.innerHTML = `
                     <div style="background-color: var(--pred-bg); padding: 15px; border-radius: 6px; border-left: 5px solid var(--pred-border);">
