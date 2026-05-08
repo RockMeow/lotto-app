@@ -261,11 +261,11 @@
                         <span>${t.type}</span>
                     </h3>
                     <p>觸發日期：${t.triggerDate} (進入第 ${t.age} 期)</p>
-                    <p>精選預測：<span class="nums-highlight">${t.targetStr}</span></p>
+                    <p>預測號碼：<span class="nums-highlight">${t.targetStr}</span></p>
                 </div>
             `).join('');
         } else {
-            predictionArea.innerHTML = '<div style="padding: 10px; color: #666;">目前無嚴選版路處於追蹤期內。</div>';
+            predictionArea.innerHTML = '<div style="padding: 10px; color: #666;">目前無版路處於追蹤期內。</div>';
         }
 
         results.reverse();
@@ -280,10 +280,10 @@
         let hitRateTotal = stats.total > 0 ? (((stats.hit13 + stats.hit46) / stats.total) * 100).toFixed(1) : 0;
         
         summaryArea.innerHTML = `
-            <div style="width: 100%;"><strong>勝率回測 (每天最多出2組牌)：</strong> 共發布 ${stats.total} 組牌</div>
-            <div style="color: var(--track-1-3-border);"><span>● 1~3期內極速命中：</span> ${stats.hit13} 組 (佔 ${hitRate13}%)</div>
+            <div style="width: 100%;"><strong>勝率回測：</strong> 共發布 ${stats.total} 組牌</div>
+            <div style="color: var(--track-1-3-border);"><span>● 1~3期內命中：</span> ${stats.hit13} 組 (佔 ${hitRate13}%)</div>
             <div style="color: var(--track-4-6-border);"><span>● 4~6期內命中：</span> ${stats.hit46} 組</div>
-            <div><span>● 總體不敗率 (6期內開出)：</span> ${hitRateTotal}%</div>
+            <div><span>● 6期內開出：</span> ${hitRateTotal}%</div>
         `;
     }
 </script>
