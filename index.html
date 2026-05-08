@@ -277,8 +277,8 @@
         let totalHits = stats.hit13 + stats.hit46;
         summaryArea.innerHTML = `
             <div style="width: 100%;"><strong>回測統計：</strong> 共產生 ${stats.total} 組牌</div>
-            <div style="color: var(--track-1-3-border);"><span>● 1~3期命中：</span> ${stats.hit13} 組</div>
-            <div style="color: var(--track-4-6-border);"><span>● 4~6期命中：</span> ${stats.hit46} 組</div>
+            <div style="color: var(--track-1-3-border);"><span>● 1~3期內命中：</span> ${stats.hit13} 組</div>
+            <div style="color: var(--track-4-6-border);"><span>● 4~6期內命中：</span> ${stats.hit46} 組</div>
             <div><span>● 總命中率：</span> ${stats.total > 0 ? ((totalHits/stats.total)*100).toFixed(1) : 0}%</div>
         `;
     }
