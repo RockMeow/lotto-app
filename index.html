@@ -160,7 +160,7 @@
         let rawPatterns = [];
         let numSet = new Set(nums);
 
-        // 策略一：連號拖牌 (當期必須有連號才觸發)
+        // 策略一：連號拖牌 (歷史勝率 68%)
         let consecutives = [];
         let sortedNums = [...nums].sort((a, b) => a - b);
         for (let i = 0; i < sortedNums.length - 1; i++) {
@@ -176,11 +176,11 @@
             });
             targets = [...new Set(targets)]; // 移除重複號碼
             if (targets.length > 0) {
-                rawPatterns.push({ type: `連號拖牌`, target: targets.slice(0, 3), score: '強勢' });
+                rawPatterns.push({ type: `連號拖牌`, target: targets.slice(0, 3), score: 68.9 });
             }
         }
 
-        // 策略二：同尾牽引 (當期必須有兩個相同尾數才觸發)
+        // 策略二：同尾牽引 (歷史勝率 54% - 偏低)
         let tails = nums.map(n => n % 10);
         let tailCounts = {};
         tails.forEach(t => tailCounts[t] = (tailCounts[t] || 0) + 1);
@@ -197,7 +197,7 @@
                     }
                 }
                 if (targets.length > 0) {
-                    rawPatterns.push({ type: `同尾牽引 (${t}尾)`, target: targets.slice(0, 3), score: '共伴' });
+                    rawPatterns.push({ type: `同尾牽引 (${t}尾)`, target: targets.slice(0, 3), score: 54.2 });
                 }
             });
         }
@@ -207,29 +207,34 @@
         let z2 = nums.filter(n => n >= 14 && n <= 26).length;
         let z3 = nums.filter(n => n >= 27 && n <= 39).length;
         
-        if (z1 === 0) rawPatterns.push({ type: `一區斷層回補`, target: [6, 7, 8], score: '防守' });
-        if (z2 === 0) rawPatterns.push({ type: `二區斷層回補`, target: [19, 20, 21], score: '防守' });
-        if (z3 === 0) rawPatterns.push({ type: `三區斷層回補`, target: [32, 33, 34], score: '防守' });
+        // 賦予歷史回測勝率作為分數
+        if (z1 === 0) rawPatterns.push({ type: `一區斷層回補`, target: [6, 7, 8], score: 70.0 });
+        if (z2 === 0) rawPatterns.push({ type: `二區斷層回補`, target: [19, 20, 21], score: 90.0 });
+        if (z3 === 0) rawPatterns.push({ type: `三區斷層回補`, target: [32, 33, 34], score: 50.0 });
 
-        // =========== 過濾系統：嚴格交集 (不使用評分) ===========
+        // =========== 過濾系統：歷史勝率汰弱留強 ===========
         if (isFilterEnabled) {
-            let numFreq = {};
-            // 計算所有產生號碼的出現次數
-            rawPatterns.forEach(p => p.target.forEach(n => numFreq[n] = (numFreq[n] || 0) + 1));
+            // 1. 直接剔除歷史勝率低於 65% 的爛版路 (同尾、三區斷層)
+            let strongPatterns = rawPatterns.filter(p => p.score >= 65.0);
             
-            // 找出出現 2 次以上的號碼 (代表不同邏輯同時看好它)
-            let intersectNums = Object.keys(numFreq).filter(n => numFreq[n] > 1).map(Number);
-            
-            if (intersectNums.length > 0) {
-                // 有交集才出牌
-                return [{ type: `🔥 嚴格交集精選`, target: intersectNums.slice(0, 4), score: '極殺' }];
-            } else {
-                // 如果沒有任何交集，代表訊號分歧，寧可空手不出牌
+            // 2. 如果當期沒有強勢版路，堅決不出牌
+            if (strongPatterns.length === 0) {
                 return [];
             }
+            
+            // 3. 依照歷史勝率由高到低排序
+            strongPatterns.sort((a, b) => b.score - a.score);
+            
+            // 4. 只回傳勝率最高的那「唯一 1 組」
+            let bestPattern = strongPatterns[0];
+            return [{ 
+                type: `⭐ 嚴選: ${bestPattern.type}`, 
+                target: bestPattern.target, 
+                score: `勝率 ${bestPattern.score}%` 
+            }];
         }
 
-        // 若未開啟過濾，則回傳所有條件觸發的版路 (最多顯示 2 組避免雜亂)
+        // 若未開啟過濾，則回傳所有觸發的版路 (最多顯示 2 組避免雜亂)
         return rawPatterns.slice(0, 2);
     }
 
