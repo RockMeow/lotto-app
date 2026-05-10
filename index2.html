@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三期牌分析系統</title>
+    <title>三期牌</title>
     <style>
         :root {
             --primary-color: #1a237e;
@@ -15,29 +15,59 @@
             --hit-1-3-text: #2e7d32;
             --track-1-3-bg: #fff8e1;
             --track-1-3-border: #f57c00;
+            --fail-bg: #fafafa;
+            --fail-text: #9e9e9e;
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-color); color: #333; line-height: 1.5; padding: 15px; }
         .container { max-width: 1000px; margin: 0 auto; background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
         h2 { font-size: 1.4rem; margin-bottom: 15px; border-bottom: 3px solid var(--primary-color); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        
         .ai-status { display: flex; align-items: center; gap: 10px; }
         .ai-badge { background: #ff1744; color: white; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 23, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0); } }
+
         .controls { background: #e8eaf6; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c5cae9; }
+        
         select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); margin-top: 8px; margin-bottom: 15px; font-size: 1rem; background-color: #fff; cursor: pointer; }
-        button { width: 100%; padding: 14px; background-color: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1.1rem; font-weight: bold; transition: 0.2s; }
-        button:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+        
         #predictionArea { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
         .pred-card { padding: 15px; border-radius: 8px; width: calc(50% - 7.5px); background: var(--card-bg); box-shadow: 0 2px 6px rgba(0,0,0,0.05); position: relative; }
-        .nums-highlight { font-size: 1.4em; font-weight: bold; letter-spacing: 2px; color: var(--track-1-3-border); }
+        .pred-card h3 { font-size: 1.1rem; margin-bottom: 8px; color: #424242; }
+        .nums-highlight { font-size: 1.4em; font-weight: bold; letter-spacing: 2px; }
         .score-badge { position: absolute; top: 15px; right: 15px; background: #3949ab; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold; }
+
         .t1-3 { border-left: 6px solid var(--track-1-3-border); background-color: var(--track-1-3-bg); }
+        .t1-3 .nums-highlight { color: var(--track-1-3-border); }
+
         .summary { background: #e8eaf6; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 1rem; display: flex; gap: 20px; flex-wrap: wrap; border: 1px solid #c5cae9; }
-        .table-container { width: 100%; overflow-x: auto; border-radius: 8px; }
+        .summary span { font-weight: bold; }
+
+        .table-container { width: 100%; overflow-x: auto; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: #fff; }
-        th, td { border: 1px solid var(--border-color); padding: 12px 8px; text-align: center; }
-        th { background-color: var(--primary-color); color: white; }
+        th, td { border: 1px solid var(--border-color); padding: 12px 8px; text-align: center; vertical-align: middle; line-height: 1.8; }
+        th { background-color: var(--primary-color); color: white; position: sticky; top: 0; white-space: nowrap; }
+        
+        #resultTable td { white-space: normal !important; word-break: break-word; }
+        .hit-item { display: block; margin-bottom: 8px; padding: 2px 0; min-height: 1.5em; }
+        .hit-item:last-child { margin-bottom: 0; }
+        tr:nth-child(even) { background-color: #fcfcfc; }
         .row-hit-1-3 { color: var(--hit-1-3-text); font-weight: bold; }
+
+        @media screen and (max-width: 768px) {
+            .pred-card { width: 100%; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { display: none; }
+            tr { border: 1px solid var(--border-color); margin-bottom: 15px; border-radius: 8px; overflow: hidden; }
+            td { text-align: right; padding-left: 45%; position: relative; border-bottom: 1px solid #f0f0f0; min-height: 40px; }
+            td:before { position: absolute; left: 12px; width: 40%; text-align: left; font-weight: bold; color: #666; }
+            td:nth-of-type(1):before { content: "開獎日期"; }
+            td:nth-of-type(2):before { content: "開出號碼"; }
+            td:nth-of-type(3):before { content: "命中版路 (觸發日)"; }
+            td:nth-of-type(4):before { content: "命中號碼"; }
+            td:nth-of-type(5):before { content: "狀態"; }
+        }
     </style>
 </head>
 <body>
@@ -60,7 +90,7 @@
             <option value="Fan_history_2026.csv">天天樂</option>
             <option value="Ghana_history_2026.csv">迦納彩</option>
         </select>
-        <button onclick="processData()">執行計算</button>
+        <label style="display:block;"><strong>資料狀態：</strong> <span id="dataStatus" style="color:#1a237e; font-weight:bold;">讀取中...</span></label>
     </div>
 
     <h2 style="font-size: 1.2rem;">目前追蹤中</h2>
@@ -69,7 +99,7 @@
 
     <h2 style="font-size: 1.2rem;">回測紀錄</h2>
     <div class="table-container">
-        <table>
+        <table id="resultTable">
             <thead>
                 <tr>
                     <th>日期</th>
@@ -88,6 +118,9 @@
     let parsedData = [];
     let isFilterEnabled = false;
 
+    function fNum(n) { return String(n).padStart(2, '0'); }
+    function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
+
     function toggleFilter() {
         isFilterEnabled = !isFilterEnabled;
         document.getElementById('toggleFilter').innerText = isFilterEnabled ? "過濾 ON" : "過濾 OFF";
@@ -98,10 +131,8 @@
     function getSmartPatterns(nums, fileName) {
         let rawPatterns = [];
         let numSet = new Set(nums);
-        // 自動判斷球數上限 (49 或 39)
         let maxNum = (fileName.includes('649') || fileName.includes('Six')) ? 49 : 39;
 
-        // 1. 連號拖牌
         let sorted = [...nums].sort((a,b)=>a-b);
         let consec = [];
         for(let i=0; i<sorted.length-1; i++) if(sorted[i+1]-sorted[i]===1) consec.push(sorted[i+1]);
@@ -109,10 +140,9 @@
             let targets = [];
             consec.forEach(c => { if(c+1 <= maxNum) targets.push(c+1); if(c+2 <= maxNum) targets.push(c+2); });
             targets = [...new Set(targets)];
-            rawPatterns.push({ type: '連號拖牌', target: targets.slice(0,3), score: 68 });
+            rawPatterns.push({ type: '連號拖牌', target: targets.slice(0,3), score: 68.9 });
         }
 
-        // 2. 同尾牽引
         let tails = nums.map(n => n % 10);
         let tailCounts = {};
         tails.forEach(t => tailCounts[t] = (tailCounts[t]||0)+1);
@@ -122,27 +152,28 @@
                 let cand = i*10 + parseInt(t);
                 if(cand > 0 && cand <= maxNum && !numSet.has(cand)) targets.push(cand);
             }
-            rawPatterns.push({ type: `同尾牽引(${t}尾)`, target: targets.slice(0,3), score: 67 });
+            rawPatterns.push({ type: `同尾牽引(${t}尾)`, target: targets.slice(0,3), score: 67.0 });
         });
 
-        // 3. 斷區回補
         let zLimit = Math.floor(maxNum / 3);
         let z1 = nums.filter(n => n <= zLimit).length;
         let z2 = nums.filter(n => n > zLimit && n <= zLimit*2).length;
         let z3 = nums.filter(n => n > zLimit*2).length;
-        if(z1===0) rawPatterns.push({ type: '一區斷層回補', target: [Math.floor(zLimit/2)], score: 70 });
-        if(z2===0) rawPatterns.push({ type: '二區斷層回補', target: [Math.floor(zLimit*1.5)], score: 85 });
-        if(z3===0) rawPatterns.push({ type: '三區斷層回補', target: [Math.floor(zLimit*2.5)], score: 50 });
+        if(z1===0) rawPatterns.push({ type: '一區斷層回補', target: [Math.floor(zLimit/2)], score: 70.0 });
+        if(z2===0) rawPatterns.push({ type: '二區斷層回補', target: [Math.floor(zLimit*1.5)], score: 85.0 });
+        if(z3===0) rawPatterns.push({ type: '三區斷層回補', target: [Math.floor(zLimit*2.5)], score: 50.0 });
 
         if (isFilterEnabled) {
-            let strong = rawPatterns.filter(p => p.score >= 65).sort((a,b)=>b.score-a.score);
+            let strong = rawPatterns.filter(p => p.score >= 65.0).sort((a,b)=>b.score-a.score);
             return strong.length > 0 ? [strong[0]] : [];
         }
-        return rawPatterns.slice(0,2);
+        return rawPatterns.slice(0, 2);
     }
 
     async function processData() {
         const fileName = document.getElementById('csvSelect').value;
+        const statusEl = document.getElementById('dataStatus');
+        statusEl.innerText = "讀取中...";
         try {
             const res = await fetch(fileName);
             const text = await res.text();
@@ -153,8 +184,9 @@
                 if(cols.length < 6 || isNaN(parseInt(cols[1]))) return;
                 parsedData.push({ date: cols[0], nums: cols.slice(1,7).map(n => parseInt(n)).filter(n => !isNaN(n)) });
             });
+            statusEl.innerText = "✅ 已成功讀取";
             runAnalysis();
-        } catch(e) { alert("讀取失敗"); }
+        } catch(e) { statusEl.innerText = "❌ 讀取失敗"; }
     }
 
     function runAnalysis() {
@@ -171,36 +203,37 @@
                 for (let j = 1; j <= 3; j++) {
                     if (i + j < parsedData.length && intersect(p.target, parsedData[i+j].nums).length > 0) {
                         stats.hit++;
-                        dailyResults[i+j].hits.push({ type: p.type, date: d=parsedData[i].date, n: intersect(p.target, parsedData[i+j].nums), p: j });
+                        dailyResults[i+j].hits.push({ type: p.type, date: parsedData[i].date, n: intersect(p.target, parsedData[i+j].nums), p: j });
                         found = true; break;
                     }
                 }
                 if (!found && parsedData.length - 1 - i < 3) 
-                    tracking.push({ type: p.type, target: p.target.join(','), date: parsedData[i].date, age: parsedData.length-i });
+                    tracking.push({ type: p.type, target: p.target.map(fNum).join(','), date: parsedData[i].date, age: parsedData.length-i, score: p.score });
             });
         }
 
-        document.getElementById('predictionArea').innerHTML = tracking.map(t => `
+        tracking.reverse();
+        document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => `
             <div class="pred-card t1-3">
+                <div class="score-badge">勝率: ${t.score}%</div>
                 <h3>${t.type}</h3>
                 <p>觸發：${t.date} (第 ${t.age} 期)</p>
                 <p class="nums-highlight">${t.target}</p>
-            </div>`).join('');
+            </div>`).join('') : '<div style="padding: 10px; color: #666;">無追蹤中版路。</div>';
 
         document.getElementById('resultBody').innerHTML = dailyResults.slice().reverse().filter(d=>d.hits.length>0).map(d => `
             <tr>
                 <td>${d.date}</td>
-                <td>${d.nums.join(',')}</td>
-                <td>${d.hits.map(h=>h.type+'('+h.date+')').join('<br>')}</td>
-                <td>${d.hits.map(h=>h.n.join(',')).join('<br>')}</td>
-                <td class="row-hit-1-3">${d.hits.map(h=>'1~3期內命中('+h.p+')').join('<br>')}</td>
+                <td>${d.nums.map(fNum).join(',')}</td>
+                <td style="text-align: right; padding-right: 20px;">${d.hits.map(h=>h.type+' ('+h.date+')').join('<br>')}</td>
+                <td>${d.hits.map(h=>h.n.map(fNum).join(',')).join('<br>')}</td>
+                <td class="row-hit-1-3">${d.hits.map(h=>'1~3期內命中 ('+h.p+')').join('<br>')}</td>
             </tr>`).join('');
 
-        document.getElementById('summaryArea').style.display = 'block';
+        document.getElementById('summaryArea').style.display = 'flex';
         document.getElementById('summaryArea').innerHTML = `<strong>回測統計：</strong> 總計產生 ${stats.total} 組，命中 ${stats.hit} 組，命中率 ${(stats.hit/stats.total*100).toFixed(1)}%`;
     }
 
-    function intersect(a, b) { return a.filter(v => b.includes(v)); }
     window.onload = processData;
 </script>
 </body>
