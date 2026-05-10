@@ -15,6 +15,10 @@
             --hit-1-3-text: #2e7d32;
             --track-1-3-bg: #fff8e1;
             --track-1-3-border: #f57c00;
+            --hit-4-6-bg: #e3f2fd;
+            --hit-4-6-text: #1565c0;
+            --track-4-6-bg: #f3e5f5;
+            --track-4-6-border: #8e24aa;
             --fail-bg: #fafafa;
             --fail-text: #9e9e9e;
         }
@@ -44,6 +48,8 @@
 
         .t1-3 { border-left: 6px solid var(--track-1-3-border); background-color: var(--track-1-3-bg); }
         .t1-3 .nums-highlight { color: var(--track-1-3-border); }
+        .t4-6 { border-left: 6px solid var(--track-4-6-border); background-color: var(--track-4-6-bg); }
+        .t4-6 .nums-highlight { color: var(--track-4-6-border); }
 
         .summary { background: #e8eaf6; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 1rem; display: flex; gap: 20px; flex-wrap: wrap; border: 1px solid #c5cae9; }
         .summary span { font-weight: bold; }
@@ -68,6 +74,7 @@
         tr:nth-child(even) { background-color: #fcfcfc; }
 
         .row-hit-1-3 { color: var(--hit-1-3-text); font-weight: bold; }
+        .row-hit-4-6 { color: var(--hit-4-6-text); font-weight: bold; }
 
         @media screen and (max-width: 768px) {
             .pred-card { width: 100%; }
@@ -104,6 +111,7 @@
         </select>
         
         <label style="display:block;"><strong>資料狀態：</strong> <span id="dataStatus" style="color:#1a237e; font-weight:bold;">等待讀取...</span></label>
+        <button onclick="processData()" style="margin-top: 15px;">執行計算</button>
     </div>
 
     <h2 style="font-size: 1.2rem; margin-top: 25px;">目前追蹤中</h2>
@@ -133,6 +141,12 @@
 </div>
 
 <script>
+    const modGroups = {
+        1: [1, 7, 13, 19, 25, 31, 37], 2: [2, 8, 14, 20, 26, 32, 38],
+        3: [3, 9, 15, 21, 27, 33, 39], 4: [4, 10, 16, 22, 28, 34],
+        5: [5, 11, 17, 23, 29, 35], 0: [6, 12, 18, 24, 30, 36]
+    };
+
     let parsedData = [];
     let isFilterEnabled = false;
 
@@ -157,84 +171,36 @@
 
     function getSmartPatterns(nums, currentIndex, allData) {
         let rawPatterns = [];
-        let numSet = new Set(nums);
+        nums.forEach(n => {
+            if (n >= 36) rawPatterns.push({ type: `歸零大號 (${n})`, target: [1, 2, 3], score: 20 });
+            else if (n + 3 <= 39) rawPatterns.push({ type: `順勢連號 (${n})`, target: [n + 1, n + 2, n + 3], score: 10 });
+        });
 
-        // 策略一：連號拖牌 (歷史勝率 68%)
-        let consecutives = [];
-        let sortedNums = [...nums].sort((a, b) => a - b);
-        for (let i = 0; i < sortedNums.length - 1; i++) {
-            if (sortedNums[i + 1] - sortedNums[i] === 1) {
-                consecutives.push(sortedNums[i + 1]);
+        let mods = new Set(nums.map(n => n % 6));
+        [0, 1, 2, 3, 4, 5].forEach(m => {
+            if (!mods.has(m)) {
+                let g = modGroups[m];
+                if (g.length >= 3) rawPatterns.push({ type: `漏牌補位 (餘${m})`, target: g.slice(0, 3), score: 15 });
+                if (g.length >= 6) rawPatterns.push({ type: `漏牌補位 (餘${m})`, target: g.slice(3, 6), score: 12 });
             }
-        }
-        if (consecutives.length > 0) {
-            let targets = [];
-            consecutives.forEach(c => {
-                if (c + 1 <= 39) targets.push(c + 1);
-                if (c + 2 <= 39) targets.push(c + 2);
-            });
-            targets = [...new Set(targets)]; // 移除重複號碼
-            if (targets.length > 0) {
-                rawPatterns.push({ type: `連號拖牌`, target: targets.slice(0, 3), score: 68.9 });
-            }
-        }
+        });
 
-        // 策略二：同尾牽引 (歷史勝率 54% - 偏低)
-        let tails = nums.map(n => n % 10);
-        let tailCounts = {};
-        tails.forEach(t => tailCounts[t] = (tailCounts[t] || 0) + 1);
-        let doubleTails = Object.keys(tailCounts).filter(t => tailCounts[t] > 1).map(Number);
-        
-        if (doubleTails.length > 0) {
-            doubleTails.forEach(t => {
-                let targets = [];
-                // 產生該尾數的 4 個可能號碼 (如 4尾 -> 4, 14, 24, 34)
-                for (let i = 0; i <= 3; i++) {
-                    let cand = i * 10 + t;
-                    if (cand > 0 && cand <= 39 && !numSet.has(cand)) {
-                        targets.push(cand);
-                    }
-                }
-                if (targets.length > 0) {
-                    rawPatterns.push({ type: `同尾牽引 (${t}尾)`, target: targets.slice(0, 3), score: 54.2 });
-                }
-            });
-        }
-
-        // 策略三：斷區回補 (將版面分為三區，若某區掛零則預測回補)
-        let z1 = nums.filter(n => n >= 1 && n <= 13).length;
-        let z2 = nums.filter(n => n >= 14 && n <= 26).length;
-        let z3 = nums.filter(n => n >= 27 && n <= 39).length;
-        
-        // 賦予歷史回測勝率作為分數
-        if (z1 === 0) rawPatterns.push({ type: `一區斷層回補`, target: [6, 7, 8], score: 70.0 });
-        if (z2 === 0) rawPatterns.push({ type: `二區斷層回補`, target: [19, 20, 21], score: 90.0 });
-        if (z3 === 0) rawPatterns.push({ type: `三區斷層回補`, target: [32, 33, 34], score: 50.0 });
-
-        // =========== 過濾系統：歷史勝率汰弱留強 ===========
         if (isFilterEnabled) {
-            // 1. 直接剔除歷史勝率低於 65% 的爛版路 (同尾、三區斷層)
-            let strongPatterns = rawPatterns.filter(p => p.score >= 65.0);
-            
-            // 2. 如果當期沒有強勢版路，堅決不出牌
-            if (strongPatterns.length === 0) {
-                return [];
-            }
-            
-            // 3. 依照歷史勝率由高到低排序
-            strongPatterns.sort((a, b) => b.score - a.score);
-            
-            // 4. 只回傳勝率最高的那「唯一 1 組」
-            let bestPattern = strongPatterns[0];
-            return [{ 
-                type: `⭐ ${bestPattern.type}`, 
-                target: bestPattern.target, 
-                score: `${bestPattern.score}%` 
-            }];
+            let numFreq = {};
+            rawPatterns.forEach(p => p.target.forEach(n => numFreq[n] = (numFreq[n] || 0) + 1));
+            rawPatterns.forEach(p => {
+                p.target.forEach(n => { if (numFreq[n] > 1) p.score += 25; });
+                let missCount = 0;
+                for(let j = currentIndex - 1; j >= 0 && j >= currentIndex - 15; j--) {
+                    if(intersect(p.target, allData[j].nums).length > 0) break;
+                    missCount++;
+                }
+                p.score += (missCount * 3);
+            });
+            rawPatterns.sort((a, b) => b.score - a.score);
+            return rawPatterns.slice(0, 2);
         }
-
-        // 若未開啟過濾，則回傳所有觸發的版路 (最多顯示 2 組避免雜亂)
-        return rawPatterns.slice(0, 2);
+        return rawPatterns;
     }
 
     async function processData() {
@@ -275,18 +241,18 @@
 
         let dailyResults = parsedData.map(d => ({ date: d.date, actual: d.nums, hits: [] }));
         let currentlyTracking = [];
-        let stats = { total: 0, hit13: 0 };
+        let stats = { total: 0, hit13: 0, hit46: 0 };
 
         for (let i = 0; i < parsedData.length; i++) {
             let patterns = getSmartPatterns(parsedData[i].nums, i, parsedData);
             patterns.forEach(p => {
                 stats.total++;
                 let foundHit = false;
-                for (let j = 1; j <= 3; j++) {
+                for (let j = 1; j <= 6; j++) {
                     if (i + j < parsedData.length) {
                         let inter = intersect(p.target, parsedData[i + j].nums);
                         if (inter.length > 0) {
-                            stats.hit13++;
+                            if (j <= 3) stats.hit13++; else stats.hit46++;
                             dailyResults[i + j].hits.push({
                                 triggerDate: parsedData[i].date,
                                 type: p.type,
@@ -299,10 +265,10 @@
                     }
                 }
                 let age = parsedData.length - 1 - i;
-                if (!foundHit && age < 3) {
+                if (!foundHit && age < 6) {
                     currentlyTracking.push({
                         triggerDate: parsedData[i].date, age: age + 1, type: p.type, targetStr: p.target.map(fNum).join(', '),
-                        cardClass: 't1-3', score: p.score || '-'
+                        cardClass: age < 3 ? 't1-3' : 't4-6', score: p.score || '-'
                     });
                 }
             });
@@ -311,7 +277,7 @@
         currentlyTracking.reverse();
         predictionArea.innerHTML = currentlyTracking.length > 0 ? currentlyTracking.map(t => `
             <div class="pred-card ${t.cardClass}">
-                ${isFilterEnabled ? `<div class="score-badge">${t.score}</div>` : `<div class="score-badge">${t.score}</div>`}
+                ${isFilterEnabled ? `<div class="score-badge">評分: ${t.score}</div>` : ''}
                 <h3>${t.type}</h3>
                 <p>觸發日期：${t.triggerDate} (第 ${t.age} 期)</p>
                 <p>預測號碼：<span class="nums-highlight">${t.targetStr}</span></p>
@@ -322,8 +288,8 @@
             let triggerInfo = d.hits.map(h => `<div class="hit-item">${h.type} (${h.triggerDate})</div>`).join('');
             let hitNumsInfo = d.hits.map(h => `<div class="hit-item">${h.hitNums.map(fNum).join(', ')}</div>`).join('');
             let statusInfo = d.hits.map(h => {
-                let text = `1~3期內命中 (${h.period})`;
-                let colorClass = 'row-hit-1-3';
+                let text = h.period <= 3 ? `1~3期內命中 (${h.period})` : `4~6期內命中 (${h.period})`;
+                let colorClass = h.period <= 3 ? 'row-hit-1-3' : 'row-hit-4-6';
                 return `<div class="hit-item ${colorClass}">${text}</div>`;
             }).join('');
 
@@ -340,13 +306,16 @@
         resultBody.innerHTML = hitTableHtml || '<tr><td colspan="5" style="text-align:center;">尚無命中紀錄</td></tr>';
 
         summaryArea.style.display = 'flex';
-        let totalHits = stats.hit13;
+        let totalHits = stats.hit13 + stats.hit46;
         let rate13 = stats.total > 0 ? ((stats.hit13 / stats.total) * 100).toFixed(1) : 0;
+        let rate46 = stats.total > 0 ? ((stats.hit46 / stats.total) * 100).toFixed(1) : 0;
         let rateTotal = stats.total > 0 ? ((totalHits / stats.total) * 100).toFixed(1) : 0;
 
         summaryArea.innerHTML = `
             <div style="width: 100%;"><strong>回測統計：</strong> 共產生 ${stats.total} 組號碼</div>
             <div style="color: var(--track-1-3-border);"><span>● 1~3期內命中：</span> ${stats.hit13} 組 (${rate13}%)</div>
+            <div style="color: var(--track-4-6-border);"><span>● 4~6期內命中：</span> ${stats.hit46} 組 (${rate46}%)</div>
+            <div><span>● 總命中率：</span> ${rateTotal}%</div>
         `;
     }
 </script>
