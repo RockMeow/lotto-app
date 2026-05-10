@@ -2,116 +2,97 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三期牌</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>三期牌分析系統</title>
     <style>
         :root {
-            --primary-color: #1a237e;
-            --primary-hover: #283593;
-            --bg-color: #f0f2f5;
-            --card-bg: #fff;
-            --border-color: #e0e0e0;
-            --hit-1-3-bg: #e8f5e9;
-            --hit-1-3-text: #2e7d32;
-            --track-1-3-bg: #fff8e1;
-            --track-1-3-border: #f57c00;
-            --fail-bg: #fafafa;
-            --fail-text: #9e9e9e;
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #2d3436;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-color); color: #333; line-height: 1.5; padding: 15px; }
-        .container { max-width: 1000px; margin: 0 auto; background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        h2 { font-size: 1.4rem; margin-bottom: 15px; border-bottom: 3px solid var(--primary-color); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        
-        .ai-status { display: flex; align-items: center; gap: 10px; }
-        .ai-badge { background: #ff1744; color: white; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 23, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, system-ui, sans-serif; background-color: var(--bg); color: var(--text); padding: 10px; line-height: 1.4; }
 
-        .controls { background: #e8eaf6; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c5cae9; }
-        
-        select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); margin-top: 8px; margin-bottom: 15px; font-size: 1rem; background-color: #fff; cursor: pointer; }
-        
-        #predictionArea { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
-        .pred-card { padding: 15px; border-radius: 8px; width: calc(50% - 7.5px); background: var(--card-bg); box-shadow: 0 2px 6px rgba(0,0,0,0.05); position: relative; }
-        .pred-card h3 { font-size: 1.1rem; margin-bottom: 8px; color: #424242; }
-        .nums-highlight { font-size: 1.4em; font-weight: bold; letter-spacing: 2px; }
-        .score-badge { position: absolute; top: 15px; right: 15px; background: #3949ab; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold; }
+        .container { max-width: 600px; margin: 0 auto; }
 
-        .t1-3 { border-left: 6px solid var(--track-1-3-border); background-color: var(--track-1-3-bg); }
-        .t1-3 .nums-highlight { color: var(--track-1-3-border); }
+        /* Header Area */
+        .header { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
 
-        .summary { background: #e8eaf6; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 1rem; display: flex; gap: 20px; flex-wrap: wrap; border: 1px solid #c5cae9; }
-        .summary span { font-weight: bold; }
+        .toggle-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; transition: 0.3s; }
+        .toggle-on { background: var(--success); border-color: var(--success); }
 
-        .table-container { width: 100%; overflow-x: auto; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: #fff; }
-        th, td { border: 1px solid var(--border-color); padding: 12px 8px; text-align: center; vertical-align: middle; line-height: 1.8; }
-        th { background-color: var(--primary-color); color: white; position: sticky; top: 0; white-space: nowrap; }
-        
-        #resultTable td { white-space: normal !important; word-break: break-word; }
-        .hit-item { display: block; margin-bottom: 8px; padding: 2px 0; min-height: 1.5em; }
-        .hit-item:last-child { margin-bottom: 0; }
-        tr:nth-child(even) { background-color: #fcfcfc; }
-        .row-hit-1-3 { color: var(--hit-1-3-text); font-weight: bold; }
+        /* Controls */
+        .selector-box { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
+        select { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #dfe6e9; font-size: 1rem; appearance: none; background: #fff; margin-bottom: 8px; }
+        .status-bar { font-size: 0.85rem; color: #636e72; display: flex; align-items: center; gap: 5px; }
 
-        @media screen and (max-width: 768px) {
-            .pred-card { width: 100%; }
-            table, thead, tbody, th, td, tr { display: block; }
-            thead tr { display: none; }
-            tr { border: 1px solid var(--border-color); margin-bottom: 15px; border-radius: 8px; overflow: hidden; }
-            td { text-align: right; padding-left: 45%; position: relative; border-bottom: 1px solid #f0f0f0; min-height: 40px; }
-            td:before { position: absolute; left: 12px; width: 40%; text-align: left; font-weight: bold; color: #666; }
-            td:nth-of-type(1):before { content: "開獎日期"; }
-            td:nth-of-type(2):before { content: "開出號碼"; }
-            td:nth-of-type(3):before { content: "命中版路 (觸發日)"; }
-            td:nth-of-type(4):before { content: "命中號碼"; }
-            td:nth-of-type(5):before { content: "狀態"; }
-        }
+        /* Prediction Cards */
+        .section-title { font-size: 1rem; font-weight: bold; margin: 15px 0 10px 5px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        #predictionArea { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
+        .pred-card { background: var(--card); padding: 15px; border-radius: 12px; border-left: 6px solid var(--warning); box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
+        .pred-card h3 { font-size: 0.95rem; margin-bottom: 5px; color: var(--primary); }
+        .pred-info { font-size: 0.8rem; color: #636e72; margin-bottom: 8px; }
+        .nums-highlight { font-size: 1.5rem; font-weight: 900; color: var(--warning); letter-spacing: 2px; display: block; margin-top: 5px; }
+        .score-tag { position: absolute; top: 0; right: 0; background: #dfe6e9; color: #2d3436; padding: 4px 10px; border-bottom-left-radius: 10px; font-size: 0.7rem; font-weight: bold; }
+
+        /* Summary Area */
+        .summary { background: #e1f5fe; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #b3e5fc; }
+
+        /* Result List (Mobile-optimized table replacement) */
+        .result-item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #eee; }
+        .res-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; border-bottom: 1px dashed #eee; padding-bottom: 8px; }
+        .res-date { font-weight: bold; color: var(--primary); }
+        .res-actual { font-family: monospace; font-size: 1rem; color: #2d3436; font-weight: bold; }
+        .hit-detail { background: #fdfaf0; padding: 8px; border-radius: 8px; margin-top: 8px; }
+        .hit-type { font-size: 0.85rem; font-weight: bold; color: #d35400; }
+        .hit-nums { color: var(--success); font-weight: 900; font-size: 1rem; }
+        .hit-status { font-size: 0.75rem; color: var(--success); font-weight: bold; margin-top: 3px; }
+
+        /* Animations */
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .loading { animation: pulse 1s infinite; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>
-        <span>三期牌分析系統</span>
-        <div class="ai-status">
-            <span id="aiBadge" class="ai-badge" style="display:none;">過濾中</span>
-            <div id="toggleFilter" class="toggle-btn" style="cursor:pointer; background:#fff; padding:4px 10px; border-radius:4px; border:1px solid #ccc;" onclick="toggleFilter()">過濾 OFF</div>
+    <div class="header">
+        <div class="header-top">
+            <h1>三期牌分析系統</h1>
+            <div id="toggleFilter" class="toggle-btn" onclick="toggleFilter()">過濾 OFF</div>
         </div>
-    </h2>
+        <div id="aiBadge" style="display:none; font-size: 0.7rem; color: #ffeb3b; font-weight: bold;">● AI 勝率精選模式已開啟</div>
+    </div>
     
-    <div class="controls">
-        <label><strong>選擇彩球類型：</strong></label>
+    <div class="selector-box">
         <select id="csvSelect" onchange="processData()">
-            <option value="539_history_2026.csv">今彩539</option>
-            <option value="649_history_2026.csv">大樂透</option>
-            <option value="Six_history_2026.csv">六合彩</option>
+            <option value="539_history_2026.csv">今彩 539</option>
+            <option value="649_history_2026.csv">大樂透 (6/49)</option>
+            <option value="Six_history_2026.csv">香港六合彩</option>
             <option value="Fan_history_2026.csv">天天樂</option>
             <option value="Ghana_history_2026.csv">迦納彩</option>
         </select>
-        <label style="display:block;"><strong>資料狀態：</strong> <span id="dataStatus" style="color:#1a237e; font-weight:bold;">讀取中...</span></label>
+        <div class="status-bar">
+            <span>資料狀態:</span>
+            <span id="dataStatus" style="font-weight: bold;">讀取中...</span>
+        </div>
     </div>
 
-    <h2 style="font-size: 1.2rem;">目前追蹤中</h2>
+    <div class="section-title">🕒 目前追蹤中</div>
     <div id="predictionArea"></div>
+    
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <h2 style="font-size: 1.2rem;">回測紀錄</h2>
-    <div class="table-container">
-        <table id="resultTable">
-            <thead>
-                <tr>
-                    <th>日期</th>
-                    <th>開獎號碼</th>
-                    <th>命中版路</th>
-                    <th>命中號碼</th>
-                    <th>狀態</th>
-                </tr>
-            </thead>
-            <tbody id="resultBody"></tbody>
-        </table>
-    </div>
+    <div class="section-title">📜 回測紀錄</div>
+    <div id="resultList"></div>
 </div>
 
 <script>
@@ -123,7 +104,9 @@
 
     function toggleFilter() {
         isFilterEnabled = !isFilterEnabled;
-        document.getElementById('toggleFilter').innerText = isFilterEnabled ? "過濾 ON" : "過濾 OFF";
+        const btn = document.getElementById('toggleFilter');
+        btn.innerText = isFilterEnabled ? "過濾 ON" : "過濾 OFF";
+        btn.className = isFilterEnabled ? "toggle-btn toggle-on" : "toggle-btn";
         document.getElementById('aiBadge').style.display = isFilterEnabled ? "block" : "none";
         if(parsedData.length > 0) runAnalysis();
     }
@@ -152,7 +135,7 @@
                 let cand = i*10 + parseInt(t);
                 if(cand > 0 && cand <= maxNum && !numSet.has(cand)) targets.push(cand);
             }
-            rawPatterns.push({ type: `同尾牽引(${t}尾)`, target: targets.slice(0,3), score: 67.0 });
+            rawPatterns.push({ type: `同尾牽引 (${t}尾)`, target: targets.slice(0,3), score: 67.0 });
         });
 
         let zLimit = Math.floor(maxNum / 3);
@@ -184,9 +167,9 @@
                 if(cols.length < 6 || isNaN(parseInt(cols[1]))) return;
                 parsedData.push({ date: cols[0], nums: cols.slice(1,7).map(n => parseInt(n)).filter(n => !isNaN(n)) });
             });
-            statusEl.innerText = "✅ 已成功讀取";
+            statusEl.innerText = "✅ 載入成功";
             runAnalysis();
-        } catch(e) { statusEl.innerText = "❌ 讀取失敗"; }
+        } catch(e) { statusEl.innerText = "❌ 檔案異常"; }
     }
 
     function runAnalysis() {
@@ -203,35 +186,43 @@
                 for (let j = 1; j <= 3; j++) {
                     if (i + j < parsedData.length && intersect(p.target, parsedData[i+j].nums).length > 0) {
                         stats.hit++;
-                        dailyResults[i+j].hits.push({ type: p.type, date: parsedData[i].date, n: intersect(p.target, parsedData[i+j].nums), p: j });
+                        dailyResults[i+j].hits.push({ type: p.type, triggerDate: parsedData[i].date, n: intersect(p.target, parsedData[i+j].nums), p: j });
                         found = true; break;
                     }
                 }
                 if (!found && parsedData.length - 1 - i < 3) 
-                    tracking.push({ type: p.type, target: p.target.map(fNum).join(','), date: parsedData[i].date, age: parsedData.length-i, score: p.score });
+                    tracking.push({ type: p.type, target: p.target.map(fNum).join(', '), date: parsedData[i].date, age: parsedData.length-i, score: p.score });
             });
         }
 
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => `
-            <div class="pred-card t1-3">
-                <div class="score-badge">勝率: ${t.score}%</div>
+            <div class="pred-card">
+                <div class="score-tag">${t.score}% 勝率</div>
                 <h3>${t.type}</h3>
-                <p>觸發：${t.date} (第 ${t.age} 期)</p>
-                <p class="nums-highlight">${t.target}</p>
-            </div>`).join('') : '<div style="padding: 10px; color: #666;">無追蹤中版路。</div>';
+                <div class="pred-info">觸發日: ${t.date} | 第 ${t.age} 期</div>
+                <span class="nums-highlight">${t.target}</span>
+            </div>`).join('') : '<div style="padding:20px; color:#999; text-align:center;">無追蹤版路</div>';
 
-        document.getElementById('resultBody').innerHTML = dailyResults.slice().reverse().filter(d=>d.hits.length>0).map(d => `
-            <tr>
-                <td>${d.date}</td>
-                <td>${d.nums.map(fNum).join(',')}</td>
-                <td style="text-align: right; padding-right: 20px;">${d.hits.map(h=>h.type+' ('+h.date+')').join('<br>')}</td>
-                <td>${d.hits.map(h=>h.n.map(fNum).join(',')).join('<br>')}</td>
-                <td class="row-hit-1-3">${d.hits.map(h=>'1~3期內命中 ('+h.p+')').join('<br>')}</td>
-            </tr>`).join('');
+        const listHtml = dailyResults.slice().reverse().filter(d=>d.hits.length>0).map(d => `
+            <div class="result-item">
+                <div class="res-header">
+                    <span class="res-date">${d.date}</span>
+                    <span class="res-actual">${d.nums.map(fNum).join(' ')}</span>
+                </div>
+                ${d.hits.map(h => `
+                    <div class="hit-detail">
+                        <div class="hit-type">${h.type} <span style="font-weight:normal;color:#999">(${h.triggerDate} 觸發)</span></div>
+                        <div class="hit-nums">命中: ${h.n.map(fNum).join(', ')}</div>
+                        <div class="hit-status">🎯 1~3期內命中 (第 ${h.p} 期)</div>
+                    </div>
+                `).join('')}
+            </div>`).join('');
+        
+        document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px;">尚無命中紀錄</div>';
 
-        document.getElementById('summaryArea').style.display = 'flex';
-        document.getElementById('summaryArea').innerHTML = `<strong>回測統計：</strong> 總計產生 ${stats.total} 組，命中 ${stats.hit} 組，命中率 ${(stats.hit/stats.total*100).toFixed(1)}%`;
+        document.getElementById('summaryArea').style.display = 'block';
+        document.getElementById('summaryArea').innerHTML = `💡 <b>統計：</b> 共產出 ${stats.total} 組，命中 ${stats.hit} 組，精準率 <b>${(stats.hit/stats.total*100).toFixed(1)}%</b>`;
     }
 
     window.onload = processData;
