@@ -227,7 +227,7 @@
             // 4. 只回傳勝率最高的那「唯一 1 組」
             let bestPattern = strongPatterns[0];
             return [{ 
-                type: `⭐ 嚴選: ${bestPattern.type}`, 
+                type: `⭐ ${bestPattern.type}`, 
                 target: bestPattern.target, 
                 score: `勝率 ${bestPattern.score}%` 
             }];
