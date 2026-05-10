@@ -134,12 +134,6 @@
 </div>
 
 <script>
-    const modGroups = {
-        1: [1, 7, 13, 19, 25, 31, 37], 2: [2, 8, 14, 20, 26, 32, 38],
-        3: [3, 9, 15, 21, 27, 33, 39], 4: [4, 10, 16, 22, 28, 34],
-        5: [5, 11, 17, 23, 29, 35], 0: [6, 12, 18, 24, 30, 36]
-    };
-
     let parsedData = [];
     let isFilterEnabled = false;
 
@@ -164,36 +158,79 @@
 
     function getSmartPatterns(nums, currentIndex, allData) {
         let rawPatterns = [];
-        nums.forEach(n => {
-            if (n >= 36) rawPatterns.push({ type: `歸零大號 (${n})`, target: [1, 2, 3], score: 20 });
-            else if (n + 3 <= 39) rawPatterns.push({ type: `順勢連號 (${n})`, target: [n + 1, n + 2, n + 3], score: 10 });
-        });
+        let numSet = new Set(nums);
 
-        let mods = new Set(nums.map(n => n % 6));
-        [0, 1, 2, 3, 4, 5].forEach(m => {
-            if (!mods.has(m)) {
-                let g = modGroups[m];
-                if (g.length >= 3) rawPatterns.push({ type: `漏牌補位 (餘${m})`, target: g.slice(0, 3), score: 15 });
-                if (g.length >= 6) rawPatterns.push({ type: `漏牌補位 (餘${m})`, target: g.slice(3, 6), score: 12 });
+        // 策略一：連號拖牌 (當期必須有連號才觸發)
+        let consecutives = [];
+        let sortedNums = [...nums].sort((a, b) => a - b);
+        for (let i = 0; i < sortedNums.length - 1; i++) {
+            if (sortedNums[i + 1] - sortedNums[i] === 1) {
+                consecutives.push(sortedNums[i + 1]);
             }
-        });
+        }
+        if (consecutives.length > 0) {
+            let targets = [];
+            consecutives.forEach(c => {
+                if (c + 1 <= 39) targets.push(c + 1);
+                if (c + 2 <= 39) targets.push(c + 2);
+            });
+            targets = [...new Set(targets)]; // 移除重複號碼
+            if (targets.length > 0) {
+                rawPatterns.push({ type: `連號拖牌`, target: targets.slice(0, 3), score: '強勢' });
+            }
+        }
 
+        // 策略二：同尾牽引 (當期必須有兩個相同尾數才觸發)
+        let tails = nums.map(n => n % 10);
+        let tailCounts = {};
+        tails.forEach(t => tailCounts[t] = (tailCounts[t] || 0) + 1);
+        let doubleTails = Object.keys(tailCounts).filter(t => tailCounts[t] > 1).map(Number);
+        
+        if (doubleTails.length > 0) {
+            doubleTails.forEach(t => {
+                let targets = [];
+                // 產生該尾數的 4 個可能號碼 (如 4尾 -> 4, 14, 24, 34)
+                for (let i = 0; i <= 3; i++) {
+                    let cand = i * 10 + t;
+                    if (cand > 0 && cand <= 39 && !numSet.has(cand)) {
+                        targets.push(cand);
+                    }
+                }
+                if (targets.length > 0) {
+                    rawPatterns.push({ type: `同尾牽引 (${t}尾)`, target: targets.slice(0, 3), score: '共伴' });
+                }
+            });
+        }
+
+        // 策略三：斷區回補 (將版面分為三區，若某區掛零則預測回補)
+        let z1 = nums.filter(n => n >= 1 && n <= 13).length;
+        let z2 = nums.filter(n => n >= 14 && n <= 26).length;
+        let z3 = nums.filter(n => n >= 27 && n <= 39).length;
+        
+        if (z1 === 0) rawPatterns.push({ type: `一區斷層回補`, target: [6, 7, 8], score: '防守' });
+        if (z2 === 0) rawPatterns.push({ type: `二區斷層回補`, target: [19, 20, 21], score: '防守' });
+        if (z3 === 0) rawPatterns.push({ type: `三區斷層回補`, target: [32, 33, 34], score: '防守' });
+
+        // =========== 過濾系統：嚴格交集 (不使用評分) ===========
         if (isFilterEnabled) {
             let numFreq = {};
+            // 計算所有產生號碼的出現次數
             rawPatterns.forEach(p => p.target.forEach(n => numFreq[n] = (numFreq[n] || 0) + 1));
-            rawPatterns.forEach(p => {
-                p.target.forEach(n => { if (numFreq[n] > 1) p.score += 25; });
-                let missCount = 0;
-                for(let j = currentIndex - 1; j >= 0 && j >= currentIndex - 15; j--) {
-                    if(intersect(p.target, allData[j].nums).length > 0) break;
-                    missCount++;
-                }
-                p.score += (missCount * 3);
-            });
-            rawPatterns.sort((a, b) => b.score - a.score);
-            return rawPatterns.slice(0, 2);
+            
+            // 找出出現 2 次以上的號碼 (代表不同邏輯同時看好它)
+            let intersectNums = Object.keys(numFreq).filter(n => numFreq[n] > 1).map(Number);
+            
+            if (intersectNums.length > 0) {
+                // 有交集才出牌
+                return [{ type: `🔥 嚴格交集精選`, target: intersectNums.slice(0, 4), score: '極殺' }];
+            } else {
+                // 如果沒有任何交集，代表訊號分歧，寧可空手不出牌
+                return [];
+            }
         }
-        return rawPatterns;
+
+        // 若未開啟過濾，則回傳所有條件觸發的版路 (最多顯示 2 組避免雜亂)
+        return rawPatterns.slice(0, 2);
     }
 
     async function processData() {
@@ -270,7 +307,7 @@
         currentlyTracking.reverse();
         predictionArea.innerHTML = currentlyTracking.length > 0 ? currentlyTracking.map(t => `
             <div class="pred-card ${t.cardClass}">
-                ${isFilterEnabled ? `<div class="score-badge">評分: ${t.score}</div>` : ''}
+                ${isFilterEnabled ? `<div class="score-badge">標籤: ${t.score}</div>` : `<div class="score-badge">標籤: ${t.score}</div>`}
                 <h3>${t.type}</h3>
                 <p>觸發日期：${t.triggerDate} (第 ${t.age} 期)</p>
                 <p>預測號碼：<span class="nums-highlight">${t.targetStr}</span></p>
