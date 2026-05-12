@@ -322,7 +322,7 @@
                 <div class="pred-info">觸發日: ${t.date} | 目前養到第 ${t.age} 期</div>
                 <span class="nums-highlight">${t.target}</span>
             </div>`
-        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">無追蹤版路，靜置觀望 ☕</div>';
+        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無追蹤版路，休息一期 ☕</div>';
 
         // 渲染回測紀錄 (只顯示有命中的日子)
         const listHtml = dailyResults.slice().reverse().filter(d=>d.hits.length>0).map(d => `
