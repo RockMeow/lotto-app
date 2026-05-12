@@ -1,6 +1,6 @@
 {
-  "name": "三期牌",
-  "short_name": "三期牌",
+  "name": "三期牌(2碼)",
+  "short_name": "三期牌(2碼)",
   "start_url": "./index2.html",
   "display": "standalone",
   "background_color": "#f1f5f9",
