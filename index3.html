@@ -25,11 +25,8 @@
 
         /* Header Area */
         .header { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .header-top { display: flex; justify-content: center; align-items: center; margin-bottom: 0; }
         h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
-
-        .toggle-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; transition: 0.3s; cursor: pointer; }
-        .toggle-on { background: var(--success); border-color: var(--success); }
 
         /* Controls */
         .selector-box { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
@@ -58,9 +55,12 @@
         .res-date { font-weight: bold; color: var(--primary); }
         .res-actual { font-family: monospace; font-size: 1rem; color: #2d3436; font-weight: bold; }
         .hit-detail { background: #fdfaf0; padding: 8px; border-radius: 8px; margin-top: 8px; }
+        .miss-detail { background: #f5f6f7; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #eee; }
         .hit-type { font-size: 0.85rem; font-weight: bold; color: #d35400; }
         .hit-nums { color: var(--success); font-weight: 900; font-size: 1rem; margin-top: 2px; }
+        .miss-nums { color: #b2bec3; font-weight: 900; font-size: 1rem; margin-top: 2px; }
         .hit-status { font-size: 0.75rem; color: var(--success); font-weight: bold; margin-top: 3px; }
+        .miss-status { font-size: 0.75rem; color: #636e72; font-weight: bold; margin-top: 3px; }
 
     </style>
 </head>
@@ -70,9 +70,7 @@
     <div class="header">
         <div class="header-top">
             <h1>三期牌分析系統(拖尾)</h1>
-            <div id="toggleFilter" class="toggle-btn" onclick="toggleFilter()">過濾 OFF</div>
         </div>
-        <div id="aiBadge" style="display:none; font-size: 0.75rem; color: #ffeb3b; font-weight: bold;">● 高勝率模式已開啟 (僅顯示勝率 ≥ 80%)</div>
     </div>
     
     <div class="selector-box">
@@ -94,31 +92,18 @@
     
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">📜 回測歷史命中紀錄</div>
+    <div class="section-title">📜 歷史觸發紀錄</div>
     <div id="resultList"></div>
 </div>
 
 <script>
     let parsedData = [];
-    let isFilterEnabled = false;
     let maxNum = 39;
-    
-    // 儲存每個雙尾/三尾在歷史中最高勝率的「目標拖尾」
     let rules = { double: {}, triple: {} }; 
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
-    function toggleFilter() {
-        isFilterEnabled = !isFilterEnabled;
-        const btn = document.getElementById('toggleFilter');
-        btn.innerText = isFilterEnabled ? "過濾 ON" : "過濾 OFF";
-        btn.className = isFilterEnabled ? "toggle-btn toggle-on" : "toggle-btn";
-        document.getElementById('aiBadge').style.display = isFilterEnabled ? "block" : "none";
-        if(parsedData.length > 0) runAnalysis();
-    }
-
-    // 產生鐵支號碼：實作「殺 0 頭」，只取 10 以上的號碼
     function getIronBalls(tail) {
         let balls = [];
         let maxHeads = Math.floor(maxNum / 10);
@@ -145,7 +130,6 @@
             for(let i = 1; i < lines.length; i++) {
                 let cols = lines[i].split(',').map(s => s.trim());
                 if(cols.length < 6 || isNaN(parseInt(cols[1]))) continue;
-                // 抓取開獎號碼 (支援5顆或6顆球)
                 let nums = [];
                 for(let j = 1; j < cols.length; j++) {
                     let n = parseInt(cols[j]);
@@ -155,8 +139,8 @@
             }
             
             statusEl.innerText = `✅ 載入成功 (共 ${parsedData.length} 期)`;
-            calculateRules(); // 第一階段：跑大數據算出歷史最佳公式
-            runAnalysis();    // 第二階段：產生卡片與命中紀錄
+            calculateRules();
+            runAnalysis();
         } catch(e) { 
             statusEl.innerText = "❌ 讀取失敗 (需在本機伺服器環境執行)"; 
             document.getElementById('predictionArea').innerHTML = '';
@@ -165,7 +149,6 @@
         }
     }
 
-    // 第一階段：掃描所有歷史數據，找出每個尾數的「最佳拖尾」
     function calculateRules() {
         let dStats = {}; let tStats = {};
         for(let i=0; i<10; i++) {
@@ -178,7 +161,6 @@
             let counts = new Array(10).fill(0);
             tails.forEach(t => counts[t]++);
 
-            // 取得未來三天有開出的「有效尾數」 (套用殺0頭邏輯：只算 >=10 的號碼)
             let next3ValidTails = new Set();
             for (let j = 1; j <= 3; j++) {
                 if (i + j < parsedData.length) {
@@ -202,31 +184,20 @@
 
         rules = { double: {}, triple: {} };
         for(let t = 0; t < 10; t++) {
-            // 計算雙尾最佳目標
             let bestDTail = -1, maxDHit = -1;
             for(let nt = 0; nt < 10; nt++) {
                 if(dStats[t].hits[nt] > maxDHit) { maxDHit = dStats[t].hits[nt]; bestDTail = nt; }
             }
-            rules.double[t] = { 
-                targetTail: bestDTail, 
-                score: dStats[t].total > 0 ? (maxDHit / dStats[t].total * 100) : 0,
-                total: dStats[t].total
-            };
+            rules.double[t] = { targetTail: bestDTail, score: dStats[t].total > 0 ? (maxDHit / dStats[t].total * 100) : 0, total: dStats[t].total };
 
-            // 計算三尾最佳目標
             let bestTTail = -1, maxTHit = -1;
             for(let nt = 0; nt < 10; nt++) {
                 if(tStats[t].hits[nt] > maxTHit) { maxTHit = tStats[t].hits[nt]; bestTTail = nt; }
             }
-            rules.triple[t] = { 
-                targetTail: bestTTail, 
-                score: tStats[t].total > 0 ? (maxTHit / tStats[t].total * 100) : 0,
-                total: tStats[t].total
-            };
+            rules.triple[t] = { targetTail: bestTTail, score: tStats[t].total > 0 ? (maxTHit / tStats[t].total * 100) : 0, total: tStats[t].total };
         }
     }
 
-    // 產生該期觸發的公式版路
     function getSmartPatterns(nums) {
         let patterns = [];
         let tails = nums.map(n => n % 10);
@@ -236,82 +207,51 @@
         for (let t = 0; t < 10; t++) {
             if (counts[t] >= 3) {
                 let r = rules.triple[t];
-                if(r && r.total > 0) {
-                    patterns.push({
-                        type: `三尾拖牌 (${t}尾)`,
-                        targetTail: r.targetTail,
-                        target: getIronBalls(r.targetTail),
-                        score: r.score
-                    });
-                }
+                if(r && r.total > 0) patterns.push({ type: `三尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail), score: r.score });
             } else if (counts[t] >= 2) {
                 let r = rules.double[t];
-                if(r && r.total > 0) {
-                    patterns.push({
-                        type: `雙尾拖牌 (${t}尾)`,
-                        targetTail: r.targetTail,
-                        target: getIronBalls(r.targetTail),
-                        score: r.score
-                    });
-                }
+                if(r && r.total > 0) patterns.push({ type: `雙尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail), score: r.score });
             }
-        }
-
-        // 過濾與排序 (優先顯示高勝率，最多顯示3個版路避免雜亂)
-        if (isFilterEnabled) {
-            return patterns.filter(p => p.score >= 80.0).sort((a,b)=>b.score-a.score).slice(0, 3);
         }
         return patterns.sort((a,b)=>b.score-a.score).slice(0, 3);
     }
 
-    // 第二階段：產生分析結果與 UI
     function runAnalysis() {
-        let dailyResults = parsedData.map(d => ({ ...d, hits: [] }));
+        let fullHistory = [];
         let tracking = [];
         let stats = { total: 0, hit: 0 };
 
         for (let i = 0; i < parsedData.length; i++) {
             let patterns = getSmartPatterns(parsedData[i].nums);
+            let periodRecord = { date: parsedData[i].date, actualNums: parsedData[i].nums, actions: [] };
             
             patterns.forEach(p => {
-                if (p.target.length === 0) return; // 若無鐵支號碼則跳過
+                if (p.target.length === 0) return;
                 stats.total++;
-                let found = false;
+                let hitInfo = null;
                 
-                // 往未來3天找命中
                 for (let j = 1; j <= 3; j++) {
                     if (i + j < parsedData.length) {
                         let hitNums = intersect(p.target, parsedData[i+j].nums);
                         if (hitNums.length > 0) {
+                            hitInfo = { p: j, n: hitNums };
                             stats.hit++;
-                            dailyResults[i+j].hits.push({ 
-                                type: p.type, 
-                                targetTail: p.targetTail,
-                                triggerDate: parsedData[i].date, 
-                                n: hitNums, 
-                                p: j 
-                            });
-                            found = true; 
-                            break; // 只要有中一天就停利
+                            break;
                         }
                     }
                 }
                 
-                // 如果沒找到，且距離最新一期還在 3 天以內，列入追蹤卡片
-                if (!found && (parsedData.length - 1 - i) < 3) {
-                    tracking.push({ 
-                        type: p.type, 
-                        targetTail: p.targetTail,
-                        target: p.target.map(fNum).join(', '), 
-                        date: parsedData[i].date, 
-                        age: parsedData.length - i, 
-                        score: p.score 
-                    });
+                if (hitInfo) {
+                    periodRecord.actions.push({ ...p, isHit: true, hitPeriod: hitInfo.p, hitNums: hitInfo.n });
+                } else if (parsedData.length - 1 - i < 3) {
+                    tracking.push({ ...p, date: parsedData[i].date, age: parsedData.length - i });
+                } else {
+                    periodRecord.actions.push({ ...p, isHit: false });
                 }
             });
+            if(periodRecord.actions.length > 0) fullHistory.push(periodRecord);
         }
 
-        // 渲染正在追蹤的卡片 (最新日期排最上面)
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
@@ -319,41 +259,39 @@
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 勝率</div>
                 <h3>${t.type} <span class="target-tail">拖 ${t.targetTail} 尾</span></h3>
-                <div class="pred-info">觸發日: ${t.date} | 目前養到第 ${t.age} 期</div>
-                <span class="nums-highlight">${t.target}</span>
+                <div class="pred-info">觸發日: ${t.date} | 養牌第 ${t.age} 期</div>
+                <span class="nums-highlight">${t.target.map(fNum).join(', ')}</span>
             </div>`
-        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無追蹤版路，休息一期 ☕</div>';
+        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無追蹤版路 ☕</div>';
 
-        // 渲染回測紀錄 (只顯示有命中的日子)
-        const listHtml = dailyResults.slice().reverse().filter(d=>d.hits.length>0).map(d => `
+        const listHtml = fullHistory.slice().reverse().map(d => `
             <div class="result-item">
                 <div class="res-header">
-                    <span class="res-date">${d.date}</span>
-                    <span class="res-actual">${d.nums.map(fNum).join(' ')}</span>
+                    <span class="res-date">觸發日: ${d.date}</span>
+                    <span class="res-actual">${d.actualNums.map(fNum).join(' ')}</span>
                 </div>
-                ${d.hits.map(h => `
+                ${d.actions.map(a => a.isHit ? `
                     <div class="hit-detail">
-                        <div class="hit-type">${h.type} <span class="target-tail" style="font-size:0.75rem;">拖 ${h.targetTail}尾</span> <span style="font-weight:normal;color:#999">(${h.triggerDate} 觸發)</span></div>
-                        <div class="hit-nums">命中號碼: ${h.n.map(fNum).join(', ')}</div>
-                        <div class="hit-status">🎯 獲利 (於第 ${h.p} 期開出)</div>
+                        <div class="hit-type">${a.type} <span class="target-tail" style="font-size:0.75rem;">拖 ${a.targetTail}尾</span></div>
+                        <div class="hit-nums">命中號碼: ${a.hitNums.map(fNum).join(', ')}</div>
+                        <div class="hit-status">🎯 獲利 (於第 ${a.hitPeriod} 期開出)</div>
+                    </div>
+                ` : `
+                    <div class="miss-detail">
+                        <div class="hit-type" style="color:#636e72;">${a.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">拖 ${a.targetTail}尾</span></div>
+                        <div class="miss-nums">預測鐵支: ${a.target.map(fNum).join(', ')}</div>
+                        <div class="miss-status">❌ 養牌三期未中</div>
                     </div>
                 `).join('')}
             </div>`).join('');
         
-        document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px; color:#999;">尚無命中紀錄</div>';
+        document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px; color:#999;">尚無紀錄</div>';
 
-        // 渲染統計摘要
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
-        document.getElementById('summaryArea').innerHTML = `
-            💡 <b>歷史數據自動結算：</b><br>
-            總共掃描出 <b>${stats.total}</b> 個雙尾/三尾訊號。<br>
-            套用「殺0頭」策略後，成功於3天內停利的訊號共 <b>${stats.hit}</b> 個。<br>
-            🎯 歷史平均精準率：<b style="color:var(--danger); font-size:1.1em;">${hitRate}%</b>
-        `;
+        document.getElementById('summaryArea').innerHTML = `💡 <b>歷史結算：</b>共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b>`;
     }
 
-    // 初始化不自動跑，等待使用者確認或修改 Select
     window.onload = processData;
 </script>
 </body>
