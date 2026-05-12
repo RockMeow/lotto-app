@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統 (雙尾/三尾大數據版)</title>
+    <title>三期牌分析系統</title>
     <link rel="manifest" href="manifest2.json">
     <meta name="theme-color" content="#3b82f6">
     <style>
@@ -69,10 +69,10 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>三期牌分析系統 (拖牌大數據版)</h1>
+            <h1>三期牌分析系統</h1>
             <div id="toggleFilter" class="toggle-btn" onclick="toggleFilter()">過濾 OFF</div>
         </div>
-        <div id="aiBadge" style="display:none; font-size: 0.75rem; color: #ffeb3b; font-weight: bold;">● 高勝率精選模式已開啟 (僅顯示勝率 ≥ 80%)</div>
+        <div id="aiBadge" style="display:none; font-size: 0.75rem; color: #ffeb3b; font-weight: bold;">● 高勝率模式已開啟 (僅顯示勝率 ≥ 80%)</div>
     </div>
     
     <div class="selector-box">
@@ -238,7 +238,7 @@
                 let r = rules.triple[t];
                 if(r && r.total > 0) {
                     patterns.push({
-                        type: `三尾極端 (${t}尾)`,
+                        type: `三尾拖牌 (${t}尾)`,
                         targetTail: r.targetTail,
                         target: getIronBalls(r.targetTail),
                         score: r.score
@@ -322,7 +322,7 @@
                 <div class="pred-info">觸發日: ${t.date} | 目前養到第 ${t.age} 期</div>
                 <span class="nums-highlight">${t.target}</span>
             </div>`
-        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">無追蹤版路，空手觀望 ☕</div>';
+        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">無追蹤版路，靜置觀望 ☕</div>';
 
         // 渲染回測紀錄 (只顯示有命中的日子)
         const listHtml = dailyResults.slice().reverse().filter(d=>d.hits.length>0).map(d => `
@@ -334,8 +334,8 @@
                 ${d.hits.map(h => `
                     <div class="hit-detail">
                         <div class="hit-type">${h.type} <span class="target-tail" style="font-size:0.75rem;">拖 ${h.targetTail}尾</span> <span style="font-weight:normal;color:#999">(${h.triggerDate} 觸發)</span></div>
-                        <div class="hit-nums">命中鐵支: ${h.n.map(fNum).join(', ')}</div>
-                        <div class="hit-status">🎯 順利停利 (於第 ${h.p} 期開出)</div>
+                        <div class="hit-nums">命中號碼: ${h.n.map(fNum).join(', ')}</div>
+                        <div class="hit-status">🎯 順利獲利 (於第 ${h.p} 期開出)</div>
                     </div>
                 `).join('')}
             </div>`).join('');
@@ -346,7 +346,7 @@
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
-            💡 <b>大數據自動結算：</b><br>
+            💡 <b>歷史數據自動結算：</b><br>
             總共掃描出 <b>${stats.total}</b> 個雙尾/三尾訊號。<br>
             套用「殺0頭」策略後，成功於3天內停利的訊號共 <b>${stats.hit}</b> 個。<br>
             🎯 歷史平均精準率：<b style="color:var(--danger); font-size:1.1em;">${hitRate}%</b>
