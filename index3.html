@@ -234,7 +234,7 @@
                     if (i + j < parsedData.length) {
                         let hitNums = intersect(p.target, parsedData[i+j].nums);
                         if (hitNums.length > 0) {
-                            hitInfo = { p: j, n: hitNums };
+                            hitInfo = { p: j, n: hitNums, date: parsedData[i+j].date };
                             stats.hit++;
                             break;
                         }
@@ -242,7 +242,7 @@
                 }
                 
                 if (hitInfo) {
-                    periodRecord.actions.push({ ...p, isHit: true, hitPeriod: hitInfo.p, hitNums: hitInfo.n });
+                    periodRecord.actions.push({ ...p, isHit: true, hitPeriod: hitInfo.p, hitNums: hitInfo.n, hitDate: hitInfo.date });
                 } else if (parsedData.length - 1 - i < 3) {
                     tracking.push({ ...p, date: parsedData[i].date, age: parsedData.length - i });
                 } else {
@@ -274,7 +274,7 @@
                     <div class="hit-detail">
                         <div class="hit-type">${a.type} <span class="target-tail" style="font-size:0.75rem;">拖 ${a.targetTail}尾</span></div>
                         <div class="hit-nums">命中號碼: ${a.hitNums.map(fNum).join(', ')}</div>
-                        <div class="hit-status">🎯 獲利 (於第 ${a.hitPeriod} 期開出)</div>
+                        <div class="hit-status">🎯 命中日: ${a.hitDate} (第 ${a.hitPeriod} 期獲利)</div>
                     </div>
                 ` : `
                     <div class="miss-detail">
