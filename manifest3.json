@@ -1,6 +1,6 @@
 {
-  "name": "坐車",
-  "short_name": "坐車",
+  "name": "三期牌(拖尾)",
+  "short_name": "三期牌(拖尾)",
   "start_url": "./index3.html",
   "display": "standalone",
   "background_color": "#f1f5f9",
