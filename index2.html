@@ -28,19 +28,20 @@
         .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
 
-        .toggle-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; transition: 0.3s; }
+        .toggle-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; transition: 0.3s; cursor: pointer; }
         .toggle-on { background: var(--success); border-color: var(--success); }
 
         /* Controls */
         .selector-box { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
-        select { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #dfe6e9; font-size: 1rem; appearance: none; background: #fff; margin-bottom: 8px; }
+        select { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #dfe6e9; font-size: 1rem; appearance: none; background: #fff; margin-bottom: 8px; outline: none; cursor: pointer; }
+        select:focus { border-color: var(--accent); }
         .status-bar { font-size: 0.85rem; color: #636e72; display: flex; align-items: center; gap: 5px; }
 
         /* Prediction Cards */
         .section-title { font-size: 1rem; font-weight: bold; margin: 15px 0 10px 5px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
         #predictionArea { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
         .pred-card { background: var(--card); padding: 15px; border-radius: 12px; border-left: 6px solid var(--warning); box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
-        .pred-card h3 { font-size: 0.95rem; margin-bottom: 5px; color: var(--primary); }
+        .pred-card h3 { font-size: 0.95rem; margin-bottom: 5px; color: var(--primary); font-weight: 800; }
         .pred-info { font-size: 0.8rem; color: #636e72; margin-bottom: 8px; }
         .nums-highlight { font-size: 1.5rem; font-weight: 900; color: var(--warning); letter-spacing: 2px; display: block; margin-top: 5px; }
         .score-tag { position: absolute; top: 0; right: 0; background: #dfe6e9; color: #2d3436; padding: 4px 10px; border-bottom-left-radius: 10px; font-size: 0.7rem; font-weight: bold; }
@@ -48,15 +49,27 @@
         /* Summary Area */
         .summary { background: #e1f5fe; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #b3e5fc; }
 
-        /* Result List (Mobile-optimized table replacement) */
+        /* Result List (Daily Log Style) */
         .result-item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #eee; }
         .res-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; border-bottom: 1px dashed #eee; padding-bottom: 8px; }
         .res-date { font-weight: bold; color: var(--primary); }
         .res-actual { font-family: monospace; font-size: 1rem; color: #2d3436; font-weight: bold; }
+        
+        /* Event Details */
         .hit-detail { background: #fdfaf0; padding: 8px; border-radius: 8px; margin-top: 8px; }
+        .miss-detail { background: #f5f6f7; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #eee; }
+        .trigger-detail { background: #f0f8ff; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #cce5ff; }
+
         .hit-type { font-size: 0.85rem; font-weight: bold; color: #d35400; }
-        .hit-nums { color: var(--success); font-weight: 900; font-size: 1rem; }
+        .trigger-type { font-size: 0.85rem; font-weight: bold; color: #0056b3; }
+        
+        .hit-nums { color: var(--success); font-weight: 900; font-size: 1rem; margin-top: 2px; }
+        .miss-nums { color: #b2bec3; font-weight: 900; font-size: 1rem; margin-top: 2px; }
+        .trigger-nums { color: #004085; font-weight: 900; font-size: 1rem; margin-top: 2px; }
+
         .hit-status { font-size: 0.75rem; color: var(--success); font-weight: bold; margin-top: 3px; }
+        .miss-status { font-size: 0.75rem; color: #636e72; font-weight: bold; margin-top: 3px; }
+        .trigger-status { font-size: 0.75rem; color: #0056b3; font-weight: bold; margin-top: 3px; }
 
         /* Animations */
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
@@ -93,7 +106,7 @@
     
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">📜 回測紀錄</div>
+    <div class="section-title">📜 每日開獎與訊號紀錄</div>
     <div id="resultList"></div>
 </div>
 
@@ -176,27 +189,61 @@
 
     function runAnalysis() {
         const fileName = document.getElementById('csvSelect').value;
-        let dailyResults = parsedData.map(d => ({ ...d, hits: [] }));
+        
+        // 建立每日日誌陣列
+        let dailyView = parsedData.map(d => ({ date: d.date, nums: d.nums, events: [] }));
         let tracking = [];
         let stats = { total: 0, hit: 0 };
 
         for (let i = 0; i < parsedData.length; i++) {
             let patterns = getSmartPatterns(parsedData[i].nums, fileName);
+            
             patterns.forEach(p => {
                 stats.total++;
+                
+                // 1. 記錄今日產生的「新訊號」
+                dailyView[i].events.push({
+                    type: 'trigger',
+                    pattern: p
+                });
+
                 let found = false;
+                let hitInfo = null;
+
+                // 往未來三天尋找命中
                 for (let j = 1; j <= 3; j++) {
                     if (i + j < parsedData.length && intersect(p.target, parsedData[i+j].nums).length > 0) {
                         stats.hit++;
-                        dailyResults[i+j].hits.push({ type: p.type, triggerDate: parsedData[i].date, n: intersect(p.target, parsedData[i+j].nums), p: j });
-                        found = true; break;
+                        hitInfo = { hitIndex: i + j, p: j, n: intersect(p.target, parsedData[i+j].nums) };
+                        found = true; 
+                        break;
                     }
                 }
-                if (!found && parsedData.length - 1 - i < 3) 
+
+                if (found) {
+                    // 2. 如果有命中，將命中事件記錄在「命中日」當天
+                    dailyView[hitInfo.hitIndex].events.push({
+                        type: 'hit',
+                        pattern: p,
+                        triggerDate: parsedData[i].date,
+                        hitPeriod: hitInfo.p,
+                        hitNums: hitInfo.n
+                    });
+                } else if (parsedData.length - 1 - i < 3) {
+                    // 尚未到期，加入追蹤卡片中
                     tracking.push({ type: p.type, target: p.target.map(fNum).join(', '), date: parsedData[i].date, age: parsedData.length-i, score: p.score });
+                } else {
+                    // 3. 如果三期都沒命中，把失敗事件記錄在「第三天」
+                    dailyView[i + 3].events.push({
+                        type: 'miss',
+                        pattern: p,
+                        triggerDate: parsedData[i].date
+                    });
+                }
             });
         }
 
+        // 渲染追蹤卡片
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => `
             <div class="pred-card">
@@ -204,24 +251,52 @@
                 <h3>${t.type}</h3>
                 <div class="pred-info">觸發日: ${t.date} | 第 ${t.age} 期</div>
                 <span class="nums-highlight">${t.target}</span>
-            </div>`).join('') : '<div style="padding:20px; color:#999; text-align:center;">無追蹤版路</div>';
+            </div>`).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">無追蹤版路 ☕</div>';
 
-        const listHtml = dailyResults.slice().reverse().filter(d=>d.hits.length>0).map(d => `
+        // 渲染每日日誌
+        const listHtml = dailyView.slice().reverse().map(d => {
+            let eventsHtml = '';
+            
+            if (d.events.length === 0) {
+                eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無相關動靜</div>`;
+            } else {
+                eventsHtml = d.events.map(e => {
+                    if (e.type === 'trigger') {
+                        return `
+                        <div class="trigger-detail">
+                            <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type}</div>
+                            <div class="trigger-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div>
+                            <div class="trigger-status">👉 開始養牌三期</div>
+                        </div>`;
+                    } else if (e.type === 'hit') {
+                        return `
+                        <div class="hit-detail">
+                            <div class="hit-type">${e.pattern.type}</div>
+                            <div class="hit-nums">命中號碼: ${e.hitNums.map(fNum).join(', ')}</div>
+                            <div class="hit-status">🎯 觸發日: ${e.triggerDate} (於第 ${e.hitPeriod} 期獲利)</div>
+                        </div>`;
+                    } else if (e.type === 'miss') {
+                        return `
+                        <div class="miss-detail">
+                            <div class="hit-type" style="color:#636e72;">${e.pattern.type}</div>
+                            <div class="miss-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div>
+                            <div class="miss-status">❌ 養牌三期未中 (觸發日: ${e.triggerDate})</div>
+                        </div>`;
+                    }
+                }).join('');
+            }
+
+            return `
             <div class="result-item">
                 <div class="res-header">
-                    <span class="res-date">${d.date}</span>
+                    <span class="res-date">開獎日: ${d.date}</span>
                     <span class="res-actual">${d.nums.map(fNum).join(' ')}</span>
                 </div>
-                ${d.hits.map(h => `
-                    <div class="hit-detail">
-                        <div class="hit-type">${h.type} <span style="font-weight:normal;color:#999">(${h.triggerDate} 觸發)</span></div>
-                        <div class="hit-nums">命中: ${h.n.map(fNum).join(', ')}</div>
-                        <div class="hit-status">🎯 1~3期內命中 (第 ${h.p} 期)</div>
-                    </div>
-                `).join('')}
-            </div>`).join('');
+                ${eventsHtml}
+            </div>`;
+        }).join('');
         
-        document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px;">尚無命中紀錄</div>';
+        document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px;">尚無紀錄</div>';
 
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `💡 <b>統計：</b> 共產出 ${stats.total} 組，命中 ${stats.hit} 組，精準率 <b>${(stats.hit/stats.total*100).toFixed(1)}%</b>`;
