@@ -300,7 +300,7 @@
             
             // 判斷這一天是否有任何事件
             if (d.events.length === 0) {
-                eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無相關動靜</div>`;
+                eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無訊號</div>`;
             } else {
                 // 渲染這天發生的所有事件
                 eventsHtml = d.events.map(e => {
@@ -308,7 +308,7 @@
                         return `
                         <div class="trigger-detail">
                             <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
-                            <div class="trigger-nums">預測鐵支: ${e.pattern.target.map(fNum).join(', ')}</div>
+                            <div class="trigger-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div>
                             <div class="trigger-status">👉 開始養牌三期</div>
                         </div>`;
                     } else if (e.type === 'hit') {
@@ -322,7 +322,7 @@
                         return `
                         <div class="miss-detail">
                             <div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
-                            <div class="miss-nums">預測鐵支: ${e.pattern.target.map(fNum).join(', ')}</div>
+                            <div class="miss-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div>
                             <div class="miss-status">❌ 養牌三期未中 (觸發日: ${e.triggerDate})</div>
                         </div>`;
                     }
