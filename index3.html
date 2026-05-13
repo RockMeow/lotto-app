@@ -92,7 +92,7 @@
     
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">📜 歷史觸發紀錄</div>
+    <div class="section-title">📜 歷史命中紀錄</div>
     <div id="resultList"></div>
 </div>
 
@@ -264,26 +264,29 @@
             </div>`
         }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無追蹤版路 ☕</div>';
 
-        const listHtml = fullHistory.slice().reverse().map(d => `
+        const listHtml = fullHistory.slice().reverse().map(d => {
+            let hitDateDisplay = d.actions.find(a => a.isHit)?.hitDate || '未命中';
+            return `
             <div class="result-item">
                 <div class="res-header">
-                    <span class="res-date">觸發日: ${d.date}</span>
+                    <span class="res-date">命中日: ${hitDateDisplay}</span>
                     <span class="res-actual">${d.actualNums.map(fNum).join(' ')}</span>
                 </div>
                 ${d.actions.map(a => a.isHit ? `
                     <div class="hit-detail">
                         <div class="hit-type">${a.type} <span class="target-tail" style="font-size:0.75rem;">拖 ${a.targetTail}尾</span></div>
                         <div class="hit-nums">命中號碼: ${a.hitNums.map(fNum).join(', ')}</div>
-                        <div class="hit-status">🎯 命中日: ${a.hitDate} (第 ${a.hitPeriod} 期獲利)</div>
+                        <div class="hit-status">🎯 觸發日: ${d.date} (第 ${a.hitPeriod} 期獲利)</div>
                     </div>
                 ` : `
                     <div class="miss-detail">
                         <div class="hit-type" style="color:#636e72;">${a.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">拖 ${a.targetTail}尾</span></div>
                         <div class="miss-nums">預測號碼: ${a.target.map(fNum).join(', ')}</div>
-                        <div class="miss-status">❌ 養牌三期未中</div>
+                        <div class="miss-status">❌ 養牌三期未中 (觸發日: ${d.date})</div>
                     </div>
                 `).join('')}
-            </div>`).join('');
+            </div>`;
+        }).join('');
         
         document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px; color:#999;">尚無紀錄</div>';
 
