@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統 (去0頭神級版路)</title>
+    <title>三期牌分析系統(拖牌)</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <style>
@@ -78,13 +78,12 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>三期牌分析系統 (去0頭神級版路)</h1>
+            <h1>三期牌分析系統(拖牌)</h1>
         </div>
     </div>
     
     <div class="selector-box">
         <select id="csvSelect" onchange="processData()">
-            <option value="data.csv">測試用資料 (data.csv)</option>
             <option value="Fan_history_2026.csv">天天樂</option>
             <option value="539_history_2026.csv">今彩 539</option>
             <option value="Ghana_history_2026.csv">迦納彩</option>
@@ -231,7 +230,7 @@
                     if (!seenKeys.has(key)) {
                         seenKeys.add(key);
                         patterns.push({ 
-                            type: `神級拖牌 (開${fNum(num)})`, 
+                            type: `拖牌 (開${fNum(num)})`, 
                             targetTail: r.targetTail, 
                             target: r.target, 
                             score: r.score 
