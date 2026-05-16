@@ -100,6 +100,8 @@
                 <option value="dynamic">動態去冷頭 (預測 4 顆，自動閃避近期最冷區間)</option>
                 <option value="noZero">固定去 0 頭 (預測 4 顆，傳統省成本)</option>
                 <option value="fullTail">保留全尾數 (預測 5 顆，涵蓋率最高)</option>
+                <option value="noZero2">固定去 0 頭 (預測 2 顆，保留熱門兩頭)</option>
+                <option value="dynamic2">動態去頭 (預測 2 顆，保留熱門兩頭)</option>
             </select>
         </div>
 
@@ -132,7 +134,7 @@
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
-    // 【新增】：計算指定期數之前，最冷門的字頭 (0頭, 1頭, 2頭...)
+    // 計算指定期數之前，最冷門的字頭 (0頭, 1頭, 2頭...)
     function getColdestHead(currentIndex) {
         let counts = {0:0, 1:0, 2:0, 3:0, 4:0};
         let start = Math.max(0, currentIndex - COLD_WINDOW + 1);
@@ -157,14 +159,39 @@
         return coldest;
     }
 
+    // 【新增】：計算指定期數之前，最熱門的 N 個字頭
+    function getHotHeads(currentIndex, count, excludeZero) {
+        let counts = {0:0, 1:0, 2:0, 3:0, 4:0};
+        let start = Math.max(0, currentIndex - COLD_WINDOW + 1);
+        let maxHeads = Math.floor(maxNum / 10);
+        
+        for (let i = start; i <= currentIndex; i++) {
+            parsedData[i].nums.forEach(n => {
+                let h = Math.floor(n / 10);
+                if (h === 0 && n === 0) return; 
+                if (h <= maxHeads) counts[h]++;
+            });
+        }
+        
+        let sortedHeads = [];
+        for (let h = 0; h <= maxHeads; h++) {
+            if (excludeZero && h === 0) continue;
+            sortedHeads.push({h: h, c: counts[h]});
+        }
+        sortedHeads.sort((a,b) => b.c - a.c); // 由大到小排序
+        return sortedHeads.slice(0, count).map(x => x.h);
+    }
+
     // 動態尾數產生器
-    function getTargetBalls(tail, strategy, coldestHead = null) {
+    function getTargetBalls(tail, strategy, options = {}) {
         let balls = [];
         let maxHeads = Math.floor(maxNum / 10);
         
         for(let h = 0; h <= maxHeads; h++) {
-            if (strategy === 'noZero' && h === 0) continue;          // 固定去0頭
-            if (strategy === 'dynamic' && h === coldestHead) continue; // 動態去冷頭
+            if (strategy === 'noZero' && h === 0) continue;          
+            if (strategy === 'dynamic' && h === options.coldestHead) continue; 
+            if (strategy === 'noZero2' && (!options.hotHeadsNoZero || !options.hotHeadsNoZero.includes(h))) continue;
+            if (strategy === 'dynamic2' && (!options.hotHeadsDynamic || !options.hotHeadsDynamic.includes(h))) continue;
             
             let n = h * 10 + tail;
             if(n > 0 && n <= maxNum) balls.push(n);
@@ -233,9 +260,13 @@
                 for (let idx of triggerIndices) {
                     if (idx + LOOKAHEAD >= totalDraws) continue;
                     
-                    // 根據觸發當下的歷史時間點，計算最冷頭並產生目標號碼
-                    let currentColdest = strategy === 'dynamic' ? getColdestHead(idx) : null;
-                    let targetBalls = getTargetBalls(tail, strategy, currentColdest);
+                    // 根據觸發當下的歷史時間點，計算頭數條件並產生目標號碼
+                    let options = {};
+                    if (strategy === 'dynamic') options.coldestHead = getColdestHead(idx);
+                    if (strategy === 'noZero2') options.hotHeadsNoZero = getHotHeads(idx, 2, true);
+                    if (strategy === 'dynamic2') options.hotHeadsDynamic = getHotHeads(idx, 2, false);
+                    
+                    let targetBalls = getTargetBalls(tail, strategy, options);
                     
                     if (targetBalls.length === 0) continue;
 
@@ -271,7 +302,11 @@
         let patterns = [];
         let seenKeys = new Set();
         let strategy = document.getElementById('strategySelect').value;
-        let currentColdest = strategy === 'dynamic' ? getColdestHead(currentIndex) : null;
+        
+        let options = {};
+        if (strategy === 'dynamic') options.coldestHead = getColdestHead(currentIndex);
+        if (strategy === 'noZero2') options.hotHeadsNoZero = getHotHeads(currentIndex, 2, true);
+        if (strategy === 'dynamic2') options.hotHeadsDynamic = getHotHeads(currentIndex, 2, false);
 
         nums.forEach(num => {
             if (smartRules[num]) {
@@ -279,13 +314,18 @@
                     let key = `${num}-${r.targetTail}`;
                     if (!seenKeys.has(key)) {
                         seenKeys.add(key);
-                        let currentTarget = getTargetBalls(r.targetTail, strategy, currentColdest);
+                        let currentTarget = getTargetBalls(r.targetTail, strategy, options);
+                        
+                        let droppedText = null;
+                        if (strategy === 'dynamic') droppedText = `殺 ${options.coldestHead} 頭`;
+                        else if (strategy === 'noZero2' || strategy === 'dynamic2') droppedText = `預測 2 顆`;
+                        
                         patterns.push({ 
                             type: `拖牌 (開${fNum(num)})`, 
                             targetTail: r.targetTail, 
                             target: currentTarget, 
                             score: r.score,
-                            droppedHead: currentColdest // 記錄殺了哪個頭
+                            droppedText: droppedText // 記錄 UI 顯示文字
                         });
                     }
                 });
@@ -336,7 +376,7 @@
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
-            let killBadge = (strategy === 'dynamic' && t.droppedHead !== null) ? `<span class="kill-tag">殺 ${t.droppedHead} 頭</span>` : '';
+            let killBadge = t.droppedText ? `<span class="kill-tag">${t.droppedText}</span>` : '';
             return `
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 勝率</div>
@@ -352,7 +392,7 @@
                 eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無訊號</div>`;
             } else {
                 eventsHtml = d.events.map(e => {
-                    let killBadge = (strategy === 'dynamic' && e.pattern.droppedHead !== null) ? `<span class="kill-tag">殺 ${e.pattern.droppedHead} 頭</span>` : '';
+                    let killBadge = e.pattern.droppedText ? `<span class="kill-tag">${e.pattern.droppedText}</span>` : '';
                     if (e.type === 'trigger') {
                         return `<div class="trigger-detail"><div class="trigger-type">🔔 新訊號: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span> ${killBadge}</div><div class="trigger-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div><div class="trigger-status">👉 開始養牌三期</div></div>`;
                     } else if (e.type === 'hit') {
