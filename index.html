@@ -133,6 +133,7 @@
         const fileName = document.getElementById('csvSelect').value;
         const statusEl = document.getElementById('dataStatus');
         maxNum = (fileName.includes('649') || fileName.includes('Six')) ? 49 : 39;
+        const ballCount = (fileName.includes('649') || fileName.includes('Six')) ? 6 : 5; // 判斷需要讀取幾顆球
         
         statusEl.innerText = "讀取中...";
         try {
@@ -144,9 +145,9 @@
             parsedData = [];
             for(let i = 1; i < lines.length; i++) {
                 let cols = lines[i].split(',').map(s => s.trim());
-                if(cols.length < 6 || isNaN(parseInt(cols[1]))) continue;
+                if(cols.length < ballCount + 1 || isNaN(parseInt(cols[1]))) continue;
                 let nums = [];
-                for(let j = 1; j <= 5; j++) {
+                for(let j = 1; j <= ballCount; j++) { // 根據球數動態讀取
                     let n = parseInt(cols[j]);
                     if(!isNaN(n)) nums.push(n);
                 }
