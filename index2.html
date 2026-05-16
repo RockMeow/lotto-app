@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統(2碼)</title>
-    <link rel="manifest" href="manifest2.json">
+    <title>三期牌分析系統(拖牌) - 回測版</title>
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3b82f6">
     <style>
         :root {
@@ -25,17 +25,16 @@
 
         /* Header Area */
         .header { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .header-top { display: flex; justify-content: center; align-items: center; margin-bottom: 0; }
         h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
-
-        .toggle-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; transition: 0.3s; cursor: pointer; }
-        .toggle-on { background: var(--success); border-color: var(--success); }
 
         /* Controls */
         .selector-box { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
-        select { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #dfe6e9; font-size: 1rem; appearance: none; background: #fff; margin-bottom: 8px; outline: none; cursor: pointer; }
+        select { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #dfe6e9; font-size: 1rem; appearance: none; background: #fff; margin-bottom: 8px; cursor: pointer; outline: none; }
         select:focus { border-color: var(--accent); }
-        .status-bar { font-size: 0.85rem; color: #636e72; display: flex; align-items: center; gap: 5px; }
+        .status-bar { font-size: 0.85rem; color: #636e72; display: flex; align-items: center; gap: 5px; margin-bottom: 8px; }
+        .strategy-bar { background: #f0f8ff; padding: 10px; border-radius: 8px; border: 1px dashed var(--accent); }
+        .strategy-bar span { font-weight: bold; color: var(--primary); display: block; margin-bottom: 5px; }
 
         /* Prediction Cards */
         .section-title { font-size: 1rem; font-weight: bold; margin: 15px 0 10px 5px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
@@ -43,13 +42,16 @@
         .pred-card { background: var(--card); padding: 15px; border-radius: 12px; border-left: 6px solid var(--warning); box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
         .pred-card h3 { font-size: 0.95rem; margin-bottom: 5px; color: var(--primary); font-weight: 800; }
         .pred-info { font-size: 0.8rem; color: #636e72; margin-bottom: 8px; }
-        .nums-highlight { font-size: 1.5rem; font-weight: 900; color: var(--warning); letter-spacing: 2px; display: block; margin-top: 5px; }
-        .score-tag { position: absolute; top: 0; right: 0; background: #dfe6e9; color: #2d3436; padding: 4px 10px; border-bottom-left-radius: 10px; font-size: 0.7rem; font-weight: bold; }
+        .nums-highlight { font-size: 1.4rem; font-weight: 900; color: var(--warning); letter-spacing: 1px; display: block; margin-top: 5px; }
+        .target-tail { font-size: 0.85rem; color: #fff; background: var(--accent); padding: 2px 8px; border-radius: 12px; vertical-align: middle; margin-left: 5px; }
+        .score-tag { position: absolute; top: 0; right: 0; background: #dfe6e9; color: #2d3436; padding: 4px 10px; border-bottom-left-radius: 10px; font-size: 0.75rem; font-weight: bold; }
+        .score-high { background: #ffeaa7; color: #d35400; }
+        .score-perfect { background: var(--success); color: white; }
 
         /* Summary Area */
         .summary { background: #e1f5fe; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #b3e5fc; }
 
-        /* Result List (Daily Log Style) */
+        /* Result List */
         .result-item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #eee; }
         .res-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; border-bottom: 1px dashed #eee; padding-bottom: 8px; }
         .res-date { font-weight: bold; color: var(--primary); }
@@ -71,9 +73,6 @@
         .miss-status { font-size: 0.75rem; color: #636e72; font-weight: bold; margin-top: 3px; }
         .trigger-status { font-size: 0.75rem; color: #0056b3; font-weight: bold; margin-top: 3px; }
 
-        /* Animations */
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        .loading { animation: pulse 1s infinite; }
     </style>
 </head>
 <body>
@@ -81,10 +80,8 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>三期牌分析系統(2碼)</h1>
-            <div id="toggleFilter" class="toggle-btn" onclick="toggleFilter()">過濾 OFF</div>
+            <h1>三期牌回測系統(拖牌)</h1>
         </div>
-        <div id="aiBadge" style="display:none; font-size: 0.7rem; color: #ffeb3b; font-weight: bold;">● 勝率精選模式已開啟</div>
     </div>
     
     <div class="selector-box">
@@ -93,213 +90,254 @@
             <option value="Ghana_history_2026.csv">迦納彩</option>
             <option value="539_history_2026.csv">今彩 539</option>
             <option value="649_history_2026.csv">大樂透</option>
-            <option value="Six_history_2026.csv">六合彩</option>
+            <option value="Six_history_2026.csv" selected>六合彩</option>
         </select>
-        <div class="status-bar">
+        
+        <div class="strategy-bar">
+            <span>⚙️ 尾數預測策略：</span>
+            <select id="strategySelect" onchange="recalculateOnly()" style="margin-bottom:0; padding: 8px;">
+                <option value="noZero">去 0 頭 (預測 4 顆，成本較低)</option>
+                <option value="fullTail">保留全尾數 (預測 5 顆，涵蓋率高)</option>
+            </select>
+        </div>
+
+        <div class="status-bar" style="margin-top: 10px;">
             <span>資料狀態:</span>
             <span id="dataStatus" style="font-weight: bold;">讀取中...</span>
         </div>
     </div>
 
-    <div class="section-title">🕒 目前追蹤中</div>
+    <div class="section-title">🕒 目前追蹤中 (養三期)</div>
     <div id="predictionArea"></div>
     
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">📜 每日開獎與訊號紀錄</div>
+    <div class="section-title">📜 每日開獎與回測紀錄</div>
     <div id="resultList"></div>
 </div>
 
 <script>
+    // --- 核心演算法設定區 ---
+    const LOOKAHEAD = 3;              // 往後觀察期數
+    const MIN_OCCURRENCE = 8;         // 最少開出次數
+    const MIN_WIN_RATE = 100.0;       // 勝率門檻
+
     let parsedData = [];
-    let isFilterEnabled = false;
+    let maxNum = 39;
+    let smartRules = {}; 
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
-    function toggleFilter() {
-        isFilterEnabled = !isFilterEnabled;
-        const btn = document.getElementById('toggleFilter');
-        btn.innerText = isFilterEnabled ? "過濾 ON" : "過濾 OFF";
-        btn.className = isFilterEnabled ? "toggle-btn toggle-on" : "toggle-btn";
-        document.getElementById('aiBadge').style.display = isFilterEnabled ? "block" : "none";
-        if(parsedData.length > 0) runAnalysis();
+    // 【新增】：動態尾數產生器 (根據策略決定是否去 0 頭)
+    function getTargetBalls(tail) {
+        let strategy = document.getElementById('strategySelect').value;
+        let balls = [];
+        let maxHeads = Math.floor(maxNum / 10);
+        
+        // 若選 "noZero" (去0頭)，則從 10 開始 (h=1)；若選 "fullTail"，從 0 開始 (h=0)
+        let startHead = (strategy === 'noZero') ? 1 : 0;
+
+        for(let h = startHead; h <= maxHeads; h++) {
+            let n = h * 10 + tail;
+            // 加入 n > 0 判斷，避免把 0 當成號碼
+            if(n > 0 && n <= maxNum) balls.push(n);
+        }
+        return balls;
     }
 
-    function getSmartPatterns(nums, fileName) {
-        let rawPatterns = [];
-        let numSet = new Set(nums);
-        let maxNum = (fileName.includes('649') || fileName.includes('Six')) ? 49 : 39;
-
-        let sorted = [...nums].sort((a,b)=>a-b);
-        let consec = [];
-        for(let i=0; i<sorted.length-1; i++) if(sorted[i+1]-sorted[i]===1) consec.push(sorted[i+1]);
-        if(consec.length > 0) {
-            let targets = [];
-            consec.forEach(c => { if(c+1 <= maxNum) targets.push(c+1); if(c+2 <= maxNum) targets.push(c+2); });
-            targets = [...new Set(targets)];
-            rawPatterns.push({ type: '連號拖牌', target: targets.slice(0,3), score: 68.9 });
+    // 重新計算而不重新讀取檔案 (切換策略用)
+    function recalculateOnly() {
+        if(parsedData.length > 0) {
+            calculateRules();
+            runAnalysis();
         }
-
-        let tails = nums.map(n => n % 10);
-        let tailCounts = {};
-        tails.forEach(t => tailCounts[t] = (tailCounts[t]||0)+1);
-        Object.keys(tailCounts).filter(t => tailCounts[t]>1).forEach(t => {
-            let targets = [];
-            for(let i=0; i<=4; i++) {
-                let cand = i*10 + parseInt(t);
-                if(cand > 0 && cand <= maxNum && !numSet.has(cand)) targets.push(cand);
-            }
-            rawPatterns.push({ type: `同尾牽引 (${t}尾)`, target: targets.slice(0,3), score: 67.0 });
-        });
-
-        let zLimit = Math.floor(maxNum / 3);
-        let z1 = nums.filter(n => n <= zLimit).length;
-        let z2 = nums.filter(n => n > zLimit && n <= zLimit*2).length;
-        let z3 = nums.filter(n => n > zLimit*2).length;
-        if(z1===0) rawPatterns.push({ type: '一區斷層回補', target: [Math.floor(zLimit/2)], score: 70.0 });
-        if(z2===0) rawPatterns.push({ type: '二區斷層回補', target: [Math.floor(zLimit*1.5)], score: 85.0 });
-        if(z3===0) rawPatterns.push({ type: '三區斷層回補', target: [Math.floor(zLimit*2.5)], score: 50.0 });
-
-        if (isFilterEnabled) {
-            let strong = rawPatterns.filter(p => p.score >= 65.0).sort((a,b)=>b.score-a.score);
-            return strong.length > 0 ? [strong[0]] : [];
-        }
-        return rawPatterns.slice(0, 2);
     }
 
     async function processData() {
         const fileName = document.getElementById('csvSelect').value;
         const statusEl = document.getElementById('dataStatus');
+        maxNum = (fileName.includes('649') || fileName.includes('Six')) ? 49 : 39;
+        const ballCount = (fileName.includes('649') || fileName.includes('Six')) ? 6 : 5;
+        
         statusEl.innerText = "讀取中...";
         try {
             const res = await fetch(fileName);
+            if(!res.ok) throw new Error();
             const text = await res.text();
             const lines = text.trim().split('\n');
+            
             parsedData = [];
-            lines.forEach(line => {
-                let cols = line.split(',');
-                if(cols.length < 6 || isNaN(parseInt(cols[1]))) return;
-                parsedData.push({ date: cols[0], nums: cols.slice(1,7).map(n => parseInt(n)).filter(n => !isNaN(n)) });
-            });
-            statusEl.innerText = "✅ 載入成功";
-            runAnalysis();
-        } catch(e) { statusEl.innerText = "❌ 檔案異常"; }
+            for(let i = 1; i < lines.length; i++) {
+                let cols = lines[i].split(',').map(s => s.trim());
+                if(cols.length < ballCount + 1 || isNaN(parseInt(cols[1]))) continue;
+                let nums = [];
+                for(let j = 1; j <= ballCount; j++) { 
+                    let n = parseInt(cols[j]);
+                    if(!isNaN(n)) nums.push(n);
+                }
+                parsedData.push({ date: cols[0], nums: nums });
+            }
+            
+            statusEl.innerText = `✅ 載入成功 (共 ${parsedData.length} 期)`;
+            recalculateOnly();
+        } catch(e) { 
+            statusEl.innerText = "❌ 讀取失敗 (需在本機伺服器環境執行，或確認檔案是否存在)"; 
+            document.getElementById('predictionArea').innerHTML = '';
+            document.getElementById('resultList').innerHTML = '';
+            document.getElementById('summaryArea').style.display = 'none';
+        }
+    }
+
+    function calculateRules() {
+        smartRules = {};
+        let totalDraws = parsedData.length;
+
+        for (let triggerNum = 1; triggerNum <= maxNum; triggerNum++) {
+            let triggerIndices = [];
+            for (let i = 0; i < totalDraws; i++) {
+                if (parsedData[i].nums.includes(triggerNum)) {
+                    triggerIndices.push(i);
+                }
+            }
+
+            if (triggerIndices.length < MIN_OCCURRENCE) continue;
+
+            for (let tail = 0; tail < 10; tail++) {
+                let targetBalls = getTargetBalls(tail); // 使用動態策略
+                if (targetBalls.length === 0) continue;
+
+                let successCount = 0;
+                let validEvaluations = 0;
+
+                for (let idx of triggerIndices) {
+                    if (idx + LOOKAHEAD >= totalDraws) continue;
+                    
+                    validEvaluations++;
+                    let hitSuccess = false;
+
+                    for (let j = 1; j <= LOOKAHEAD; j++) {
+                        if (intersect(parsedData[idx + j].nums, targetBalls).length > 0) {
+                            hitSuccess = true;
+                            break;
+                        }
+                    }
+
+                    if (hitSuccess) successCount++;
+                }
+
+                if (validEvaluations > 0) {
+                    let winRate = (successCount / validEvaluations) * 100;
+                    if (winRate >= MIN_WIN_RATE) {
+                        if (!smartRules[triggerNum]) smartRules[triggerNum] = [];
+                        smartRules[triggerNum].push({
+                            targetTail: tail,
+                            target: targetBalls,
+                            score: winRate,
+                            total: validEvaluations
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    function getSmartPatterns(nums) {
+        let patterns = [];
+        let seenKeys = new Set();
+
+        nums.forEach(num => {
+            if (smartRules[num]) {
+                smartRules[num].forEach(r => {
+                    let key = `${num}-${r.targetTail}`;
+                    if (!seenKeys.has(key)) {
+                        seenKeys.add(key);
+                        patterns.push({ 
+                            type: `拖牌 (開${fNum(num)})`, 
+                            targetTail: r.targetTail, 
+                            target: r.target, 
+                            score: r.score 
+                        });
+                    }
+                });
+            }
+        });
+        return patterns.sort((a,b) => b.score - a.score);
     }
 
     function runAnalysis() {
-        const fileName = document.getElementById('csvSelect').value;
-        
-        // 建立每日日誌陣列
         let dailyView = parsedData.map(d => ({ date: d.date, nums: d.nums, events: [] }));
         let tracking = [];
         let stats = { total: 0, hit: 0 };
 
         for (let i = 0; i < parsedData.length; i++) {
-            let patterns = getSmartPatterns(parsedData[i].nums, fileName);
+            let patterns = getSmartPatterns(parsedData[i].nums);
             
             patterns.forEach(p => {
+                if (p.target.length === 0) return;
                 stats.total++;
                 
-                // 1. 記錄今日產生的「新訊號」
-                dailyView[i].events.push({
-                    type: 'trigger',
-                    pattern: p
-                });
+                dailyView[i].events.push({ type: 'trigger', pattern: p });
 
-                let found = false;
                 let hitInfo = null;
-
-                // 往未來三天尋找命中
-                for (let j = 1; j <= 3; j++) {
-                    if (i + j < parsedData.length && intersect(p.target, parsedData[i+j].nums).length > 0) {
-                        stats.hit++;
-                        hitInfo = { hitIndex: i + j, p: j, n: intersect(p.target, parsedData[i+j].nums) };
-                        found = true; 
-                        break;
+                for (let j = 1; j <= LOOKAHEAD; j++) {
+                    if (i + j < parsedData.length) {
+                        let hitNums = intersect(p.target, parsedData[i+j].nums);
+                        if (hitNums.length > 0) {
+                            hitInfo = { hitIndex: i + j, p: j, n: hitNums };
+                            stats.hit++;
+                            break;
+                        }
                     }
                 }
-
-                if (found) {
-                    // 2. 如果有命中，將命中事件記錄在「命中日」當天
+                
+                if (hitInfo) {
                     dailyView[hitInfo.hitIndex].events.push({
-                        type: 'hit',
-                        pattern: p,
-                        triggerDate: parsedData[i].date,
-                        hitPeriod: hitInfo.p,
-                        hitNums: hitInfo.n
+                        type: 'hit', pattern: p, triggerDate: parsedData[i].date, hitPeriod: hitInfo.p, hitNums: hitInfo.n
                     });
-                } else if (parsedData.length - 1 - i < 3) {
-                    // 尚未到期，加入追蹤卡片中
-                    tracking.push({ type: p.type, target: p.target.map(fNum).join(', '), date: parsedData[i].date, age: parsedData.length-i, score: p.score });
+                } else if (parsedData.length - 1 - i < LOOKAHEAD) {
+                    tracking.push({ ...p, date: parsedData[i].date, age: parsedData.length - i });
                 } else {
-                    // 3. 如果三期都沒命中，把失敗事件記錄在「第三天」
-                    dailyView[i + 3].events.push({
-                        type: 'miss',
-                        pattern: p,
-                        triggerDate: parsedData[i].date
-                    });
+                    dailyView[i + LOOKAHEAD].events.push({ type: 'miss', pattern: p, triggerDate: parsedData[i].date });
                 }
             });
         }
 
-        // 渲染追蹤卡片
         tracking.reverse();
-        document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => `
+        document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
+            let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
+            return `
             <div class="pred-card">
-                <div class="score-tag">${t.score}% 勝率</div>
-                <h3>${t.type}</h3>
-                <div class="pred-info">觸發日: ${t.date} | 第 ${t.age} 期</div>
-                <span class="nums-highlight">${t.target}</span>
-            </div>`).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">無追蹤版路 ☕</div>';
+                <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 勝率</div>
+                <h3>${t.type} <span class="target-tail">拖 ${t.targetTail} 尾</span></h3>
+                <div class="pred-info">觸發日: ${t.date} | 養牌第 ${t.age} 期</div>
+                <span class="nums-highlight">${t.target.map(fNum).join(', ')}</span>
+            </div>`
+        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無追蹤版路 ☕</div>';
 
-        // 渲染每日日誌
         const listHtml = dailyView.slice().reverse().map(d => {
             let eventsHtml = '';
-            
             if (d.events.length === 0) {
                 eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無訊號</div>`;
             } else {
                 eventsHtml = d.events.map(e => {
                     if (e.type === 'trigger') {
-                        return `
-                        <div class="trigger-detail">
-                            <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type}</div>
-                            <div class="trigger-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div>
-                            <div class="trigger-status">👉 開始養牌三期</div>
-                        </div>`;
+                        return `<div class="trigger-detail"><div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div><div class="trigger-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div><div class="trigger-status">👉 開始養牌三期</div></div>`;
                     } else if (e.type === 'hit') {
-                        return `
-                        <div class="hit-detail">
-                            <div class="hit-type">${e.pattern.type}</div>
-                            <div class="hit-nums">命中號碼: ${e.hitNums.map(fNum).join(', ')}</div>
-                            <div class="hit-status">🎯 觸發日: ${e.triggerDate} (於第 ${e.hitPeriod} 期獲利)</div>
-                        </div>`;
+                        return `<div class="hit-detail"><div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div><div class="hit-nums">命中號碼: ${e.hitNums.map(fNum).join(', ')}</div><div class="hit-status">🎯 觸發日: ${e.triggerDate} (於第 ${e.hitPeriod} 期獲利)</div></div>`;
                     } else if (e.type === 'miss') {
-                        return `
-                        <div class="miss-detail">
-                            <div class="hit-type" style="color:#636e72;">${e.pattern.type}</div>
-                            <div class="miss-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div>
-                            <div class="miss-status">❌ 養牌三期未中 (觸發日: ${e.triggerDate})</div>
-                        </div>`;
+                        return `<div class="miss-detail"><div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div><div class="miss-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div><div class="miss-status">❌ 養牌三期未中 (觸發日: ${e.triggerDate})</div></div>`;
                     }
                 }).join('');
             }
-
-            return `
-            <div class="result-item">
-                <div class="res-header">
-                    <span class="res-date">開獎日: ${d.date}</span>
-                    <span class="res-actual">${d.nums.map(fNum).join(' ')}</span>
-                </div>
-                ${eventsHtml}
-            </div>`;
+            return `<div class="result-item"><div class="res-header"><span class="res-date">開獎日: ${d.date}</span><span class="res-actual">${d.nums.map(fNum).join(' ')}</span></div>${eventsHtml}</div>`;
         }).join('');
         
-        document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px;">尚無紀錄</div>';
+        document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px; color:#999;">尚無紀錄</div>';
 
+        let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
-        document.getElementById('summaryArea').innerHTML = `💡 <b>統計：</b> 共產出 ${stats.total} 組，命中 ${stats.hit} 組，精準率 <b>${(stats.hit/stats.total*100).toFixed(1)}%</b>`;
+        document.getElementById('summaryArea').innerHTML = `💡 <b>策略回測結算：</b>共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b>`;
     }
 
     window.onload = processData;
