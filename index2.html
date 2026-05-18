@@ -96,13 +96,57 @@
         
         <div class="strategy-bar">
             <span>⚙️ 尾數預測策略：</span>
-            <select id="strategySelect" onchange="recalculateOnly()" style="margin-bottom:0; padding: 8px;">
+            <select id="strategySelect" onchange="recalculateOnly()" style="margin-bottom:8px; padding: 8px;">
                 <option value="dynamic">動態去冷頭 (預測 4 顆，自動閃避近期最冷區間)</option>
                 <option value="noZero">固定去 0 頭 (預測 4 顆，傳統省成本)</option>
                 <option value="fullTail">保留全尾數 (預測 5 顆，涵蓋率最高)</option>
                 <option value="noZero2">固定去 0 頭 (預測 2 顆，保留熱門兩頭)</option>
                 <option value="dynamic2">動態去頭 (預測 2 顆，保留熱門兩頭)</option>
             </select>
+            
+            <span style="display: block; margin-top: 10px; margin-bottom: 5px;">🎛️ 參數微調 (動態計算)：</span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                    <label style="font-size: 0.8rem; color: var(--primary);">養牌期數 (Lookahead)</label>
+                    <select id="setLookahead" onchange="recalculateOnly()" style="margin-bottom:0; padding: 6px;">
+                        <option value="1">1 期</option>
+                        <option value="2">2 期</option>
+                        <option value="3" selected>3 期</option>
+                        <option value="4">4 期</option>
+                        <option value="5">5 期</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 0.8rem; color: var(--primary);">最少歷史開出次數</label>
+                    <select id="setMinOccur" onchange="recalculateOnly()" style="margin-bottom:0; padding: 6px;">
+                        <option value="3">3 次</option>
+                        <option value="5">5 次</option>
+                        <option value="8" selected>8 次</option>
+                        <option value="10">10 次</option>
+                        <option value="15">15 次</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 0.8rem; color: var(--primary);">勝率門檻</label>
+                    <select id="setWinRate" onchange="recalculateOnly()" style="margin-bottom:0; padding: 6px;">
+                        <option value="60">60%</option>
+                        <option value="70">70%</option>
+                        <option value="80">80%</option>
+                        <option value="90">90%</option>
+                        <option value="100" selected>100%</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 0.8rem; color: var(--primary);">冷熱觀察期數</label>
+                    <select id="setColdWindow" onchange="recalculateOnly()" style="margin-bottom:0; padding: 6px;">
+                        <option value="5">5 期</option>
+                        <option value="10" selected>10 期</option>
+                        <option value="15">15 期</option>
+                        <option value="20">20 期</option>
+                        <option value="30">30 期</option>
+                    </select>
+                </div>
+            </div>
         </div>
 
         <div class="status-bar" style="margin-top: 10px;">
@@ -111,7 +155,7 @@
         </div>
     </div>
 
-    <div class="section-title">🕒 目前追蹤中 (養三期)</div>
+    <div class="section-title" id="trackTitle">🕒 目前追蹤中 (養 3 期)</div>
     <div id="predictionArea"></div>
     
     <div id="summaryArea" class="summary" style="display:none;"></div>
@@ -121,11 +165,11 @@
 </div>
 
 <script>
-    // --- 核心演算法設定區 ---
-    const LOOKAHEAD = 3;              // 往後觀察期數
-    const MIN_OCCURRENCE = 8;         // 最少開出次數
-    const MIN_WIN_RATE = 100.0;       // 勝率門檻
-    const COLD_WINDOW = 10;           // 動態策略：觀察過去 10 期冷區
+    // --- 核心演算法設定區 (由選項動態決定) ---
+    let LOOKAHEAD = 3;              
+    let MIN_OCCURRENCE = 8;         
+    let MIN_WIN_RATE = 100.0;       
+    let COLD_WINDOW = 10;           
 
     let parsedData = [];
     let maxNum = 39;
@@ -200,6 +244,15 @@
     }
 
     function recalculateOnly() {
+        // 更新動態參數
+        LOOKAHEAD = parseInt(document.getElementById('setLookahead').value);
+        MIN_OCCURRENCE = parseInt(document.getElementById('setMinOccur').value);
+        MIN_WIN_RATE = parseFloat(document.getElementById('setWinRate').value);
+        COLD_WINDOW = parseInt(document.getElementById('setColdWindow').value);
+        
+        // 更新介面文字
+        document.getElementById('trackTitle').innerHTML = `🕒 目前追蹤中 (養 ${LOOKAHEAD} 期)`;
+
         if(parsedData.length > 0) {
             calculateRules();
             runAnalysis();
@@ -394,11 +447,11 @@
                 eventsHtml = d.events.map(e => {
                     let killBadge = e.pattern.droppedText ? `<span class="kill-tag">${e.pattern.droppedText}</span>` : '';
                     if (e.type === 'trigger') {
-                        return `<div class="trigger-detail"><div class="trigger-type">🔔 新訊號: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span> ${killBadge}</div><div class="trigger-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div><div class="trigger-status">👉 開始養牌三期</div></div>`;
+                        return `<div class="trigger-detail"><div class="trigger-type">🔔 新訊號: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span> ${killBadge}</div><div class="trigger-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div><div class="trigger-status">👉 開始養牌 ${LOOKAHEAD} 期</div></div>`;
                     } else if (e.type === 'hit') {
                         return `<div class="hit-detail"><div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span> ${killBadge}</div><div class="hit-nums">命中號碼: ${e.hitNums.map(fNum).join(', ')}</div><div class="hit-status">🎯 觸發日: ${e.triggerDate} (於第 ${e.hitPeriod} 期獲利)</div></div>`;
                     } else if (e.type === 'miss') {
-                        return `<div class="miss-detail"><div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span> ${killBadge}</div><div class="miss-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div><div class="miss-status">❌ 養牌三期未中 (觸發日: ${e.triggerDate})</div></div>`;
+                        return `<div class="miss-detail"><div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span> ${killBadge}</div><div class="miss-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div><div class="miss-status">❌ 養牌 ${LOOKAHEAD} 期未中 (觸發日: ${e.triggerDate})</div></div>`;
                     }
                 }).join('');
             }
