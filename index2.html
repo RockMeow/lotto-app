@@ -95,13 +95,12 @@
         </select>
         
         <div class="strategy-bar">
-            <span>⚙️ 尾數預測策略：</span>
+            <span>⚙️ 尾數預測策略 (基礎模式)：</span>
             <select id="strategySelect" onchange="recalculateOnly()" style="margin-bottom:8px; padding: 8px;">
-                <option value="dynamic">動態去冷頭 (預測 4 顆，自動閃避近期最冷區間)</option>
-                <option value="noZero">固定去 0 頭 (預測 4 顆，傳統省成本)</option>
-                <option value="fullTail">保留全尾數 (預測 5 顆，涵蓋率最高)</option>
-                <option value="noZero2">固定去 0 頭 (預測 2 顆，保留熱門兩頭)</option>
-                <option value="dynamic2">動態去頭 (預測 2 顆，保留熱門兩頭)</option>
+                <option value="dynamic">動態挑選熱門頭 (依近期冷熱自動挑選)</option>
+                <option value="noZero_dynamic">去 0 頭並動態挑選熱門頭</option>
+                <option value="noZero">固定去 0 頭 (不考慮冷熱)</option>
+                <option value="fullTail">保留全尾數</option>
             </select>
             
             <span style="display: block; margin-top: 10px; margin-bottom: 5px;">🎛️ 參數微調 (動態計算)：</span>
@@ -146,6 +145,16 @@
                         <option value="30">30 期</option>
                     </select>
                 </div>
+                <div>
+                    <label style="font-size: 0.8rem; color: var(--primary);">預測顆數 (保留幾種頭數)</label>
+                    <select id="setPredictCount" onchange="recalculateOnly()" style="margin-bottom:0; padding: 6px;">
+                        <option value="1">1 顆</option>
+                        <option value="2">2 顆</option>
+                        <option value="3">3 顆</option>
+                        <option value="4" selected>4 顆</option>
+                        <option value="5">5 顆 (全保留)</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -170,6 +179,7 @@
     let MIN_OCCURRENCE = 8;         
     let MIN_WIN_RATE = 100.0;       
     let COLD_WINDOW = 10;           
+    let PREDICT_COUNT = 4;          
 
     let parsedData = [];
     let maxNum = 39;
@@ -178,32 +188,7 @@
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
-    // 計算指定期數之前，最冷門的字頭 (0頭, 1頭, 2頭...)
-    function getColdestHead(currentIndex) {
-        let counts = {0:0, 1:0, 2:0, 3:0, 4:0};
-        let start = Math.max(0, currentIndex - COLD_WINDOW + 1);
-        let maxHeads = Math.floor(maxNum / 10);
-        
-        for (let i = start; i <= currentIndex; i++) {
-            parsedData[i].nums.forEach(n => {
-                let h = Math.floor(n / 10);
-                if (h === 0 && n === 0) return; // 忽略真實的0 (若資料庫有錯)
-                if (h <= maxHeads) counts[h]++;
-            });
-        }
-        
-        let coldest = -1;
-        let minCount = 9999;
-        for (let h = 0; h <= maxHeads; h++) {
-            if (counts[h] < minCount) {
-                minCount = counts[h];
-                coldest = h;
-            }
-        }
-        return coldest;
-    }
-
-    // 【新增】：計算指定期數之前，最熱門的 N 個字頭
+    // 計算指定期數之前，最熱門的 N 個字頭
     function getHotHeads(currentIndex, count, excludeZero) {
         let counts = {0:0, 1:0, 2:0, 3:0, 4:0};
         let start = Math.max(0, currentIndex - COLD_WINDOW + 1);
@@ -233,9 +218,7 @@
         
         for(let h = 0; h <= maxHeads; h++) {
             if (strategy === 'noZero' && h === 0) continue;          
-            if (strategy === 'dynamic' && h === options.coldestHead) continue; 
-            if (strategy === 'noZero2' && (!options.hotHeadsNoZero || !options.hotHeadsNoZero.includes(h))) continue;
-            if (strategy === 'dynamic2' && (!options.hotHeadsDynamic || !options.hotHeadsDynamic.includes(h))) continue;
+            if ((strategy === 'dynamic' || strategy === 'noZero_dynamic') && options.hotHeads && !options.hotHeads.includes(h)) continue;
             
             let n = h * 10 + tail;
             if(n > 0 && n <= maxNum) balls.push(n);
@@ -249,6 +232,7 @@
         MIN_OCCURRENCE = parseInt(document.getElementById('setMinOccur').value);
         MIN_WIN_RATE = parseFloat(document.getElementById('setWinRate').value);
         COLD_WINDOW = parseInt(document.getElementById('setColdWindow').value);
+        PREDICT_COUNT = parseInt(document.getElementById('setPredictCount').value);
         
         // 更新介面文字
         document.getElementById('trackTitle').innerHTML = `🕒 目前追蹤中 (養 ${LOOKAHEAD} 期)`;
@@ -315,9 +299,8 @@
                     
                     // 根據觸發當下的歷史時間點，計算頭數條件並產生目標號碼
                     let options = {};
-                    if (strategy === 'dynamic') options.coldestHead = getColdestHead(idx);
-                    if (strategy === 'noZero2') options.hotHeadsNoZero = getHotHeads(idx, 2, true);
-                    if (strategy === 'dynamic2') options.hotHeadsDynamic = getHotHeads(idx, 2, false);
+                    if (strategy === 'dynamic') options.hotHeads = getHotHeads(idx, PREDICT_COUNT, false);
+                    if (strategy === 'noZero_dynamic') options.hotHeads = getHotHeads(idx, PREDICT_COUNT, true);
                     
                     let targetBalls = getTargetBalls(tail, strategy, options);
                     
@@ -357,9 +340,8 @@
         let strategy = document.getElementById('strategySelect').value;
         
         let options = {};
-        if (strategy === 'dynamic') options.coldestHead = getColdestHead(currentIndex);
-        if (strategy === 'noZero2') options.hotHeadsNoZero = getHotHeads(currentIndex, 2, true);
-        if (strategy === 'dynamic2') options.hotHeadsDynamic = getHotHeads(currentIndex, 2, false);
+        if (strategy === 'dynamic') options.hotHeads = getHotHeads(currentIndex, PREDICT_COUNT, false);
+        if (strategy === 'noZero_dynamic') options.hotHeads = getHotHeads(currentIndex, PREDICT_COUNT, true);
 
         nums.forEach(num => {
             if (smartRules[num]) {
@@ -370,8 +352,9 @@
                         let currentTarget = getTargetBalls(r.targetTail, strategy, options);
                         
                         let droppedText = null;
-                        if (strategy === 'dynamic') droppedText = `殺 ${options.coldestHead} 頭`;
-                        else if (strategy === 'noZero2' || strategy === 'dynamic2') droppedText = `預測 2 顆`;
+                        if (strategy === 'dynamic' || strategy === 'noZero_dynamic') droppedText = `預測 ${PREDICT_COUNT} 顆`;
+                        else if (strategy === 'noZero') droppedText = `固定去 0 頭`;
+                        else if (strategy === 'fullTail') droppedText = `全保留`;
                         
                         patterns.push({ 
                             type: `拖牌 (開${fNum(num)})`, 
