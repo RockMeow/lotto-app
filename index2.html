@@ -95,13 +95,12 @@
         </select>
         
         <div class="strategy-bar">
-            <span>⚙️ 預測模式與策略：</span>
+            <span>⚙️ 尾數預測策略 (基礎模式)：</span>
             <select id="strategySelect" onchange="recalculateOnly()" style="margin-bottom:8px; padding: 8px;">
-                <option value="exactNum">精準拖牌 (直接預測單顆號碼)</option>
-                <option value="dynamic">拖尾 - 動態挑選熱門頭 (依冷熱自動挑選)</option>
-                <option value="noZero_dynamic">拖尾 - 去 0 頭並動態挑選熱門頭</option>
-                <option value="noZero">拖尾 - 固定去 0 頭 (不考慮冷熱)</option>
-                <option value="fullTail">拖尾 - 保留全尾數</option>
+                <option value="dynamic">動態挑選熱門頭 (依近期冷熱自動挑選)</option>
+                <option value="noZero_dynamic">去 0 頭並動態挑選熱門頭</option>
+                <option value="noZero">固定去 0 頭 (不考慮冷熱)</option>
+                <option value="fullTail">保留全尾數</option>
             </select>
             
             <span style="display: block; margin-top: 10px; margin-bottom: 5px;">🎛️ 參數微調 (動態計算)：</span>
@@ -157,8 +156,8 @@
                     </select>
                 </div>
             </div>
-            <!-- 恢復為絕對命中次數優先的王者模式按鈕 -->
-            <button id="btnAutoSearch" onclick="startSmartSearch()" style="width:100%; margin-top:12px; padding:10px; background:var(--success); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.3s;">🤖 智能搜尋「預測最多且命中最多」參數</button>
+            <!-- 全新加入的智能搜尋按鈕 -->
+            <button id="btnAutoSearch" onclick="startSmartSearch()" style="width:100%; margin-top:12px; padding:10px; background:var(--success); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.3s;">🤖 智能搜尋隱藏最佳參數</button>
         </div>
 
         <div class="status-bar" style="margin-top: 10px;">
@@ -281,8 +280,6 @@
         let tracking = [];
         let stats = { total: 0, hit: 0 };
         let strategy = document.getElementById('strategySelect').value;
-        
-        let targetsToEvaluate = (strategy === 'exactNum') ? Array.from({length: maxNum}, (_, i) => i + 1) : [0,1,2,3,4,5,6,7,8,9];
 
         // --- 優化：預先計算每一期的熱門頭與目標球，避免在回測迴圈中重複計算導致卡頓 ---
         let hotHeadsCache = new Array(parsedData.length);
@@ -293,17 +290,13 @@
             hotHeadsCache[i] = getHotHeads(i, PREDICT_COUNT, false);
             noZeroHotHeadsCache[i] = getHotHeads(i, PREDICT_COUNT, true);
             
-            targetBallsCache[i] = {};
+            targetBallsCache[i] = new Array(10);
             let options_i = {};
             if (strategy === 'dynamic') options_i.hotHeads = hotHeadsCache[i];
             if (strategy === 'noZero_dynamic') options_i.hotHeads = noZeroHotHeadsCache[i];
             
-            for(let t of targetsToEvaluate) {
-                if (strategy === 'exactNum') {
-                    targetBallsCache[i][t] = [t]; // 預測單號
-                } else {
-                    targetBallsCache[i][t] = getTargetBalls(t, strategy, options_i); // 預測尾數
-                }
+            for(let tail = 0; tail < 10; tail++) {
+                targetBallsCache[i][tail] = getTargetBalls(tail, strategy, options_i);
             }
         }
 
@@ -311,6 +304,7 @@
         let occurMap = Array.from({length: maxNum + 1}, () => []);
 
         // --- 核心升級：滾動式步進回測 (Walk-Forward Testing) ---
+        // 完全杜絕未來函數，第 i 天只會拿 < i 的資料來評估勝率
         for (let i = 0; i < parsedData.length; i++) {
             let currentNums = parsedData[i].nums;
             let dailyPatterns = [];
@@ -318,30 +312,32 @@
             // 1. 評估今天開出的號碼，基於「過去歷史」是否有高勝率規律
             for (let num of currentNums) {
                 if (num < 1 || num > maxNum) continue;
-                let pastIndices = occurMap[num]; 
+                let pastIndices = occurMap[num]; // 取得直到昨天為止的歷史足跡
 
                 if (pastIndices.length >= MIN_OCCURRENCE) {
-                    for (let target of targetsToEvaluate) {
+                    for (let tail = 0; tail < 10; tail++) {
                         let successCount = 0;
                         let validEvaluations = 0;
 
                         for (let k of pastIndices) {
                             let hitSuccess = false;
                             let resolved = false;
-                            let t_k = targetBallsCache[k][target];
+                            let target_k = targetBallsCache[k][tail];
 
-                            if (t_k.length === 0) continue;
+                            if (target_k.length === 0) continue;
 
+                            // 只驗證從歷史期數 k，往後追蹤 LOOKAHEAD 期 (但最高只能查到今天的資料 i)
                             for (let j = 1; j <= LOOKAHEAD; j++) {
                                 if (k + j <= i) {
-                                    if (intersect(parsedData[k + j].nums, t_k).length > 0) {
+                                    if (intersect(parsedData[k + j].nums, target_k).length > 0) {
                                         hitSuccess = true;
                                         resolved = true;
-                                        break;
+                                        break; // 只要命中一次就算成功
                                     }
                                 }
                             }
 
+                            // 如果直到今天為止都沒中，且追蹤期數已走完，則判定為有效但失敗的評估
                             if (!resolved && k + LOOKAHEAD <= i) {
                                 resolved = true; 
                             }
@@ -352,22 +348,21 @@
                             }
                         }
 
+                        // 如果符合門檻，則生成今天的預測訊號
                         if (validEvaluations >= MIN_OCCURRENCE) {
                             let winRate = (successCount / validEvaluations) * 100;
                             if (winRate >= MIN_WIN_RATE) {
-                                let currentTarget = targetBallsCache[i][target];
+                                let currentTarget = targetBallsCache[i][tail];
                                 if (currentTarget.length > 0) {
                                     let droppedText = null;
-                                    if (strategy === 'exactNum') droppedText = `單號必中`;
-                                    else if (strategy === 'dynamic' || strategy === 'noZero_dynamic') droppedText = `預測 ${PREDICT_COUNT} 顆`;
+                                    if (strategy === 'dynamic' || strategy === 'noZero_dynamic') droppedText = `預測 ${PREDICT_COUNT} 顆`;
                                     else if (strategy === 'noZero') droppedText = `固定去 0 頭`;
                                     else if (strategy === 'fullTail') droppedText = `全保留`;
 
                                     dailyPatterns.push({ 
-                                        num: num, 
-                                        targetId: target, 
-                                        targetType: strategy,
+                                        num: num, // 隱藏屬性供去重使用
                                         type: `拖牌 (開${fNum(num)})`, 
+                                        targetTail: tail, 
                                         target: currentTarget, 
                                         score: winRate,
                                         droppedText: droppedText
@@ -379,16 +374,16 @@
                 }
             }
 
-            // 2. 將今天的號碼紀錄到歷史地圖中，供明天使用 
+            // 2. 將今天的號碼紀錄到歷史地圖中，供明天使用 (確保不偷看未來)
             currentNums.forEach(num => {
                 if (num >= 1 && num <= maxNum) occurMap[num].push(i);
             });
 
-            // 3. 去除同號碼同目標的重複訊號，並依勝率排序
+            // 3. 去除同號碼同尾數的重複訊號，並依勝率排序
             let uniquePatterns = [];
             let seen = new Set();
             for (let p of dailyPatterns) {
-                let key = `${p.num}-${p.targetId}`;
+                let key = `${p.num}-${p.targetTail}`;
                 if (!seen.has(key)) {
                     seen.add(key);
                     uniquePatterns.push(p);
@@ -425,16 +420,15 @@
             });
         }
 
-        // --- 渲染 UI 區域 (完全保持原樣，僅動態替換「尾/號」標籤) ---
+        // --- 渲染 UI 區域 (保持原有結構完全不變) ---
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
             let killBadge = t.droppedText ? `<span class="kill-tag">${t.droppedText}</span>` : '';
-            let targetLabel = t.targetType === 'exactNum' ? `拖 ${fNum(t.targetId)} 號` : `拖 ${t.targetId} 尾`;
             return `
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 勝率</div>
-                <h3>${t.type} <span class="target-tail">${targetLabel}</span> ${killBadge}</h3>
+                <h3>${t.type} <span class="target-tail">拖 ${t.targetTail} 尾</span> ${killBadge}</h3>
                 <div class="pred-info">觸發日: ${t.date} | 養牌第 ${t.age} 期</div>
                 <span class="nums-highlight">${t.target.map(fNum).join(', ')}</span>
             </div>`
@@ -447,13 +441,12 @@
             } else {
                 eventsHtml = d.events.map(e => {
                     let killBadge = e.pattern.droppedText ? `<span class="kill-tag">${e.pattern.droppedText}</span>` : '';
-                    let targetLabel = e.pattern.targetType === 'exactNum' ? `拖 ${fNum(e.pattern.targetId)} 號` : `拖 ${e.pattern.targetId}尾`;
                     if (e.type === 'trigger') {
-                        return `<div class="trigger-detail"><div class="trigger-type">🔔 新訊號: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">${targetLabel}</span> ${killBadge}</div><div class="trigger-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div><div class="trigger-status">👉 開始養牌 ${LOOKAHEAD} 期</div></div>`;
+                        return `<div class="trigger-detail"><div class="trigger-type">🔔 新訊號: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span> ${killBadge}</div><div class="trigger-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div><div class="trigger-status">👉 開始養牌 ${LOOKAHEAD} 期</div></div>`;
                     } else if (e.type === 'hit') {
-                        return `<div class="hit-detail"><div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">${targetLabel}</span> ${killBadge}</div><div class="hit-nums">命中號碼: ${e.hitNums.map(fNum).join(', ')}</div><div class="hit-status">🎯 觸發日: ${e.triggerDate} (於第 ${e.hitPeriod} 期獲利)</div></div>`;
+                        return `<div class="hit-detail"><div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span> ${killBadge}</div><div class="hit-nums">命中號碼: ${e.hitNums.map(fNum).join(', ')}</div><div class="hit-status">🎯 觸發日: ${e.triggerDate} (於第 ${e.hitPeriod} 期獲利)</div></div>`;
                     } else if (e.type === 'miss') {
-                        return `<div class="miss-detail"><div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">${targetLabel}</span> ${killBadge}</div><div class="miss-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div><div class="miss-status">❌ 養牌 ${LOOKAHEAD} 期未中 (觸發日: ${e.triggerDate})</div></div>`;
+                        return `<div class="miss-detail"><div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span> ${killBadge}</div><div class="miss-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div><div class="miss-status">❌ 養牌 ${LOOKAHEAD} 期未中 (觸發日: ${e.triggerDate})</div></div>`;
                     }
                 }).join('');
             }
@@ -467,7 +460,7 @@
         document.getElementById('summaryArea').innerHTML = `💡 <b>策略回測結算：</b>共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b>`;
     }
 
-    // --- 智能搜尋擴充功能 (高命中王者模式) ---
+    // --- 智能搜尋擴充功能 (支援解禁動態注入) ---
     let isSearching = false;
 
     // 動態注入選項輔助函數
@@ -492,48 +485,36 @@
         }
         isSearching = true;
         const btn = document.getElementById('btnAutoSearch');
-        btn.innerText = "⏳ 智能運算中 (跑遍隱藏組合)...";
+        btn.innerText = "⏳ 智能運算中 (跑遍72,000種隱藏組合)...";
         btn.style.background = "var(--warning)";
         btn.style.color = "var(--text)";
 
-        // 擴大演算法的「隱藏搜索網」 (加入 exactNum)
-        const strats = ['exactNum', 'dynamic', 'noZero_dynamic', 'noZero', 'fullTail'];
+        // 擴大演算法的「隱藏搜索網」
+        const strats = ['dynamic', 'noZero_dynamic', 'noZero', 'fullTail'];
         const lookas = [1, 2, 3, 4, 5];
         const minOccs = [3, 4, 5, 6, 7, 8, 9, 10, 12, 15];
         const winRs = [60, 65, 70, 75, 80, 85, 90, 95, 100];
         const coldWs = [5, 8, 10, 12, 15, 20, 25, 30];
         const predCs = [1, 2, 3, 4, 5];
 
-        let bestHitRate = 0;
+        let bestHitRate = -1;
         let bestTotal = 0;
-        let bestHit = -1;  // 絕對命中次數優先
+        let bestHit = 0;
         let bestParams = null;
 
-        // 計算總運算進度，精準單號模式不需跑冷熱與預測顆數迴圈，可省下大量運算
-        let totalProgress = 0;
-        for (let s of strats) {
-            let cws = (s === 'exactNum') ? [10] : coldWs;
-            let pcs = (s === 'exactNum') ? [1] : predCs;
-            totalProgress += cws.length * pcs.length;
-        }
+        let totalProgress = strats.length * coldWs.length * predCs.length;
         let currentProgress = 0;
 
         await new Promise(resolve => setTimeout(resolve, 50)); // 讓 UI 先更新
 
         for (let s of strats) {
-            let isExactNum = (s === 'exactNum');
-            let currentCWs = isExactNum ? [10] : coldWs;
-            let currentPCs = isExactNum ? [1] : predCs;
-
-            for (let cw of currentCWs) {
-                for (let pc of currentPCs) {
+            for (let cw of coldWs) {
+                for (let pc of predCs) {
                     currentProgress++;
                     btn.innerText = `⏳ 隱藏數據挖掘中... ${Math.round((currentProgress / totalProgress) * 100)}%`;
                     await new Promise(resolve => setTimeout(resolve, 0)); // 讓出線程防卡死
 
-                    let targetsToEvaluate = isExactNum ? Array.from({length: maxNum}, (_, i) => i + 1) : [0,1,2,3,4,5,6,7,8,9];
-
-                    // 1. 建立當前快取
+                    // 1. 建立當前 (策略/冷熱窗/預測數) 的快取
                     let targetBallsCache = new Array(parsedData.length);
                     for(let i = 0; i < parsedData.length; i++) {
                         let isNoZero = (s === 'noZero_dynamic' || s === 'noZero');
@@ -560,21 +541,17 @@
                             hotHeads = sorted.slice(0, pc).map(x => x.h);
                         }
 
-                        targetBallsCache[i] = {};
-                        for(let t of targetsToEvaluate) {
-                            if (isExactNum) {
-                                targetBallsCache[i][t] = [t];
-                            } else {
-                                let balls = [];
-                                let mH = Math.floor(maxNum / 10);
-                                for(let h = 0; h <= mH; h++) {
-                                    if (s === 'noZero' && h === 0) continue;          
-                                    if (isDynamic && hotHeads && !hotHeads.includes(h)) continue;
-                                    let n = h * 10 + t;
-                                    if(n > 0 && n <= maxNum) balls.push(n);
-                                }
-                                targetBallsCache[i][t] = balls;
+                        targetBallsCache[i] = new Array(10);
+                        for(let tail = 0; tail < 10; tail++) {
+                            let balls = [];
+                            let mH = Math.floor(maxNum / 10);
+                            for(let h = 0; h <= mH; h++) {
+                                if (s === 'noZero' && h === 0) continue;          
+                                if (isDynamic && hotHeads && !hotHeads.includes(h)) continue;
+                                let n = h * 10 + tail;
+                                if(n > 0 && n <= maxNum) balls.push(n);
                             }
+                            targetBallsCache[i][tail] = balls;
                         }
                     }
 
@@ -593,14 +570,14 @@
                                     let pastIndices = occurMap[num];
 
                                     if (pastIndices.length >= mo) {
-                                        for (let target of targetsToEvaluate) {
+                                        for (let tail = 0; tail < 10; tail++) {
                                             let sCount = 0;
                                             let vEvals = 0;
 
                                             for (let k of pastIndices) {
                                                 let hSuccess = false;
                                                 let resolved = false;
-                                                let t_k = targetBallsCache[k][target];
+                                                let t_k = targetBallsCache[k][tail];
 
                                                 if (t_k.length === 0) continue;
 
@@ -622,9 +599,9 @@
 
                                             if (vEvals >= mo) {
                                                 let wr = (sCount / vEvals) * 100;
-                                                let currentTarget = targetBallsCache[i][target];
+                                                let currentTarget = targetBallsCache[i][tail];
                                                 if (currentTarget.length > 0) {
-                                                    dailyPatterns.push({ num: num, targetId: target, score: wr, target: currentTarget });
+                                                    dailyPatterns.push({ num: num, targetTail: tail, score: wr, target: currentTarget });
                                                 }
                                             }
                                         }
@@ -638,7 +615,7 @@
                                 let seen = new Set();
                                 dailyPatterns.sort((a,b)=>b.score - a.score);
                                 for (let p of dailyPatterns) {
-                                    let key = `${p.num}-${p.targetId}`;
+                                    let key = `${p.num}-${p.targetTail}`;
                                     if (!seen.has(key)) {
                                         seen.add(key);
                                         // 記錄此訊號與其未來是否真實命中
@@ -657,7 +634,7 @@
                                 }
                             }
 
-                            // 3. 測試各種勝率門檻，絕對數量優先！
+                            // 3. 測試各種勝率門檻，找出最佳解
                             for (let wr of winRs) {
                                 let total = 0;
                                 let hit = 0;
@@ -671,11 +648,11 @@
                                 // 必須至少觸發過 3 次訊號才具有統計參考價值
                                 if (total >= 3) { 
                                     let hr = hit / total;
-                                    // 只要能過勝率門檻，命中總量最大者勝出！
-                                    if (hit > bestHit || (hit === bestHit && hr > bestHitRate)) {
-                                        bestHit = hit;
+                                    // 規則：精準率優先，若精準率相同則看誰抓到的總訊號較多
+                                    if (hr > bestHitRate || (Math.abs(hr - bestHitRate) < 0.001 && total > bestTotal)) {
                                         bestHitRate = hr;
                                         bestTotal = total;
+                                        bestHit = hit;
                                         bestParams = { strat: s, cw: cw, pc: pc, mo: mo, la: la, wr: wr };
                                     }
                                 }
@@ -695,7 +672,7 @@
             setDynamicOption('setLookahead', bestParams.la, '期');
             setDynamicOption('setWinRate', bestParams.wr, '%');
             
-            btn.innerText = `✅ 最佳數量王者！總命中 ${bestHit} 次 (勝率 ${(bestHitRate*100).toFixed(1)}%)`;
+            btn.innerText = `✅ 找到最佳勝率 (${(bestHitRate*100).toFixed(1)}%)！已動態注入選單`;
             btn.style.background = "var(--success)";
             btn.style.color = "white";
 
@@ -709,7 +686,7 @@
 
         // 5 秒後按鈕恢復原狀
         setTimeout(() => {
-            btn.innerText = "🤖 智能搜尋「預測最多且命中最多」參數";
+            btn.innerText = "🤖 智能搜尋隱藏最佳參數";
             btn.style.background = "var(--success)";
             isSearching = false;
         }, 5000);
