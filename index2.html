@@ -157,7 +157,7 @@
                 </div>
             </div>
             <!-- 全新加入的智能搜尋按鈕 -->
-            <button id="btnAutoSearch" onclick="startSmartSearch()" style="width:100%; margin-top:12px; padding:10px; background:var(--success); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.3s;">🤖 智能搜尋「高頻率且高命中」參數</button>
+            <button id="btnAutoSearch" onclick="startSmartSearch()" style="width:100%; margin-top:12px; padding:10px; background:var(--success); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.3s;">🤖 智能搜尋「預測最多且命中最多」參數</button>
         </div>
 
         <div class="status-bar" style="margin-top: 10px;">
@@ -460,7 +460,7 @@
         document.getElementById('summaryArea').innerHTML = `💡 <b>策略回測結算：</b>共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b>`;
     }
 
-    // --- 智能搜尋擴充功能 (綜合期望值優化版) ---
+    // --- 智能搜尋擴充功能 (絕對數量優先模型) ---
     let isSearching = false;
 
     // 動態注入選項輔助函數
@@ -497,10 +497,9 @@
         const coldWs = [5, 8, 10, 12, 15, 20, 25, 30];
         const predCs = [1, 2, 3, 4, 5];
 
-        let bestScore = -1;  // 改用期望值分數
         let bestHitRate = 0;
         let bestTotal = 0;
-        let bestHit = 0;
+        let bestHit = -1;  // 改為絕對命中次數
         let bestParams = null;
 
         let totalProgress = strats.length * coldWs.length * predCs.length;
@@ -649,15 +648,12 @@
                                 // 必須至少觸發過 3 次訊號才具有統計參考價值
                                 if (total >= 3) { 
                                     let hr = hit / total;
-                                    // 規則升級：綜合期望值公式 (命中次數 * 勝率的平方)
-                                    // 完美兼顧高頻率命中與準確率
-                                    let currentScore = hit * (hr * hr);
-                                    
-                                    if (currentScore > bestScore || (Math.abs(currentScore - bestScore) < 0.001 && hr > bestHitRate)) {
-                                        bestScore = currentScore;
+                                    // 規則升級：絕對數量優先模型 (數量王道)
+                                    // 只要能過勝率門檻，誰命中的總次數最多誰就贏。若命中次數平手，則比較實際精準率。
+                                    if (hit > bestHit || (hit === bestHit && hr > bestHitRate)) {
+                                        bestHit = hit;
                                         bestHitRate = hr;
                                         bestTotal = total;
-                                        bestHit = hit;
                                         bestParams = { strat: s, cw: cw, pc: pc, mo: mo, la: la, wr: wr };
                                     }
                                 }
@@ -677,7 +673,7 @@
             setDynamicOption('setLookahead', bestParams.la, '期');
             setDynamicOption('setWinRate', bestParams.wr, '%');
             
-            btn.innerText = `✅ 最佳平衡參數！命中 ${bestHit} 次 (勝率 ${(bestHitRate*100).toFixed(1)}%)`;
+            btn.innerText = `✅ 最佳數量王者！總命中 ${bestHit} 次 (勝率 ${(bestHitRate*100).toFixed(1)}%)`;
             btn.style.background = "var(--success)";
             btn.style.color = "white";
 
@@ -691,7 +687,7 @@
 
         // 5 秒後按鈕恢復原狀
         setTimeout(() => {
-            btn.innerText = "🤖 智能搜尋「高頻率且高命中」參數";
+            btn.innerText = "🤖 智能搜尋「預測最多且命中最多」參數";
             btn.style.background = "var(--success)";
             isSearching = false;
         }, 5000);
