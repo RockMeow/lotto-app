@@ -157,7 +157,7 @@
                 </div>
             </div>
             <!-- 全新加入的智能搜尋按鈕 -->
-            <button id="btnAutoSearch" onclick="startSmartSearch()" style="width:100%; margin-top:12px; padding:10px; background:var(--success); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.3s;">🤖 智能搜尋最佳勝率參數</button>
+            <button id="btnAutoSearch" onclick="startSmartSearch()" style="width:100%; margin-top:12px; padding:10px; background:var(--success); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.3s;">🤖 智能搜尋隱藏最佳參數</button>
         </div>
 
         <div class="status-bar" style="margin-top: 10px;">
@@ -460,8 +460,22 @@
         document.getElementById('summaryArea').innerHTML = `💡 <b>策略回測結算：</b>共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b>`;
     }
 
-    // --- 智能搜尋擴充功能 ---
+    // --- 智能搜尋擴充功能 (支援解禁動態注入) ---
     let isSearching = false;
+
+    // 動態注入選項輔助函數
+    function setDynamicOption(selectId, val, suffix) {
+        let sel = document.getElementById(selectId);
+        let exists = Array.from(sel.options).some(o => parseFloat(o.value) === val);
+        if (!exists) {
+            let newOpt = document.createElement('option');
+            newOpt.value = val;
+            newOpt.innerText = `${val} ${suffix} (智能找到)`;
+            newOpt.style.color = "var(--danger)"; // 標記為特殊找到的
+            sel.appendChild(newOpt);
+        }
+        sel.value = val;
+    }
 
     async function startSmartSearch() {
         if (isSearching) return;
@@ -471,17 +485,17 @@
         }
         isSearching = true;
         const btn = document.getElementById('btnAutoSearch');
-        btn.innerText = "⏳ 智能運算中 (跑遍12,500種組合)...";
+        btn.innerText = "⏳ 智能運算中 (跑遍72,000種隱藏組合)...";
         btn.style.background = "var(--warning)";
         btn.style.color = "var(--text)";
 
-        // 取得所有下拉選單的選項
-        const strats = Array.from(document.getElementById('strategySelect').options).map(o=>o.value);
-        const lookas = Array.from(document.getElementById('setLookahead').options).map(o=>parseInt(o.value));
-        const minOccs = Array.from(document.getElementById('setMinOccur').options).map(o=>parseInt(o.value));
-        const winRs = Array.from(document.getElementById('setWinRate').options).map(o=>parseFloat(o.value));
-        const coldWs = Array.from(document.getElementById('setColdWindow').options).map(o=>parseInt(o.value));
-        const predCs = Array.from(document.getElementById('setPredictCount').options).map(o=>parseInt(o.value));
+        // 擴大演算法的「隱藏搜索網」
+        const strats = ['dynamic', 'noZero_dynamic', 'noZero', 'fullTail'];
+        const lookas = [1, 2, 3, 4, 5];
+        const minOccs = [3, 4, 5, 6, 7, 8, 9, 10, 12, 15];
+        const winRs = [60, 65, 70, 75, 80, 85, 90, 95, 100];
+        const coldWs = [5, 8, 10, 12, 15, 20, 25, 30];
+        const predCs = [1, 2, 3, 4, 5];
 
         let bestHitRate = -1;
         let bestTotal = 0;
@@ -493,12 +507,11 @@
 
         await new Promise(resolve => setTimeout(resolve, 50)); // 讓 UI 先更新
 
-        // 為了極致效能，將快取層拉到最外圍
         for (let s of strats) {
             for (let cw of coldWs) {
                 for (let pc of predCs) {
                     currentProgress++;
-                    btn.innerText = `⏳ 演算法搜索中... ${Math.round((currentProgress / totalProgress) * 100)}%`;
+                    btn.innerText = `⏳ 隱藏數據挖掘中... ${Math.round((currentProgress / totalProgress) * 100)}%`;
                     await new Promise(resolve => setTimeout(resolve, 0)); // 讓出線程防卡死
 
                     // 1. 建立當前 (策略/冷熱窗/預測數) 的快取
@@ -651,15 +664,15 @@
         }
 
         if (bestParams) {
-            // 自動套用最佳參數
+            // 動態注入與套用最佳隱藏參數
             document.getElementById('strategySelect').value = bestParams.strat;
-            document.getElementById('setColdWindow').value = bestParams.cw;
-            document.getElementById('setPredictCount').value = bestParams.pc;
-            document.getElementById('setMinOccur').value = bestParams.mo;
-            document.getElementById('setLookahead').value = bestParams.la;
-            document.getElementById('setWinRate').value = bestParams.wr;
+            setDynamicOption('setColdWindow', bestParams.cw, '期');
+            setDynamicOption('setPredictCount', bestParams.pc, '顆');
+            setDynamicOption('setMinOccur', bestParams.mo, '次');
+            setDynamicOption('setLookahead', bestParams.la, '期');
+            setDynamicOption('setWinRate', bestParams.wr, '%');
             
-            btn.innerText = `✅ 找到最佳勝率 (${(bestHitRate*100).toFixed(1)}%)！已自動套用`;
+            btn.innerText = `✅ 找到最佳勝率 (${(bestHitRate*100).toFixed(1)}%)！已動態注入選單`;
             btn.style.background = "var(--success)";
             btn.style.color = "white";
 
@@ -673,7 +686,7 @@
 
         // 5 秒後按鈕恢復原狀
         setTimeout(() => {
-            btn.innerText = "🤖 智能搜尋最佳勝率參數";
+            btn.innerText = "🤖 智能搜尋隱藏最佳參數";
             btn.style.background = "var(--success)";
             isSearching = false;
         }, 5000);
