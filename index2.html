@@ -183,7 +183,6 @@
 
     let parsedData = [];
     let maxNum = 39;
-    let smartRules = {}; 
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
@@ -238,7 +237,6 @@
         document.getElementById('trackTitle').innerHTML = `🕒 目前追蹤中 (養 ${LOOKAHEAD} 期)`;
 
         if(parsedData.length > 0) {
-            calculateRules();
             runAnalysis();
         }
     }
@@ -275,114 +273,125 @@
         }
     }
 
-    function calculateRules() {
-        smartRules = {};
-        let totalDraws = parsedData.length;
-        let strategy = document.getElementById('strategySelect').value;
-
-        for (let triggerNum = 1; triggerNum <= maxNum; triggerNum++) {
-            let triggerIndices = [];
-            for (let i = 0; i < totalDraws; i++) {
-                if (parsedData[i].nums.includes(triggerNum)) {
-                    triggerIndices.push(i);
-                }
-            }
-
-            if (triggerIndices.length < MIN_OCCURRENCE) continue;
-
-            for (let tail = 0; tail < 10; tail++) {
-                let successCount = 0;
-                let validEvaluations = 0;
-
-                for (let idx of triggerIndices) {
-                    if (idx + LOOKAHEAD >= totalDraws) continue;
-                    
-                    // 根據觸發當下的歷史時間點，計算頭數條件並產生目標號碼
-                    let options = {};
-                    if (strategy === 'dynamic') options.hotHeads = getHotHeads(idx, PREDICT_COUNT, false);
-                    if (strategy === 'noZero_dynamic') options.hotHeads = getHotHeads(idx, PREDICT_COUNT, true);
-                    
-                    let targetBalls = getTargetBalls(tail, strategy, options);
-                    
-                    if (targetBalls.length === 0) continue;
-
-                    validEvaluations++;
-                    let hitSuccess = false;
-
-                    for (let j = 1; j <= LOOKAHEAD; j++) {
-                        if (intersect(parsedData[idx + j].nums, targetBalls).length > 0) {
-                            hitSuccess = true;
-                            break;
-                        }
-                    }
-
-                    if (hitSuccess) successCount++;
-                }
-
-                if (validEvaluations > 0) {
-                    let winRate = (successCount / validEvaluations) * 100;
-                    if (winRate >= MIN_WIN_RATE) {
-                        if (!smartRules[triggerNum]) smartRules[triggerNum] = [];
-                        smartRules[triggerNum].push({
-                            targetTail: tail,
-                            score: winRate,
-                            total: validEvaluations
-                        });
-                    }
-                }
-            }
-        }
-    }
-
-    function getSmartPatterns(nums, currentIndex) {
-        let patterns = [];
-        let seenKeys = new Set();
-        let strategy = document.getElementById('strategySelect').value;
-        
-        let options = {};
-        if (strategy === 'dynamic') options.hotHeads = getHotHeads(currentIndex, PREDICT_COUNT, false);
-        if (strategy === 'noZero_dynamic') options.hotHeads = getHotHeads(currentIndex, PREDICT_COUNT, true);
-
-        nums.forEach(num => {
-            if (smartRules[num]) {
-                smartRules[num].forEach(r => {
-                    let key = `${num}-${r.targetTail}`;
-                    if (!seenKeys.has(key)) {
-                        seenKeys.add(key);
-                        let currentTarget = getTargetBalls(r.targetTail, strategy, options);
-                        
-                        let droppedText = null;
-                        if (strategy === 'dynamic' || strategy === 'noZero_dynamic') droppedText = `預測 ${PREDICT_COUNT} 顆`;
-                        else if (strategy === 'noZero') droppedText = `固定去 0 頭`;
-                        else if (strategy === 'fullTail') droppedText = `全保留`;
-                        
-                        patterns.push({ 
-                            type: `拖牌 (開${fNum(num)})`, 
-                            targetTail: r.targetTail, 
-                            target: currentTarget, 
-                            score: r.score,
-                            droppedText: droppedText // 記錄 UI 顯示文字
-                        });
-                    }
-                });
-            }
-        });
-        return patterns.sort((a,b) => b.score - a.score);
-    }
-
     function runAnalysis() {
         let dailyView = parsedData.map(d => ({ date: d.date, nums: d.nums, events: [] }));
         let tracking = [];
         let stats = { total: 0, hit: 0 };
         let strategy = document.getElementById('strategySelect').value;
 
-        for (let i = 0; i < parsedData.length; i++) {
-            let patterns = getSmartPatterns(parsedData[i].nums, i);
+        // --- 優化：預先計算每一期的熱門頭與目標球，避免在回測迴圈中重複計算導致卡頓 ---
+        let hotHeadsCache = new Array(parsedData.length);
+        let noZeroHotHeadsCache = new Array(parsedData.length);
+        let targetBallsCache = new Array(parsedData.length);
+
+        for(let i = 0; i < parsedData.length; i++) {
+            hotHeadsCache[i] = getHotHeads(i, PREDICT_COUNT, false);
+            noZeroHotHeadsCache[i] = getHotHeads(i, PREDICT_COUNT, true);
             
-            patterns.forEach(p => {
-                if (p.target.length === 0) return;
+            targetBallsCache[i] = new Array(10);
+            let options_i = {};
+            if (strategy === 'dynamic') options_i.hotHeads = hotHeadsCache[i];
+            if (strategy === 'noZero_dynamic') options_i.hotHeads = noZeroHotHeadsCache[i];
+            
+            for(let tail = 0; tail < 10; tail++) {
+                targetBallsCache[i][tail] = getTargetBalls(tail, strategy, options_i);
+            }
+        }
+
+        // 用來記錄各個號碼過去開出的期數 Index
+        let occurMap = Array.from({length: maxNum + 1}, () => []);
+
+        // --- 核心升級：滾動式步進回測 (Walk-Forward Testing) ---
+        // 完全杜絕未來函數，第 i 天只會拿 < i 的資料來評估勝率
+        for (let i = 0; i < parsedData.length; i++) {
+            let currentNums = parsedData[i].nums;
+            let dailyPatterns = [];
+
+            // 1. 評估今天開出的號碼，基於「過去歷史」是否有高勝率規律
+            for (let num of currentNums) {
+                if (num < 1 || num > maxNum) continue;
+                let pastIndices = occurMap[num]; // 取得直到昨天為止的歷史足跡
+
+                if (pastIndices.length >= MIN_OCCURRENCE) {
+                    for (let tail = 0; tail < 10; tail++) {
+                        let successCount = 0;
+                        let validEvaluations = 0;
+
+                        for (let k of pastIndices) {
+                            let hitSuccess = false;
+                            let resolved = false;
+                            let target_k = targetBallsCache[k][tail];
+
+                            if (target_k.length === 0) continue;
+
+                            // 只驗證從歷史期數 k，往後追蹤 LOOKAHEAD 期 (但最高只能查到今天的資料 i)
+                            for (let j = 1; j <= LOOKAHEAD; j++) {
+                                if (k + j <= i) {
+                                    if (intersect(parsedData[k + j].nums, target_k).length > 0) {
+                                        hitSuccess = true;
+                                        resolved = true;
+                                        break; // 只要命中一次就算成功
+                                    }
+                                }
+                            }
+
+                            // 如果直到今天為止都沒中，且追蹤期數已走完，則判定為有效但失敗的評估
+                            if (!resolved && k + LOOKAHEAD <= i) {
+                                resolved = true; 
+                            }
+
+                            if (resolved) {
+                                validEvaluations++;
+                                if (hitSuccess) successCount++;
+                            }
+                        }
+
+                        // 如果符合門檻，則生成今天的預測訊號
+                        if (validEvaluations >= MIN_OCCURRENCE) {
+                            let winRate = (successCount / validEvaluations) * 100;
+                            if (winRate >= MIN_WIN_RATE) {
+                                let currentTarget = targetBallsCache[i][tail];
+                                if (currentTarget.length > 0) {
+                                    let droppedText = null;
+                                    if (strategy === 'dynamic' || strategy === 'noZero_dynamic') droppedText = `預測 ${PREDICT_COUNT} 顆`;
+                                    else if (strategy === 'noZero') droppedText = `固定去 0 頭`;
+                                    else if (strategy === 'fullTail') droppedText = `全保留`;
+
+                                    dailyPatterns.push({ 
+                                        num: num, // 隱藏屬性供去重使用
+                                        type: `拖牌 (開${fNum(num)})`, 
+                                        targetTail: tail, 
+                                        target: currentTarget, 
+                                        score: winRate,
+                                        droppedText: droppedText
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. 將今天的號碼紀錄到歷史地圖中，供明天使用 (確保不偷看未來)
+            currentNums.forEach(num => {
+                if (num >= 1 && num <= maxNum) occurMap[num].push(i);
+            });
+
+            // 3. 去除同號碼同尾數的重複訊號，並依勝率排序
+            let uniquePatterns = [];
+            let seen = new Set();
+            for (let p of dailyPatterns) {
+                let key = `${p.num}-${p.targetTail}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniquePatterns.push(p);
+                }
+            }
+            uniquePatterns.sort((a, b) => b.score - a.score);
+
+            // 4. 將預測事件掛載到日誌與追蹤版面上
+            uniquePatterns.forEach(p => {
                 stats.total++;
-                
                 dailyView[i].events.push({ type: 'trigger', pattern: p });
 
                 let hitInfo = null;
@@ -409,6 +418,7 @@
             });
         }
 
+        // --- 渲染 UI 區域 (保持原有結構完全不變) ---
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
