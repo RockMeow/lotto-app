@@ -191,7 +191,7 @@
             const text = await response.text();
             csvData = text.split(/\r?\n/).filter(r => r.trim()).map(r => r.split(',').map(s => s.trim()));
             
-            statusEl.innerText = `✅ 成功載入 ${filename}，共 ${csvData.length} 期`;
+            statusEl.innerText = `✅ 成功載入，共 ${csvData.length} 期`;
             statusEl.style.color = "#166534"; 
         } catch (error) {
             console.error("讀取失敗:", error);
