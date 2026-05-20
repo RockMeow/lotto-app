@@ -6,7 +6,7 @@
     <title>三期牌/週牌監控</title>
     <style>
         :root { --primary: #4f46e5; --bg: #f1f5f9; --text: #0f172a; --danger: #ef4444; --success: #22c55e; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 80px; /* 留給底部浮動列空間 */ }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 80px; }
         .container { max-width: 100%; padding: 15px; box-sizing: border-box; }
         .card { background: #ffffff; padding: 18px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
         .strategy-card { background: #eef2ff; border-left: 5px solid var(--primary); padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 1.1em;}
@@ -15,7 +15,7 @@
         .input-group { margin-bottom: 18px; }
         label { display: flex; justify-content: space-between; align-items: center; font-weight: 600; margin-bottom: 8px; font-size: 1em; color: #475569; }
         .label-title { font-weight: 600; margin-bottom: 8px; font-size: 1em; color: #475569; display: block; }
-        input, select { width: 100%; padding: 14px; border: 1px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; background-color: #f8fafc; appearance: none; /* 移除iOS預設樣式 */}
+        input, select { width: 100%; padding: 14px; border: 1px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; background-color: #f8fafc; appearance: none; }
         input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2); }
         
         .three-input { margin-bottom: 12px; }
@@ -37,6 +37,9 @@
         .result-item { border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 12px; }
         .result-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
         .result-item p { margin: 0 0 5px 0; font-size: 1.1em; color: #334155;}
+        
+        .bet-details { margin-top: 12px; font-size: 0.95em; color: #334155; background: #ffffff; padding: 10px; border-radius: 6px; border: 1px dashed #cbd5e1; }
+        .bet-label { font-weight: bold; color: var(--primary); margin-bottom: 4px; display: block; }
     </style>
 </head>
 <body>
@@ -159,7 +162,7 @@
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'three-input';
-        input.inputMode = 'numeric'; // 呼叫手機數字鍵盤
+        input.inputMode = 'numeric'; 
         input.placeholder = `組別 ${threeInputCount} (如: 01,02)`;
         input.value = value;
         input.oninput = saveInputs;
@@ -180,7 +183,14 @@
             if (!response.ok) throw new Error("無檔案");
             
             const text = await response.text();
-            csvData = text.split(/\r?\n/).filter(r => r.trim()).map(r => r.split(',').map(s => s.trim()));
+            let rawData = text.split(/\r?\n/).filter(r => r.trim()).map(r => r.split(',').map(s => s.trim()));
+            
+            // 略過第一行的標題列 (若第一格包含 Date 或 date)
+            if (rawData.length > 0 && rawData[0][0].toLowerCase() === 'date') {
+                rawData.shift();
+            }
+            
+            csvData = rawData;
             
             statusEl.innerText = `✅ 已載入 ${csvData.length} 期資料`;
             statusEl.style.color = "#166534"; 
@@ -267,21 +277,59 @@
                 statusListHtml += `<div class="result-item"><p><strong>${g.name}</strong></p><span class="status-badge dropped">已於 ${hitLog}</span></div>`;
             } else {
                 statusListHtml += `<div class="result-item"><p><strong>${g.name}</strong></p><span class="status-badge safe">繼續養牌</span></div>`;
-                activeGroups.push(g.name);
+                activeGroups.push(g); // 儲存整個物件以便後續提取號碼
             }
         });
 
-        let strategy = "";
-        if (activeGroups.length === 0) strategy = "⚠️ <strong>停止下注</strong>";
-        else if (activeGroups.length === 1) strategy = "🚗 <strong>建議：坐車</strong>";
-        else if (activeGroups.length === 2) strategy = "⛓️ <strong>建議：連碰</strong>";
-        else strategy = "🏗️ <strong>建議：柱碰</strong>";
+        // 產生策略與下注號碼
+        let strategyTitle = "";
+        let betDetailsHtml = "";
+
+        if (activeGroups.length === 0) {
+            strategyTitle = "⚠️ <strong>停止下注</strong>";
+            betDetailsHtml = "<div class='bet-details'>本週所有號碼皆已開出，建議休息。</div>";
+        } 
+        else if (activeGroups.length === 1) {
+            strategyTitle = "🚗 <strong>建議策略：坐車</strong>";
+            betDetailsHtml = `
+                <div class='bet-details'>
+                    <span class='bet-label'>坐車號碼組合：</span>
+                    ${activeGroups[0].val.join(', ')}
+                </div>`;
+        } 
+        else if (activeGroups.length === 2) {
+            strategyTitle = "⛓️ <strong>建議策略：連碰</strong>";
+            // 將兩組號碼合併並去重
+            let combined = [...new Set([...activeGroups[0].val, ...activeGroups[1].val])];
+            betDetailsHtml = `
+                <div class='bet-details'>
+                    <span class='bet-label'>連碰號碼組合：</span>
+                    ${combined.join(', ')}
+                </div>`;
+        } 
+        else {
+            strategyTitle = "🏗️ <strong>建議策略：柱碰</strong>";
+            // 將第一組安全牌設為「柱」，其餘合併為「拖」
+            let keyGroup = activeGroups[0];
+            let dragNums = [];
+            for(let i = 1; i < activeGroups.length; i++) {
+                dragNums.push(...activeGroups[i].val);
+            }
+            let uniqueDrags = [...new Set(dragNums)]; // 去重
+            
+            betDetailsHtml = `
+                <div class='bet-details'>
+                    <span class='bet-label'>柱碰號碼組合：</span>
+                    <span style="color:var(--danger)">[柱]</span> ${keyGroup.val.join(', ')} <br>
+                    <span style="color:var(--primary); margin-top:4px; display:inline-block;">[拖]</span> ${uniqueDrags.join(', ')}
+                </div>`;
+        }
 
         document.getElementById('statusList').innerHTML = statusListHtml;
-        document.getElementById('strategyBox').innerHTML = strategy;
+        document.getElementById('strategyBox').innerHTML = strategyTitle + betDetailsHtml;
         document.getElementById('results').style.display = 'block';
         
-        // 分析完後自動向下捲動，讓結果可見
+        // 分析完後自動向下捲動
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 </script>
