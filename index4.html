@@ -15,10 +15,19 @@
         .input-group { margin-bottom: 18px; }
         label { display: flex; justify-content: space-between; align-items: center; font-weight: 600; margin-bottom: 8px; font-size: 1em; color: #475569; }
         .label-title { font-weight: 600; margin-bottom: 8px; font-size: 1em; color: #475569; display: block; }
-        input, select { width: 100%; padding: 14px; border: 1px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; background-color: #f8fafc; appearance: none; }
+        
+        /* 輸入框與刪除按鈕並排設計 */
+        .input-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+        input, select { flex: 1; padding: 14px; border: 1px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; background-color: #f8fafc; appearance: none; }
         input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2); }
         
-        .three-input { margin-bottom: 12px; }
+        .btn-del {
+            background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; border-radius: 10px;
+            width: 48px; height: 48px; font-size: 1.5em; line-height: 1; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; flex-shrink: 0; transition: 0.1s;
+        }
+        .btn-del:active { background: #fee2e2; transform: scale(0.95); }
+
         .btn-sm { background: #e2e8f0; color: #475569; border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.9em; cursor: pointer; font-weight: bold; }
         .btn-sm:active { background: #cbd5e1; }
         
@@ -65,13 +74,32 @@
                 <button type="button" class="btn-sm" onclick="addThreeInput()">+ 新增</button>
             </label>
             <div id="threeContainer">
-                <!-- 預設的輸入框會在 JS 中生成 -->
+                <!-- 動態生成的三期牌輸入框 -->
             </div>
         </div>
 
-        <div class="input-group"><label class="label-title">週牌 1</label><input type="text" id="w1" placeholder="請輸入號碼" inputmode="numeric" oninput="saveInputs()"></div>
-        <div class="input-group"><label class="label-title">週牌 2</label><input type="text" id="w2" placeholder="請輸入號碼" inputmode="numeric" oninput="saveInputs()"></div>
-        <div class="input-group"><label class="label-title">週牌 3</label><input type="text" id="w3" placeholder="請輸入號碼" inputmode="numeric" oninput="saveInputs()"></div>
+        <!-- 固定週牌，加入 input-row 與刪除按鈕 -->
+        <div class="input-group" id="group-w1">
+            <label class="label-title">週牌 1</label>
+            <div class="input-row">
+                <input type="text" id="w1" placeholder="請輸入號碼" inputmode="numeric" oninput="saveInputs()">
+                <button type="button" class="btn-del" onclick="hideWeekly('group-w1', 'w1')">×</button>
+            </div>
+        </div>
+        <div class="input-group" id="group-w2">
+            <label class="label-title">週牌 2</label>
+            <div class="input-row">
+                <input type="text" id="w2" placeholder="請輸入號碼" inputmode="numeric" oninput="saveInputs()">
+                <button type="button" class="btn-del" onclick="hideWeekly('group-w2', 'w2')">×</button>
+            </div>
+        </div>
+        <div class="input-group" id="group-w3">
+            <label class="label-title">週牌 3</label>
+            <div class="input-row">
+                <input type="text" id="w3" placeholder="請輸入號碼" inputmode="numeric" oninput="saveInputs()">
+                <button type="button" class="btn-del" onclick="hideWeekly('group-w3', 'w3')">×</button>
+            </div>
+        </div>
     </div>
 
     <!-- 分析結果區塊 -->
@@ -106,11 +134,16 @@
         const threeInputs = Array.from(document.querySelectorAll('.three-input')).map(input => input.value);
         
         let masterData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        
+        // 同時儲存各個輸入框的值，以及週牌是否被隱藏的狀態
         masterData[currentGame] = {
             threeCards: threeInputs,
             w1: document.getElementById('w1').value,
             w2: document.getElementById('w2').value,
-            w3: document.getElementById('w3').value
+            w3: document.getElementById('w3').value,
+            w1_hidden: document.getElementById('group-w1').style.display === 'none',
+            w2_hidden: document.getElementById('group-w2').style.display === 'none',
+            w3_hidden: document.getElementById('group-w3').style.display === 'none'
         };
         masterData['_lastSelectedGame'] = currentGame;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(masterData));
@@ -125,19 +158,24 @@
         threeInputCount = 0;
         
         if (data) {
-            document.getElementById('w1').value = data.w1 || '';
-            document.getElementById('w2').value = data.w2 || '';
-            document.getElementById('w3').value = data.w3 || '';
+            // 恢復週牌的值與隱藏狀態
+            ['w1', 'w2', 'w3'].forEach(id => {
+                document.getElementById(id).value = data[id] || '';
+                document.getElementById('group-' + id).style.display = data[`${id}_hidden`] ? 'none' : 'block';
+            });
 
+            // 恢復三期牌
             if (data.threeCards && data.threeCards.length > 0) {
                 data.threeCards.forEach(val => addThreeInput(val));
             } else {
                 addThreeInput();
             }
         } else {
-            document.getElementById('w1').value = '';
-            document.getElementById('w2').value = '';
-            document.getElementById('w3').value = '';
+            // 若無紀錄，恢復預設全開狀態
+            ['w1', 'w2', 'w3'].forEach(id => {
+                document.getElementById(id).value = '';
+                document.getElementById('group-' + id).style.display = 'block';
+            });
             addThreeInput();
         }
     }
@@ -146,7 +184,7 @@
         const currentGame = document.getElementById('csvSelect').value;
         const gameName = document.querySelector(`#csvSelect option[value="${currentGame}"]`).text;
         
-        if (confirm(`確定要清除【${gameName}】的輸入紀錄嗎？`)) {
+        if (confirm(`確定要清除【${gameName}】的輸入紀錄，並恢復所有輸入框嗎？`)) {
             let masterData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
             delete masterData[currentGame];
             localStorage.setItem(STORAGE_KEY, JSON.stringify(masterData));
@@ -159,6 +197,13 @@
     function addThreeInput(value = '') {
         threeInputCount++;
         const container = document.getElementById('threeContainer');
+        
+        // 創建整行的容器
+        const row = document.createElement('div');
+        row.className = 'input-row';
+        row.style.marginBottom = '12px';
+        
+        // 創建輸入框
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'three-input';
@@ -166,9 +211,29 @@
         input.placeholder = `組別 ${threeInputCount} (如: 01,02)`;
         input.value = value;
         input.oninput = saveInputs;
-        container.appendChild(input);
+        
+        // 創建專屬刪除按鈕
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-del';
+        btn.innerHTML = '×';
+        btn.onclick = () => { 
+            row.remove(); 
+            saveInputs(); 
+        };
+        
+        row.appendChild(input);
+        row.appendChild(btn);
+        container.appendChild(row);
         
         if (value === '') saveInputs();
+    }
+
+    // 刪除(隱藏)固定週牌的函式
+    function hideWeekly(groupId, inputId) {
+        document.getElementById(groupId).style.display = 'none';
+        document.getElementById(inputId).value = '';
+        saveInputs();
     }
 
     async function processData() {
@@ -230,6 +295,7 @@
 
         const groups = [];
 
+        // 收集頁面上存在的三期牌
         const threeInputs = document.querySelectorAll('.three-input');
         threeInputs.forEach((input, index) => {
             if (input.value.trim() !== '') {
@@ -240,16 +306,20 @@
             }
         });
 
+        // 收集尚未被隱藏的週牌
         const w1 = document.getElementById('w1').value;
-        if(w1.trim()) groups.push({ name: "週牌 1", val: w1.split(',').filter(s => s.trim()).map(normalizeNumber) });
+        if(document.getElementById('group-w1').style.display !== 'none' && w1.trim()) 
+            groups.push({ name: "週牌 1", val: w1.split(',').filter(s => s.trim()).map(normalizeNumber) });
         
         const w2 = document.getElementById('w2').value;
-        if(w2.trim()) groups.push({ name: "週牌 2", val: w2.split(',').filter(s => s.trim()).map(normalizeNumber) });
+        if(document.getElementById('group-w2').style.display !== 'none' && w2.trim()) 
+            groups.push({ name: "週牌 2", val: w2.split(',').filter(s => s.trim()).map(normalizeNumber) });
         
         const w3 = document.getElementById('w3').value;
-        if(w3.trim()) groups.push({ name: "週牌 3", val: w3.split(',').filter(s => s.trim()).map(normalizeNumber) });
+        if(document.getElementById('group-w3').style.display !== 'none' && w3.trim()) 
+            groups.push({ name: "週牌 3", val: w3.split(',').filter(s => s.trim()).map(normalizeNumber) });
 
-        if (groups.length === 0) return alert("請輸入號碼");
+        if (groups.length === 0) return alert("請輸入至少一組號碼再分析！");
 
         const weekStart = new Date(2026, 4, 17); // 5/17
         const weekEnd = new Date(2026, 4, 23);   // 5/23
@@ -277,7 +347,7 @@
                 statusListHtml += `<div class="result-item"><p><strong>${g.name}</strong></p><span class="status-badge dropped">已於 ${hitLog}</span></div>`;
             } else {
                 statusListHtml += `<div class="result-item"><p><strong>${g.name}</strong></p><span class="status-badge safe">繼續養牌</span></div>`;
-                activeGroups.push(g); // 儲存整個物件以便後續提取號碼
+                activeGroups.push(g);
             }
         });
 
@@ -287,7 +357,7 @@
 
         if (activeGroups.length === 0) {
             strategyTitle = "⚠️ <strong>停止下注</strong>";
-            betDetailsHtml = "<div class='bet-details'>本週所有號碼皆已開出，建議休息。</div>";
+            betDetailsHtml = "<div class='bet-details'>本週所有輸入的號碼皆已開出，建議休息。</div>";
         } 
         else if (activeGroups.length === 1) {
             strategyTitle = "🚗 <strong>建議策略：坐車</strong>";
