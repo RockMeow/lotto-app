@@ -58,9 +58,9 @@
             </div>
         </div>
 
-        <div class="input-group"><label>週牌1:</label><input type="text" id="w1" placeholder="" oninput="saveInputs()"></div>
-        <div class="input-group"><label>週牌2:</label><input type="text" id="w2" placeholder="" oninput="saveInputs()"></div>
-        <div class="input-group"><label>週牌3:</label><input type="text" id="w3" placeholder="" oninput="saveInputs()"></div>
+        <div class="input-group"><label>週牌 1:</label><input type="text" id="w1" placeholder="" oninput="saveInputs()"></div>
+        <div class="input-group"><label>週牌 2:</label><input type="text" id="w2" placeholder="" oninput="saveInputs()"></div>
+        <div class="input-group"><label>週牌 3:</label><input type="text" id="w3" placeholder="" oninput="saveInputs()"></div>
         
         <div class="button-group">
             <button class="btn-main" onclick="analyzeGroups()">執行分析</button>
@@ -277,18 +277,18 @@
             }
 
             if (hitLog) {
-                statusListHtml += `<div class="card"><p><strong>${g.name}</strong></p><span class="status-badge dropped">已於 ${hitLog} / 放棄</span></div>`;
+                statusListHtml += `<div class="card"><p><strong>${g.name}</strong></p><span class="status-badge dropped">已於 ${hitLog}</span></div>`;
             } else {
-                statusListHtml += `<div class="card"><p><strong>${g.name}</strong></p><span class="status-badge safe">安全 / 繼續監控</span></div>`;
+                statusListHtml += `<div class="card"><p><strong>${g.name}</strong></p><span class="status-badge safe">繼續養牌</span></div>`;
                 activeGroups.push(g.name);
             }
         });
 
         let strategy = "";
-        if (activeGroups.length === 0) strategy = "⚠️ <strong>全面下車</strong>：本週所有組別皆已開出，建議本週停止投注。";
-        else if (activeGroups.length === 1) strategy = "🚗 <strong>建議：坐車</strong>：目前僅剩一組安全，建議採取單點投注策略。";
-        else if (activeGroups.length === 2) strategy = "⛓️ <strong>建議：連碰</strong>：目前有兩組安全，建議將其組合進行連碰。";
-        else strategy = "🏗️ <strong>建議：柱碰</strong>：目前有三組以上安全，建議挑選最強組別為「柱」，其餘為「拖」。";
+        if (activeGroups.length === 0) strategy = "⚠️ <strong>停止下注</strong>";
+        else if (activeGroups.length === 1) strategy = "🚗 <strong>建議：坐車</strong>";
+        else if (activeGroups.length === 2) strategy = "⛓️ <strong>建議：連碰</strong>";
+        else strategy = "🏗️ <strong>建議：柱碰</strong>";
 
         document.getElementById('statusList').innerHTML = statusListHtml;
         document.getElementById('strategyBox').innerHTML = strategy;
