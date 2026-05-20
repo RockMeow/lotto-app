@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>三期牌/週牌監控</title>
+    <title>三期牌 / 週牌監控</title>
     <style>
         :root { --primary: #4f46e5; --bg: #f8fafc; --text: #1e293b; --danger: #ef4444; --success: #22c55e; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
@@ -33,13 +33,13 @@
 
 <div class="container">
     <div class="card">
-        <h2>三期牌/週牌監控</h2>
+        <h2>三期牌 / 週牌監控</h2>
         
         <!-- 自動讀取選單區塊 -->
         <div class="input-group">
             <span class="label-title">選擇遊戲類型:</span>
             <div class="selector-box">
-                <select id="csvSelect" onchange="processData(); saveInputs();">
+                <select id="csvSelect" onchange="onGameChange()">
                     <option value="Fan_history_2026.csv" selected>天天樂</option>
                     <option value="Ghana_history_2026.csv">迦納彩</option>
                     <option value="539_history_2026.csv">今彩539</option>
@@ -64,7 +64,7 @@
         
         <div class="button-group">
             <button class="btn-main" onclick="analyzeGroups()">執行分析</button>
-            <button class="btn-main btn-danger" onclick="clearInputs()">清除紀錄</button>
+            <button class="btn-main btn-danger" onclick="clearInputs()">清除當前紀錄</button>
         </div>
     </div>
 
@@ -77,34 +77,56 @@
 <script>
     let csvData = [];
     let threeInputCount = 0;
-    const STORAGE_KEY = 'lottery_monitor_data';
+    // 更新 Key 以避免與舊版本資料結構衝突
+    const STORAGE_KEY = 'lottery_monitor_data_v2';
 
-    // 儲存目前所有輸入的值到 localStorage
+    // 當下拉選單改變時觸發
+    function onGameChange() {
+        const selectedGame = document.getElementById('csvSelect').value;
+        loadInputsForGame(selectedGame);
+        processData();
+        // 切換遊戲時隱藏先前的分析結果
+        document.getElementById('results').style.display = 'none';
+        saveInputs(); // 更新最後選擇的遊戲記憶
+    }
+
+    // 儲存目前所有輸入的值到 localStorage (依據遊戲類型分類)
     function saveInputs() {
+        const currentGame = document.getElementById('csvSelect').value;
         const threeInputs = Array.from(document.querySelectorAll('.three-input')).map(input => input.value);
-        const dataToSave = {
-            gameType: document.getElementById('csvSelect').value,
+        
+        // 抓取原本已儲存的所有資料，若無則建立空物件
+        let masterData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        
+        // 將當前資料寫入對應的遊戲 Key 中
+        masterData[currentGame] = {
             threeCards: threeInputs,
             w1: document.getElementById('w1').value,
             w2: document.getElementById('w2').value,
             w3: document.getElementById('w3').value
         };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+        
+        // 記憶最後一次選擇的遊戲
+        masterData['_lastSelectedGame'] = currentGame;
+        
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(masterData));
     }
 
-    // 讀取 localStorage 的資料並還原 UI
-    function loadInputs() {
-        const savedData = localStorage.getItem(STORAGE_KEY);
-        const container = document.getElementById('threeContainer');
+    // 讀取特定遊戲的資料並還原 UI
+    function loadInputsForGame(gameKey) {
+        let masterData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        let data = masterData[gameKey];
         
-        if (savedData) {
-            const data = JSON.parse(savedData);
-            
-            // 恢復遊戲類型與週牌
-            if (data.gameType) document.getElementById('csvSelect').value = data.gameType;
-            if (data.w1) document.getElementById('w1').value = data.w1;
-            if (data.w2) document.getElementById('w2').value = data.w2;
-            if (data.w3) document.getElementById('w3').value = data.w3;
+        // 清空現有的三期牌
+        const container = document.getElementById('threeContainer');
+        container.innerHTML = '';
+        threeInputCount = 0;
+        
+        if (data) {
+            // 恢復週牌
+            document.getElementById('w1').value = data.w1 || '';
+            document.getElementById('w2').value = data.w2 || '';
+            document.getElementById('w3').value = data.w3 || '';
 
             // 恢復三期牌，如果沒有記錄，就給一個空的預設框
             if (data.threeCards && data.threeCards.length > 0) {
@@ -113,25 +135,28 @@
                 addThreeInput();
             }
         } else {
-            // 如果從來沒儲存過，給一個預設框
+            // 如果該遊戲從來沒儲存過，給予全空預設值
+            document.getElementById('w1').value = '';
+            document.getElementById('w2').value = '';
+            document.getElementById('w3').value = '';
             addThreeInput();
         }
     }
 
-    // 清除所有輸入與暫存
+    // 清除【當前遊戲】的輸入紀錄
     function clearInputs() {
-        if (confirm("確定要清除所有輸入紀錄嗎？")) {
-            localStorage.removeItem(STORAGE_KEY);
+        const currentGame = document.getElementById('csvSelect').value;
+        const gameName = document.querySelector(`#csvSelect option[value="${currentGame}"]`).text;
+        
+        if (confirm(`確定要清除【${gameName}】的所有輸入紀錄嗎？`)) {
+            let masterData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
             
-            document.getElementById('w1').value = '';
-            document.getElementById('w2').value = '';
-            document.getElementById('w3').value = '';
+            // 從記錄中刪除該遊戲的資料
+            delete masterData[currentGame];
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(masterData));
             
-            const container = document.getElementById('threeContainer');
-            container.innerHTML = '';
-            threeInputCount = 0;
-            addThreeInput(); // 重新產生一個空的預設框
-            
+            // 重新載入（此時會是空狀態）
+            loadInputsForGame(currentGame);
             document.getElementById('results').style.display = 'none';
         }
     }
@@ -176,9 +201,19 @@
         }
     }
 
-    // 網頁載入完成時，先還原輸入資料，再觸發資料庫讀取
+    // 網頁載入完成時，還原最後一次選擇的遊戲與其資料
     window.onload = () => {
-        loadInputs();
+        let masterData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        const selectEl = document.getElementById('csvSelect');
+        
+        // 恢復上次使用的遊戲選項
+        if (masterData['_lastSelectedGame']) {
+            let exists = Array.from(selectEl.options).some(opt => opt.value === masterData['_lastSelectedGame']);
+            if (exists) selectEl.value = masterData['_lastSelectedGame'];
+        }
+
+        const currentGame = selectEl.value;
+        loadInputsForGame(currentGame);
         processData();
     };
 
