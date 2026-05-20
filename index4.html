@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>三期牌/週牌監控</title>
+    <style>
+        :root { --primary: #4f46e5; --bg: #f8fafc; --text: #1e293b; --danger: #ef4444; --success: #22c55e; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .card { background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .strategy-card { background: #eef2ff; border-left: 5px solid var(--primary); padding: 15px; border-radius: 8px; margin-top: 20px; }
+        h2 { margin-top: 0; color: var(--primary); }
+        .input-group { margin-bottom: 15px; }
+        label { display: flex; justify-content: space-between; align-items: center; font-weight: 600; margin-bottom: 8px; font-size: 0.9em; color: #64748b; }
+        .label-title { font-weight: 600; margin-bottom: 8px; font-size: 0.9em; color: #64748b; display: block; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
+        select { background-color: #f8fafc; cursor: pointer; }
+        .three-input { margin-bottom: 10px; }
+        .btn-main { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s;}
+        .btn-main:hover { background: #4338ca; }
+        .btn-danger { background: var(--danger); }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-sm { background: #e2e8f0; color: #475569; border: none; padding: 4px 10px; border-radius: 6px; font-size: 0.85em; cursor: pointer; font-weight: bold; }
+        .btn-sm:hover { background: #cbd5e1; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; }
+        .safe { background: #dcfce7; color: #166534; }
+        .dropped { background: #fee2e2; color: #991b1b; }
+        .system-msg { font-size: 0.85em; color: #64748b; margin-top: 5px; }
+        .button-group { display: flex; gap: 10px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2>三期牌/週牌監控</h2>
+        
+        <!-- 自動讀取選單區塊 -->
+        <div class="input-group">
+            <span class="label-title">選擇遊戲類型:</span>
+            <div class="selector-box">
+                <select id="csvSelect" onchange="processData(); saveInputs();">
+                    <option value="Fan_history_2026.csv" selected>天天樂</option>
+                    <option value="Ghana_history_2026.csv">迦納彩</option>
+                    <option value="539_history_2026.csv">今彩539</option>
+                </select>
+            </div>
+            <div id="loadStatus" class="system-msg">等待載入資料庫...</div>
+        </div>
+
+        <div class="input-group">
+            <label>
+                <span>三期牌:</span>
+                <button type="button" class="btn-sm" onclick="addThreeInput()">+ 新增三期牌</button>
+            </label>
+            <div id="threeContainer">
+                <!-- 預設的輸入框會在 JS 中生成 -->
+            </div>
+        </div>
+
+        <div class="input-group"><label>週牌1:</label><input type="text" id="w1" placeholder="" oninput="saveInputs()"></div>
+        <div class="input-group"><label>週牌2:</label><input type="text" id="w2" placeholder="" oninput="saveInputs()"></div>
+        <div class="input-group"><label>週牌3:</label><input type="text" id="w3" placeholder="" oninput="saveInputs()"></div>
+        
+        <div class="button-group">
+            <button class="btn-main" onclick="analyzeGroups()">執行分析</button>
+            <button class="btn-main btn-danger" onclick="clearInputs()">清除紀錄</button>
+        </div>
+    </div>
+
+    <div id="results" style="display:none;">
+        <div id="statusList"></div>
+        <div id="strategyBox" class="strategy-card"></div>
+    </div>
+</div>
+
+<script>
+    let csvData = [];
+    let threeInputCount = 0;
+    const STORAGE_KEY = 'lottery_monitor_data';
+
+    // 儲存目前所有輸入的值到 localStorage
+    function saveInputs() {
+        const threeInputs = Array.from(document.querySelectorAll('.three-input')).map(input => input.value);
+        const dataToSave = {
+            gameType: document.getElementById('csvSelect').value,
+            threeCards: threeInputs,
+            w1: document.getElementById('w1').value,
+            w2: document.getElementById('w2').value,
+            w3: document.getElementById('w3').value
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    }
+
+    // 讀取 localStorage 的資料並還原 UI
+    function loadInputs() {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        const container = document.getElementById('threeContainer');
+        
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            
+            // 恢復遊戲類型與週牌
+            if (data.gameType) document.getElementById('csvSelect').value = data.gameType;
+            if (data.w1) document.getElementById('w1').value = data.w1;
+            if (data.w2) document.getElementById('w2').value = data.w2;
+            if (data.w3) document.getElementById('w3').value = data.w3;
+
+            // 恢復三期牌，如果沒有記錄，就給一個空的預設框
+            if (data.threeCards && data.threeCards.length > 0) {
+                data.threeCards.forEach(val => addThreeInput(val));
+            } else {
+                addThreeInput();
+            }
+        } else {
+            // 如果從來沒儲存過，給一個預設框
+            addThreeInput();
+        }
+    }
+
+    // 清除所有輸入與暫存
+    function clearInputs() {
+        if (confirm("確定要清除所有輸入紀錄嗎？")) {
+            localStorage.removeItem(STORAGE_KEY);
+            
+            document.getElementById('w1').value = '';
+            document.getElementById('w2').value = '';
+            document.getElementById('w3').value = '';
+            
+            const container = document.getElementById('threeContainer');
+            container.innerHTML = '';
+            threeInputCount = 0;
+            addThreeInput(); // 重新產生一個空的預設框
+            
+            document.getElementById('results').style.display = 'none';
+        }
+    }
+
+    // 新增三期牌輸入框
+    function addThreeInput(value = '') {
+        threeInputCount++;
+        const container = document.getElementById('threeContainer');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'three-input';
+        input.placeholder = `(組別 ${threeInputCount})`;
+        input.value = value;
+        input.oninput = saveInputs; // 每次輸入時自動儲存
+        container.appendChild(input);
+        
+        if (value === '') saveInputs(); // 如果是按鈕新增的空框，也要更新存檔結構
+    }
+
+    // 非同步自動讀取 CSV 檔案
+    async function processData() {
+        const filename = document.getElementById('csvSelect').value;
+        const statusEl = document.getElementById('loadStatus');
+        
+        statusEl.innerText = `正在讀取 ${filename} ...`;
+        statusEl.style.color = "#d97706"; 
+
+        try {
+            const response = await fetch(filename);
+            if (!response.ok) throw new Error("檔案不存在或無法讀取");
+            
+            const text = await response.text();
+            csvData = text.split(/\r?\n/).filter(r => r.trim()).map(r => r.split(',').map(s => s.trim()));
+            
+            statusEl.innerText = `✅ 成功載入 ${filename}，共 ${csvData.length} 期`;
+            statusEl.style.color = "#166534"; 
+        } catch (error) {
+            console.error("讀取失敗:", error);
+            statusEl.innerText = `❌ 無法讀取 ${filename} (請確認檔案存在且使用 Local Server 開啟)`;
+            statusEl.style.color = "#dc2626"; 
+            csvData = [];
+        }
+    }
+
+    // 網頁載入完成時，先還原輸入資料，再觸發資料庫讀取
+    window.onload = () => {
+        loadInputs();
+        processData();
+    };
+
+    function parseDate(dateStr) {
+        const parts = dateStr.split('/');
+        return new Date(2026, parseInt(parts[0], 10) - 1, parseInt(parts[1], 10));
+    }
+
+    function normalizeNumber(numStr) {
+        const num = parseInt(numStr, 10);
+        return isNaN(num) ? numStr.trim() : num.toString();
+    }
+
+    function analyzeGroups() {
+        if (!csvData || csvData.length === 0) return alert("資料庫未載入！請確認 CSV 檔案是否就緒。");
+
+        const groups = [];
+
+        // 抓取所有三期牌
+        const threeInputs = document.querySelectorAll('.three-input');
+        threeInputs.forEach((input, index) => {
+            if (input.value.trim() !== '') {
+                groups.push({
+                    name: `三期牌 (組別 ${index + 1})`,
+                    val: input.value.split(',').filter(s => s.trim()).map(normalizeNumber)
+                });
+            }
+        });
+
+        const w1 = document.getElementById('w1').value;
+        if(w1.trim()) groups.push({ name: "週牌組1", val: w1.split(',').filter(s => s.trim()).map(normalizeNumber) });
+        
+        const w2 = document.getElementById('w2').value;
+        if(w2.trim()) groups.push({ name: "週牌組2", val: w2.split(',').filter(s => s.trim()).map(normalizeNumber) });
+        
+        const w3 = document.getElementById('w3').value;
+        if(w3.trim()) groups.push({ name: "週牌組3", val: w3.split(',').filter(s => s.trim()).map(normalizeNumber) });
+
+        if (groups.length === 0) return alert("請至少輸入一組號碼進行分析");
+
+        const weekStart = new Date(2026, 4, 17); // 5/17
+        const weekEnd = new Date(2026, 4, 23);   // 5/23
+        
+        let statusListHtml = "";
+        let activeGroups = [];
+
+        groups.forEach(g => {
+            let hitLog = null; 
+            for (let i = 0; i < csvData.length; i++) {
+                const row = csvData[i];
+                const dateObj = parseDate(row[0]);
+                const wins = row.slice(1).filter(s => s.trim()).map(normalizeNumber);
+                
+                if (dateObj >= weekStart && dateObj <= weekEnd) {
+                    const matches = g.val.filter(n => wins.includes(n));
+                    if (matches.length > 0) {
+                        hitLog = `${row[0]} (命中: ${matches.join(',')})`;
+                        break; 
+                    }
+                }
+            }
+
+            if (hitLog) {
+                statusListHtml += `<div class="card"><p><strong>${g.name}</strong></p><span class="status-badge dropped">已於 ${hitLog} / 放棄</span></div>`;
+            } else {
+                statusListHtml += `<div class="card"><p><strong>${g.name}</strong></p><span class="status-badge safe">安全 / 繼續監控</span></div>`;
+                activeGroups.push(g.name);
+            }
+        });
+
+        let strategy = "";
+        if (activeGroups.length === 0) strategy = "⚠️ <strong>全面下車</strong>：本週所有組別皆已開出，建議本週停止投注。";
+        else if (activeGroups.length === 1) strategy = "🚗 <strong>建議：坐車</strong>：目前僅剩一組安全，建議採取單點投注策略。";
+        else if (activeGroups.length === 2) strategy = "⛓️ <strong>建議：連碰</strong>：目前有兩組安全，建議將其組合進行連碰。";
+        else strategy = "🏗️ <strong>建議：柱碰</strong>：目前有三組以上安全，建議挑選最強組別為「柱」，其餘為「拖」。";
+
+        document.getElementById('statusList').innerHTML = statusListHtml;
+        document.getElementById('strategyBox').innerHTML = strategy;
+        document.getElementById('results').style.display = 'block';
+    }
+</script>
+</body>
+</html>
