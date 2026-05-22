@@ -117,17 +117,6 @@
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
-    // 【修正 3】保留完整尾數產生器 (頭數從 0 開始，包含 01~09)
-    function getTailBalls(tail) {
-        let balls = [];
-        let maxHeads = Math.floor(maxNum / 10);
-        for(let h = 0; h <= maxHeads; h++) {
-            let n = h * 10 + tail;
-            if(n > 0 && n <= maxNum) balls.push(n);
-        }
-        return balls;
-    }
-
     async function processData() {
         const fileName = document.getElementById('csvSelect').value;
         const statusEl = document.getElementById('dataStatus');
@@ -153,7 +142,6 @@
                 parsedData.push({ date: cols[0], nums: nums });
             }
             
-            // 【修正 2】自動校正日期排序，確保進行滾動回測時時間軸正確 (舊到新)
             if (parsedData.length > 1 && parsedData[0].date > parsedData[parsedData.length - 1].date) {
                 parsedData.reverse();
             }
@@ -168,65 +156,94 @@
         }
     }
 
-    // 【修正 1】滾動式回測計算，消除未來函數 (只使用當天之前的資料)
+    // 將策略改為：尋找勝率極高的「兩顆特定號碼」
     function getDynamicPatterns(currentIndex) {
         let patterns = [];
-        let seenKeys = new Set();
         let currentNums = parsedData[currentIndex].nums;
 
         currentNums.forEach(num => {
-            let triggerIndices = [];
+            let validTriggers = [];
             
-            // 只看「當下及過去」的紀錄來產生拖牌訊號
+            // 收集觸發歷史紀錄 (只看「當下及過去」)
             for (let k = 0; k <= currentIndex; k++) {
                 if (parsedData[k].nums.includes(num)) {
-                    triggerIndices.push(k);
+                    // 確保用來驗證的未來三期，也存在於已知範圍內
+                    if (k + LOOKAHEAD <= currentIndex) {
+                        validTriggers.push(k);
+                    }
                 }
             }
 
-            if (triggerIndices.length < MIN_OCCURRENCE) return;
+            if (validTriggers.length < MIN_OCCURRENCE) return;
 
-            for (let tail = 0; tail < 10; tail++) {
-                let targetBalls = getTailBalls(tail);
-                if (targetBalls.length === 0) continue;
-
-                let successCount = 0;
-                let validEvaluations = 0;
-
-                for (let idx of triggerIndices) {
-                    // 確保用來驗證的未來三期，也存在於我們目前「已知」的歷史範圍內
-                    if (idx + LOOKAHEAD > currentIndex) continue;
-                    
-                    validEvaluations++;
-                    let hitSuccess = false;
-
+            // 最佳化：先算出每顆單號在三期內開出的機率，挑出最強的 15 顆來配對，避免瀏覽器卡頓
+            let singleStats = [];
+            for (let n = 1; n <= maxNum; n++) {
+                let sCount = 0;
+                let totalHits = 0;
+                for (let idx of validTriggers) {
+                    let hSuccess = false;
                     for (let j = 1; j <= LOOKAHEAD; j++) {
-                        if (intersect(parsedData[idx + j].nums, targetBalls).length > 0) {
-                            hitSuccess = true;
-                            break;
+                        if (parsedData[idx + j].nums.includes(n)) {
+                            hSuccess = true;
+                            totalHits++;
                         }
                     }
-
-                    if (hitSuccess) successCount++;
+                    if (hSuccess) sCount++;
                 }
+                singleStats.push({ n: n, rate: sCount / validTriggers.length, hits: totalHits });
+            }
+            singleStats.sort((a, b) => b.rate - a.rate || b.hits - a.hits);
+            let candidates = singleStats.slice(0, 15).map(x => x.n);
 
-                if (validEvaluations > 0) {
-                    let winRate = (successCount / validEvaluations) * 100;
+            let bestPair = null;
+            let highestWinRate = 0;
+            let maxTotalHits = 0;
+
+            // 從最強的 15 顆號碼中，兩兩配對，尋找「二中一」勝率最高的組合
+            for (let a = 0; a < candidates.length - 1; a++) {
+                for (let b = a + 1; b < candidates.length; b++) {
+                    let pair = [candidates[a], candidates[b]].sort((x, y) => x - y);
+                    let successCount = 0;
+                    let pairTotalHits = 0;
+
+                    for (let idx of validTriggers) {
+                        let hitSuccess = false;
+                        for (let j = 1; j <= LOOKAHEAD; j++) {
+                            let drawNums = parsedData[idx + j].nums;
+                            let hitA = drawNums.includes(pair[0]);
+                            let hitB = drawNums.includes(pair[1]);
+                            if (hitA || hitB) {
+                                hitSuccess = true;
+                                if(hitA) pairTotalHits++;
+                                if(hitB) pairTotalHits++;
+                            }
+                        }
+                        if (hitSuccess) successCount++;
+                    }
+
+                    let winRate = (successCount / validTriggers.length) * 100;
                     if (winRate >= MIN_WIN_RATE) {
-                        let key = `${num}-${tail}`;
-                        if (!seenKeys.has(key)) {
-                            seenKeys.add(key);
-                            patterns.push({ 
-                                type: `拖牌 (開${fNum(num)})`, 
-                                targetTail: tail, 
-                                target: targetBalls, 
-                                score: winRate 
-                            });
+                        if (winRate > highestWinRate || (winRate === highestWinRate && pairTotalHits > maxTotalHits)) {
+                            highestWinRate = winRate;
+                            maxTotalHits = pairTotalHits;
+                            bestPair = pair;
                         }
                     }
                 }
+            }
+
+            // 若找到高勝率的雙星組合，則加入訊號
+            if (bestPair && highestWinRate >= MIN_WIN_RATE) {
+                patterns.push({ 
+                    type: `拖牌 (開${fNum(num)})`, 
+                    targetDesc: `專注雙星`, 
+                    target: bestPair, 
+                    score: highestWinRate 
+                });
             }
         });
+        
         return patterns.sort((a,b) => b.score - a.score);
     }
 
@@ -236,7 +253,6 @@
         let stats = { total: 0, hit: 0 };
 
         for (let i = 0; i < parsedData.length; i++) {
-            // 使用動態滾動計算取代全域掃描
             let patterns = getDynamicPatterns(i);
             
             patterns.forEach(p => {
@@ -270,7 +286,6 @@
                         hitNums: hitInfo.n
                     });
                 } else if (parsedData.length - 1 - i < LOOKAHEAD) {
-                    // 【修正 4】修改為下注期數計算 (若今日出訊號，準備下注第1期)
                     tracking.push({ ...p, date: parsedData[i].date, waitPeriod: parsedData.length - i });
                 } else {
                     dailyView[i + LOOKAHEAD].events.push({
@@ -288,7 +303,7 @@
             return `
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 勝率</div>
-                <h3>${t.type} <span class="target-tail">拖 ${t.targetTail} 尾</span></h3>
+                <h3>${t.type} <span class="target-tail">${t.targetDesc}</span></h3>
                 <div class="pred-info">觸發日: ${t.date} | 準備下注第 ${t.waitPeriod} 期</div>
                 <span class="nums-highlight">${t.target.map(fNum).join(', ')}</span>
             </div>`
@@ -304,21 +319,21 @@
                     if (e.type === 'trigger') {
                         return `
                         <div class="trigger-detail">
-                            <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
+                            <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">${e.pattern.targetDesc}</span></div>
                             <div class="trigger-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div>
                             <div class="trigger-status">👉 開始養牌三期</div>
                         </div>`;
                     } else if (e.type === 'hit') {
                         return `
                         <div class="hit-detail">
-                            <div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
+                            <div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">${e.pattern.targetDesc}</span></div>
                             <div class="hit-nums">命中號碼: ${e.hitNums.map(fNum).join(', ')}</div>
                             <div class="hit-status">🎯 觸發日: ${e.triggerDate} (於第 ${e.hitPeriod} 期獲利)</div>
                         </div>`;
                     } else if (e.type === 'miss') {
                         return `
                         <div class="miss-detail">
-                            <div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
+                            <div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">${e.pattern.targetDesc}</span></div>
                             <div class="miss-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div>
                             <div class="miss-status">❌ 養牌三期未中 (觸發日: ${e.triggerDate})</div>
                         </div>`;
