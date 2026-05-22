@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>順球動態版路系統 (日期尾數與精選包牌)</title>
+    <title>星期四專屬版路系統 (日期尾數)</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -11,6 +11,7 @@
             --success: #27ae60;
             --warning: #f39c12;
             --danger: #e74c3c;
+            --purple: #8e44ad;
             --bg: #f8f9fa;
             --card: #ffffff;
             --text: #2d3436;
@@ -34,14 +35,14 @@
 
         .section-title { font-size: 1rem; font-weight: bold; margin: 15px 0 10px 5px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
         #predictionArea { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
-        .pred-card { background: var(--card); padding: 15px; border-radius: 12px; border-left: 6px solid var(--danger); box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
+        .pred-card { background: var(--card); padding: 15px; border-radius: 12px; border-left: 6px solid var(--purple); box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
         .pred-card h3 { font-size: 0.95rem; margin-bottom: 5px; color: var(--primary); font-weight: 800; }
         .pred-info { font-size: 0.8rem; color: #636e72; margin-bottom: 8px; }
-        .nums-highlight { font-size: 1.4rem; font-weight: 900; color: var(--danger); letter-spacing: 2px; display: block; margin-top: 5px; }
-        .target-tail { font-size: 0.8rem; color: #fff; background: var(--danger); padding: 2px 6px; border-radius: 8px; vertical-align: middle; margin-right: 5px; display: inline-block; margin-bottom: 3px; }
+        .nums-highlight { font-size: 1.4rem; font-weight: 900; color: var(--purple); letter-spacing: 2px; display: block; margin-top: 5px; }
+        .target-tail { font-size: 0.8rem; color: #fff; background: var(--purple); padding: 2px 6px; border-radius: 8px; vertical-align: middle; margin-right: 5px; display: inline-block; margin-bottom: 3px; font-weight: bold;}
         .score-tag { position: absolute; top: 0; right: 0; background: #ffeaa7; color: #d35400; padding: 4px 10px; border-bottom-left-radius: 10px; font-size: 0.75rem; font-weight: bold; }
 
-        .summary { background: #e1f5fe; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #b3e5fc; }
+        .summary { background: #f3e5f5; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #e1bee7; }
 
         .result-item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #eee; }
         .res-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; border-bottom: 1px dashed #eee; padding-bottom: 8px; }
@@ -50,19 +51,19 @@
         
         .hit-detail { background: #fdfaf0; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #f1c40f; }
         .miss-detail { background: #f5f6f7; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #eee; }
-        .trigger-detail { background: #f0f8ff; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #cce5ff; }
+        .trigger-detail { background: #f4f0ff; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #dcd0ff; }
 
         .hit-type, .trigger-type { font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; }
         .hit-type { color: #d35400; }
-        .trigger-type { color: #0056b3; }
+        .trigger-type { color: var(--purple); }
         
         .hit-nums { color: var(--success); font-weight: 900; font-size: 1.1rem; margin-top: 4px; }
-        .trigger-nums { color: var(--danger); font-weight: 900; font-size: 1.1rem; margin-top: 4px; }
+        .trigger-nums { color: var(--purple); font-weight: 900; font-size: 1.1rem; margin-top: 4px; }
 
         .hit-status { font-size: 0.75rem; color: var(--success); font-weight: bold; margin-top: 5px; }
         .miss-status { font-size: 0.75rem; color: #636e72; font-weight: bold; margin-top: 5px; }
-        .trigger-status { font-size: 0.75rem; color: #0056b3; font-weight: bold; margin-top: 5px; }
-        .hit-badge { background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px; }
+        .trigger-status { font-size: 0.75rem; color: var(--purple); font-weight: bold; margin-top: 5px; }
+        .hit-badge { background: var(--purple); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; margin-right: 5px; }
 
     </style>
 </head>
@@ -70,12 +71,12 @@
 
 <div class="container">
     <div class="header">
-        <h1>順球動態版路系統</h1>
-        <div class="subtitle">支援日曆尾數與 3~4 碼包牌推算</div>
+        <h1>星期四專屬版路系統</h1>
+        <div class="subtitle">鎖定每週四日期，推算四、五開出尾數</div>
     </div>
     
     <div class="selector-box">
-        <label style="font-weight:bold; color:var(--primary); display:block; margin-bottom:5px;">📋 歷史數據 (系統將自動落球轉順球)</label>
+        <label style="font-weight:bold; color:var(--primary); display:block; margin-bottom:5px;">📋 歷史數據 (系統自動落球轉順球)</label>
         <textarea id="csvData">Date,N1,N2,N3,N4,N5
 01/01,18,29,15,16,36
 01/02,18,25,36,39,17
@@ -208,7 +209,7 @@
         </div>
     </div>
 
-    <div class="section-title">🕒 本期預測追蹤 (養兩期)</div>
+    <div class="section-title">🕒 本週四、五鎖定預測</div>
     <div id="predictionArea"></div>
     
     <div id="summaryArea" class="summary" style="display:none;"></div>
@@ -219,7 +220,7 @@
 
 <script>
     const LOOKAHEAD = 2;              
-    const WINDOW_SIZE = 10;           
+    const WINDOW_SIZE = 10; // 回測過去 10 個星期四      
     const MIN_WIN_RATE = 80.0;        
     const DOW_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
@@ -229,6 +230,7 @@
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
+    // 取得尾數對應的完整號碼 (包含 01~09)
     function getTailBalls(tail) {
         let balls = [];
         for (let i = 0; i <= 3; i++) {
@@ -251,13 +253,14 @@
                 let n = parseInt(cols[j]);
                 if(!isNaN(n)) nums.push(n);
             }
-            // 【核心升級】無條件將落球轉為順球
+            // 強制落球轉順球
             nums.sort((a, b) => a - b);
             
             let dateStr = cols[0];
             let parts = dateStr.split('/');
             let m = parseInt(parts[0], 10);
             let d = parseInt(parts[1], 10);
+            // 系統年份假設為 2026
             let dt = new Date(2026, m - 1, d); 
             
             parsedData.push({ 
@@ -269,97 +272,88 @@
             });
         }
         
-        // 確保時間軸舊到新
         if (parsedData.length > 1) {
             let d1 = new Date(2026, parsedData[0].month - 1, parsedData[0].day);
             let d2 = new Date(2026, parsedData[parsedData.length - 1].month - 1, parsedData[parsedData.length - 1].day);
             if (d1 > d2) parsedData.reverse();
         }
         
-        document.getElementById('dataStatus').innerText = `✅ 載入成功 (共 ${parsedData.length} 期，已全部轉換為順球排序)`;
+        document.getElementById('dataStatus').innerText = `✅ 載入成功 (共 ${parsedData.length} 期，已轉為順球)`;
         runAnalysis();
     }
 
     function getDailyPredictionSet(currentIndex) {
         if (currentIndex < WINDOW_SIZE) return null;
 
-        let currentDraw = parsedData[currentIndex];
         let candidateFormulas = [];
+        
+        // 判斷當下情境：今天是否為星期三(準備預測明天的星期四)
+        let nextDate = new Date(2026, parsedData[currentIndex].month - 1, parsedData[currentIndex].day + 1);
+        if (nextDate.getDay() === 0) nextDate.setDate(nextDate.getDate() + 1); // 略過星期日
+        let isApproachingThursday = (nextDate.getDay() === 4);
 
-        // 1. 【核心升級】掃描「日曆尾數版路」 (例如: 星期四日期+1 = 尾數)
-        for (let testDow = 1; testDow <= 6; testDow++) {
+        // 如果明天是星期四，啟動「星期四日期」專屬版路回測引擎
+        if (isApproachingThursday) {
+            let thuDay = nextDate.getDate(); // 取得即將到來的星期四是幾號
+            
+            // 掃描所有可能的加減偏移量 (0~9)
             for (let offset = 0; offset < 10; offset++) {
                 let hits = 0;
                 let valid = 0;
-                let occurrences = [];
-                for (let i = 0; i <= currentIndex; i++) {
-                    if (parsedData[i].dow === testDow) occurrences.push(i);
-                }
                 
-                let recentOccurrences = occurrences.slice(-WINDOW_SIZE);
-                if (recentOccurrences.length < 5) continue;
-                
-                for (let idx of recentOccurrences) {
-                    valid++;
-                    let tail = (parsedData[idx].day + offset) % 10;
-                    let targetNums = getTailBalls(tail);
-                    let hitSuccess = false;
-                    
-                    // 驗證當天或隔天是否開出該尾數
-                    if (intersect(targetNums, parsedData[idx].nums).length > 0) {
-                        hitSuccess = true;
-                    } else if (idx + 1 <= currentIndex && intersect(targetNums, parsedData[idx + 1].nums).length > 0) {
-                        hitSuccess = true;
-                    }
-                    
-                    if (idx === currentIndex && !hitSuccess) {
-                        valid--; // 如果是今天觸發但還沒開出，不計入失敗，進入「聽牌」狀態
-                    } else if (hitSuccess) {
-                        hits++;
+                // 回測過去的歷史數據，嚴格挑選「過去的星期四」
+                for (let k = 0; k <= currentIndex; k++) {
+                    if (parsedData[k].dow === 4) {
+                        valid++;
+                        // 套用公式：過去的星期四日期 + 偏移量 = 尾數
+                        let tail = (parsedData[k].day + offset) % 10;
+                        let targetNums = getTailBalls(tail);
+                        let hitSuccess = false;
+                        
+                        // 驗證是否在該週的星期四 或 星期五開出
+                        if (intersect(targetNums, parsedData[k].nums).length > 0) {
+                            hitSuccess = true;
+                        } else if (k + 1 <= currentIndex && parsedData[k+1].dow === 5 && intersect(targetNums, parsedData[k+1].nums).length > 0) {
+                            hitSuccess = true;
+                        }
+                        
+                        if (hitSuccess) hits++;
                     }
                 }
                 
+                // 只看最近 WINDOW_SIZE 個星期四的表現，若達標則成為主推版路
                 if (valid > 0 && (hits / valid) * 100 >= MIN_WIN_RATE) {
-                    // 預測明天的日期
-                    let nextDayTime = new Date(2026, parsedData[currentIndex].month - 1, parsedData[currentIndex].day + 1);
-                    if (nextDayTime.getDay() === 0) nextDayTime.setDate(nextDayTime.getDate() + 1);
-                    let nextDow = nextDayTime.getDay();
-                    let nextDayOfMonth = nextDayTime.getDate();
-
-                    let ruleApplies = false;
-                    let targetTail = -1;
-                    let ruleDesc = "";
+                    let targetTail = (thuDay + offset) % 10;
                     let opStr = offset === 0 ? '+0' : `+${offset}`;
                     
-                    if (nextDow === testDow) {
-                        ruleApplies = true;
-                        targetTail = (nextDayOfMonth + offset) % 10;
-                        ruleDesc = `星期${DOW_NAMES[testDow]}日期${opStr}尾數`;
-                    } else if (parsedData[currentIndex].dow === testDow) {
-                        let tail = (parsedData[currentIndex].day + offset) % 10;
-                        let targetNums = getTailBalls(tail);
-                        if (intersect(targetNums, parsedData[currentIndex].nums).length === 0) {
-                            ruleApplies = true;
-                            targetTail = tail;
-                            ruleDesc = `星期${DOW_NAMES[testDow]}日期${opStr}尾數 (聽牌/抓隔天)`;
-                        }
-                    }
-
-                    if (ruleApplies && targetTail !== -1) {
-                        candidateFormulas.push({
-                            desc: ruleDesc,
-                            targets: getTailBalls(targetTail),
-                            score: (hits / valid) * 100,
-                            hits: hits,
-                            isTail: true
-                        });
-                    }
+                    candidateFormulas.push({
+                        desc: `星期四日期(${fNum(thuDay)})${opStr} = ${targetTail}尾`,
+                        targets: getTailBalls(targetTail),
+                        score: (hits / valid) * 100,
+                        hits: hits,
+                        isTail: true
+                    });
                 }
             }
         }
 
-        // 2. 掃描正規的「順球 N 顆 + 偏移量」版路
+        candidateFormulas.sort((a, b) => b.score - a.score || b.hits - a.hits);
+
+        // 優先輸出星期四專屬尾數版路
+        let tailPattern = candidateFormulas.find(f => f.isTail);
+        if (tailPattern) {
+            return {
+                type: `📅 星期四專屬日曆版路 (涵蓋四、五)`,
+                targetDescList: [tailPattern.desc],
+                targets: tailPattern.targets.sort((a, b) => a - b)
+            };
+        }
+
+        // 備用：若非星期三，則採用一般順球最強 3 碼
+        let currentDraw = parsedData[currentIndex];
         let numCount = currentDraw.nums.length;
+        let backupFormulas = [];
+        
         for (let bIndex = 0; bIndex < numCount; bIndex++) {
             for (let offset = 0; offset < maxNum; offset++) {
                 let hits = 0;
@@ -368,53 +362,34 @@
                     validTriggers++;
                     let baseNum = parsedData[k].nums[bIndex];
                     let targetNum = ((baseNum - 1 + offset) % maxNum) + 1;
-                    
                     let hitSuccess = false;
                     for (let j = 1; j <= LOOKAHEAD; j++) {
-                        if (k + j <= currentIndex) {
-                            if (parsedData[k + j].nums.includes(targetNum)) {
-                                hitSuccess = true;
-                                break;
-                            }
+                        if (k + j <= currentIndex && parsedData[k + j].nums.includes(targetNum)) {
+                            hitSuccess = true; break;
                         }
                     }
                     if (hitSuccess) hits++;
                 }
 
-                let winRate = (hits / validTriggers) * 100;
-                if (winRate >= MIN_WIN_RATE) {
+                if ((hits / validTriggers) * 100 >= MIN_WIN_RATE) {
                     let baseNumToday = currentDraw.nums[bIndex];
                     let targetToday = ((baseNumToday - 1 + offset) % maxNum) + 1;
                     let offsetText = offset === 0 ? '+0' : (offset <= maxNum/2 ? '+'+offset : '-'+(maxNum-offset));
-                    
-                    candidateFormulas.push({
+                    backupFormulas.push({
                         desc: `順球第${bIndex + 1}顆${offsetText}`,
                         targets: [targetToday],
-                        score: winRate,
-                        hits: hits,
-                        isTail: false
+                        score: (hits / validTriggers) * 100,
+                        hits: hits
                     });
                 }
             }
         }
-
-        candidateFormulas.sort((a, b) => b.score - a.score || b.hits - a.hits);
-
-        // 如果出現尾數版路，優先使用 (自帶3~4顆號碼)
-        let tailPattern = candidateFormulas.find(f => f.isTail);
-        if (tailPattern) {
-            return {
-                type: `日曆尾數版路 (${tailPattern.targets.length}碼包牌)`,
-                targetDescList: [tailPattern.desc],
-                targets: tailPattern.targets.sort((a, b) => a - b)
-            };
-        }
-
-        // 若無尾數版路，取最強的 3 顆獨立號碼合併包牌
+        
+        backupFormulas.sort((a, b) => b.score - a.score || b.hits - a.hits);
         let topTargets = [];
         let topDescs = [];
-        for (let f of candidateFormulas) {
-            if (!f.isTail && !topTargets.includes(f.targets[0])) {
+        for (let f of backupFormulas) {
+            if (!topTargets.includes(f.targets[0])) {
                 topTargets.push(f.targets[0]);
                 topDescs.push(f.desc);
                 if (topTargets.length === 3) break;
@@ -422,9 +397,8 @@
         }
 
         if (topTargets.length === 0) return null;
-
         return {
-            type: `順球動態精選 (${topTargets.length}碼包牌)`,
+            type: `一般順球動態精選 (${topTargets.length}碼)`,
             targetDescList: topDescs,
             targets: topTargets.sort((a, b) => a - b)
         };
@@ -445,12 +419,13 @@
             let hitNumsSet = new Set();
             let hitDetails = [];
 
+            // 往下看兩期 (星期四和星期五)
             for (let j = 1; j <= LOOKAHEAD; j++) {
                 if (i + j < parsedData.length) {
                     let matches = intersect(pSet.targets, parsedData[i+j].nums);
                     if (matches.length > 0) {
                         matches.forEach(m => hitNumsSet.add(m));
-                        hitDetails.push(`第${j}期中${matches.length}碼`);
+                        hitDetails.push(`星期${DOW_NAMES[parsedData[i+j].dow]}中${matches.length}碼`);
                     }
                 }
             }
@@ -464,7 +439,7 @@
                 else if (hitNums.length >= 4) stats.hit4++;
 
                 let hitTypeStr = `${pSet.targets.length}中${hitNums.length}`;
-                let firstHitPeriod = hitDetails[0].includes('1') ? 1 : 2;
+                let firstHitPeriod = hitDetails[0].includes(DOW_NAMES[parsedData[i+1 < parsedData.length ? i+1 : i].dow]) ? 1 : 2;
                 
                 dailyView[i + firstHitPeriod].events.push({
                     type: 'hit',
@@ -490,10 +465,10 @@
             let tagsHtml = t.targetDescList.map(desc => `<span class="target-tail">${desc}</span>`).join(' ');
             return `
             <div class="pred-card">
-                <div class="score-tag score-high">強勢推薦包牌</div>
+                <div class="score-tag score-high">本週鎖定版路</div>
                 <h3>${t.type}</h3>
                 <div style="margin-bottom: 8px;">${tagsHtml}</div>
-                <div class="pred-info">觸發日: ${t.date} | 準備下注第 ${t.waitPeriod} 期</div>
+                <div class="pred-info">觸發日: ${t.date} | 目前養牌第 ${t.waitPeriod} 期</div>
                 <span class="nums-highlight">${t.targets.map(fNum).join(', ')}</span>
             </div>`
         }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無符合條件之版路 ☕</div>';
@@ -506,19 +481,19 @@
             } else {
                 eventsHtml = d.events.map(e => {
                     if (e.type === 'trigger') {
-                        let tagsHtml = e.pattern.targetDescList.map(desc => `<span class="target-tail" style="background:#e74c3c;">${desc}</span>`).join(' ');
+                        let tagsHtml = e.pattern.targetDescList.map(desc => `<span class="target-tail">${desc}</span>`).join(' ');
                         return `
                         <div class="trigger-detail">
                             <div class="trigger-type">🔔 鎖定組合: ${tagsHtml}</div>
                             <div class="trigger-nums">包牌號碼: ${e.pattern.targets.map(fNum).join(', ')}</div>
-                            <div class="trigger-status">👉 開始追蹤兩期</div>
+                            <div class="trigger-status">👉 開始追蹤接下來的兩期</div>
                         </div>`;
                     } else if (e.type === 'hit') {
-                        let badgeColor = e.hitNums.length > 1 ? '#e74c3c' : '#f39c12';
+                        let badgeColor = e.hitNums.length > 1 ? '#e74c3c' : '#8e44ad';
                         return `
                         <div class="hit-detail">
                             <div class="hit-type"><span class="hit-badge" style="background:${badgeColor};">${e.hitTypeStr}</span> 預測組合: ${e.pattern.targets.map(fNum).join(', ')}</div>
-                            <div class="hit-nums">順利開出: ${e.hitNums.map(fNum).join(', ')}</div>
+                            <div class="hit-nums">強勢開出: ${e.hitNums.map(fNum).join(', ')}</div>
                             <div class="hit-status">🎯 觸發日: ${e.triggerDate} (${e.desc})</div>
                         </div>`;
                     } else if (e.type === 'miss') {
@@ -549,7 +524,7 @@
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
             💡 <b>動態結算：</b>共出牌 <b>${stats.total}</b> 次，二期內成功中獎 <b>${totalHits}</b> 次 (勝率 <b>${hitRate}%</b>)<br>
-            <span style="color:var(--danger); font-weight:bold; font-size:0.85rem; margin-top:5px; display:inline-block;">
+            <span style="color:var(--purple); font-weight:bold; font-size:0.85rem; margin-top:5px; display:inline-block;">
                 🏆 戰況：包牌中1 (${stats.hit1}次) / 包牌中2 (${stats.hit2}次) / 包牌中3以上 (${stats.hit3 + stats.hit4}次)
             </span>`;
     }
