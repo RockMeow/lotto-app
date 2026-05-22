@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>星期四專屬版路系統 (日期尾數)</title>
+    <title>星期四專屬版路系統 (純尾數推算)</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -72,7 +72,7 @@
 <div class="container">
     <div class="header">
         <h1>星期四專屬版路系統</h1>
-        <div class="subtitle">鎖定每週四日期，推算四、五開出尾數</div>
+        <div class="subtitle">完全鎖定每週四日期，全歷史數據驗證尾數</div>
     </div>
     
     <div class="selector-box">
@@ -202,7 +202,7 @@
 05/19,4,32,6,24,31
 05/20,21,20,23,1,35
 05/21,36,34,9,28,25</textarea>
-        <button onclick="processData()">🚀 開始執行並過濾版路</button>
+        <button onclick="processData()">🚀 掃描全歷史數據並鎖定版路</button>
         <div class="status-bar">
             <span>資料狀態:</span>
             <span id="dataStatus" style="font-weight: bold; color: var(--primary);">等待分析...</span>
@@ -220,8 +220,6 @@
 
 <script>
     const LOOKAHEAD = 2;              
-    const WINDOW_SIZE = 10; // 回測過去 10 個星期四      
-    const MIN_WIN_RATE = 80.0;        
     const DOW_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
     let parsedData = [];
@@ -283,124 +281,72 @@
     }
 
     function getDailyPredictionSet(currentIndex) {
-        if (currentIndex < WINDOW_SIZE) return null;
-
         let candidateFormulas = [];
         
-        // 判斷當下情境：今天是否為星期三(準備預測明天的星期四)
+        // 判斷當下情境：今天是否為星期三 (準備預測明天的星期四)
         let nextDate = new Date(2026, parsedData[currentIndex].month - 1, parsedData[currentIndex].day + 1);
         if (nextDate.getDay() === 0) nextDate.setDate(nextDate.getDate() + 1); // 略過星期日
         let isApproachingThursday = (nextDate.getDay() === 4);
 
-        // 如果明天是星期四，啟動「星期四日期」專屬版路回測引擎
-        if (isApproachingThursday) {
-            let thuDay = nextDate.getDate(); // 取得即將到來的星期四是幾號
-            
-            // 掃描所有可能的加減偏移量 (0~9)
-            for (let offset = 0; offset < 10; offset++) {
-                let hits = 0;
-                let valid = 0;
-                
-                // 回測過去的歷史數據，嚴格挑選「過去的星期四」
-                for (let k = 0; k <= currentIndex; k++) {
-                    if (parsedData[k].dow === 4) {
-                        valid++;
-                        // 套用公式：過去的星期四日期 + 偏移量 = 尾數
-                        let tail = (parsedData[k].day + offset) % 10;
-                        let targetNums = getTailBalls(tail);
-                        let hitSuccess = false;
-                        
-                        // 驗證是否在該週的星期四 或 星期五開出
-                        if (intersect(targetNums, parsedData[k].nums).length > 0) {
-                            hitSuccess = true;
-                        } else if (k + 1 <= currentIndex && parsedData[k+1].dow === 5 && intersect(targetNums, parsedData[k+1].nums).length > 0) {
-                            hitSuccess = true;
-                        }
-                        
-                        if (hitSuccess) hits++;
-                    }
-                }
-                
-                // 只看最近 WINDOW_SIZE 個星期四的表現，若達標則成為主推版路
-                if (valid > 0 && (hits / valid) * 100 >= MIN_WIN_RATE) {
-                    let targetTail = (thuDay + offset) % 10;
-                    let opStr = offset === 0 ? '+0' : `+${offset}`;
-                    
-                    candidateFormulas.push({
-                        desc: `星期四日期(${fNum(thuDay)})${opStr} = ${targetTail}尾`,
-                        targets: getTailBalls(targetTail),
-                        score: (hits / valid) * 100,
-                        hits: hits,
-                        isTail: true
-                    });
-                }
-            }
-        }
+        // 如果明天不是星期四，直接略過，完全不發送訊號
+        if (!isApproachingThursday) return null;
 
-        candidateFormulas.sort((a, b) => b.score - a.score || b.hits - a.hits);
-
-        // 優先輸出星期四專屬尾數版路
-        let tailPattern = candidateFormulas.find(f => f.isTail);
-        if (tailPattern) {
-            return {
-                type: `📅 星期四專屬日曆版路 (涵蓋四、五)`,
-                targetDescList: [tailPattern.desc],
-                targets: tailPattern.targets.sort((a, b) => a - b)
-            };
-        }
-
-        // 備用：若非星期三，則採用一般順球最強 3 碼
-        let currentDraw = parsedData[currentIndex];
-        let numCount = currentDraw.nums.length;
-        let backupFormulas = [];
+        let thuDay = nextDate.getDate(); // 取得即將到來的星期四是幾號
         
-        for (let bIndex = 0; bIndex < numCount; bIndex++) {
-            for (let offset = 0; offset < maxNum; offset++) {
-                let hits = 0;
-                let validTriggers = 0;
-                for (let k = currentIndex - WINDOW_SIZE; k < currentIndex; k++) {
-                    validTriggers++;
-                    let baseNum = parsedData[k].nums[bIndex];
-                    let targetNum = ((baseNum - 1 + offset) % maxNum) + 1;
+        // 掃描所有可能的加減偏移量 (0~9)
+        for (let offset = 0; offset < 10; offset++) {
+            let hits = 0;
+            let valid = 0;
+            
+            // 適用整個數據：回測從第一天到今天的所有星期四
+            for (let k = 0; k <= currentIndex; k++) {
+                if (parsedData[k].dow === 4) {
+                    valid++;
+                    // 套用公式：過去的星期四日期 + 偏移量 = 尾數
+                    let tail = (parsedData[k].day + offset) % 10;
+                    let targetNums = getTailBalls(tail);
                     let hitSuccess = false;
-                    for (let j = 1; j <= LOOKAHEAD; j++) {
-                        if (k + j <= currentIndex && parsedData[k + j].nums.includes(targetNum)) {
-                            hitSuccess = true; break;
-                        }
+                    
+                    // 驗證是否在該週的星期四 或 星期五開出
+                    if (intersect(targetNums, parsedData[k].nums).length > 0) {
+                        hitSuccess = true;
+                    } else if (k + 1 <= currentIndex && parsedData[k+1].dow === 5 && intersect(targetNums, parsedData[k+1].nums).length > 0) {
+                        hitSuccess = true;
                     }
+                    
                     if (hitSuccess) hits++;
                 }
-
-                if ((hits / validTriggers) * 100 >= MIN_WIN_RATE) {
-                    let baseNumToday = currentDraw.nums[bIndex];
-                    let targetToday = ((baseNumToday - 1 + offset) % maxNum) + 1;
-                    let offsetText = offset === 0 ? '+0' : (offset <= maxNum/2 ? '+'+offset : '-'+(maxNum-offset));
-                    backupFormulas.push({
-                        desc: `順球第${bIndex + 1}顆${offsetText}`,
-                        targets: [targetToday],
-                        score: (hits / validTriggers) * 100,
-                        hits: hits
-                    });
-                }
             }
-        }
-        
-        backupFormulas.sort((a, b) => b.score - a.score || b.hits - a.hits);
-        let topTargets = [];
-        let topDescs = [];
-        for (let f of backupFormulas) {
-            if (!topTargets.includes(f.targets[0])) {
-                topTargets.push(f.targets[0]);
-                topDescs.push(f.desc);
-                if (topTargets.length === 3) break;
+            
+            // 只要有歷史資料，就納入排序評估
+            if (valid > 0) {
+                let targetTail = (thuDay + offset) % 10;
+                let opStr = offset === 0 ? '+0' : `+${offset}`;
+                
+                candidateFormulas.push({
+                    desc: `星期四日期(${fNum(thuDay)})${opStr} = ${targetTail}尾`,
+                    targets: getTailBalls(targetTail),
+                    score: (hits / valid) * 100,
+                    hits: hits,
+                    valid: valid
+                });
             }
         }
 
-        if (topTargets.length === 0) return null;
+        if (candidateFormulas.length === 0) return null;
+
+        // 依歷史總勝率排序，找出全歷史中最強的日曆偏移量
+        candidateFormulas.sort((a, b) => b.score - a.score || b.hits - a.hits);
+
+        let bestPattern = candidateFormulas[0];
+
         return {
-            type: `一般順球動態精選 (${topTargets.length}碼)`,
-            targetDescList: topDescs,
-            targets: topTargets.sort((a, b) => a - b)
+            type: `📅 星期四專屬日曆版路 (涵蓋四、五)`,
+            targetDescList: [bestPattern.desc],
+            targets: bestPattern.targets.sort((a, b) => a - b),
+            score: bestPattern.score,
+            hits: bestPattern.hits,
+            valid: bestPattern.valid
         };
     }
 
@@ -411,7 +357,7 @@
 
         for (let i = 0; i < parsedData.length; i++) {
             let pSet = getDailyPredictionSet(i);
-            if (!pSet) continue;
+            if (!pSet) continue; // 非星期三不觸發任何公式
             
             stats.total++;
             dailyView[i].events.push({ type: 'trigger', pattern: pSet });
@@ -465,27 +411,27 @@
             let tagsHtml = t.targetDescList.map(desc => `<span class="target-tail">${desc}</span>`).join(' ');
             return `
             <div class="pred-card">
-                <div class="score-tag score-high">本週鎖定版路</div>
+                <div class="score-tag score-high">歷史累積勝率 ${t.score.toFixed(1)}% (${t.hits}/${t.valid})</div>
                 <h3>${t.type}</h3>
                 <div style="margin-bottom: 8px;">${tagsHtml}</div>
                 <div class="pred-info">觸發日: ${t.date} | 目前養牌第 ${t.waitPeriod} 期</div>
                 <span class="nums-highlight">${t.targets.map(fNum).join(', ')}</span>
             </div>`
-        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無符合條件之版路 ☕</div>';
+        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">等待週三盤後產出星期四專屬訊號 ☕</div>';
 
         const listHtml = dailyView.slice().reverse().map(d => {
             let eventsHtml = '';
             
             if (d.events.length === 0) {
-                eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期盤勢混亂，無穩定訊號</div>`;
+                eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無觸發條件 (非星期三)</div>`;
             } else {
                 eventsHtml = d.events.map(e => {
                     if (e.type === 'trigger') {
                         let tagsHtml = e.pattern.targetDescList.map(desc => `<span class="target-tail">${desc}</span>`).join(' ');
                         return `
                         <div class="trigger-detail">
-                            <div class="trigger-type">🔔 鎖定組合: ${tagsHtml}</div>
-                            <div class="trigger-nums">包牌號碼: ${e.pattern.targets.map(fNum).join(', ')}</div>
+                            <div class="trigger-type">🔔 週四引擎啟動: ${tagsHtml}</div>
+                            <div class="trigger-nums">包牌尾數: ${e.pattern.targets.map(fNum).join(', ')}</div>
                             <div class="trigger-status">👉 開始追蹤接下來的兩期</div>
                         </div>`;
                     } else if (e.type === 'hit') {
@@ -523,7 +469,7 @@
         let hitRate = stats.total > 0 ? (totalHits / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
-            💡 <b>動態結算：</b>共出牌 <b>${stats.total}</b> 次，二期內成功中獎 <b>${totalHits}</b> 次 (勝率 <b>${hitRate}%</b>)<br>
+            💡 <b>全數據結算：</b>共觸發 <b>${stats.total}</b> 次，二期內成功中獎 <b>${totalHits}</b> 次 (勝率 <b>${hitRate}%</b>)<br>
             <span style="color:var(--purple); font-weight:bold; font-size:0.85rem; margin-top:5px; display:inline-block;">
                 🏆 戰況：包牌中1 (${stats.hit1}次) / 包牌中2 (${stats.hit2}次) / 包牌中3以上 (${stats.hit3 + stats.hit4}次)
             </span>`;
