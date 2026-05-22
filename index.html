@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統(拖牌)</title>
+    <title>兩期版路分析系統(獨支公式)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3b82f6">
     <style>
@@ -40,7 +40,7 @@
         .pred-card { background: var(--card); padding: 15px; border-radius: 12px; border-left: 6px solid var(--warning); box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
         .pred-card h3 { font-size: 0.95rem; margin-bottom: 5px; color: var(--primary); font-weight: 800; }
         .pred-info { font-size: 0.8rem; color: #636e72; margin-bottom: 8px; }
-        .nums-highlight { font-size: 1.4rem; font-weight: 900; color: var(--warning); letter-spacing: 1px; display: block; margin-top: 5px; }
+        .nums-highlight { font-size: 1.4rem; font-weight: 900; color: var(--danger); letter-spacing: 1px; display: block; margin-top: 5px; }
         .target-tail { font-size: 0.85rem; color: #fff; background: var(--accent); padding: 2px 8px; border-radius: 12px; vertical-align: middle; margin-left: 5px; }
         .score-tag { position: absolute; top: 0; right: 0; background: #dfe6e9; color: #2d3436; padding: 4px 10px; border-bottom-left-radius: 10px; font-size: 0.75rem; font-weight: bold; }
         .score-high { background: #ffeaa7; color: #d35400; }
@@ -78,7 +78,7 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>三期牌分析系統(拖牌)</h1>
+            <h1>兩期版路分析系統(獨支)</h1>
         </div>
     </div>
     
@@ -96,26 +96,40 @@
         </div>
     </div>
 
-    <div class="section-title">🕒 目前追蹤中 (養三期)</div>
+    <div class="section-title">🕒 目前追蹤中 (養兩期)</div>
     <div id="predictionArea"></div>
     
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">📜 每日開獎與訊號紀錄</div>
+    <div class="section-title">📜 每日開獎與版路紀錄</div>
     <div id="resultList"></div>
 </div>
 
 <script>
     // --- 核心演算法設定區 ---
-    const LOOKAHEAD = 3;              // 往後觀察期數
-    const MIN_OCCURRENCE = 8;         // 最少開出次數
+    const LOOKAHEAD = 2;              // 改為養兩期
+    const MIN_OCCURRENCE = 5;         // 版路最少歷史觸發成功次數 (考量星期幾發生頻率較低，設為5次)
     const MIN_WIN_RATE = 100.0;       // 勝率門檻
 
     let parsedData = [];
     let maxNum = 39;
+    const DOW_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
     function fNum(n) { return String(n).padStart(2, '0'); }
-    function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
+
+    // 日期解析器，支援西元年與民國年，回傳星期幾 (0~6)
+    function getDayOfWeek(dateStr) {
+        let parts = dateStr.split(/[-/]/);
+        if (parts.length >= 3) {
+            let y = parseInt(parts[0], 10);
+            if (y < 1000) y += 1911; // 處理民國年
+            let m = parseInt(parts[1], 10) - 1;
+            let d = parseInt(parts[2], 10);
+            let dt = new Date(y, m, d);
+            if (!isNaN(dt.getTime())) return dt.getDay();
+        }
+        return -1;
+    }
 
     async function processData() {
         const fileName = document.getElementById('csvSelect').value;
@@ -139,9 +153,11 @@
                     let n = parseInt(cols[j]);
                     if(!isNaN(n)) nums.push(n);
                 }
-                parsedData.push({ date: cols[0], nums: nums });
+                let dow = getDayOfWeek(cols[0]);
+                parsedData.push({ date: cols[0], dow: dow, nums: nums });
             }
             
+            // 確保資料是由舊到新排序 (滾動回測必須)
             if (parsedData.length > 1 && parsedData[0].date > parsedData[parsedData.length - 1].date) {
                 parsedData.reverse();
             }
@@ -156,99 +172,89 @@
         }
     }
 
-    // 將策略改為：尋找勝率極高的「兩顆特定號碼」
+    // 版路公式核心：動態尋找歷史中「特定星期幾」的「第N顆+偏移量」必開公式
     function getDynamicPatterns(currentIndex) {
         let patterns = [];
-        let currentNums = parsedData[currentIndex].nums;
-
-        currentNums.forEach(num => {
-            let validTriggers = [];
-            
-            // 收集觸發歷史紀錄 (只看「當下及過去」)
-            for (let k = 0; k <= currentIndex; k++) {
-                if (parsedData[k].nums.includes(num)) {
-                    // 確保用來驗證的未來三期，也存在於已知範圍內
-                    if (k + LOOKAHEAD <= currentIndex) {
-                        validTriggers.push(k);
-                    }
-                }
-            }
-
-            if (validTriggers.length < MIN_OCCURRENCE) return;
-
-            // 最佳化：先算出每顆單號在三期內開出的機率，挑出最強的 15 顆來配對，避免瀏覽器卡頓
-            let singleStats = [];
-            for (let n = 1; n <= maxNum; n++) {
-                let sCount = 0;
-                let totalHits = 0;
-                for (let idx of validTriggers) {
-                    let hSuccess = false;
-                    for (let j = 1; j <= LOOKAHEAD; j++) {
-                        if (parsedData[idx + j].nums.includes(n)) {
-                            hSuccess = true;
-                            totalHits++;
-                        }
-                    }
-                    if (hSuccess) sCount++;
-                }
-                singleStats.push({ n: n, rate: sCount / validTriggers.length, hits: totalHits });
-            }
-            singleStats.sort((a, b) => b.rate - a.rate || b.hits - a.hits);
-            let candidates = singleStats.slice(0, 15).map(x => x.n);
-
-            let bestPair = null;
-            let highestWinRate = 0;
-            let maxTotalHits = 0;
-
-            // 從最強的 15 顆號碼中，兩兩配對，尋找「二中一」勝率最高的組合
-            for (let a = 0; a < candidates.length - 1; a++) {
-                for (let b = a + 1; b < candidates.length; b++) {
-                    let pair = [candidates[a], candidates[b]].sort((x, y) => x - y);
-                    let successCount = 0;
-                    let pairTotalHits = 0;
-
-                    for (let idx of validTriggers) {
-                        let hitSuccess = false;
-                        for (let j = 1; j <= LOOKAHEAD; j++) {
-                            let drawNums = parsedData[idx + j].nums;
-                            let hitA = drawNums.includes(pair[0]);
-                            let hitB = drawNums.includes(pair[1]);
-                            if (hitA || hitB) {
-                                hitSuccess = true;
-                                if(hitA) pairTotalHits++;
-                                if(hitB) pairTotalHits++;
-                            }
-                        }
-                        if (hitSuccess) successCount++;
-                    }
-
-                    let winRate = (successCount / validTriggers.length) * 100;
-                    if (winRate >= MIN_WIN_RATE) {
-                        if (winRate > highestWinRate || (winRate === highestWinRate && pairTotalHits > maxTotalHits)) {
-                            highestWinRate = winRate;
-                            maxTotalHits = pairTotalHits;
-                            bestPair = pair;
-                        }
-                    }
-                }
-            }
-
-            // 若找到高勝率的雙星組合，則加入訊號
-            if (bestPair && highestWinRate >= MIN_WIN_RATE) {
-                patterns.push({ 
-                    type: `拖牌 (開${fNum(num)})`, 
-                    targetDesc: `專注雙星`, 
-                    target: bestPair, 
-                    score: highestWinRate 
-                });
-            }
-        });
+        let currentDraw = parsedData[currentIndex];
+        let currentDow = currentDraw.dow;
         
-        return patterns.sort((a,b) => b.score - a.score);
+        // 如果日期解析失敗，則跳過此期計算
+        if (currentDow === -1) return patterns; 
+        
+        let numCount = currentDraw.nums.length;
+
+        // 掃描每顆球的位置 (例如第1顆到第5顆)
+        for (let bIndex = 0; bIndex < numCount; bIndex++) {
+            // 掃描可能的加減偏移量 (0 ~ maxNum-1 足以涵蓋所有加減運算)
+            for (let offset = 0; offset < maxNum; offset++) {
+                let validTriggers = 0;
+                let successCount = 0;
+
+                // 回溯歷史，尋找同為「星期X」的期數
+                for (let k = 0; k <= currentIndex; k++) {
+                    if (parsedData[k].dow === currentDow) {
+                        // 確保用來驗證的未來兩期，存在於我們目前「已知」的歷史範圍內
+                        if (k + LOOKAHEAD <= currentIndex) {
+                            validTriggers++;
+                            
+                            // 套用公式：歷史當天的第N顆 + 偏移量
+                            let baseNum = parsedData[k].nums[bIndex];
+                            let targetNum = ((baseNum - 1 + offset) % maxNum) + 1;
+                            
+                            let hitSuccess = false;
+                            // 檢查未來兩期是否有開出算出來的目標號碼
+                            for (let j = 1; j <= LOOKAHEAD; j++) {
+                                if (parsedData[k + j].nums.includes(targetNum)) {
+                                    hitSuccess = true;
+                                    break;
+                                }
+                            }
+                            if (hitSuccess) successCount++;
+                        }
+                    }
+                }
+
+                // 評估該版路公式是否達到神級標準
+                if (validTriggers >= MIN_OCCURRENCE) {
+                    let winRate = (successCount / validTriggers) * 100;
+                    if (winRate >= MIN_WIN_RATE) {
+                        // 算出今天的目標號碼
+                        let baseNumToday = currentDraw.nums[bIndex];
+                        let targetToday = ((baseNumToday - 1 + offset) % maxNum) + 1;
+                        
+                        // 格式化顯示文字 (+5 或 -3 這樣比較直觀)
+                        let offsetText = offset === 0 ? '+0' : (offset <= maxNum/2 ? '+'+offset : '-'+(maxNum-offset));
+                        
+                        patterns.push({
+                            type: `星期${DOW_NAMES[currentDow]}版路`,
+                            targetDesc: `第${bIndex + 1}顆 (${fNum(baseNumToday)}) ${offsetText}`,
+                            target: [targetToday], // 獨支號碼
+                            score: winRate,
+                            hits: successCount // 記錄歷史連準次數
+                        });
+                    }
+                }
+            }
+        }
+        
+        // 去重與優化：如果今天有多個公式都算出同一個號碼，只保留命中次數最高的那個公式
+        let uniquePatterns = [];
+        let seenTargets = new Set();
+        patterns.sort((a, b) => b.score - a.score || b.hits - a.hits);
+        
+        for (let p of patterns) {
+            let t = p.target[0];
+            if (!seenTargets.has(t)) {
+                seenTargets.add(t);
+                uniquePatterns.push(p);
+            }
+        }
+
+        return uniquePatterns.slice(0, 3); // 避免畫面太滿，每天最多推薦3支最強獨支
     }
 
     function runAnalysis() {
-        let dailyView = parsedData.map(d => ({ date: d.date, nums: d.nums, events: [] }));
+        let dailyView = parsedData.map(d => ({ date: d.date, dow: d.dow, nums: d.nums, events: [] }));
         let tracking = [];
         let stats = { total: 0, hit: 0 };
 
@@ -259,18 +265,15 @@
                 if (p.target.length === 0) return;
                 stats.total++;
                 
-                dailyView[i].events.push({
-                    type: 'trigger',
-                    pattern: p
-                });
+                dailyView[i].events.push({ type: 'trigger', pattern: p });
 
                 let hitInfo = null;
                 
+                // 往後尋找兩期內是否命中
                 for (let j = 1; j <= LOOKAHEAD; j++) {
                     if (i + j < parsedData.length) {
-                        let hitNums = intersect(p.target, parsedData[i+j].nums);
-                        if (hitNums.length > 0) {
-                            hitInfo = { hitIndex: i + j, p: j, n: hitNums };
+                        if (parsedData[i+j].nums.includes(p.target[0])) {
+                            hitInfo = { hitIndex: i + j, p: j, n: [p.target[0]] };
                             stats.hit++;
                             break;
                         }
@@ -302,15 +305,16 @@
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
             return `
             <div class="pred-card">
-                <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 勝率</div>
+                <div class="score-tag ${scoreClass}">歷史連準 ${t.hits} 次</div>
                 <h3>${t.type} <span class="target-tail">${t.targetDesc}</span></h3>
                 <div class="pred-info">觸發日: ${t.date} | 準備下注第 ${t.waitPeriod} 期</div>
-                <span class="nums-highlight">${t.target.map(fNum).join(', ')}</span>
+                <span class="nums-highlight">${fNum(t.target[0])}</span>
             </div>`
         }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無追蹤版路 ☕</div>';
 
         const listHtml = dailyView.slice().reverse().map(d => {
             let eventsHtml = '';
+            let dowStr = d.dow !== -1 ? `(星期${DOW_NAMES[d.dow]})` : '';
             
             if (d.events.length === 0) {
                 eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無訊號</div>`;
@@ -319,23 +323,23 @@
                     if (e.type === 'trigger') {
                         return `
                         <div class="trigger-detail">
-                            <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">${e.pattern.targetDesc}</span></div>
-                            <div class="trigger-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div>
-                            <div class="trigger-status">👉 開始養牌三期</div>
+                            <div class="trigger-type">🔔 獨支公式: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">${e.pattern.targetDesc}</span></div>
+                            <div class="trigger-nums">精算號碼: <span style="color:#e74c3c;">${fNum(e.pattern.target[0])}</span></div>
+                            <div class="trigger-status">👉 開始養牌兩期</div>
                         </div>`;
                     } else if (e.type === 'hit') {
                         return `
                         <div class="hit-detail">
                             <div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">${e.pattern.targetDesc}</span></div>
-                            <div class="hit-nums">命中號碼: ${e.hitNums.map(fNum).join(', ')}</div>
+                            <div class="hit-nums">命中號碼: ${fNum(e.hitNums[0])}</div>
                             <div class="hit-status">🎯 觸發日: ${e.triggerDate} (於第 ${e.hitPeriod} 期獲利)</div>
                         </div>`;
                     } else if (e.type === 'miss') {
                         return `
                         <div class="miss-detail">
                             <div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">${e.pattern.targetDesc}</span></div>
-                            <div class="miss-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div>
-                            <div class="miss-status">❌ 養牌三期未中 (觸發日: ${e.triggerDate})</div>
+                            <div class="miss-nums">精算號碼: ${fNum(e.pattern.target[0])}</div>
+                            <div class="miss-status">❌ 養牌兩期未中 (觸發日: ${e.triggerDate})</div>
                         </div>`;
                     }
                 }).join('');
@@ -344,7 +348,7 @@
             return `
             <div class="result-item">
                 <div class="res-header">
-                    <span class="res-date">開獎日: ${d.date}</span>
+                    <span class="res-date">開獎日: ${d.date} ${dowStr}</span>
                     <span class="res-actual">${d.nums.map(fNum).join(' ')}</span>
                 </div>
                 ${eventsHtml}
@@ -355,7 +359,7 @@
 
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
-        document.getElementById('summaryArea').innerHTML = `💡 <b>歷史結算：</b>共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b>`;
+        document.getElementById('summaryArea').innerHTML = `💡 <b>歷史結算：</b>共掃描 <b>${stats.total}</b> 組獨支公式，命中 <b>${stats.hit}</b> 次，二期命中率 <b>${hitRate}%</b>`;
     }
 
     window.onload = processData;
