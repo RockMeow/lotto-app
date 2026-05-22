@@ -113,18 +113,17 @@
 
     let parsedData = [];
     let maxNum = 39;
-    let smartRules = {}; // 存放 100% 勝率的神級版路
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
-    // 去0頭尾數產生器 (僅保留 10 以上的號碼)
-    function getNoZeroTailBalls(tail) {
+    // 【修正 3】保留完整尾數產生器 (頭數從 0 開始，包含 01~09)
+    function getTailBalls(tail) {
         let balls = [];
         let maxHeads = Math.floor(maxNum / 10);
-        for(let h = 1; h <= maxHeads; h++) {
+        for(let h = 0; h <= maxHeads; h++) {
             let n = h * 10 + tail;
-            if(n <= maxNum) balls.push(n);
+            if(n > 0 && n <= maxNum) balls.push(n);
         }
         return balls;
     }
@@ -133,7 +132,7 @@
         const fileName = document.getElementById('csvSelect').value;
         const statusEl = document.getElementById('dataStatus');
         maxNum = (fileName.includes('649') || fileName.includes('Six')) ? 49 : 39;
-        const ballCount = (fileName.includes('649') || fileName.includes('Six')) ? 6 : 5; // 判斷需要讀取幾顆球
+        const ballCount = (fileName.includes('649') || fileName.includes('Six')) ? 6 : 5; 
         
         statusEl.innerText = "讀取中...";
         try {
@@ -147,15 +146,19 @@
                 let cols = lines[i].split(',').map(s => s.trim());
                 if(cols.length < ballCount + 1 || isNaN(parseInt(cols[1]))) continue;
                 let nums = [];
-                for(let j = 1; j <= ballCount; j++) { // 根據球數動態讀取
+                for(let j = 1; j <= ballCount; j++) { 
                     let n = parseInt(cols[j]);
                     if(!isNaN(n)) nums.push(n);
                 }
                 parsedData.push({ date: cols[0], nums: nums });
             }
             
+            // 【修正 2】自動校正日期排序，確保進行滾動回測時時間軸正確 (舊到新)
+            if (parsedData.length > 1 && parsedData[0].date > parsedData[parsedData.length - 1].date) {
+                parsedData.reverse();
+            }
+            
             statusEl.innerText = `✅ 載入成功 (共 ${parsedData.length} 期)`;
-            calculateRules();
             runAnalysis();
         } catch(e) { 
             statusEl.innerText = "❌ 讀取失敗 (需在本機伺服器環境執行，或確認檔案是否存在)"; 
@@ -165,31 +168,34 @@
         }
     }
 
-    function calculateRules() {
-        smartRules = {};
-        let totalDraws = parsedData.length;
+    // 【修正 1】滾動式回測計算，消除未來函數 (只使用當天之前的資料)
+    function getDynamicPatterns(currentIndex) {
+        let patterns = [];
+        let seenKeys = new Set();
+        let currentNums = parsedData[currentIndex].nums;
 
-        // 自動掃描 1 ~ maxNum 作為觸發號碼
-        for (let triggerNum = 1; triggerNum <= maxNum; triggerNum++) {
+        currentNums.forEach(num => {
             let triggerIndices = [];
-            for (let i = 0; i < totalDraws; i++) {
-                if (parsedData[i].nums.includes(triggerNum)) {
-                    triggerIndices.push(i);
+            
+            // 只看「當下及過去」的紀錄來產生拖牌訊號
+            for (let k = 0; k <= currentIndex; k++) {
+                if (parsedData[k].nums.includes(num)) {
+                    triggerIndices.push(k);
                 }
             }
 
-            if (triggerIndices.length < MIN_OCCURRENCE) continue;
+            if (triggerIndices.length < MIN_OCCURRENCE) return;
 
-            // 檢查開出此號碼後，未來 3 期內各尾數(去0頭)的勝率
             for (let tail = 0; tail < 10; tail++) {
-                let targetBalls = getNoZeroTailBalls(tail);
+                let targetBalls = getTailBalls(tail);
                 if (targetBalls.length === 0) continue;
 
                 let successCount = 0;
                 let validEvaluations = 0;
 
                 for (let idx of triggerIndices) {
-                    if (idx + LOOKAHEAD >= totalDraws) continue;
+                    // 確保用來驗證的未來三期，也存在於我們目前「已知」的歷史範圍內
+                    if (idx + LOOKAHEAD > currentIndex) continue;
                     
                     validEvaluations++;
                     let hitSuccess = false;
@@ -207,56 +213,36 @@
                 if (validEvaluations > 0) {
                     let winRate = (successCount / validEvaluations) * 100;
                     if (winRate >= MIN_WIN_RATE) {
-                        if (!smartRules[triggerNum]) smartRules[triggerNum] = [];
-                        smartRules[triggerNum].push({
-                            targetTail: tail,
-                            target: targetBalls,
-                            score: winRate,
-                            total: validEvaluations
-                        });
+                        let key = `${num}-${tail}`;
+                        if (!seenKeys.has(key)) {
+                            seenKeys.add(key);
+                            patterns.push({ 
+                                type: `拖牌 (開${fNum(num)})`, 
+                                targetTail: tail, 
+                                target: targetBalls, 
+                                score: winRate 
+                            });
+                        }
                     }
                 }
-            }
-        }
-    }
-
-    function getSmartPatterns(nums) {
-        let patterns = [];
-        let seenKeys = new Set();
-
-        nums.forEach(num => {
-            if (smartRules[num]) {
-                smartRules[num].forEach(r => {
-                    let key = `${num}-${r.targetTail}`;
-                    if (!seenKeys.has(key)) {
-                        seenKeys.add(key);
-                        patterns.push({ 
-                            type: `拖牌 (開${fNum(num)})`, 
-                            targetTail: r.targetTail, 
-                            target: r.target, 
-                            score: r.score 
-                        });
-                    }
-                });
             }
         });
         return patterns.sort((a,b) => b.score - a.score);
     }
 
     function runAnalysis() {
-        // 建立每一天的日誌陣列
         let dailyView = parsedData.map(d => ({ date: d.date, nums: d.nums, events: [] }));
         let tracking = [];
         let stats = { total: 0, hit: 0 };
 
         for (let i = 0; i < parsedData.length; i++) {
-            let patterns = getSmartPatterns(parsedData[i].nums);
+            // 使用動態滾動計算取代全域掃描
+            let patterns = getDynamicPatterns(i);
             
             patterns.forEach(p => {
                 if (p.target.length === 0) return;
                 stats.total++;
                 
-                // 1. 記錄今天產生的「新訊號」
                 dailyView[i].events.push({
                     type: 'trigger',
                     pattern: p
@@ -264,7 +250,6 @@
 
                 let hitInfo = null;
                 
-                // 往後尋找三天內是否命中
                 for (let j = 1; j <= LOOKAHEAD; j++) {
                     if (i + j < parsedData.length) {
                         let hitNums = intersect(p.target, parsedData[i+j].nums);
@@ -277,7 +262,6 @@
                 }
                 
                 if (hitInfo) {
-                    // 2. 如果有命中，把命中事件記錄在「命中那一天」
                     dailyView[hitInfo.hitIndex].events.push({
                         type: 'hit',
                         pattern: p,
@@ -286,10 +270,9 @@
                         hitNums: hitInfo.n
                     });
                 } else if (parsedData.length - 1 - i < LOOKAHEAD) {
-                    // 尚未到期，加入目前追蹤中卡片
-                    tracking.push({ ...p, date: parsedData[i].date, age: parsedData.length - i });
+                    // 【修正 4】修改為下注期數計算 (若今日出訊號，準備下注第1期)
+                    tracking.push({ ...p, date: parsedData[i].date, waitPeriod: parsedData.length - i });
                 } else {
-                    // 3. 如果三期都沒命中，把失敗事件記錄在「第三天」
                     dailyView[i + LOOKAHEAD].events.push({
                         type: 'miss',
                         pattern: p,
@@ -299,7 +282,6 @@
             });
         }
 
-        // 渲染正在追蹤的卡片
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
@@ -307,20 +289,17 @@
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 勝率</div>
                 <h3>${t.type} <span class="target-tail">拖 ${t.targetTail} 尾</span></h3>
-                <div class="pred-info">觸發日: ${t.date} | 養牌第 ${t.age} 期</div>
+                <div class="pred-info">觸發日: ${t.date} | 準備下注第 ${t.waitPeriod} 期</div>
                 <span class="nums-highlight">${t.target.map(fNum).join(', ')}</span>
             </div>`
         }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無追蹤版路 ☕</div>';
 
-        // 渲染每一天的歷史紀錄
         const listHtml = dailyView.slice().reverse().map(d => {
             let eventsHtml = '';
             
-            // 判斷這一天是否有任何事件
             if (d.events.length === 0) {
                 eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無訊號</div>`;
             } else {
-                // 渲染這天發生的所有事件
                 eventsHtml = d.events.map(e => {
                     if (e.type === 'trigger') {
                         return `
@@ -359,7 +338,6 @@
         
         document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px; color:#999;">尚無紀錄</div>';
 
-        // 渲染統計摘要
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `💡 <b>歷史結算：</b>共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b>`;
