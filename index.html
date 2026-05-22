@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>動態版路系統 (精選3碼 3中1/2)</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3b82f6">
+    <title>順球動態版路系統 (日期尾數與精選包牌)</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -23,49 +21,43 @@
 
         .container { max-width: 600px; margin: 0 auto; }
 
-        /* Header Area */
-        .header { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .header-top { display: flex; justify-content: center; align-items: center; margin-bottom: 0; }
-        h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
+        .header { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+        h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; margin-bottom: 5px; }
+        .subtitle { font-size: 0.8rem; color: #bdc3c7; }
 
-        /* Controls */
         .selector-box { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
-        select { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #dfe6e9; font-size: 1rem; appearance: none; background: #fff; margin-bottom: 8px; cursor: pointer; outline: none; }
-        select:focus { border-color: var(--accent); }
-        .status-bar { font-size: 0.85rem; color: #636e72; display: flex; align-items: center; gap: 5px; }
+        textarea { width: 100%; height: 120px; border-radius: 8px; border: 2px solid #dfe6e9; padding: 10px; font-family: monospace; font-size: 0.85rem; margin-bottom: 10px; resize: vertical; }
+        button { width: 100%; background: var(--primary); color: white; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        button:hover { background: #1a252f; }
+        
+        .status-bar { font-size: 0.85rem; color: #636e72; display: flex; align-items: center; gap: 5px; background: #e8f4f8; padding: 8px; border-radius: 6px; }
 
-        /* Prediction Cards */
         .section-title { font-size: 1rem; font-weight: bold; margin: 15px 0 10px 5px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
         #predictionArea { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
-        .pred-card { background: var(--card); padding: 15px; border-radius: 12px; border-left: 6px solid var(--warning); box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
+        .pred-card { background: var(--card); padding: 15px; border-radius: 12px; border-left: 6px solid var(--danger); box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
         .pred-card h3 { font-size: 0.95rem; margin-bottom: 5px; color: var(--primary); font-weight: 800; }
         .pred-info { font-size: 0.8rem; color: #636e72; margin-bottom: 8px; }
         .nums-highlight { font-size: 1.4rem; font-weight: 900; color: var(--danger); letter-spacing: 2px; display: block; margin-top: 5px; }
-        .target-tail { font-size: 0.8rem; color: #fff; background: var(--accent); padding: 2px 6px; border-radius: 8px; vertical-align: middle; margin-left: 5px; display: inline-block; margin-bottom: 3px; }
-        .score-tag { position: absolute; top: 0; right: 0; background: #dfe6e9; color: #2d3436; padding: 4px 10px; border-bottom-left-radius: 10px; font-size: 0.75rem; font-weight: bold; }
-        .score-high { background: #ffeaa7; color: #d35400; }
-        .score-perfect { background: var(--success); color: white; }
+        .target-tail { font-size: 0.8rem; color: #fff; background: var(--danger); padding: 2px 6px; border-radius: 8px; vertical-align: middle; margin-right: 5px; display: inline-block; margin-bottom: 3px; }
+        .score-tag { position: absolute; top: 0; right: 0; background: #ffeaa7; color: #d35400; padding: 4px 10px; border-bottom-left-radius: 10px; font-size: 0.75rem; font-weight: bold; }
 
-        /* Summary Area */
         .summary { background: #e1f5fe; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #b3e5fc; }
 
-        /* Result List */
         .result-item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #eee; }
         .res-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; border-bottom: 1px dashed #eee; padding-bottom: 8px; }
         .res-date { font-weight: bold; color: var(--primary); }
         .res-actual { font-family: monospace; font-size: 1rem; color: #2d3436; font-weight: bold; }
         
-        /* Event Details */
         .hit-detail { background: #fdfaf0; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #f1c40f; }
         .miss-detail { background: #f5f6f7; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #eee; }
         .trigger-detail { background: #f0f8ff; padding: 10px; border-radius: 8px; margin-top: 8px; border: 1px solid #cce5ff; }
 
-        .hit-type { font-size: 0.85rem; font-weight: bold; color: #d35400; margin-bottom: 4px;}
-        .trigger-type { font-size: 0.85rem; font-weight: bold; color: #0056b3; margin-bottom: 4px;}
+        .hit-type, .trigger-type { font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; }
+        .hit-type { color: #d35400; }
+        .trigger-type { color: #0056b3; }
         
         .hit-nums { color: var(--success); font-weight: 900; font-size: 1.1rem; margin-top: 4px; }
-        .miss-nums { color: #b2bec3; font-weight: 900; font-size: 1rem; margin-top: 4px; }
-        .trigger-nums { color: #e74c3c; font-weight: 900; font-size: 1.1rem; margin-top: 4px; }
+        .trigger-nums { color: var(--danger); font-weight: 900; font-size: 1.1rem; margin-top: 4px; }
 
         .hit-status { font-size: 0.75rem; color: var(--success); font-weight: bold; margin-top: 5px; }
         .miss-status { font-size: 0.75rem; color: #636e72; font-weight: bold; margin-top: 5px; }
@@ -78,39 +70,158 @@
 
 <div class="container">
     <div class="header">
-        <div class="header-top">
-            <h1>動態版路系統 (精選3碼)</h1>
-        </div>
+        <h1>順球動態版路系統</h1>
+        <div class="subtitle">支援日曆尾數與 3~4 碼包牌推算</div>
     </div>
     
     <div class="selector-box">
-        <select id="csvSelect" onchange="processData()">
-            <option value="Fan_history_2026.csv">天天樂</option>
-            <option value="Ghana_history_2026.csv">迦納彩</option>
-            <option value="539_history_2026.csv">今彩 539</option>
-            <option value="649_history_2026.csv">大樂透</option>
-            <option value="Six_history_2026.csv">六合彩</option>
-        </select>
+        <label style="font-weight:bold; color:var(--primary); display:block; margin-bottom:5px;">📋 歷史數據 (系統將自動落球轉順球)</label>
+        <textarea id="csvData">Date,N1,N2,N3,N4,N5
+01/01,18,29,15,16,36
+01/02,18,25,36,39,17
+01/03,22,31,38,32,23
+01/05,16,10,39,34,18
+01/06,2,1,11,33,6
+01/07,28,10,5,15,14
+01/08,30,3,21,10,8
+01/09,12,34,14,22,1
+01/10,25,11,34,38,26
+01/12,18,3,30,13,24
+01/13,16,17,19,31,6
+01/14,1,33,16,35,2
+01/15,1,36,19,3,2
+01/16,19,29,18,27,22
+01/17,24,37,2,11,10
+01/19,12,24,16,29,23
+01/20,23,19,25,16,34
+01/21,23,38,4,27,15
+01/22,30,6,3,11,34
+01/23,3,21,11,31,12
+01/24,37,7,35,15,6
+01/26,26,30,6,23,15
+01/27,5,32,17,18,23
+01/28,10,24,23,11,29
+01/29,37,11,36,6,28
+01/30,16,29,36,30,17
+01/31,21,32,5,12,16
+02/02,38,8,6,31,37
+02/03,5,23,11,15,3
+02/04,17,8,28,22,27
+02/05,8,9,35,32,13
+02/06,1,32,6,34,29
+02/07,27,8,22,3,32
+02/09,35,31,21,25,16
+02/10,36,11,17,10,22
+02/11,29,33,11,15,18
+02/12,12,1,35,37,21
+02/13,31,34,4,28,33
+02/14,3,36,13,31,1
+02/15,22,13,18,11,34
+02/16,34,18,5,15,7
+02/17,21,8,11,6,20
+02/18,12,10,8,33,32
+02/19,15,19,25,8,27
+02/20,23,27,22,11,4
+02/21,8,20,1,25,19
+02/22,13,16,8,24,25
+02/23,3,36,10,12,27
+02/24,32,23,16,25,36
+02/25,28,35,22,36,5
+02/26,39,6,3,9,31
+02/27,22,39,1,37,23
+02/28,27,4,26,2,13
+03/01,15,8,31,2,29
+03/02,21,27,3,20,12
+03/03,32,21,19,35,2
+03/04,16,12,4,8,17
+03/05,36,12,4,1,8
+03/06,34,32,24,29,19
+03/07,36,15,34,18,17
+03/09,32,38,12,7,15
+03/10,11,17,14,32,12
+03/11,15,5,37,38,26
+03/12,7,35,5,4,23
+03/13,15,2,12,5,11
+03/14,18,8,10,34,20
+03/16,34,19,17,21,29
+03/17,27,19,22,11,13
+03/18,21,32,22,31,35
+03/19,23,5,25,30,37
+03/20,11,33,15,3,39
+03/21,19,7,15,22,14
+03/23,29,12,7,35,24
+03/24,36,29,10,20,28
+03/25,31,13,36,33,3
+03/26,14,24,37,17,20
+03/27,8,34,35,18,24
+03/28,16,17,11,9,6
+03/30,8,6,22,32,20
+03/31,23,16,35,39,9
+04/01,3,23,13,11,10
+04/02,18,13,9,1,21
+04/03,8,6,25,35,9
+04/04,4,25,36,17,31
+04/06,34,11,31,17,7
+04/07,21,4,27,29,8
+04/08,29,5,2,4,6
+04/09,38,2,15,31,25
+04/10,9,30,25,21,27
+04/11,24,31,17,12,7
+04/13,38,18,37,31,30
+04/14,33,27,14,29,9
+04/15,30,2,11,29,9
+04/16,21,12,30,8,6
+04/17,7,26,2,1,16
+04/18,29,7,25,26,31
+04/20,3,5,20,4,36
+04/21,14,28,26,1,6
+04/22,7,38,24,39,5
+04/23,10,17,35,25,2
+04/24,16,21,25,34,29
+04/25,3,20,22,33,21
+04/27,23,20,18,27,8
+04/28,21,38,7,35,8
+04/29,32,6,36,2,22
+04/30,15,31,30,6,27
+05/01,16,3,2,20,14
+05/02,9,8,38,25,17
+05/04,8,26,39,36,22
+05/05,16,37,8,24,27
+05/06,10,11,39,34,4
+05/07,1,6,18,25,36
+05/08,28,26,19,23,18
+05/09,25,18,21,22,11
+05/11,37,21,13,36,2
+05/12,1,4,22,12,26
+05/13,23,7,2,6,9
+05/14,8,39,18,28,35
+05/15,23,1,13,36,25
+05/16,11,33,32,2,28
+05/18,20,15,32,33,8
+05/19,4,32,6,24,31
+05/20,21,20,23,1,35
+05/21,36,34,9,28,25</textarea>
+        <button onclick="processData()">🚀 開始執行並過濾版路</button>
         <div class="status-bar">
             <span>資料狀態:</span>
-            <span id="dataStatus" style="font-weight: bold;">讀取中...</span>
+            <span id="dataStatus" style="font-weight: bold; color: var(--primary);">等待分析...</span>
         </div>
     </div>
 
-    <div class="section-title">🕒 目前追蹤中 (養兩期)</div>
+    <div class="section-title">🕒 本期預測追蹤 (養兩期)</div>
     <div id="predictionArea"></div>
     
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">📜 每日開獎與 3中1 紀錄</div>
+    <div class="section-title">📜 歷史版路驗證與開出紀錄</div>
     <div id="resultList"></div>
 </div>
 
 <script>
-    // --- 核心演算法設定區 ---
-    const LOOKAHEAD = 2;              // 養兩期
-    const WINDOW_SIZE = 10;           // 動態觀察窗口 (回看近 10 期)
-    const MIN_WIN_RATE = 85.0;        // 勝率門檻：設為 85% 以確保每天都能穩定產出 3 顆號碼
+    const LOOKAHEAD = 2;              
+    const WINDOW_SIZE = 10;           
+    const MIN_WIN_RATE = 80.0;        
+    const DOW_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
     let parsedData = [];
     let maxNum = 39;
@@ -118,60 +229,141 @@
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
-    async function processData() {
-        const fileName = document.getElementById('csvSelect').value;
-        const statusEl = document.getElementById('dataStatus');
-        maxNum = (fileName.includes('649') || fileName.includes('Six')) ? 49 : 39;
-        const ballCount = (fileName.includes('649') || fileName.includes('Six')) ? 6 : 5; 
-        
-        statusEl.innerText = "讀取中...";
-        try {
-            const res = await fetch(fileName);
-            if(!res.ok) throw new Error();
-            const text = await res.text();
-            const lines = text.trim().split('\n');
-            
-            parsedData = [];
-            for(let i = 1; i < lines.length; i++) {
-                let cols = lines[i].split(',').map(s => s.trim());
-                if(cols.length < ballCount + 1 || isNaN(parseInt(cols[1]))) continue;
-                let nums = [];
-                for(let j = 1; j <= ballCount; j++) { 
-                    let n = parseInt(cols[j]);
-                    if(!isNaN(n)) nums.push(n);
-                }
-                parsedData.push({ date: cols[0], nums: nums });
-            }
-            
-            // 確保資料是由舊到新排序 (滾動回測必須)
-            if (parsedData.length > 1 && parsedData[0].date > parsedData[parsedData.length - 1].date) {
-                parsedData.reverse();
-            }
-            
-            statusEl.innerText = `✅ 載入成功 (共 ${parsedData.length} 期)`;
-            runAnalysis();
-        } catch(e) { 
-            statusEl.innerText = "❌ 讀取失敗 (需在本機伺服器環境執行，或確認檔案是否存在)"; 
-            document.getElementById('predictionArea').innerHTML = '';
-            document.getElementById('resultList').innerHTML = '';
-            document.getElementById('summaryArea').style.display = 'none';
+    function getTailBalls(tail) {
+        let balls = [];
+        for (let i = 0; i <= 3; i++) {
+            let n = i * 10 + tail;
+            if (n > 0 && n <= maxNum) balls.push(n);
         }
+        return balls.sort((a, b) => a - b);
     }
 
-    // 滾動式找版路核心：打包 3 組最強公式成為「3碼組合」
+    function processData() {
+        const text = document.getElementById('csvData').value.trim();
+        const lines = text.split('\n');
+        parsedData = [];
+        
+        for(let i = 0; i < lines.length; i++) {
+            let cols = lines[i].split(',').map(s => s.trim());
+            if(cols.length < 6 || isNaN(parseInt(cols[1]))) continue;
+            let nums = [];
+            for(let j = 1; j <= 5; j++) { 
+                let n = parseInt(cols[j]);
+                if(!isNaN(n)) nums.push(n);
+            }
+            // 【核心升級】無條件將落球轉為順球
+            nums.sort((a, b) => a - b);
+            
+            let dateStr = cols[0];
+            let parts = dateStr.split('/');
+            let m = parseInt(parts[0], 10);
+            let d = parseInt(parts[1], 10);
+            let dt = new Date(2026, m - 1, d); 
+            
+            parsedData.push({ 
+                date: dateStr, 
+                nums: nums, 
+                month: m,
+                day: d,
+                dow: dt.getDay()
+            });
+        }
+        
+        // 確保時間軸舊到新
+        if (parsedData.length > 1) {
+            let d1 = new Date(2026, parsedData[0].month - 1, parsedData[0].day);
+            let d2 = new Date(2026, parsedData[parsedData.length - 1].month - 1, parsedData[parsedData.length - 1].day);
+            if (d1 > d2) parsedData.reverse();
+        }
+        
+        document.getElementById('dataStatus').innerText = `✅ 載入成功 (共 ${parsedData.length} 期，已全部轉換為順球排序)`;
+        runAnalysis();
+    }
+
     function getDailyPredictionSet(currentIndex) {
         if (currentIndex < WINDOW_SIZE) return null;
 
         let currentDraw = parsedData[currentIndex];
-        let numCount = currentDraw.nums.length;
         let candidateFormulas = [];
 
-        // 掃描所有可能的動態公式
+        // 1. 【核心升級】掃描「日曆尾數版路」 (例如: 星期四日期+1 = 尾數)
+        for (let testDow = 1; testDow <= 6; testDow++) {
+            for (let offset = 0; offset < 10; offset++) {
+                let hits = 0;
+                let valid = 0;
+                let occurrences = [];
+                for (let i = 0; i <= currentIndex; i++) {
+                    if (parsedData[i].dow === testDow) occurrences.push(i);
+                }
+                
+                let recentOccurrences = occurrences.slice(-WINDOW_SIZE);
+                if (recentOccurrences.length < 5) continue;
+                
+                for (let idx of recentOccurrences) {
+                    valid++;
+                    let tail = (parsedData[idx].day + offset) % 10;
+                    let targetNums = getTailBalls(tail);
+                    let hitSuccess = false;
+                    
+                    // 驗證當天或隔天是否開出該尾數
+                    if (intersect(targetNums, parsedData[idx].nums).length > 0) {
+                        hitSuccess = true;
+                    } else if (idx + 1 <= currentIndex && intersect(targetNums, parsedData[idx + 1].nums).length > 0) {
+                        hitSuccess = true;
+                    }
+                    
+                    if (idx === currentIndex && !hitSuccess) {
+                        valid--; // 如果是今天觸發但還沒開出，不計入失敗，進入「聽牌」狀態
+                    } else if (hitSuccess) {
+                        hits++;
+                    }
+                }
+                
+                if (valid > 0 && (hits / valid) * 100 >= MIN_WIN_RATE) {
+                    // 預測明天的日期
+                    let nextDayTime = new Date(2026, parsedData[currentIndex].month - 1, parsedData[currentIndex].day + 1);
+                    if (nextDayTime.getDay() === 0) nextDayTime.setDate(nextDayTime.getDate() + 1);
+                    let nextDow = nextDayTime.getDay();
+                    let nextDayOfMonth = nextDayTime.getDate();
+
+                    let ruleApplies = false;
+                    let targetTail = -1;
+                    let ruleDesc = "";
+                    let opStr = offset === 0 ? '+0' : `+${offset}`;
+                    
+                    if (nextDow === testDow) {
+                        ruleApplies = true;
+                        targetTail = (nextDayOfMonth + offset) % 10;
+                        ruleDesc = `星期${DOW_NAMES[testDow]}日期${opStr}尾數`;
+                    } else if (parsedData[currentIndex].dow === testDow) {
+                        let tail = (parsedData[currentIndex].day + offset) % 10;
+                        let targetNums = getTailBalls(tail);
+                        if (intersect(targetNums, parsedData[currentIndex].nums).length === 0) {
+                            ruleApplies = true;
+                            targetTail = tail;
+                            ruleDesc = `星期${DOW_NAMES[testDow]}日期${opStr}尾數 (聽牌/抓隔天)`;
+                        }
+                    }
+
+                    if (ruleApplies && targetTail !== -1) {
+                        candidateFormulas.push({
+                            desc: ruleDesc,
+                            targets: getTailBalls(targetTail),
+                            score: (hits / valid) * 100,
+                            hits: hits,
+                            isTail: true
+                        });
+                    }
+                }
+            }
+        }
+
+        // 2. 掃描正規的「順球 N 顆 + 偏移量」版路
+        let numCount = currentDraw.nums.length;
         for (let bIndex = 0; bIndex < numCount; bIndex++) {
             for (let offset = 0; offset < maxNum; offset++) {
                 let hits = 0;
                 let validTriggers = 0;
-
                 for (let k = currentIndex - WINDOW_SIZE; k < currentIndex; k++) {
                     validTriggers++;
                     let baseNum = parsedData[k].nums[bIndex];
@@ -196,25 +388,34 @@
                     let offsetText = offset === 0 ? '+0' : (offset <= maxNum/2 ? '+'+offset : '-'+(maxNum-offset));
                     
                     candidateFormulas.push({
-                        desc: `上期第${bIndex + 1}顆${offsetText}`,
-                        target: targetToday,
+                        desc: `順球第${bIndex + 1}顆${offsetText}`,
+                        targets: [targetToday],
                         score: winRate,
-                        hits: hits
+                        hits: hits,
+                        isTail: false
                     });
                 }
             }
         }
 
-        // 依勝率與命中次數排序
         candidateFormulas.sort((a, b) => b.score - a.score || b.hits - a.hits);
 
+        // 如果出現尾數版路，優先使用 (自帶3~4顆號碼)
+        let tailPattern = candidateFormulas.find(f => f.isTail);
+        if (tailPattern) {
+            return {
+                type: `日曆尾數版路 (${tailPattern.targets.length}碼包牌)`,
+                targetDescList: [tailPattern.desc],
+                targets: tailPattern.targets.sort((a, b) => a - b)
+            };
+        }
+
+        // 若無尾數版路，取最強的 3 顆獨立號碼合併包牌
         let topTargets = [];
         let topDescs = [];
-
-        // 提取前 3 個不重複的號碼
         for (let f of candidateFormulas) {
-            if (!topTargets.includes(f.target)) {
-                topTargets.push(f.target);
+            if (!f.isTail && !topTargets.includes(f.targets[0])) {
+                topTargets.push(f.targets[0]);
                 topDescs.push(f.desc);
                 if (topTargets.length === 3) break;
             }
@@ -223,16 +424,16 @@
         if (topTargets.length === 0) return null;
 
         return {
-            type: `精選 ${topTargets.length} 碼預測`,
+            type: `順球動態精選 (${topTargets.length}碼包牌)`,
             targetDescList: topDescs,
             targets: topTargets.sort((a, b) => a - b)
         };
     }
 
     function runAnalysis() {
-        let dailyView = parsedData.map(d => ({ date: d.date, nums: d.nums, events: [] }));
+        let dailyView = parsedData.map(d => ({ date: d.date, nums: d.nums, dow: d.dow, events: [] }));
         let tracking = [];
-        let stats = { total: 0, hit1: 0, hit2: 0, hit3: 0 };
+        let stats = { total: 0, hit1: 0, hit2: 0, hit3: 0, hit4: 0 };
 
         for (let i = 0; i < parsedData.length; i++) {
             let pSet = getDailyPredictionSet(i);
@@ -244,7 +445,6 @@
             let hitNumsSet = new Set();
             let hitDetails = [];
 
-            // 檢查未來兩期是否有命中
             for (let j = 1; j <= LOOKAHEAD; j++) {
                 if (i + j < parsedData.length) {
                     let matches = intersect(pSet.targets, parsedData[i+j].nums);
@@ -261,10 +461,9 @@
                 if (hitNums.length === 1) stats.hit1++;
                 else if (hitNums.length === 2) stats.hit2++;
                 else if (hitNums.length === 3) stats.hit3++;
+                else if (hitNums.length >= 4) stats.hit4++;
 
                 let hitTypeStr = `${pSet.targets.length}中${hitNums.length}`;
-
-                // 找尋最早命中的那一期來記錄 UI
                 let firstHitPeriod = hitDetails[0].includes('1') ? 1 : 2;
                 
                 dailyView[i + firstHitPeriod].events.push({
@@ -276,7 +475,6 @@
                     desc: hitDetails.join(' | ')
                 });
             } else if (parsedData.length - 1 - i < LOOKAHEAD) {
-                // 還在等待開獎期
                 tracking.push({ ...pSet, date: parsedData[i].date, waitPeriod: parsedData.length - i });
             } else {
                 dailyView[i + LOOKAHEAD].events.push({
@@ -287,13 +485,12 @@
             }
         }
 
-        // 渲染目前追蹤區塊
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let tagsHtml = t.targetDescList.map(desc => `<span class="target-tail">${desc}</span>`).join(' ');
             return `
             <div class="pred-card">
-                <div class="score-tag score-high">推薦 3碼組合</div>
+                <div class="score-tag score-high">強勢推薦包牌</div>
                 <h3>${t.type}</h3>
                 <div style="margin-bottom: 8px;">${tagsHtml}</div>
                 <div class="pred-info">觸發日: ${t.date} | 準備下注第 ${t.waitPeriod} 期</div>
@@ -301,20 +498,19 @@
             </div>`
         }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無符合條件之版路 ☕</div>';
 
-        // 渲染歷史紀錄區塊
         const listHtml = dailyView.slice().reverse().map(d => {
             let eventsHtml = '';
             
             if (d.events.length === 0) {
-                eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期盤勢混亂，無高勝率訊號</div>`;
+                eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期盤勢混亂，無穩定訊號</div>`;
             } else {
                 eventsHtml = d.events.map(e => {
                     if (e.type === 'trigger') {
-                        let tagsHtml = e.pattern.targetDescList.map(desc => `<span class="target-tail" style="background:#3498db;">${desc}</span>`).join(' ');
+                        let tagsHtml = e.pattern.targetDescList.map(desc => `<span class="target-tail" style="background:#e74c3c;">${desc}</span>`).join(' ');
                         return `
                         <div class="trigger-detail">
-                            <div class="trigger-type">🔔 產出組合: ${tagsHtml}</div>
-                            <div class="trigger-nums">推測號碼: ${e.pattern.targets.map(fNum).join(', ')}</div>
+                            <div class="trigger-type">🔔 鎖定組合: ${tagsHtml}</div>
+                            <div class="trigger-nums">包牌號碼: ${e.pattern.targets.map(fNum).join(', ')}</div>
                             <div class="trigger-status">👉 開始追蹤兩期</div>
                         </div>`;
                     } else if (e.type === 'hit') {
@@ -335,10 +531,11 @@
                 }).join('');
             }
 
+            let dowStr = `(星期${DOW_NAMES[d.dow]})`;
             return `
             <div class="result-item">
                 <div class="res-header">
-                    <span class="res-date">開獎日: ${d.date}</span>
+                    <span class="res-date">開獎日: ${d.date} ${dowStr}</span>
                     <span class="res-actual">${d.nums.map(fNum).join(' ')}</span>
                 </div>
                 ${eventsHtml}
@@ -347,18 +544,15 @@
         
         document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px; color:#999;">尚無紀錄</div>';
 
-        // 統計結算
-        let totalHits = stats.hit1 + stats.hit2 + stats.hit3;
+        let totalHits = stats.hit1 + stats.hit2 + stats.hit3 + stats.hit4;
         let hitRate = stats.total > 0 ? (totalHits / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
-            💡 <b>動態結算：</b>共出牌 <b>${stats.total}</b> 次，成功命中 <b>${totalHits}</b> 次 (勝率 <b>${hitRate}%</b>)<br>
+            💡 <b>動態結算：</b>共出牌 <b>${stats.total}</b> 次，二期內成功中獎 <b>${totalHits}</b> 次 (勝率 <b>${hitRate}%</b>)<br>
             <span style="color:var(--danger); font-weight:bold; font-size:0.85rem; margin-top:5px; display:inline-block;">
-                🏆 詳細戰況：3中1 (${stats.hit1}次) / 3中2 (${stats.hit2}次) / 3中3 (${stats.hit3}次)
+                🏆 戰況：包牌中1 (${stats.hit1}次) / 包牌中2 (${stats.hit2}次) / 包牌中3以上 (${stats.hit3 + stats.hit4}次)
             </span>`;
     }
-
-    window.onload = processData;
 </script>
 </body>
 </html>
