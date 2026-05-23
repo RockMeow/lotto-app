@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>開獎尾數規律搜尋器 (CSV進階版)</title>
+    <title>開獎尾數規律搜尋器 (多彩種整合版)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -35,13 +35,37 @@
             flex-direction: column;
             gap: 15px;
         }
-        .file-upload {
-            border: 2px dashed #bdc3c7;
-            padding: 20px;
-            text-align: center;
+        .data-source-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
             background: #fff;
+            padding: 15px;
             border-radius: 6px;
+            border: 1px solid #bdc3c7;
+        }
+        .selector-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-right: 2px solid #ecf0f1;
+            padding-right: 20px;
+        }
+        .selector-box select {
+            padding: 8px 15px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c3e50;
+            border: 2px solid #3498db;
+            border-radius: 4px;
             cursor: pointer;
+            background-color: #f0f8ff;
+        }
+        .file-upload {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .file-upload input[type="file"] {
             display: none;
@@ -49,11 +73,10 @@
         .file-upload-btn {
             background-color: #2ecc71;
             color: white;
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            display: inline-block;
         }
         .filters {
             display: flex;
@@ -66,7 +89,7 @@
             align-items: center;
             gap: 8px;
         }
-        select, input[type="number"] {
+        select.filter-select, input[type="number"] {
             padding: 8px;
             border: 1px solid #bdc3c7;
             border-radius: 4px;
@@ -101,26 +124,45 @@
             font-weight: bold;
             margin-top: 10px;
         }
+        .error-msg {
+            color: #e74c3c !important;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📊 開獎尾數規律搜尋器 (CSV版)</h1>
+    <h1>📊 開獎尾數規律搜尋器 (多彩種整合版)</h1>
     
     <div class="control-panel">
-        <!-- CSV 檔案上傳區 -->
-        <label class="file-upload">
-            <span class="file-upload-btn">📁 選擇本地 CSV 檔案</span>
-            <span id="fileName">尚未選擇檔案... (請確保格式為 Date,N1,N2,N3,N4,N5)</span>
-            <input type="file" id="csvFileInput" accept=".csv, .txt">
-        </label>
+        
+        <!-- 資料來源選擇區 -->
+        <div class="data-source-container">
+            <div class="selector-box">
+                <label for="csvSelect"><strong>📂 選擇彩種：</strong></label>
+                <select id="csvSelect" onchange="loadSelectedCSV()">
+                    <option value="" disabled selected>-- 請選擇快速載入 --</option>
+                    <option value="Fan_history_2026.csv">天天樂</option>
+                    <option value="Ghana_history_2026.csv">迦納彩</option>
+                    <option value="539_history_2026.csv">今彩 539</option>
+                    <option value="649_history_2026.csv">大樂透</option>
+                    <option value="Six_history_2026.csv">六合彩</option>
+                </select>
+            </div>
+
+            <label class="file-upload">
+                <span class="file-upload-btn">⬆️ 手動上傳 CSV</span>
+                <span id="fileName" style="color:#7f8c8d; font-size: 14px;">(若無法自動讀取，請點此手動上傳)</span>
+                <input type="file" id="csvFileInput" accept=".csv, .txt">
+            </label>
+        </div>
 
         <!-- 篩選器區塊 -->
         <div class="filters">
             <div class="filter-group">
-                <label for="filterBase">基準星期 (從哪天找)：</label>
-                <select id="filterBase">
+                <label for="filterBase">基準星期：</label>
+                <select id="filterBase" class="filter-select">
                     <option value="all">📅 全部</option>
                     <option value="0">星期日</option>
                     <option value="1">星期一</option>
@@ -133,8 +175,8 @@
             </div>
 
             <div class="filter-group">
-                <label for="filterTarget">目標星期 (預測哪天)：</label>
-                <select id="filterTarget">
+                <label for="filterTarget">目標星期：</label>
+                <select id="filterTarget" class="filter-select">
                     <option value="all">📅 全部</option>
                     <option value="0">星期日</option>
                     <option value="1">星期一</option>
@@ -156,21 +198,48 @@
     </div>
 
     <div id="resultsArea">
-        <h3 style="text-align: center; color: #7f8c8d;">請先上傳 CSV 檔案以進行分析</h3>
+        <h3 style="text-align: center; color: #7f8c8d;">請選擇彩種或上傳 CSV 檔案以進行分析</h3>
     </div>
 </div>
 
 <script>
     const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-    let allGeneratedRules = []; // 儲存所有算出來的規律
+    let allGeneratedRules = [];
 
-    // 監聽檔案上傳
+    // --- 新增：透過下拉選單 Fetch 本地檔案 ---
+    async function loadSelectedCSV() {
+        const fileName = document.getElementById('csvSelect').value;
+        if (!fileName) return;
+
+        document.getElementById('fileName').textContent = `(目前資料：${fileName})`;
+        const statusEl = document.getElementById('statusMsg');
+        statusEl.className = '';
+        statusEl.textContent = `⏳ 正在嘗試載入 ${fileName}...`;
+
+        try {
+            // 使用 fetch 讀取同資料夾下的 CSV
+            const response = await fetch(fileName);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const text = await response.text();
+            processDataAndGenerateRules(text);
+        } catch (error) {
+            console.error("Fetch error:", error);
+            statusEl.className = 'error-msg';
+            statusEl.innerHTML = `⚠️ <b>載入失敗：</b>瀏覽器安全限制無法直接讀取本地 ${fileName}。<br>👉 <b>解決方法：</b>請使用旁邊的「手動上傳 CSV」按鈕，或透過 VS Code 的 Live Server 開啟此網頁。`;
+        }
+    }
+
+    // --- 原有：手動上傳檔案 ---
     document.getElementById('csvFileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
         
-        document.getElementById('fileName').textContent = `已載入檔案：${file.name}`;
-        document.getElementById('statusMsg').textContent = "讀取並分析中...";
+        document.getElementById('csvSelect').value = ""; // 清空下拉選單
+        document.getElementById('fileName').textContent = `已載入：${file.name}`;
+        
+        const statusEl = document.getElementById('statusMsg');
+        statusEl.className = '';
+        statusEl.textContent = "⏳ 讀取並分析中...";
 
         const reader = new FileReader();
         reader.onload = function(event) {
@@ -180,7 +249,7 @@
         reader.readAsText(file);
     });
 
-    // 監聽篩選器變更 (動態更新畫面，不需重新計算)
+    // 監聽篩選器變更
     document.getElementById('filterBase').addEventListener('change', renderTable);
     document.getElementById('filterTarget').addEventListener('change', renderTable);
     document.getElementById('minWinRate').addEventListener('input', renderTable);
@@ -188,9 +257,9 @@
     function processDataAndGenerateRules(rawText) {
         const lines = rawText.split('\n');
         const data = [];
-        let currentDayOfWeek = 3; // 假設數據第一筆 (1/1) 是星期三
+        // 動態推算第一筆資料的星期 (此處先假設為基準3，若您的CSV有年份資訊可以寫得更精確)
+        let currentDayOfWeek = 3; 
 
-        // 1. 解析 CSV
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
@@ -199,25 +268,25 @@
             
             const dateStr = parts[0];
             const dateParts = dateStr.split('/');
-            const day = parseInt(dateParts[1], 10);
+            const day = parseInt(dateParts[dateParts.length - 1], 10); // 取最後一個數字當日期
             
-            const nums = [
-                parseInt(parts[1], 10), parseInt(parts[2], 10),
-                parseInt(parts[3], 10), parseInt(parts[4], 10),
-                parseInt(parts[5], 10)
-            ];
+            const nums = [];
+            for (let k = 1; k <= 5; k++) {
+                if(parts[k]) nums.push(parseInt(parts[k], 10));
+            }
 
-            data.push({
-                dateStr: dateStr,
-                day: day,
-                nums: nums,
-                weekday: currentDayOfWeek
-            });
-
-            currentDayOfWeek = (currentDayOfWeek + 1) % 7;
+            // 確保有抓到足夠號碼才納入
+            if(nums.length >= 5) {
+                data.push({
+                    dateStr: dateStr,
+                    day: day,
+                    nums: nums,
+                    weekday: currentDayOfWeek
+                });
+                currentDayOfWeek = (currentDayOfWeek + 1) % 7;
+            }
         }
 
-        // 2. 一次性窮舉所有規律 (暴力運算)
         allGeneratedRules = [];
         const sources = ['日期尾數', 'N1尾數', 'N2尾數', 'N3尾數', 'N4尾數', 'N5尾數'];
 
@@ -231,7 +300,6 @@
 
                     for (let i = 0; i < data.length; i++) {
                         if (data[i].weekday === baseWd) {
-                            
                             let tailNum = (srcIdx === 0) ? (data[i].day % 10) : (data[i].nums[srcIdx - 1] % 10);
                             
                             for (let j = i + 1; j < data.length && j <= i + 7; j++) {
@@ -265,21 +333,20 @@
             }
         }
 
-        document.getElementById('statusMsg').textContent = `✅ 分析完成！共掃描 ${data.length} 期數據，計算出 ${allGeneratedRules.length} 種潛在規律組合。`;
+        const statusEl = document.getElementById('statusMsg');
+        statusEl.className = '';
+        statusEl.textContent = `✅ 分析完成！共掃描 ${data.length} 期數據，計算出 ${allGeneratedRules.length} 種潛在規律組合。`;
         
-        // 3. 渲染表格
         renderTable();
     }
 
     function renderTable() {
         if (allGeneratedRules.length === 0) return;
 
-        // 取得當前篩選條件
         const filterBase = document.getElementById('filterBase').value;
         const filterTarget = document.getElementById('filterTarget').value;
         const minWinRate = parseFloat(document.getElementById('minWinRate').value) / 100;
 
-        // 過濾資料
         let filteredRules = allGeneratedRules.filter(r => {
             let passBase = (filterBase === 'all') || (r.baseWd === parseInt(filterBase));
             let passTarget = (filterTarget === 'all') || (r.targetWd === parseInt(filterTarget));
@@ -287,7 +354,6 @@
             return passBase && passTarget && passRate;
         });
 
-        // 排序：勝率優先，總樣本數次之
         filteredRules.sort((a, b) => b.winRate - a.winRate || b.total - a.total);
 
         const resultsArea = document.getElementById('resultsArea');
@@ -297,7 +363,6 @@
             return;
         }
 
-        // 建立表格 HTML
         let html = `<h3>篩選結果：共 ${filteredRules.length} 條符合條件的規律</h3>`;
         html += `<table>
             <thead>
