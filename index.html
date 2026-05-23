@@ -3,46 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>自動搜尋版路與拖牌系統 (支援下3期)</title>
+    <title>全自動神準版路分析系統</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #1a252f; font-size: 26px; margin-top: 0; border-bottom: 2px solid #3498db; padding-bottom: 15px;}
-        .grid { display: flex; gap: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e2f; color: #e0e0e0; margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: 0 auto; background: #2a2a40; padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+        h1 { text-align: center; color: #00d2ff; font-size: 28px; margin-top: 0; border-bottom: 2px solid #3a3a5c; padding-bottom: 15px;}
+        .grid { display: flex; gap: 20px; margin-bottom: 20px; }
         .col-data { flex: 1; }
-        .col-settings { flex: 1.5; }
-        textarea { width: 100%; height: 180px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical;}
-        .card { background: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        .card-title { font-weight: bold; margin-bottom: 12px; color: #2c3e50; font-size: 16px;}
-        .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-        select, input[type="number"] { padding: 8px; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 14px;}
-        input[type="number"] { width: 60px; }
-        button { background-color: #3498db; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; transition: background-color 0.2s; display: flex; justify-content: center; align-items: center; gap: 10px;}
-        button:hover { background-color: #2980b9; }
-        #results { margin-top: 20px; display: none;}
-        .summary-box { background-color: #e8f4f8; border-left: 5px solid #3498db; padding: 15px; border-radius: 4px; margin-bottom: 20px; font-size: 16px; }
-        .results-grid { display: flex; gap: 15px; }
-        .result-col { flex: 1; background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
-        .result-header { background: #2c3e50; color: #fff; text-align: center; padding: 10px; font-weight: bold; }
-        .result-row { display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #eee; }
-        .result-row:last-child { border-bottom: none; }
-        .result-row:nth-child(even) { background-color: #fbfbfb; }
-        .rank-num { font-weight: bold; color: #e74c3c; font-size: 18px;}
-        .rank-stats { color: #666; font-size: 14px;}
-        .progress-bar { height: 6px; background-color: #e0e0e0; border-radius: 3px; margin-top: 5px; overflow: hidden;}
-        .progress-fill { height: 100%; background-color: #e74c3c; }
+        textarea { width: 100%; height: 150px; padding: 12px; background: #1a1a2e; border: 1px solid #4a4a6a; border-radius: 6px; font-family: monospace; color: #00d2ff; box-sizing: border-box; resize: vertical;}
+        .controls { text-align: center; margin: 20px 0; }
+        button { background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%); color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 50px; cursor: pointer; font-weight: bold; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);}
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 210, 255, 0.5); }
+        .dashboard { display: none; }
+        .summary-panel { background: #32324e; border-left: 6px solid #ff007c; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between;}
+        .target-draw { font-size: 20px; font-weight: bold; color: #fff; }
+        .top-picks { display: flex; gap: 10px; margin-top: 10px; }
+        .ball { width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; color: white; background: radial-gradient(circle at 30% 30%, #ff4b91, #d80056); box-shadow: 0 3px 8px rgba(0,0,0,0.4); text-shadow: 1px 1px 2px rgba(0,0,0,0.5);}
+        .ball-sub { background: radial-gradient(circle at 30% 30%, #4facfe, #00f2fe); }
+        .pattern-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
+        .pattern-card { background: #252538; border: 1px solid #3a3a5c; border-radius: 8px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); position: relative; overflow: hidden;}
+        .pattern-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #00d2ff; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3a3a5c; padding-bottom: 8px; margin-bottom: 10px; }
+        .card-title { font-weight: bold; color: #fff; font-size: 15px;}
+        .card-rate { background: #00d2ff; color: #000; padding: 3px 8px; border-radius: 12px; font-size: 13px; font-weight: bold; }
+        .card-body { font-size: 14px; color: #bbb; line-height: 1.6;}
+        .highlight-num { color: #ff007c; font-weight: bold; font-size: 16px; }
+        .freq-info { margin-top: 10px; font-size: 12px; color: #888; background: #1a1a2e; padding: 8px; border-radius: 4px;}
+        .section-title { font-size: 20px; color: #fff; margin-bottom: 15px; border-bottom: 1px solid #4a4a6a; padding-bottom: 5px; display: inline-block;}
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🚀 自動搜尋版路引擎 (下3期拖牌統計)</h1>
+    <h1>🤖 全自動隱藏版路分析引擎</h1>
     
-    <div class="grid">
-        <div class="col-data">
-            <div class="card">
-                <div class="card-title">📁 1. 數據資料庫 (CSV格式)</div>
-                <textarea id="dataInput">Date,N1,N2,N3,N4,N5
+    <div class="col-data">
+        <div style="margin-bottom: 10px; color: #aaa;">📁 資料庫 (自動讀取最後三期作為觸發條件)</div>
+        <textarea id="dataInput">Date,N1,N2,N3,N4,N5
 01/01,18,29,15,16,36
 01/02,18,25,36,39,17
 01/03,22,31,38,32,23
@@ -168,58 +165,29 @@
 05/20,21,20,23,1,35
 05/21,36,34,9,28,25
 05/22,37,4,8,16,15</textarea>
-            </div>
-        </div>
-        
-        <div class="col-settings">
-            <div class="card" style="background: #eaf2f8;">
-                <div class="card-title">⚙️ 2. 設定版路發動條件 (基準期)</div>
-                <div class="row">
-                    <label>全局排序：</label>
-                    <select id="globalSort">
-                        <option value="sorted">順球 (小到大)</option>
-                        <option value="orig">原始落球</option>
-                    </select>
-                </div>
-                <hr style="border: 0; border-top: 1px solid #cbd4db; margin: 15px 0;">
-                <div class="row">
-                    <label>當期條件：</label>
-                    <select id="tPos">
-                        <option value="any">不定位 (只要開出)</option>
-                        <option value="1">第 1 顆</option>
-                        <option value="2" selected>第 2 顆</option>
-                        <option value="3">第 3 顆</option>
-                        <option value="4">第 4 顆</option>
-                        <option value="5">第 5 顆</option>
-                    </select>
-                    開出號碼: <input type="number" id="tVal" value="9" min="1" max="39">
-                </div>
-                <p style="font-size: 13px; color: #555; margin-top: 5px;">
-                    💡 提示：設定好條件後，系統會自動幫您統計符合條件的期數，並結算其後 1~3 期最常開出的「不定位」號碼。
-                </p>
-                <button onclick="runAutoSearch()">🔍 自動搜尋下 3 期熱門拖牌</button>
-            </div>
-        </div>
     </div>
 
-    <div id="results">
-        <div class="summary-box" id="summaryText">
-            請點擊上方按鈕開始搜尋...
+    <div class="controls">
+        <button onclick="autoAnalyze()">⚡ 一鍵全自動分析最強版路</button>
+    </div>
+
+    <div class="dashboard" id="dashboard">
+        <div class="summary-panel">
+            <div>
+                <div class="target-draw" id="targetInfo">正在鎖定下一期預測...</div>
+                <div style="color: #bbb; margin-top: 5px; font-size: 14px;">系統已掃描數萬種條件組合，推薦以下最具爆發力的號碼：</div>
+            </div>
+            <div>
+                <div style="text-align: right; margin-bottom: 5px; color: #ff007c; font-weight: bold;">🔥 綜合評分 Top 5</div>
+                <div class="top-picks" id="topPicksContainer">
+                    <!-- Balls will be injected here -->
+                </div>
+            </div>
         </div>
-        
-        <div class="results-grid">
-            <div class="result-col" id="col-t1">
-                <div class="result-header">👉 下 1 期 (T+1) 排行</div>
-                <div id="list-t1"></div>
-            </div>
-            <div class="result-col" id="col-t2">
-                <div class="result-header">👉 下 2 期 (T+2) 排行</div>
-                <div id="list-t2"></div>
-            </div>
-            <div class="result-col" id="col-t3">
-                <div class="result-header">👉 下 3 期 (T+3) 排行</div>
-                <div id="list-t3"></div>
-            </div>
+
+        <div class="section-title">📊 正在發動中的高勝率版路明細 (命中率 > 60%)</div>
+        <div class="pattern-grid" id="patternGrid">
+            <!-- Pattern cards will be injected here -->
         </div>
     </div>
 </div>
@@ -243,107 +211,156 @@
         return data;
     }
 
-    function checkCondition(row, pos, val, isSorted) {
-        if (!row) return false;
-        const arr = isSorted ? row.sortedNums : row.origNums;
-        const targetVal = parseInt(val);
-        if (pos === 'any') return arr.includes(targetVal);
-        return arr[parseInt(pos) - 1] === targetVal;
-    }
-
-    function runAutoSearch() {
+    function autoAnalyze() {
         const data = parseData();
-        const isGlobalSorted = document.getElementById('globalSort').value === 'sorted';
-        const tPos = document.getElementById('tPos').value;
-        const tVal = document.getElementById('tVal').value;
+        if (data.length < 5) return alert("資料量不足！");
 
-        let matchIndices = [];
-        for (let i = 0; i < data.length; i++) {
-            if (checkCondition(data[i], tPos, tVal, isGlobalSorted)) {
-                matchIndices.push(i);
-            }
-        }
+        const lastIdx = data.length - 1;
+        const lastDate = data[lastIdx].date;
+        
+        let allDiscoveredPatterns = [];
+        let scoreBoard = {}; // 用於統計綜合推薦號碼
 
-        // 準備統計陣列
-        let stats = { 1: {}, 2: {}, 3: {} };
-        let validDraws = { 1: 0, 2: 0, 3: 0 }; // 紀錄有效的下N期期數
+        // 系統自動往回推 3 期，尋找 T+1, T+2, T+3 的連動版路
+        // back=1 代表看最後一期，預測下一期 (偏移量 1)
+        for (let back = 1; back <= 3; back++) {
+            let triggerIdx = data.length - back;
+            let offset = back; 
+            let triggerDraw = data[triggerIdx];
 
-        for(let offset = 1; offset <= 3; offset++){
-            for(let n = 1; n <= MAX_NUM; n++) stats[offset][n] = 0;
-        }
+            // 建立這期所有可能發動的「條件集合」
+            let conditionsToTest = [];
 
-        // 開始計數
-        matchIndices.forEach(idx => {
-            for (let offset = 1; offset <= 3; offset++) {
-                let targetIdx = idx + offset;
-                if (targetIdx < data.length) {
-                    validDraws[offset]++;
-                    // 將目標期的落球加入統計 (不重複計數同一期內的相同號碼，雖然彩券不會重複，但保險起見用 Set)
-                    let uniqueNums = new Set(data[targetIdx].origNums);
-                    uniqueNums.forEach(n => {
-                        stats[offset][n]++;
+            // 1. 順球定位條件
+            triggerDraw.sortedNums.forEach((val, posIndex) => {
+                conditionsToTest.push({ type: 'sorted', pos: posIndex + 1, val: val, name: `順球第${posIndex + 1}顆` });
+            });
+            // 2. 落球定位條件
+            triggerDraw.origNums.forEach((val, posIndex) => {
+                conditionsToTest.push({ type: 'orig', pos: posIndex + 1, val: val, name: `落球第${posIndex + 1}顆` });
+            });
+            // 3. 不定位條件 (只要有開出)
+            triggerDraw.origNums.forEach((val) => {
+                conditionsToTest.push({ type: 'orig', pos: 'any', val: val, name: `不定位` });
+                conditionsToTest.push({ type: 'sorted', pos: 'any', val: val, name: `不定位` }); // 其實跟 orig 一樣
+            });
+
+            // 去重複條件
+            let uniqueConditions = [];
+            let seen = new Set();
+            conditionsToTest.forEach(c => {
+                let key = `${c.type}-${c.pos}-${c.val}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniqueConditions.push(c);
+                }
+            });
+
+            // 對每一個條件，去歷史尋找其拖牌規律
+            uniqueConditions.forEach(cond => {
+                let historyMatches = [];
+                // 掃描歷史 (排除最後幾期無法驗證的資料)
+                for (let i = 0; i < data.length - offset; i++) {
+                    let isMatch = false;
+                    let arr = cond.type === 'sorted' ? data[i].sortedNums : data[i].origNums;
+                    if (cond.pos === 'any') {
+                        isMatch = arr.includes(cond.val);
+                    } else {
+                        isMatch = arr[cond.pos - 1] === cond.val;
+                    }
+
+                    if (isMatch) {
+                        // 紀錄 T+offset 期開了什麼號碼
+                        historyMatches.push(data[i + offset].origNums);
+                    }
+                }
+
+                // 計算拖出的號碼頻率
+                if (historyMatches.length >= 2) { // 至少在歷史發動過 2 次才算數
+                    let targetCounts = {};
+                    historyMatches.forEach(targetDrawNums => {
+                        targetDrawNums.forEach(n => {
+                            targetCounts[n] = (targetCounts[n] || 0) + 1;
+                        });
                     });
+
+                    // 篩選出勝率高的目標號碼
+                    for (let n = 1; n <= MAX_NUM; n++) {
+                        if (targetCounts[n]) {
+                            let hitCount = targetCounts[n];
+                            let totalCount = historyMatches.length;
+                            let rate = hitCount / totalCount;
+
+                            // 嚴格篩選：勝率大於等於 60% 的才列入最強版路
+                            if (rate >= 0.6) {
+                                allDiscoveredPatterns.push({
+                                    triggerSource: triggerDraw.date,
+                                    offset: offset,
+                                    condName: cond.name,
+                                    condVal: cond.val,
+                                    targetNum: n,
+                                    hits: hitCount,
+                                    total: totalCount,
+                                    rate: rate
+                                });
+
+                                // 累加綜合分數 (勝率 * 發動次數 * 權重)
+                                let score = (rate * 100) + (hitCount * 10);
+                                scoreBoard[n] = (scoreBoard[n] || 0) + score;
+                            }
+                        }
+                    }
                 }
-            }
+            });
+        }
+
+        // 排序版路：勝率優先，次數其次
+        allDiscoveredPatterns.sort((a, b) => b.rate - a.rate || b.hits - a.hits);
+
+        // 渲染綜合排行榜
+        let sortedScores = Object.keys(scoreBoard).map(n => ({ num: parseInt(n), score: scoreBoard[n] })).sort((a, b) => b.score - a.score);
+        let top5 = sortedScores.slice(0, 5);
+        
+        document.getElementById('targetInfo').innerText = `🎯 基於最新一期 (${lastDate}) 自動運算完成`;
+        
+        let ballsHtml = '';
+        top5.forEach((item, index) => {
+            let cssClass = index < 2 ? 'ball' : 'ball ball-sub'; // 前兩名用紅球，後面用藍球
+            ballsHtml += `<div class="${cssClass}">${pad(item.num)}</div>`;
         });
+        if(top5.length === 0) ballsHtml = '<div style="color:#aaa;">目前無強烈訊號</div>';
+        document.getElementById('topPicksContainer').innerHTML = ballsHtml;
 
-        // 渲染結果函數
-        function renderList(offset, containerId) {
-            let listHtml = '';
-            if (validDraws[offset] === 0) {
-                document.getElementById(containerId).innerHTML = '<div style="padding:20px;text-align:center;color:#999;">無足夠資料</div>';
-                return;
-            }
+        // 渲染最強版路卡片 (最多顯示 12 組避免眼花)
+        let cardsHtml = '';
+        let displayPatterns = allDiscoveredPatterns.slice(0, 12);
 
-            // 轉換為陣列並排序 (由大到小)
-            let arr = [];
-            for (let n = 1; n <= MAX_NUM; n++) {
-                if (stats[offset][n] > 0) {
-                    arr.push({ num: n, count: stats[offset][n] });
-                }
-            }
-            arr.sort((a, b) => b.count - a.count);
-
-            // 取前 5 名
-            let top5 = arr.slice(0, 5);
-            
-            top5.forEach(item => {
-                let rate = ((item.count / validDraws[offset]) * 100).toFixed(1);
-                listHtml += `
-                <div class="result-row">
-                    <div>
-                        <span class="rank-num">${pad(item.num)}</span>
+        if (displayPatterns.length === 0) {
+            cardsHtml = '<div style="color: #aaa; padding: 20px;">近期無吻合度高於 60% 的版路條件。</div>';
+        } else {
+            displayPatterns.forEach(p => {
+                let periodText = p.offset === 1 ? '上 1 期' : `上 ${p.offset} 期`;
+                cardsHtml += `
+                <div class="pattern-card">
+                    <div class="card-header">
+                        <span class="card-title">預測開出 👉 <span style="font-size: 22px; color: #ff007c;">${pad(p.targetNum)}</span></span>
+                        <span class="card-rate">${(p.rate * 100).toFixed(0)}% 勝率</span>
                     </div>
-                    <div style="text-align: right; width: 70%;">
-                        <div class="rank-stats">${item.count} 次 (${rate}%)</div>
-                        <div class="progress-bar"><div class="progress-fill" style="width: ${rate}%;"></div></div>
+                    <div class="card-body">
+                        當 ${periodText} (${p.triggerSource})<br>
+                        【<span style="color:#00d2ff;">${p.condName}</span>】開出 <span class="highlight-num">${pad(p.condVal)}</span> 時<br>
+                        <div class="freq-info">
+                            📊 歷史發動 <b>${p.total}</b> 次，成功拖出 <b>${p.hits}</b> 次。
+                        </div>
                     </div>
                 </div>`;
             });
-            
-            // 如果連1次都沒開出
-            if(top5.length === 0) listHtml = '<div style="padding:20px;text-align:center;color:#999;">尚未開出任何號碼</div>';
-
-            document.getElementById(containerId).innerHTML = listHtml;
         }
+        document.getElementById('patternGrid').innerHTML = cardsHtml;
 
         // 顯示結果
-        document.getElementById('results').style.display = 'block';
-        
-        let sortText = isGlobalSorted ? "順球" : "原始落球";
-        let posText = tPos === 'any' ? "不定位" : `第 ${tPos} 顆`;
-        document.getElementById('summaryText').innerHTML = `
-            📊 <b>條件分析結果：</b> 歷史中符合「${sortText} ${posText} 開出 <b>${pad(tVal)}</b>」的次數共計 <b>${matchIndices.length}</b> 次。<br>
-            以下為其發動後，下 1 到 3 期的熱門號碼拖牌機率（取前 5 名）：
-        `;
-
-        renderList(1, 'list-t1');
-        renderList(2, 'list-t2');
-        renderList(3, 'list-t3');
+        document.getElementById('dashboard').style.display = 'block';
     }
-
-    // 網頁載入時預設執行一次
-    window.onload = function() { runAutoSearch(); };
 </script>
 
 </body>
