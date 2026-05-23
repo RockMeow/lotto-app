@@ -3,153 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>開獎尾數規律搜尋器 (自動順球轉換版)</title>
+    <title>開獎尾數規律搜尋器 PRO</title>
     <style>
+        /* 現代化色彩變數 */
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
+            font-family: 'Inter', 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 30px 15px;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
-            background: #fff;
-            padding: 20px 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            background: var(--card-bg);
+            padding: 30px 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
         }
+        
+        /* 標題設計 */
         h1 {
-            color: #2c3e50;
             text-align: center;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        /* 控制面板 */
         .control-panel {
-            background: #ecf0f1;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            background: #f1f5f9;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
         }
         .data-source-container {
             display: flex;
             align-items: center;
             gap: 20px;
-            background: #fff;
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid #bdc3c7;
+            background: var(--card-bg);
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 15px;
+            flex-wrap: wrap;
         }
         .selector-box {
             display: flex;
             align-items: center;
-            gap: 10px;
-            border-right: 2px solid #ecf0f1;
+            gap: 12px;
+            border-right: 2px solid var(--border-color);
             padding-right: 20px;
         }
-        .selector-box select {
-            padding: 8px 15px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #2c3e50;
-            border: 2px solid #3498db;
-            border-radius: 4px;
-            cursor: pointer;
-            background-color: #f0f8ff;
+        .selector-box label {
+            font-weight: 700;
+            color: var(--text-main);
         }
+        select.styled-select, input.styled-input {
+            padding: 10px 15px;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--primary);
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: var(--card-bg);
+            transition: all 0.2s;
+            outline: none;
+        }
+        select.styled-select:hover, select.styled-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        /* 按鈕設計 */
         .file-upload {
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
         .file-upload input[type="file"] {
             display: none;
         }
         .file-upload-btn {
-            background-color: #2ecc71;
+            background: linear-gradient(135deg, var(--secondary), #059669);
             color: white;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: opacity 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
         }
+        .file-upload-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .file-upload-btn:active { transform: translateY(1px); }
+
+        /* 篩選器 */
         .filters {
             display: flex;
-            gap: 15px;
+            gap: 20px;
             flex-wrap: wrap;
             align-items: center;
+            padding: 5px 0;
         }
         .filter-group {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            font-weight: 600;
+            color: var(--text-main);
         }
-        select.filter-select, input[type="number"] {
-            padding: 8px;
-            border: 1px solid #bdc3c7;
-            border-radius: 4px;
-            font-size: 15px;
+        
+        #statusMsg {
+            font-weight: 600;
+            margin-top: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .status-success { background: #dcfce7; color: #166534; display: block !important; border-left: 4px solid var(--secondary); }
+        .status-error { background: #fee2e2; color: #991b1b; display: block !important; border-left: 4px solid var(--danger); }
+
+        /* 表格設計 */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
+            background: var(--card-bg);
             text-align: center;
         }
         th {
-            background-color: #2c3e50;
-            color: white;
+            background-color: #f8fafc;
+            color: var(--text-muted);
+            font-weight: 700;
+            padding: 16px 12px;
+            border-bottom: 2px solid var(--border-color);
+            white-space: nowrap;
         }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-        .highlight {
-            color: #e74c3c;
-            font-weight: bold;
-        }
-        #statusMsg {
-            color: #27ae60;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        .error-msg {
-            color: #e74c3c !important;
-            font-size: 14px;
-        }
-        .badge {
-            background-color: #e67e22;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            margin-left: 10px;
+        td {
+            padding: 16px 12px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
             vertical-align: middle;
         }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: #f1f5f9; }
+
+        /* 徽章與特效文字 */
+        .highlight { color: var(--danger); font-weight: 800; font-size: 16px; }
+        .rate-100 { color: var(--secondary); font-weight: 800; font-size: 16px; }
+        
+        .badge {
+            background-color: #f59e0b;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            margin-left: 10px;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+        }
+
+        /* 號碼預測彩球樣式 */
+        .prediction-cell {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+        }
+        .num-pill {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #fca5a5, var(--danger));
+            color: white;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 14px;
+            font-weight: 800;
+            box-shadow: 0 3px 5px rgba(239, 68, 68, 0.3);
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.2);
+        }
+        .tail-hint {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .miss-text { font-size: 12px; color: var(--text-muted); text-align: left; line-height: 1.5; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📊 開獎尾數規律搜尋器 <span style="font-size: 16px; color: #7f8c8d;">(自動順球轉換版)</span></h1>
+    <h1>🎯 開獎尾數規律搜尋器 PRO</h1>
+    <div class="subtitle">自動分析歷史數據落點 · 智慧化推算下期精準彩球</div>
     
     <div class="control-panel">
         <div class="data-source-container">
             <div class="selector-box">
-                <label for="csvSelect"><strong>📂 選擇彩種：</strong></label>
-                <select id="csvSelect" onchange="loadSelectedCSV()">
-                    <option value="" disabled selected>-- 請選擇快速載入 --</option>
+                <label for="csvSelect">📂 選擇彩種：</label>
+                <select id="csvSelect" class="styled-select" onchange="loadSelectedCSV()">
+                    <option value="" disabled selected>-- 點擊快速載入 --</option>
                     <option value="Fan_history_2026.csv">天天樂</option>
                     <option value="Ghana_history_2026.csv">迦納彩</option>
                     <option value="539_history_2026.csv">今彩 539</option>
@@ -160,7 +246,7 @@
 
             <label class="file-upload">
                 <span class="file-upload-btn">⬆️ 手動上傳 CSV</span>
-                <span id="fileName" style="color:#7f8c8d; font-size: 14px;">(若無法自動讀取，請點此手動上傳)</span>
+                <span id="fileName" style="color:var(--text-muted); font-size: 14px;">(若無伺服器環境，請點此手動選檔)</span>
                 <input type="file" id="csvFileInput" accept=".csv, .txt">
             </label>
         </div>
@@ -168,7 +254,7 @@
         <div class="filters">
             <div class="filter-group">
                 <label for="filterBase">基準星期：</label>
-                <select id="filterBase" class="filter-select">
+                <select id="filterBase" class="styled-select">
                     <option value="all">📅 全部</option>
                     <option value="0">星期日</option>
                     <option value="1">星期一</option>
@@ -181,8 +267,8 @@
             </div>
 
             <div class="filter-group">
-                <label for="filterTarget">目標星期：</label>
-                <select id="filterTarget" class="filter-select">
+                <label for="filterTarget">預測目標：</label>
+                <select id="filterTarget" class="styled-select">
                     <option value="all">📅 全部</option>
                     <option value="0">星期日</option>
                     <option value="1">星期一</option>
@@ -195,8 +281,8 @@
             </div>
 
             <div class="filter-group">
-                <label for="minWinRate">最低勝率 (%)：</label>
-                <input type="number" id="minWinRate" value="80" min="0" max="100" style="width: 70px;">
+                <label for="minWinRate">最低勝率限制：</label>
+                <input type="number" id="minWinRate" class="styled-input" value="80" min="0" max="100" style="width: 80px;"> %
             </div>
         </div>
         
@@ -204,7 +290,7 @@
     </div>
 
     <div id="resultsArea">
-        <h3 style="text-align: center; color: #7f8c8d;">請選擇彩種或上傳 CSV 檔案以進行分析</h3>
+        <h3 style="text-align: center; color: var(--text-muted); padding: 40px 0;">✨ 請選擇彩種或上傳資料檔以開始智慧分析 ✨</h3>
     </div>
 </div>
 
@@ -216,20 +302,16 @@
         const fileName = document.getElementById('csvSelect').value;
         if (!fileName) return;
 
-        document.getElementById('fileName').textContent = `(目前資料：${fileName})`;
-        const statusEl = document.getElementById('statusMsg');
-        statusEl.className = '';
-        statusEl.textContent = `⏳ 正在嘗試載入 ${fileName}...`;
+        document.getElementById('fileName').textContent = `已鎖定來源：${fileName}`;
+        showStatus(`⏳ 正在高速運算 ${fileName} 的歷史軌跡...`, 'normal');
 
         try {
             const response = await fetch(fileName);
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) throw new Error('無法讀取檔案');
             const text = await response.text();
             processDataAndGenerateRules(text, fileName);
         } catch (error) {
-            console.error("Fetch error:", error);
-            statusEl.className = 'error-msg';
-            statusEl.innerHTML = `⚠️ <b>載入失敗：</b>瀏覽器安全限制無法直接讀取本地 ${fileName}。<br>👉 <b>解決方法：</b>請使用旁邊的「手動上傳 CSV」按鈕，或透過 VS Code 的 Live Server 開啟此網頁。`;
+            showStatus(`⚠️ <b>載入失敗：</b>瀏覽器安全限制無法直接讀取本地 ${fileName}。<br>👉 <b>解決方法：</b>請使用「手動上傳 CSV」按鈕，或透過 Live Server 開啟。`, 'error');
         }
     }
 
@@ -238,11 +320,8 @@
         if (!file) return;
         
         document.getElementById('csvSelect').value = ""; 
-        document.getElementById('fileName').textContent = `已載入：${file.name}`;
-        
-        const statusEl = document.getElementById('statusMsg');
-        statusEl.className = '';
-        statusEl.textContent = "⏳ 讀取並分析中...";
+        document.getElementById('fileName').textContent = `已上傳：${file.name}`;
+        showStatus("⏳ 正在讀取並進行大數據分析中...", 'normal');
 
         const reader = new FileReader();
         reader.onload = function(event) {
@@ -256,15 +335,22 @@
     document.getElementById('filterTarget').addEventListener('change', renderTable);
     document.getElementById('minWinRate').addEventListener('input', renderTable);
 
+    function showStatus(msg, type) {
+        const el = document.getElementById('statusMsg');
+        el.className = type === 'error' ? 'status-error' : 'status-success';
+        el.innerHTML = msg;
+    }
+
     function processDataAndGenerateRules(rawText, fileName) {
         const lines = rawText.split('\n');
         const data = [];
         let currentDayOfWeek = 3; 
+        let maxLotteryNum = 0; // 自動偵測彩種的最大號碼 (如39, 49, 90)
+        let ballCount = 5; 
 
-        // 判斷是否為天天樂 (不需轉換順球)
         const isFan = fileName.toLowerCase().includes('fan') || fileName.includes('天天樂');
-        let ballCount = 5; // 預設追蹤到 N5，會根據數據動態擴展
 
+        // 1. 解析並清理數據
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
@@ -276,20 +362,18 @@
             const day = parseInt(dateParts[dateParts.length - 1], 10); 
             
             const nums = [];
-            // 動態讀取所有存在的號碼欄位 (相容 6 顆或以上的彩種)
             for (let k = 1; k < parts.length; k++) {
                 const val = parseInt(parts[k], 10);
-                if(!isNaN(val)) nums.push(val);
+                if(!isNaN(val)) {
+                    nums.push(val);
+                    if (val > maxLotteryNum) maxLotteryNum = val; // 更新最大號碼
+                }
             }
 
             if(nums.length > ballCount) ballCount = nums.length;
 
             if(nums.length >= 5) {
-                // 【核心邏輯】：如果不是天天樂，則進行「落球轉順球」排序 (由小到大)
-                if (!isFan) {
-                    nums.sort((a, b) => a - b);
-                }
-
+                if (!isFan) nums.sort((a, b) => a - b);
                 data.push({
                     dateStr: dateStr,
                     day: day,
@@ -300,13 +384,19 @@
             }
         }
 
+        // 建立最後一次出現的星期紀錄 (用於推算本期號碼)
+        let lastRecordByWeekday = {};
+        for (let entry of data) {
+            lastRecordByWeekday[entry.weekday] = entry; 
+        }
+
         allGeneratedRules = [];
-        // 動態生成 sources 標籤 (確保涵蓋 N1 到 Nx)
         const sources = ['日期尾數'];
         for (let idx = 1; idx <= ballCount; idx++) {
             sources.push(`N${idx}尾數`);
         }
 
+        // 2. 暴力演算所有規律
         for (let baseWd = 0; baseWd < 7; baseWd++) {
             for (let srcIdx = 0; srcIdx <= ballCount; srcIdx++) {
                 for (let targetWd = 0; targetWd < 7; targetWd++) {
@@ -317,9 +407,7 @@
 
                     for (let i = 0; i < data.length; i++) {
                         if (data[i].weekday === baseWd) {
-                            // 防呆：如果某期號碼數量不足，跳過
                             if (srcIdx > 0 && !data[i].nums[srcIdx - 1]) continue;
-
                             let tailNum = (srcIdx === 0) ? (data[i].day % 10) : (data[i].nums[srcIdx - 1] % 10);
                             
                             for (let j = i + 1; j < data.length && j <= i + 7; j++) {
@@ -329,7 +417,7 @@
                                     if (targetTails.includes(tailNum)) {
                                         hits++;
                                     } else {
-                                        missDetails.push(`基準:${data[i].dateStr}(尾${tailNum})➡️目標:${data[j].dateStr}(未開)`);
+                                        missDetails.push(`[${data[i].dateStr}] 尾${tailNum} ➡️ [${data[j].dateStr}] 未開`);
                                     }
                                     break;
                                 }
@@ -338,25 +426,44 @@
                     }
 
                     if (total >= 5) { 
+                        // 計算本期即將預測的號碼
+                        let predictTail = -1;
+                        let latestBase = lastRecordByWeekday[baseWd];
+                        if (latestBase) {
+                            if (srcIdx === 0) {
+                                predictTail = latestBase.day % 10;
+                            } else if (latestBase.nums[srcIdx - 1] !== undefined) {
+                                predictTail = latestBase.nums[srcIdx - 1] % 10;
+                            }
+                        }
+
+                        let predictedNums = [];
+                        if (predictTail !== -1) {
+                            let start = predictTail === 0 ? 10 : predictTail;
+                            for (let n = start; n <= maxLotteryNum; n += 10) {
+                                predictedNums.push(n);
+                            }
+                        }
+
                         allGeneratedRules.push({
                             baseWd: baseWd,
                             targetWd: targetWd,
-                            baseStr: `星期${weekdays[baseWd]} 的 ${sources[srcIdx]}`,
+                            baseStr: `星期${weekdays[baseWd]} · ${sources[srcIdx]}`,
                             targetStr: `下個 星期${weekdays[targetWd]}`,
                             hits: hits,
                             total: total,
                             winRate: hits / total,
-                            misses: missDetails.slice(-2).join("<br>") 
+                            misses: missDetails.slice(-2).join("<br>"),
+                            predictTail: predictTail,
+                            predictedNums: predictedNums
                         });
                     }
                 }
             }
         }
 
-        const statusEl = document.getElementById('statusMsg');
-        statusEl.className = '';
-        let processNote = isFan ? "" : "<span class='badge'>已自動將落球轉換為順球排列</span>";
-        statusEl.innerHTML = `✅ 分析完成！共掃描 ${data.length} 期數據，計算出 ${allGeneratedRules.length} 種潛在規律組合。${processNote}`;
+        let processNote = isFan ? "" : "<span class='badge'>已自動執行落球轉順球</span>";
+        showStatus(`✅ 分析完成！成功掃描 <b>${data.length}</b> 期數據，找出最高勝率規律。(偵測到彩池最大號碼：<b>${maxLotteryNum}</b>) ${processNote}`, 'success');
         
         renderTable();
     }
@@ -380,37 +487,50 @@
         const resultsArea = document.getElementById('resultsArea');
 
         if (filteredRules.length === 0) {
-            resultsArea.innerHTML = `<h3 style="text-align:center; color: #e74c3c;">在此篩選條件下，找不到符合的規律。</h3>`;
+            resultsArea.innerHTML = `<h3 style="text-align:center; color: var(--danger); padding: 30px;">🔍 在目前的條件下，找不到符合的高勝率規律。建議調低勝率限制。</h3>`;
             return;
         }
 
-        let html = `<h3>篩選結果：共 ${filteredRules.length} 條符合條件的規律</h3>`;
-        html += `<table>
-            <thead>
-                <tr>
-                    <th>找出規律 (基準)</th>
-                    <th>預測目標 (驗證)</th>
-                    <th>命中次數</th>
-                    <th>總樣本數</th>
-                    <th>歷史勝率</th>
-                    <th>近期斷龍紀錄 (參考)</th>
-                </tr>
-            </thead>
-            <tbody>`;
+        let html = `
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:15%">基準觸發點</th>
+                        <th style="width:15%">預測目標日</th>
+                        <th style="width:10%">命中率</th>
+                        <th style="width:10%">歷史戰績</th>
+                        <th style="width:25%">🔥 本期預測推薦</th>
+                        <th style="width:25%">近期斷龍紀錄 (防禦參考)</th>
+                    </tr>
+                </thead>
+                <tbody>`;
 
         filteredRules.forEach(r => {
-            const rateStr = (r.winRate * 100).toFixed(1) + '%';
+            const winRatePercent = (r.winRate * 100).toFixed(1);
+            const rateClass = r.winRate === 1 ? 'rate-100' : 'highlight';
+            
+            // 產生預測號碼彩球 HTML
+            let predictHtml = `<span style="color:#94a3b8; font-size:13px;">等待最新數據...</span>`;
+            if (r.predictedNums && r.predictedNums.length > 0) {
+                let pills = r.predictedNums.map(n => `<div class="num-pill">${n}</div>`).join('');
+                predictHtml = `
+                    <span class="tail-hint">鎖定尾數 <b>${r.predictTail}</b></span>
+                    <div class="prediction-cell">${pills}</div>
+                `;
+            }
+
             html += `<tr>
                 <td><strong>${r.baseStr}</strong></td>
                 <td><strong>${r.targetStr}</strong></td>
-                <td><span class="highlight">${r.hits}</span></td>
-                <td>${r.total}</td>
-                <td><span class="highlight">${rateStr}</span></td>
-                <td style="font-size: 12px; color: #7f8c8d; text-align: left;">${r.misses || '無斷龍，全中！'}</td>
+                <td><span class="${rateClass}">${winRatePercent}%</span></td>
+                <td><b style="color:var(--text-main)">${r.hits}</b> / <span style="color:var(--text-muted)">${r.total}</span></td>
+                <td style="background-color: #fff1f2; border-left: 2px dashed #fecdd3; border-right: 2px dashed #fecdd3;">${predictHtml}</td>
+                <td class="miss-text">${r.misses || '<span style="color:var(--secondary); font-weight:bold;">✨ 完美連莊中，無斷龍紀錄！</span>'}</td>
             </tr>`;
         });
 
-        html += `</tbody></table>`;
+        html += `</tbody></table></div>`;
         resultsArea.innerHTML = html;
     }
 </script>
