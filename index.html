@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>開獎尾數規律搜尋器 (多彩種整合版)</title>
+    <title>開獎尾數規律搜尋器 (自動順球轉換版)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -128,16 +128,23 @@
             color: #e74c3c !important;
             font-size: 14px;
         }
+        .badge {
+            background-color: #e67e22;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📊 開獎尾數規律搜尋器 (多彩種整合版)</h1>
+    <h1>📊 開獎尾數規律搜尋器 <span style="font-size: 16px; color: #7f8c8d;">(自動順球轉換版)</span></h1>
     
     <div class="control-panel">
-        
-        <!-- 資料來源選擇區 -->
         <div class="data-source-container">
             <div class="selector-box">
                 <label for="csvSelect"><strong>📂 選擇彩種：</strong></label>
@@ -158,7 +165,6 @@
             </label>
         </div>
 
-        <!-- 篩選器區塊 -->
         <div class="filters">
             <div class="filter-group">
                 <label for="filterBase">基準星期：</label>
@@ -206,7 +212,6 @@
     const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
     let allGeneratedRules = [];
 
-    // --- 新增：透過下拉選單 Fetch 本地檔案 ---
     async function loadSelectedCSV() {
         const fileName = document.getElementById('csvSelect').value;
         if (!fileName) return;
@@ -217,11 +222,10 @@
         statusEl.textContent = `⏳ 正在嘗試載入 ${fileName}...`;
 
         try {
-            // 使用 fetch 讀取同資料夾下的 CSV
             const response = await fetch(fileName);
             if (!response.ok) throw new Error('Network response was not ok');
             const text = await response.text();
-            processDataAndGenerateRules(text);
+            processDataAndGenerateRules(text, fileName);
         } catch (error) {
             console.error("Fetch error:", error);
             statusEl.className = 'error-msg';
@@ -229,12 +233,11 @@
         }
     }
 
-    // --- 原有：手動上傳檔案 ---
     document.getElementById('csvFileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
         
-        document.getElementById('csvSelect').value = ""; // 清空下拉選單
+        document.getElementById('csvSelect').value = ""; 
         document.getElementById('fileName').textContent = `已載入：${file.name}`;
         
         const statusEl = document.getElementById('statusMsg');
@@ -244,21 +247,23 @@
         const reader = new FileReader();
         reader.onload = function(event) {
             const text = event.target.result;
-            processDataAndGenerateRules(text);
+            processDataAndGenerateRules(text, file.name);
         };
         reader.readAsText(file);
     });
 
-    // 監聽篩選器變更
     document.getElementById('filterBase').addEventListener('change', renderTable);
     document.getElementById('filterTarget').addEventListener('change', renderTable);
     document.getElementById('minWinRate').addEventListener('input', renderTable);
 
-    function processDataAndGenerateRules(rawText) {
+    function processDataAndGenerateRules(rawText, fileName) {
         const lines = rawText.split('\n');
         const data = [];
-        // 動態推算第一筆資料的星期 (此處先假設為基準3，若您的CSV有年份資訊可以寫得更精確)
         let currentDayOfWeek = 3; 
+
+        // 判斷是否為天天樂 (不需轉換順球)
+        const isFan = fileName.toLowerCase().includes('fan') || fileName.includes('天天樂');
+        let ballCount = 5; // 預設追蹤到 N5，會根據數據動態擴展
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
@@ -268,15 +273,23 @@
             
             const dateStr = parts[0];
             const dateParts = dateStr.split('/');
-            const day = parseInt(dateParts[dateParts.length - 1], 10); // 取最後一個數字當日期
+            const day = parseInt(dateParts[dateParts.length - 1], 10); 
             
             const nums = [];
-            for (let k = 1; k <= 5; k++) {
-                if(parts[k]) nums.push(parseInt(parts[k], 10));
+            // 動態讀取所有存在的號碼欄位 (相容 6 顆或以上的彩種)
+            for (let k = 1; k < parts.length; k++) {
+                const val = parseInt(parts[k], 10);
+                if(!isNaN(val)) nums.push(val);
             }
 
-            // 確保有抓到足夠號碼才納入
+            if(nums.length > ballCount) ballCount = nums.length;
+
             if(nums.length >= 5) {
+                // 【核心邏輯】：如果不是天天樂，則進行「落球轉順球」排序 (由小到大)
+                if (!isFan) {
+                    nums.sort((a, b) => a - b);
+                }
+
                 data.push({
                     dateStr: dateStr,
                     day: day,
@@ -288,10 +301,14 @@
         }
 
         allGeneratedRules = [];
-        const sources = ['日期尾數', 'N1尾數', 'N2尾數', 'N3尾數', 'N4尾數', 'N5尾數'];
+        // 動態生成 sources 標籤 (確保涵蓋 N1 到 Nx)
+        const sources = ['日期尾數'];
+        for (let idx = 1; idx <= ballCount; idx++) {
+            sources.push(`N${idx}尾數`);
+        }
 
         for (let baseWd = 0; baseWd < 7; baseWd++) {
-            for (let srcIdx = 0; srcIdx < 6; srcIdx++) {
+            for (let srcIdx = 0; srcIdx <= ballCount; srcIdx++) {
                 for (let targetWd = 0; targetWd < 7; targetWd++) {
                     
                     let hits = 0;
@@ -300,6 +317,9 @@
 
                     for (let i = 0; i < data.length; i++) {
                         if (data[i].weekday === baseWd) {
+                            // 防呆：如果某期號碼數量不足，跳過
+                            if (srcIdx > 0 && !data[i].nums[srcIdx - 1]) continue;
+
                             let tailNum = (srcIdx === 0) ? (data[i].day % 10) : (data[i].nums[srcIdx - 1] % 10);
                             
                             for (let j = i + 1; j < data.length && j <= i + 7; j++) {
@@ -335,7 +355,8 @@
 
         const statusEl = document.getElementById('statusMsg');
         statusEl.className = '';
-        statusEl.textContent = `✅ 分析完成！共掃描 ${data.length} 期數據，計算出 ${allGeneratedRules.length} 種潛在規律組合。`;
+        let processNote = isFan ? "" : "<span class='badge'>已自動將落球轉換為順球排列</span>";
+        statusEl.innerHTML = `✅ 分析完成！共掃描 ${data.length} 期數據，計算出 ${allGeneratedRules.length} 種潛在規律組合。${processNote}`;
         
         renderTable();
     }
