@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>開獎尾數規律自動搜尋器</title>
+    <title>開獎尾數規律搜尋器 (CSV進階版)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -13,7 +13,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
             background: #fff;
             padding: 20px 30px;
@@ -27,45 +27,55 @@
             padding-bottom: 10px;
         }
         .control-panel {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
             display: flex;
             flex-direction: column;
             gap: 15px;
-            margin-bottom: 20px;
         }
-        textarea {
-            width: 100%;
-            height: 150px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-family: monospace;
-            resize: vertical;
+        .file-upload {
+            border: 2px dashed #bdc3c7;
+            padding: 20px;
+            text-align: center;
+            background: #fff;
+            border-radius: 6px;
+            cursor: pointer;
         }
-        .settings {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            background: #ecf0f1;
-            padding: 15px;
-            border-radius: 4px;
+        .file-upload input[type="file"] {
+            display: none;
         }
-        button {
-            background-color: #3498db;
+        .file-upload-btn {
+            background-color: #2ecc71;
             color: white;
-            border: none;
             padding: 10px 20px;
-            font-size: 16px;
             border-radius: 4px;
             cursor: pointer;
-            transition: background 0.3s;
+            font-weight: bold;
+            display: inline-block;
         }
-        button:hover {
-            background-color: #2980b9;
+        .filters {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        select, input[type="number"] {
+            padding: 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 15px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 10px;
         }
         th, td {
             border: 1px solid #ddd;
@@ -86,71 +96,114 @@
             color: #e74c3c;
             font-weight: bold;
         }
+        #statusMsg {
+            color: #27ae60;
+            font-weight: bold;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🎯 開獎尾數規律自動搜尋器</h1>
+    <h1>📊 開獎尾數規律搜尋器 (CSV版)</h1>
     
     <div class="control-panel">
-        <label for="dataInput"><strong>請貼上歷史數據 (格式: 日期,N1,N2,N3,N4,N5)：</strong></label>
-        <textarea id="dataInput" placeholder="1/1,1,3,9,11,21&#10;1/2,13,14,24,25,35...">Date,N1,N2,N3,N4,N5
-1/1,1,3,9,11,21
-1/2,13,14,24,25,35
-1/3,9,14,19,20,24
-1/4,1,4,34,37,39
-1/5,9,19,20,26,32
-1/6,5,9,15,21,24
-1/7,1,10,28,31,39
-1/8,2,3,9,11,31
-1/9,2,15,19,24,36
-1/10,23,25,28,29,35</textarea>
-        
-        <div class="settings">
-            <label for="minWinRate">最低顯示勝率 (%)：</label>
-            <input type="number" id="minWinRate" value="80" min="0" max="100" style="width: 60px; padding: 5px;">
-            <button onclick="analyzeData()">開始分析出最高規律</button>
+        <!-- CSV 檔案上傳區 -->
+        <label class="file-upload">
+            <span class="file-upload-btn">📁 選擇本地 CSV 檔案</span>
+            <span id="fileName">尚未選擇檔案... (請確保格式為 Date,N1,N2,N3,N4,N5)</span>
+            <input type="file" id="csvFileInput" accept=".csv, .txt">
+        </label>
+
+        <!-- 篩選器區塊 -->
+        <div class="filters">
+            <div class="filter-group">
+                <label for="filterBase">基準星期 (從哪天找)：</label>
+                <select id="filterBase">
+                    <option value="all">📅 全部</option>
+                    <option value="0">星期日</option>
+                    <option value="1">星期一</option>
+                    <option value="2">星期二</option>
+                    <option value="3">星期三</option>
+                    <option value="4">星期四</option>
+                    <option value="5">星期五</option>
+                    <option value="6">星期六</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filterTarget">目標星期 (預測哪天)：</label>
+                <select id="filterTarget">
+                    <option value="all">📅 全部</option>
+                    <option value="0">星期日</option>
+                    <option value="1">星期一</option>
+                    <option value="2">星期二</option>
+                    <option value="3">星期三</option>
+                    <option value="4">星期四</option>
+                    <option value="5">星期五</option>
+                    <option value="6">星期六</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="minWinRate">最低勝率 (%)：</label>
+                <input type="number" id="minWinRate" value="80" min="0" max="100" style="width: 70px;">
+            </div>
         </div>
+        
+        <div id="statusMsg"></div>
     </div>
 
     <div id="resultsArea">
-        <!-- 搜尋結果將顯示在這裡 -->
+        <h3 style="text-align: center; color: #7f8c8d;">請先上傳 CSV 檔案以進行分析</h3>
     </div>
 </div>
 
 <script>
     const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-    
-    function analyzeData() {
-        const rawText = document.getElementById('dataInput').value.trim();
-        const minWinRate = document.getElementById('minWinRate').value / 100;
-        const resultsArea = document.getElementById('resultsArea');
-        
-        if (!rawText) {
-            alert('請輸入數據！');
-            return;
-        }
+    let allGeneratedRules = []; // 儲存所有算出來的規律
 
-        // 1. 解析數據
+    // 監聽檔案上傳
+    document.getElementById('csvFileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        document.getElementById('fileName').textContent = `已載入檔案：${file.name}`;
+        document.getElementById('statusMsg').textContent = "讀取並分析中...";
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const text = event.target.result;
+            processDataAndGenerateRules(text);
+        };
+        reader.readAsText(file);
+    });
+
+    // 監聽篩選器變更 (動態更新畫面，不需重新計算)
+    document.getElementById('filterBase').addEventListener('change', renderTable);
+    document.getElementById('filterTarget').addEventListener('change', renderTable);
+    document.getElementById('minWinRate').addEventListener('input', renderTable);
+
+    function processDataAndGenerateRules(rawText) {
         const lines = rawText.split('\n');
         const data = [];
-        let currentDayOfWeek = 3; // 假設 1/1 是星期三 (根據您的數據推算)
+        let currentDayOfWeek = 3; // 假設數據第一筆 (1/1) 是星期三
 
+        // 1. 解析 CSV
         for (let i = 0; i < lines.length; i++) {
-            const parts = lines[i].split(',');
-            if (parts.length < 6 || parts[0] === 'Date') continue;
+            const line = lines[i].trim();
+            if (!line) continue;
+            const parts = line.split(',');
+            if (parts.length < 6 || parts[0].toLowerCase() === 'date') continue;
             
             const dateStr = parts[0];
             const dateParts = dateStr.split('/');
-            const month = parseInt(dateParts[0], 10);
             const day = parseInt(dateParts[1], 10);
             
             const nums = [
-                parseInt(parts[1], 10),
-                parseInt(parts[2], 10),
-                parseInt(parts[3], 10),
-                parseInt(parts[4], 10),
+                parseInt(parts[1], 10), parseInt(parts[2], 10),
+                parseInt(parts[3], 10), parseInt(parts[4], 10),
                 parseInt(parts[5], 10)
             ];
 
@@ -164,10 +217,9 @@
             currentDayOfWeek = (currentDayOfWeek + 1) % 7;
         }
 
-        // 2. 窮舉搜尋規律
-        // 條件：基準日(0-6) x 基準位置(日期尾, N1-N5) x 目標日(0-6)
+        // 2. 一次性窮舉所有規律 (暴力運算)
+        allGeneratedRules = [];
         const sources = ['日期尾數', 'N1尾數', 'N2尾數', 'N3尾數', 'N4尾數', 'N5尾數'];
-        const rules = [];
 
         for (let baseWd = 0; baseWd < 7; baseWd++) {
             for (let srcIdx = 0; srcIdx < 6; srcIdx++) {
@@ -177,62 +229,76 @@
                     let total = 0;
                     let missDetails = [];
 
-                    // 尋找符合基準日的期數
                     for (let i = 0; i < data.length; i++) {
                         if (data[i].weekday === baseWd) {
                             
-                            // 提取基準尾數
-                            let tailNum = 0;
-                            if (srcIdx === 0) tailNum = data[i].day % 10;
-                            else tailNum = data[i].nums[srcIdx - 1] % 10;
-
-                            // 往後尋找最近的一個「目標日」
-                            let foundTarget = false;
+                            let tailNum = (srcIdx === 0) ? (data[i].day % 10) : (data[i].nums[srcIdx - 1] % 10);
+                            
                             for (let j = i + 1; j < data.length && j <= i + 7; j++) {
                                 if (data[j].weekday === targetWd) {
                                     total++;
-                                    foundTarget = true;
-                                    
-                                    // 驗證目標日是否有開出該尾數
                                     const targetTails = data[j].nums.map(n => n % 10);
                                     if (targetTails.includes(tailNum)) {
                                         hits++;
                                     } else {
-                                        missDetails.push(`基準:${data[i].dateStr}(尾${tailNum}) ➡️ 目標:${data[j].dateStr}(未開)`);
+                                        missDetails.push(`基準:${data[i].dateStr}(尾${tailNum})➡️目標:${data[j].dateStr}(未開)`);
                                     }
-                                    break; // 只看下一個最近的目標日
+                                    break;
                                 }
                             }
                         }
                     }
 
-                    // 記錄勝率
-                    if (total >= 5) { // 樣本數過少不具參考價值
-                        const winRate = hits / total;
-                        if (winRate >= minWinRate) {
-                            rules.push({
-                                baseStr: `星期${weekdays[baseWd]} 的 ${sources[srcIdx]}`,
-                                targetStr: `下個 星期${weekdays[targetWd]}`,
-                                hits: hits,
-                                total: total,
-                                winRate: winRate,
-                                misses: missDetails.slice(-2).join("<br>") // 顯示最近兩次沒中的紀錄
-                            });
-                        }
+                    if (total >= 5) { 
+                        allGeneratedRules.push({
+                            baseWd: baseWd,
+                            targetWd: targetWd,
+                            baseStr: `星期${weekdays[baseWd]} 的 ${sources[srcIdx]}`,
+                            targetStr: `下個 星期${weekdays[targetWd]}`,
+                            hits: hits,
+                            total: total,
+                            winRate: hits / total,
+                            misses: missDetails.slice(-2).join("<br>") 
+                        });
                     }
                 }
             }
         }
 
-        // 3. 排序與渲染結果 (勝率高到低)
-        rules.sort((a, b) => b.winRate - a.winRate || b.total - a.total);
+        document.getElementById('statusMsg').textContent = `✅ 分析完成！共掃描 ${data.length} 期數據，計算出 ${allGeneratedRules.length} 種潛在規律組合。`;
+        
+        // 3. 渲染表格
+        renderTable();
+    }
 
-        if (rules.length === 0) {
-            resultsArea.innerHTML = `<h3 style="text-align:center; color: #e74c3c;">找不到勝率高於 ${minWinRate * 100}% 的規律。建議調低標準或增加數據。</h3>`;
+    function renderTable() {
+        if (allGeneratedRules.length === 0) return;
+
+        // 取得當前篩選條件
+        const filterBase = document.getElementById('filterBase').value;
+        const filterTarget = document.getElementById('filterTarget').value;
+        const minWinRate = parseFloat(document.getElementById('minWinRate').value) / 100;
+
+        // 過濾資料
+        let filteredRules = allGeneratedRules.filter(r => {
+            let passBase = (filterBase === 'all') || (r.baseWd === parseInt(filterBase));
+            let passTarget = (filterTarget === 'all') || (r.targetWd === parseInt(filterTarget));
+            let passRate = r.winRate >= minWinRate;
+            return passBase && passTarget && passRate;
+        });
+
+        // 排序：勝率優先，總樣本數次之
+        filteredRules.sort((a, b) => b.winRate - a.winRate || b.total - a.total);
+
+        const resultsArea = document.getElementById('resultsArea');
+
+        if (filteredRules.length === 0) {
+            resultsArea.innerHTML = `<h3 style="text-align:center; color: #e74c3c;">在此篩選條件下，找不到符合的規律。</h3>`;
             return;
         }
 
-        let html = `<h3>✅ 成功發現 ${rules.length} 條高勝率規律</h3>`;
+        // 建立表格 HTML
+        let html = `<h3>篩選結果：共 ${filteredRules.length} 條符合條件的規律</h3>`;
         html += `<table>
             <thead>
                 <tr>
@@ -246,7 +312,7 @@
             </thead>
             <tbody>`;
 
-        rules.forEach(r => {
+        filteredRules.forEach(r => {
             const rateStr = (r.winRate * 100).toFixed(1) + '%';
             html += `<tr>
                 <td><strong>${r.baseStr}</strong></td>
