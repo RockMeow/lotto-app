@@ -18,9 +18,7 @@
         button { background: #555; color: white; border: none; padding: 10px; font-size: 15px; border-radius: 4px; cursor: pointer; transition: 0.2s;}
         button:hover { background: #777; }
         
-        .options-bar { display: flex; gap: 15px; align-items: center; font-size: 14px; padding: 10px 0; border-bottom: 1px solid #333; margin-bottom: 15px;}
-        
-        /* 🏆 優化：圖例與歷史紀錄區排版 */
+        /* 🏆 圖例與歷史紀錄區排版 */
         .legend-container { 
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
@@ -66,6 +64,7 @@
         .draw-list tr:hover { background-color: #2a2a2a; }
         
         .date-col { width: 100px; color: #888;}
+        .col-hit { width: 180px; text-align: left; padding-left: 15px !important; }
         .num-group { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;}
         
         /* 號碼球 */
@@ -83,9 +82,9 @@
         .pred-badge { font-size: 12px; color: #aaa; margin-right: 5px; }
         .pred-item { display: flex; align-items: center; background: #252525; border: 1px solid #444; padding: 4px 8px; border-radius: 4px; transition: opacity 0.3s;}
         
-        .hidden { display: none !important; }
+        .hit-badge { display: inline-block; margin: 2px; transition: opacity 0.3s; border: 1px solid transparent; }
 
-        /* 高亮絕對隔離特效 */
+        /* 高亮絕對隔離特效：只有屬於 active-pattern 的球與標籤會發亮，其餘強制暗化去色 */
         .container.isolate-mode .ball:not(.active-pattern) { 
             opacity: 0.1 !important; 
             background: #2a2a2a !important; 
@@ -95,6 +94,12 @@
         }
         .container.isolate-mode .pred-item:not(.active-pattern) { 
             opacity: 0.1 !important; 
+        }
+        .container.isolate-mode .hit-badge:not(.active-pattern) {
+            opacity: 0.1 !important; 
+            background: #2a2a2a !important; 
+            color: #555 !important;
+            border-color: transparent !important;
         }
     </style>
 </head>
@@ -123,11 +128,6 @@
         </div>
     </div>
 
-    <div class="options-bar">
-        <label><input type="checkbox" id="chkOrig" checked onchange="toggleColumns()"> 顯示落球</label>
-        <label><input type="checkbox" id="chkSorted" checked onchange="toggleColumns()"> 顯示順球</label>
-    </div>
-
     <div id="dashboard" style="display:none;">
         <div class="legend-container" id="legendBox"></div>
         
@@ -136,8 +136,8 @@
                 <thead>
                     <tr>
                         <th class="date-col">日期</th>
-                        <th class="col-orig">落球</th>
-                        <th class="col-sorted">順球</th>
+                        <th class="col-sorted">順球排列</th>
+                        <th class="col-hit">版路命中紀錄</th>
                     </tr>
                 </thead>
                 <tbody id="listBody"></tbody>
@@ -181,18 +181,6 @@
             document.querySelectorAll('.pattern-' + idx).forEach(node => node.classList.add('active-pattern'));
             document.querySelectorAll('.pred-idx-' + idx).forEach(node => node.classList.add('active-pattern'));
         }
-    }
-
-    function toggleColumns() {
-        const showOrig = document.getElementById('chkOrig').checked;
-        const showSorted = document.getElementById('chkSorted').checked;
-        
-        document.querySelectorAll('.col-orig').forEach(el => {
-            if(showOrig) el.classList.remove('hidden'); else el.classList.add('hidden');
-        });
-        document.querySelectorAll('.col-sorted').forEach(el => {
-            if(showSorted) el.classList.remove('hidden'); else el.classList.add('hidden');
-        });
     }
 
     function parseData() {
@@ -265,7 +253,6 @@
                                 let hits = targetCounts[n];
                                 let rate = hits / total;
 
-                                // 篩選條件：勝率大於等於 40% 且至少發動過 2 次
                                 if (rate >= 0.4 && total >= 2) {
                                     let uniqueKey = searchMode === 'strict' ? `2_${K}_${pos1}_${val1}_${pos2}_${val2}_${n}` : `2_${K}_any_${val1}_any_${val2}_${n}`;
                                     if (!allDiscoveredPatterns.some(p => p.key === uniqueKey)) {
@@ -282,18 +269,18 @@
             }
         }
 
-        // 排序：先比命中次數，再比勝率
         allDiscoveredPatterns.sort((a, b) => b.hits - a.hits || b.rate - a.rate);
         
         let topPatterns = allDiscoveredPatterns;
-        let rowHighlights = Array.from({length: data.length + 1}, () => ({ orig: {}, sorted: {} }));
+        let rowHighlights = Array.from({length: data.length + 1}, () => ({ sorted: {} }));
+        let rowHits = Array.from({length: data.length + 1}, () => []);
 
         function addCls(obj, idx, cls) {
             if(!obj[idx]) obj[idx] = cls;
             else if(!obj[idx].includes(cls)) obj[idx] += ' ' + cls;
         }
 
-        // 標記版路位置塗色
+        // 標記版路位置塗色與歷史命中紀錄
         topPatterns.forEach((p, idx) => {
             let colorIdx = idx % 5;
             let cssClass = `bg-color-${colorIdx} pattern-${idx}`; 
@@ -303,15 +290,20 @@
                     addCls(rowHighlights[match.triggerIdx1].sorted, p.pos1, cssClass);
                     addCls(rowHighlights[match.triggerIdx2].sorted, p.pos2, cssClass);
                 } else {
-                    data[match.triggerIdx1].origNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[match.triggerIdx1].orig, i, cssClass); });
                     data[match.triggerIdx1].sortedNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[match.triggerIdx1].sorted, i, cssClass); });
-                    data[match.triggerIdx2].origNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[match.triggerIdx2].orig, i, cssClass); });
                     data[match.triggerIdx2].sortedNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[match.triggerIdx2].sorted, i, cssClass); });
                 }
 
                 if(match.targetNums.includes(p.targetNum)) {
-                    data[match.targetIdx].origNums.forEach((n, i) => { if(n === p.targetNum) { addCls(rowHighlights[match.targetIdx].orig, i, cssClass); addCls(rowHighlights[match.targetIdx].orig, i, 'target-glow'); } });
-                    data[match.targetIdx].sortedNums.forEach((n, i) => { if(n === p.targetNum) { addCls(rowHighlights[match.targetIdx].sorted, i, cssClass); addCls(rowHighlights[match.targetIdx].sorted, i, 'target-glow'); } });
+                    data[match.targetIdx].sortedNums.forEach((n, i) => { 
+                        if(n === p.targetNum) { 
+                            addCls(rowHighlights[match.targetIdx].sorted, i, cssClass); 
+                            addCls(rowHighlights[match.targetIdx].sorted, i, 'target-glow'); 
+                        } 
+                    });
+                    
+                    // 記錄該期的命中標籤
+                    rowHits[match.targetIdx].push({ pIdx: idx, colorIdx: colorIdx, targetNum: p.targetNum });
                 }
             });
 
@@ -322,9 +314,7 @@
                 addCls(rowHighlights[currentTrigger1].sorted, p.pos1, cssClass);
                 addCls(rowHighlights[lastIdx].sorted, p.pos2, cssClass);
             } else {
-                data[currentTrigger1].origNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[currentTrigger1].orig, i, cssClass); });
                 data[currentTrigger1].sortedNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[currentTrigger1].sorted, i, cssClass); });
-                data[lastIdx].origNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[lastIdx].orig, i, cssClass); });
                 data[lastIdx].sortedNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[lastIdx].sorted, i, cssClass); });
             }
         });
@@ -368,14 +358,16 @@
         let listHtml = '';
         for (let i = 0; i < data.length; i++) {
             let row = data[i];
-            let origBalls = row.origNums.map((n, idx) => `<div class="ball ${rowHighlights[i].orig[idx] || ''}">${pad(n)}</div>`).join('');
             let sortedBalls = row.sortedNums.map((n, idx) => `<div class="ball ${rowHighlights[i].sorted[idx] || ''}">${pad(n)}</div>`).join('');
+            
+            // 產生命中標籤 HTML
+            let hitBadges = rowHits[i].map(h => `<span class="pattern-badge hit-badge bg-color-${h.colorIdx} pattern-${h.pIdx}">#${h.pIdx+1} 拖中 ${pad(h.targetNum)}</span>`).join('');
 
             listHtml += `
             <tr>
                 <td class="date-col">${row.date}</td>
-                <td class="col-orig"><div class="num-group">${origBalls}</div></td>
                 <td class="col-sorted"><div class="num-group">${sortedBalls}</div></td>
+                <td class="col-hit">${hitBadges}</td>
             </tr>`;
         }
 
@@ -399,7 +391,6 @@
 
         document.getElementById('listBody').innerHTML = listHtml;
         document.getElementById('dashboard').style.display = 'block';
-        toggleColumns(); 
         
         let listWrapper = document.querySelector('.list-wrapper');
         listWrapper.scrollTop = listWrapper.scrollHeight;
