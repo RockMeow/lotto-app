@@ -100,16 +100,20 @@
         
         <div class="controls">
             <select id="searchMode">
-                <option value="strict">定位</option>
-                <option value="any" selected>不定位</option>
+                <option value="strict">定位 (位置相同)</option>
+                <option value="any" selected>不定位 (當期開出)</option>
             </select>
-            <button onclick="runListEngine()">分析</button>
+            <select id="minHits">
+                <option value="2" selected>最少發動 2 次</option>
+                <option value="3">最少發動 3 次</option>
+            </select>
+            <button onclick="runListEngine()">執行分析</button>
         </div>
     </div>
 
     <div class="options-bar">
-        <label><input type="checkbox" id="chkOrig" checked onchange="toggleColumns()"> 落球</label>
-        <label><input type="checkbox" id="chkSorted" checked onchange="toggleColumns()"> 順球</label>
+        <label><input type="checkbox" id="chkOrig" checked onchange="toggleColumns()"> 顯示落球</label>
+        <label><input type="checkbox" id="chkSorted" checked onchange="toggleColumns()"> 顯示順球</label>
     </div>
 
     <div id="dashboard" style="display:none;">
@@ -201,6 +205,7 @@
         if (data.length < 5) return;
 
         const searchMode = document.getElementById('searchMode').value;
+        const minHitsSetting = parseInt(document.getElementById('minHits').value);
         let allDiscoveredPatterns = [];
         const MAX_NUM = 49; 
 
@@ -249,7 +254,8 @@
                                 let hits = targetCounts[n];
                                 let rate = hits / totalOccurrences;
 
-                                if (rate >= 0.4 && totalOccurrences >= 2) {
+                                // 套用動態的發動次數門檻
+                                if (rate >= 0.4 && totalOccurrences >= minHitsSetting) {
                                     let uniqueKey = searchMode === 'strict' ? `${K}_${pos1}_${val1}_${pos2}_${val2}_${n}` : `${K}_any_${val1}_any_${val2}_${n}`;
                                     if (!allDiscoveredPatterns.some(p => p.key === uniqueKey)) {
                                         allDiscoveredPatterns.push({
@@ -270,24 +276,30 @@
 
         let rowHighlights = Array.from({length: data.length + 1}, () => ({ orig: {}, sorted: {} }));
 
+        // 輔助函數：疊加多重版路的 CSS Class (解決多版路重疊被覆寫的問題)
+        function addCls(obj, idx, cls) {
+            if(!obj[idx]) obj[idx] = cls;
+            else if(!obj[idx].includes(cls)) obj[idx] += ' ' + cls;
+        }
+
         // 標記版路位置塗色
         topPatterns.forEach((p, colorIdx) => {
             let cssClass = `bg-color-${colorIdx}`;
             
             p.matches.forEach(match => {
                 if (searchMode === 'strict') {
-                    rowHighlights[match.triggerIdx1].sorted[p.pos1] = cssClass;
-                    rowHighlights[match.triggerIdx2].sorted[p.pos2] = cssClass;
+                    addCls(rowHighlights[match.triggerIdx1].sorted, p.pos1, cssClass);
+                    addCls(rowHighlights[match.triggerIdx2].sorted, p.pos2, cssClass);
                 } else {
-                    data[match.triggerIdx1].origNums.forEach((n, i) => { if(n === p.val1) rowHighlights[match.triggerIdx1].orig[i] = cssClass; });
-                    data[match.triggerIdx1].sortedNums.forEach((n, i) => { if(n === p.val1) rowHighlights[match.triggerIdx1].sorted[i] = cssClass; });
-                    data[match.triggerIdx2].origNums.forEach((n, i) => { if(n === p.val2) rowHighlights[match.triggerIdx2].orig[i] = cssClass; });
-                    data[match.triggerIdx2].sortedNums.forEach((n, i) => { if(n === p.val2) rowHighlights[match.triggerIdx2].sorted[i] = cssClass; });
+                    data[match.triggerIdx1].origNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[match.triggerIdx1].orig, i, cssClass); });
+                    data[match.triggerIdx1].sortedNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[match.triggerIdx1].sorted, i, cssClass); });
+                    data[match.triggerIdx2].origNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[match.triggerIdx2].orig, i, cssClass); });
+                    data[match.triggerIdx2].sortedNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[match.triggerIdx2].sorted, i, cssClass); });
                 }
 
                 if(match.targetNums.includes(p.targetNum)) {
-                    data[match.targetIdx].origNums.forEach((n, i) => { if(n === p.targetNum) rowHighlights[match.targetIdx].orig[i] = `${cssClass} target-glow`; });
-                    data[match.targetIdx].sortedNums.forEach((n, i) => { if(n === p.targetNum) rowHighlights[match.targetIdx].sorted[i] = `${cssClass} target-glow`; });
+                    data[match.targetIdx].origNums.forEach((n, i) => { if(n === p.targetNum) { addCls(rowHighlights[match.targetIdx].orig, i, cssClass); addCls(rowHighlights[match.targetIdx].orig, i, 'target-glow'); } });
+                    data[match.targetIdx].sortedNums.forEach((n, i) => { if(n === p.targetNum) { addCls(rowHighlights[match.targetIdx].sorted, i, cssClass); addCls(rowHighlights[match.targetIdx].sorted, i, 'target-glow'); } });
                 }
             });
 
@@ -295,13 +307,13 @@
             let currentTrigger1 = lastIdx - parseInt(p.key.split('_')[0]);
 
             if (searchMode === 'strict') {
-                rowHighlights[currentTrigger1].sorted[p.pos1] = cssClass;
-                rowHighlights[lastIdx].sorted[p.pos2] = cssClass;
+                addCls(rowHighlights[currentTrigger1].sorted, p.pos1, cssClass);
+                addCls(rowHighlights[lastIdx].sorted, p.pos2, cssClass);
             } else {
-                data[currentTrigger1].origNums.forEach((n, i) => { if(n === p.val1) rowHighlights[currentTrigger1].orig[i] = cssClass; });
-                data[currentTrigger1].sortedNums.forEach((n, i) => { if(n === p.val1) rowHighlights[currentTrigger1].sorted[i] = cssClass; });
-                data[lastIdx].origNums.forEach((n, i) => { if(n === p.val2) rowHighlights[lastIdx].orig[i] = cssClass; });
-                data[lastIdx].sortedNums.forEach((n, i) => { if(n === p.val2) rowHighlights[lastIdx].sorted[i] = cssClass; });
+                data[currentTrigger1].origNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[currentTrigger1].orig, i, cssClass); });
+                data[currentTrigger1].sortedNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[currentTrigger1].sorted, i, cssClass); });
+                data[lastIdx].origNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[lastIdx].orig, i, cssClass); });
+                data[lastIdx].sortedNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[lastIdx].sorted, i, cssClass); });
             }
         });
 
