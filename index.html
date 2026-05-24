@@ -100,8 +100,8 @@
         
         <div class="controls">
             <select id="searchMode">
-                <option value="strict">定位</option>
-                <option value="any" selected>不定位</option>
+                <option value="strict">定位 (位置相同)</option>
+                <option value="any" selected>不定位 (當期開出)</option>
             </select>
             <select id="triggerCount">
                 <option value="2" selected>2 期連動 (雙重條件)</option>
@@ -155,7 +155,7 @@
     }
 
     // 點選圖例標題：展開歷史紀錄並高亮該版路的球
-    function toggleHistory(idx) {
+    function toggleHistory(idx, colorIdx) {
         const el = document.getElementById('history-' + idx);
         const container = document.getElementById('mainContainer');
         
@@ -167,7 +167,7 @@
             // 先關閉其他版路紀錄
             document.querySelectorAll('.history-list').forEach(list => list.style.display = 'none');
             // 開啟當前版路，並設定對應的高亮 Class
-            container.className = 'container highlight-' + idx;
+            container.className = 'container highlight-' + colorIdx;
             el.style.display = 'block';
         }
     }
@@ -348,7 +348,9 @@
         }
 
         allDiscoveredPatterns.sort((a, b) => b.hits - a.hits || b.rate - a.rate);
-        let topPatterns = allDiscoveredPatterns.slice(0, 5);
+        
+        // 顯示所有的版路 (無數量限制)
+        let topPatterns = allDiscoveredPatterns;
 
         let rowHighlights = Array.from({length: data.length + 1}, () => ({ orig: {}, sorted: {} }));
 
@@ -359,7 +361,8 @@
         }
 
         // 標記版路位置塗色
-        topPatterns.forEach((p, colorIdx) => {
+        topPatterns.forEach((p, idx) => {
+            let colorIdx = idx % 5;
             let cssClass = `bg-color-${colorIdx}`;
             
             p.matches.forEach(match => {
@@ -431,6 +434,7 @@
         // 繪製圖例與歷史紀錄
         let legendHtml = '';
         topPatterns.forEach((p, idx) => {
+            let colorIdx = idx % 5;
             let historyHtml = p.matches.map(m => {
                 let isHit = m.targetNums.includes(p.targetNum);
                 let numsFormatted = m.targetNums.map(n => n === p.targetNum ? `<span style="font-weight:bold; color:#fff;">${pad(n)}</span>` : pad(n)).join(', ');
@@ -452,8 +456,8 @@
                 : `[${pad(p.val1)}] 拖 [${pad(p.val2)}] 拖 [${pad(p.val3)}] 預測 [${pad(p.targetNum)}]`;
 
             legendHtml += `
-            <div class="legend-item bg-color-${idx}">
-                <div class="legend-header" onclick="toggleHistory(${idx})">
+            <div class="legend-item bg-color-${colorIdx}">
+                <div class="legend-header" onclick="toggleHistory(${idx}, ${colorIdx})">
                     <span>版路 ${idx+1}: ${titleStr}</span>
                     <span>勝率 ${(p.rate*100).toFixed(0)}% ▼</span>
                 </div>
@@ -480,12 +484,14 @@
         }
 
         // 預測列
-        let predBalls = topPatterns.map((p, idx) => `
-            <div class="pred-item pred-${idx}">
+        let predBalls = topPatterns.map((p, idx) => {
+            let colorIdx = idx % 5;
+            return `
+            <div class="pred-item pred-${colorIdx}">
                 <span class="pred-badge">版路 ${idx+1}</span>
-                <div class="ball bg-color-${idx} target-glow">${pad(p.targetNum)}</div>
+                <div class="ball bg-color-${colorIdx} target-glow">${pad(p.targetNum)}</div>
             </div>
-        `).join('');
+        `}).join('');
 
         if(topPatterns.length === 0) predBalls = '<span style="color:#666;">近期無發動條件</span>';
 
