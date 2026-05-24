@@ -3,62 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>奧索式全景走勢圖 ✕ 全自動版路分析</title>
+    <title>奧索式開獎單 ✕ 全自動版路追蹤</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 15px; }
-        .container { max-width: 1400px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #d35400; font-size: 24px; margin-top: 0; border-bottom: 2px solid #e67e22; padding-bottom: 10px;}
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 15px; }
+        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #2c3e50; font-size: 26px; margin-top: 0; border-bottom: 3px solid #3498db; padding-bottom: 15px; letter-spacing: 1px;}
         
         .top-section { display: flex; gap: 20px; margin-bottom: 20px; }
         .data-input { flex: 1; }
-        textarea { width: 100%; height: 120px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 12px; resize: vertical; box-sizing: border-box;}
+        textarea { width: 100%; height: 120px; padding: 12px; border: 1px solid #ccd1d9; border-radius: 6px; font-family: monospace; font-size: 13px; resize: vertical; box-sizing: border-box; background: #fdfdfd;}
         
-        .controls { flex: 1; background: #fdf2e9; border: 1px solid #f39c12; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: center;}
-        select { font-size: 15px; padding: 6px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #bdc3c7; }
-        button { background: linear-gradient(to bottom, #f39c12, #d35400); color: white; border: none; padding: 12px; font-size: 16px; border-radius: 4px; cursor: pointer; font-weight: bold; letter-spacing: 1px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);}
-        button:hover { background: linear-gradient(to bottom, #e67e22, #c0392b); }
+        .controls { flex: 1; background: #ebf5fb; border: 1px solid #b2ebf2; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: center;}
+        select { font-size: 15px; padding: 8px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #bdc3c7; background: #fff;}
+        button { background: linear-gradient(to bottom, #3498db, #2980b9); color: white; border: none; padding: 12px; font-size: 16px; border-radius: 4px; cursor: pointer; font-weight: bold; letter-spacing: 1px; box-shadow: 0 3px 6px rgba(0,0,0,0.15); transition: 0.2s;}
+        button:hover { background: linear-gradient(to bottom, #2980b9, #1f618d); transform: translateY(-1px);}
         
         .dashboard { display: none; }
         
-        /* 顏色標籤區 */
-        .legend-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; padding: 15px; background: #fff; border: 1px solid #eee; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
-        .legend-item { display: flex; align-items: center; font-size: 13px; font-weight: bold; padding: 6px 12px; border-radius: 20px; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.3);}
+        /* 圖例區 */
+        .legend-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; padding: 15px; background: #fff; border: 1px solid #e1e8ed; border-radius: 6px; box-shadow: inset 0 0 5px rgba(0,0,0,0.02);}
+        .legend-item { display: flex; align-items: center; font-size: 14px; font-weight: bold; padding: 8px 15px; border-radius: 20px; color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
         
-        /* 版路專屬顏色 */
-        .color-0 { background-color: #e74c3c !important; } /* 紅 */
-        .color-1 { background-color: #3498db !important; } /* 藍 */
-        .color-2 { background-color: #9b59b6 !important; } /* 紫 */
-        .color-3 { background-color: #2ecc71 !important; } /* 綠 */
-        .color-4 { background-color: #f39c12 !important; } /* 橘 */
+        /* 版路專屬顏色 (與球體同色) */
+        .bg-color-0 { background: linear-gradient(135deg, #ff6b6b, #e74c3c) !important; color: white !important; border:none !important;} /* 紅 */
+        .bg-color-1 { background: linear-gradient(135deg, #4facfe, #00f2fe) !important; color: white !important; border:none !important;} /* 藍 */
+        .bg-color-2 { background: linear-gradient(135deg, #a18cd1, #fbc2eb) !important; color: white !important; border:none !important;} /* 紫 */
+        .bg-color-3 { background: linear-gradient(135deg, #43e97b, #38f9d7) !important; color: #000 !important; border:none !important;} /* 綠 */
+        .bg-color-4 { background: linear-gradient(135deg, #f6d365, #fda085) !important; color: #000 !important; border:none !important;} /* 橘 */
         
-        /* 奧索式走勢圖網格 */
-        .chart-wrapper { overflow-x: auto; max-height: 700px; overflow-y: auto; border: 1px solid #ccc; position: relative;}
-        table.trend-chart { border-collapse: collapse; width: 100%; min-width: 1200px; font-size: 13px; text-align: center; background: #fff;}
-        .trend-chart thead { position: sticky; top: 0; z-index: 10; background: #2c3e50; color: #fff; }
-        .trend-chart th { padding: 8px 4px; border: 1px solid #455a64; font-weight: normal; font-size: 12px;}
-        .trend-chart td { padding: 4px 2px; border: 1px solid #eee; height: 30px; position: relative; }
-        .trend-chart tr:nth-child(even) { background-color: #fafafa; }
-        .trend-chart tr:hover { background-color: #f1f8ff; }
+        /* 奧索式開獎單列表 */
+        .list-wrapper { max-height: 800px; overflow-y: auto; border: 1px solid #bdc3c7; border-radius: 6px; position: relative;}
+        table.draw-list { border-collapse: collapse; width: 100%; text-align: center; background: #fff; font-size: 15px;}
+        .draw-list thead { position: sticky; top: 0; z-index: 10; background: #34495e; color: #fff; }
+        .draw-list th { padding: 12px 8px; border: 1px solid #2c3e50; font-weight: bold;}
+        .draw-list td { padding: 8px; border: 1px solid #ecf0f1; border-bottom: 1px solid #ddd;}
+        .draw-list tr:nth-child(even) { background-color: #f9fbfd; }
+        .draw-list tr:hover { background-color: #f1f8ff; }
         
-        .date-col { width: 60px; font-weight: bold; color: #555; background: #f4f4f4; position: sticky; left: 0; z-index: 5;}
-        .trend-chart thead .date-col { z-index: 15; background: #2c3e50; color: #fff;}
-        .num-col { width: 28px; }
+        .date-col { font-weight: bold; color: #555; width: 120px; letter-spacing: 0.5px;}
+        .num-group { display: flex; justify-content: center; gap: 8px;}
         
-        /* 開獎球 */
-        .ball { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #ccc; color: #fff; font-weight: bold; font-size: 12px; box-shadow: inset 0 -2px 4px rgba(0,0,0,0.2);}
-        .hit-ball { background: #555; }
+        /* 號碼球設計 (仿彩券行/網站風格) */
+        .ball { 
+            display: flex; align-items: center; justify-content: center; 
+            width: 32px; height: 32px; border-radius: 50%; 
+            background: #f1f2f6; color: #2f3640; font-weight: bold; font-size: 16px;
+            border: 1px solid #ced6e0; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.05);
+        }
         
-        /* 軌跡高亮方塊 */
-        .highlight-cell { position: absolute; top: 1px; left: 1px; right: 1px; bottom: 1px; border-radius: 4px; opacity: 0.3; pointer-events: none;}
-        .target-star { position: absolute; top: -5px; right: -5px; font-size: 14px; text-shadow: 0 0 2px #000; animation: pulse 1.5s infinite;}
-        
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+        /* 目標號碼發光特效 */
+        .target-glow {
+            box-shadow: 0 0 8px 2px currentColor, inset -2px -2px 4px rgba(0,0,0,0.2) !important;
+            transform: scale(1.1);
+            position: relative;
+            z-index: 2;
+        }
+
+        .prediction-row { background-color: #fff9e6 !important; border-top: 2px solid #f39c12; }
+        .prediction-row td { padding: 15px 8px; font-weight: bold; color: #d35400;}
+        .pred-target { border: 2px dashed currentColor; background: transparent !important; color: inherit;}
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📈 奧索式全景走勢圖 ✕ 雙條件自動解盤</h1>
+    <h1>📋 奧索式開獎單 ✕ 顏色軌跡解盤</h1>
     
     <div class="top-section">
         <div class="data-input">
@@ -191,35 +200,31 @@
         </div>
         
         <div class="controls">
-            <label style="font-weight:bold; margin-bottom:5px; color:#c0392b;">⚙️ 引擎設定</label>
+            <label style="font-weight:bold; margin-bottom:5px; color:#2c3e50;">⚙️ 條件設定</label>
             <select id="searchMode">
                 <option value="strict">📍 嚴格定位 (指定順球位置相同)</option>
                 <option value="any" selected>🔄 不定位 (只要當期有開出就算)</option>
             </select>
-            <button onclick="runArclinkEngine()">🚀 繪製走勢圖與最強版路</button>
+            <button onclick="runListEngine()">🚀 自動塗色並預測下期</button>
         </div>
     </div>
 
     <div class="dashboard" id="dashboard">
         <div class="legend-container" id="legendBox">
-            <!-- 版路圖示會在這裡生成 -->
+            <!-- 圖例 -->
         </div>
         
-        <div class="chart-wrapper">
-            <table class="trend-chart" id="trendGrid">
+        <div class="list-wrapper">
+            <table class="draw-list" id="drawListTable">
                 <thead>
                     <tr>
-                        <th class="date-col">日期</th>
-                        <!-- 01 到 39 表頭 -->
-                        <script>
-                            for(let i=1; i<=39; i++) {
-                                document.write(`<th class="num-col">${i.toString().padStart(2, '0')}</th>`);
-                            }
-                        </script>
+                        <th class="date-col">開獎日期</th>
+                        <th>開出順序 (落球)</th>
+                        <th>大小順序 (順球)</th>
                     </tr>
                 </thead>
-                <tbody id="gridBody">
-                    <!-- 大網格內容 -->
+                <tbody id="listBody">
+                    <!-- 開獎單內容 -->
                 </tbody>
             </table>
         </div>
@@ -227,7 +232,6 @@
 </div>
 
 <script>
-    const MAX_NUM = 39;
     const pad = (n) => n.toString().padStart(2, '0');
 
     function parseData() {
@@ -245,15 +249,14 @@
         return data;
     }
 
-    function runArclinkEngine() {
+    function runListEngine() {
         const data = parseData();
         if (data.length < 5) return alert("資料量不足！");
 
         const searchMode = document.getElementById('searchMode').value;
-        
         let allDiscoveredPatterns = [];
 
-        // --- 1. 核心搜尋引擎 ---
+        // --- 1. 搜尋引擊 ---
         for (let K = 1; K <= 3; K++) {
             let cond1Idx = data.length - 1 - K;
             let cond2Idx = data.length - 1; 
@@ -290,31 +293,21 @@
 
                     if (historyMatches.length > 0) {
                         let targetCounts = {};
-                        historyMatches.forEach(match => {
-                            match.targetNums.forEach(n => {
-                                targetCounts[n] = (targetCounts[n] || 0) + 1;
-                            });
-                        });
-
+                        historyMatches.forEach(match => match.targetNums.forEach(n => targetCounts[n] = (targetCounts[n] || 0) + 1));
                         let totalOccurrences = historyMatches.length;
 
-                        for (let n = 1; n <= MAX_NUM; n++) {
+                        for (let n = 1; n <= 39; n++) {
                             if (targetCounts[n]) {
                                 let hits = targetCounts[n];
                                 let rate = hits / totalOccurrences;
 
-                                // 篩選門檻 (勝率40%且發動>=2次)
+                                // 篩選門檻
                                 if (rate >= 0.4 && totalOccurrences >= 2) {
-                                    let uniqueKey = searchMode === 'strict' 
-                                        ? `${K}_${pos1}_${val1}_${pos2}_${val2}_${n}` 
-                                        : `${K}_any_${val1}_any_${val2}_${n}`;
-
+                                    let uniqueKey = searchMode === 'strict' ? `${K}_${pos1}_${val1}_${pos2}_${val2}_${n}` : `${K}_any_${val1}_any_${val2}_${n}`;
                                     if (!allDiscoveredPatterns.some(p => p.key === uniqueKey)) {
                                         allDiscoveredPatterns.push({
-                                            key: uniqueKey,
-                                            val1: val1, val2: val2, targetNum: n,
-                                            hits: hits, total: totalOccurrences, rate: rate,
-                                            matches: historyMatches
+                                            key: uniqueKey, pos1, val1, pos2, val2, targetNum: n,
+                                            hits, total: totalOccurrences, rate, matches: historyMatches
                                         });
                                     }
                                 }
@@ -325,110 +318,124 @@
             }
         }
 
-        // 排序並取 Top 5
         allDiscoveredPatterns.sort((a, b) => b.hits - a.hits || b.rate - a.rate);
         let topPatterns = allDiscoveredPatterns.slice(0, 5);
 
-        // --- 2. 建立網格顏色標記矩陣 ---
-        // 矩陣結構: cellMap[行索引][號碼] = { colorIndex, isTargetHit }
-        let cellMap = {}; 
-        
+        // --- 2. 準備網格塗色標記 (Row -> Position -> ColorClass) ---
+        let rowHighlights = Array.from({length: data.length + 1}, () => ({ orig: {}, sorted: {} }));
+
         topPatterns.forEach((p, colorIdx) => {
-            // 這個版路在「等待開獎」的最新一期也要標記
-            let lastIdx = data.length - 1;
-            let currentTrigger1 = data.length - 1 - parseInt(p.key.split('_')[0]);
+            let cssClass = `bg-color-${colorIdx}`;
             
-            // 標記未來預測點 (新增虛擬的一行)
-            if(!cellMap[lastIdx + 1]) cellMap[lastIdx + 1] = {};
-            cellMap[lastIdx + 1][p.targetNum] = { colorClass: `color-${colorIdx}`, isTargetHit: false, isPending: true };
-
-            if(!cellMap[currentTrigger1]) cellMap[currentTrigger1] = {};
-            cellMap[currentTrigger1][p.val1] = { colorClass: `color-${colorIdx}` };
-            
-            if(!cellMap[lastIdx]) cellMap[lastIdx] = {};
-            cellMap[lastIdx][p.val2] = { colorClass: `color-${colorIdx}` };
-
-            // 標記歷史軌跡
+            // 標記歷史
             p.matches.forEach(match => {
-                if(!cellMap[match.triggerIdx1]) cellMap[match.triggerIdx1] = {};
-                cellMap[match.triggerIdx1][p.val1] = { colorClass: `color-${colorIdx}` };
-                
-                if(!cellMap[match.triggerIdx2]) cellMap[match.triggerIdx2] = {};
-                cellMap[match.triggerIdx2][p.val2] = { colorClass: `color-${colorIdx}` };
+                // 標記條件1 (Trigger 1)
+                if (searchMode === 'strict') {
+                    rowHighlights[match.triggerIdx1].sorted[p.pos1] = cssClass;
+                } else {
+                    data[match.triggerIdx1].origNums.forEach((n, i) => { if(n === p.val1) rowHighlights[match.triggerIdx1].orig[i] = cssClass; });
+                    data[match.triggerIdx1].sortedNums.forEach((n, i) => { if(n === p.val1) rowHighlights[match.triggerIdx1].sorted[i] = cssClass; });
+                }
 
-                // 如果命中，標記目標
-                if(match.targetNums.includes(p.targetNum)){
-                    if(!cellMap[match.targetIdx]) cellMap[match.targetIdx] = {};
-                    cellMap[match.targetIdx][p.targetNum] = { colorClass: `color-${colorIdx}`, isTargetHit: true };
+                // 標記條件2 (Trigger 2)
+                if (searchMode === 'strict') {
+                    rowHighlights[match.triggerIdx2].sorted[p.pos2] = cssClass;
+                } else {
+                    data[match.triggerIdx2].origNums.forEach((n, i) => { if(n === p.val2) rowHighlights[match.triggerIdx2].orig[i] = cssClass; });
+                    data[match.triggerIdx2].sortedNums.forEach((n, i) => { if(n === p.val2) rowHighlights[match.triggerIdx2].sorted[i] = cssClass; });
+                }
+
+                // 標記目標 (Target Hit)
+                if(match.targetNums.includes(p.targetNum)) {
+                    data[match.targetIdx].origNums.forEach((n, i) => { if(n === p.targetNum) rowHighlights[match.targetIdx].orig[i] = `${cssClass} target-glow`; });
+                    data[match.targetIdx].sortedNums.forEach((n, i) => { if(n === p.targetNum) rowHighlights[match.targetIdx].sorted[i] = `${cssClass} target-glow`; });
                 }
             });
+
+            // 標記當前醞釀中的最新狀態
+            let lastIdx = data.length - 1;
+            let currentTrigger1 = lastIdx - parseInt(p.key.split('_')[0]);
+
+            if (searchMode === 'strict') {
+                rowHighlights[currentTrigger1].sorted[p.pos1] = cssClass;
+                rowHighlights[lastIdx].sorted[p.pos2] = cssClass;
+            } else {
+                data[currentTrigger1].origNums.forEach((n, i) => { if(n === p.val1) rowHighlights[currentTrigger1].orig[i] = cssClass; });
+                data[currentTrigger1].sortedNums.forEach((n, i) => { if(n === p.val1) rowHighlights[currentTrigger1].sorted[i] = cssClass; });
+                
+                data[lastIdx].origNums.forEach((n, i) => { if(n === p.val2) rowHighlights[lastIdx].orig[i] = cssClass; });
+                data[lastIdx].sortedNums.forEach((n, i) => { if(n === p.val2) rowHighlights[lastIdx].sorted[i] = cssClass; });
+            }
+
+            // 將預測目標放入未來區塊
+            rowHighlights[lastIdx + 1].sorted[colorIdx] = { num: p.targetNum, cssClass: `${cssClass} target-glow` };
         });
 
-        // --- 3. 渲染圖例 (Legend) ---
-        let legendHtml = '<div style="width:100%; margin-bottom:5px; color:#777; font-size:14px;">已自動將最強連動軌跡繪製於下方網格，請對照顏色追蹤：</div>';
-        if (topPatterns.length === 0) legendHtml += '<span>無吻合高勝率條件</span>';
+        // --- 3. 繪製圖例 ---
+        let legendHtml = '<div style="width:100%; margin-bottom:5px; color:#555; font-size:14px;">已在下方開獎單自動為球體上色，發光球體代表「版路成功拖出」的號碼：</div>';
+        if (topPatterns.length === 0) legendHtml += '<span style="color:#e74c3c; font-weight:bold;">近期無吻合高勝率條件</span>';
         topPatterns.forEach((p, idx) => {
             legendHtml += `
-            <div class="legend-item color-${idx}">
-                版路 ${idx+1}: [${pad(p.val1)}] 拖 [${pad(p.val2)}] 👉 預測下期 [${pad(p.targetNum)}] (勝率 ${(p.rate*100).toFixed(0)}%)
+            <div class="legend-item bg-color-${idx}">
+                拖牌 ${idx+1}：[${pad(p.val1)}] + [${pad(p.val2)}] 👉 預測 [${pad(p.targetNum)}] (勝率 ${(p.rate*100).toFixed(0)}%)
             </div>`;
         });
         document.getElementById('legendBox').innerHTML = legendHtml;
 
-        // --- 4. 渲染 39 碼全景大網格 ---
-        let gridHtml = '';
+        // --- 4. 繪製列表 HTML ---
+        let listHtml = '';
         
-        // 迴圈印出每一期
         for (let i = 0; i < data.length; i++) {
             let row = data[i];
-            gridHtml += `<tr><td class="date-col">${row.date}</td>`;
             
-            for (let num = 1; num <= 39; num++) {
-                let isDrawn = row.origNums.includes(num);
-                let mark = cellMap[i] && cellMap[i][num] ? cellMap[i][num] : null;
-                
-                let cellContent = '';
-                let bgDiv = '';
-                
-                // 如果這個格子是版路軌跡之一，加入底色方塊
-                if (mark) {
-                    bgDiv = `<div class="highlight-cell ${mark.colorClass}"></div>`;
-                }
+            let origBalls = row.origNums.map((n, idx) => {
+                let colorClass = rowHighlights[i].orig[idx] || '';
+                return `<div class="ball ${colorClass}">${pad(n)}</div>`;
+            }).join('');
 
-                // 如果有開出號碼，畫球
-                if (isDrawn) {
-                    // 若是被選中的版路號碼，球變亮色，否則預設灰色
-                    let ballClass = mark ? `ball ${mark.colorClass}` : 'ball hit-ball';
-                    let star = (mark && mark.isTargetHit) ? '<span class="target-star">⭐</span>' : '';
-                    cellContent = `<div class="${ballClass}">${pad(num)}${star}</div>`;
-                }
-                
-                gridHtml += `<td>${bgDiv}${cellContent}</td>`;
-            }
-            gridHtml += `</tr>`;
+            let sortedBalls = row.sortedNums.map((n, idx) => {
+                let colorClass = rowHighlights[i].sorted[idx] || '';
+                return `<div class="ball ${colorClass}">${pad(n)}</div>`;
+            }).join('');
+
+            listHtml += `
+            <tr>
+                <td class="date-col">${row.date}</td>
+                <td><div class="num-group">${origBalls}</div></td>
+                <td><div class="num-group">${sortedBalls}</div></td>
+            </tr>`;
         }
 
-        // 新增一行「預測期 (T+1)」
-        gridHtml += `<tr><td class="date-col" style="color:#e74c3c; background:#fdf2e9;">預測期</td>`;
-        for (let num = 1; num <= 39; num++) {
-            let mark = cellMap[data.length] && cellMap[data.length][num] ? cellMap[data.length][num] : null;
-            let cellContent = '';
-            let bgDiv = '';
-            if (mark && mark.isPending) {
-                // 預測的目標位置，畫一個虛線球或閃爍框
-                bgDiv = `<div class="highlight-cell ${mark.colorClass}"></div>`;
-                cellContent = `<div class="ball" style="background:transparent; border:2px dashed #e74c3c; color:#e74c3c;">${pad(num)}</div>`;
-            }
-            gridHtml += `<td>${bgDiv}${cellContent}</td>`;
+        // --- 加入預測列 (T+1) ---
+        let pendingTargets = Object.values(rowHighlights[data.length].sorted);
+        let predBalls = '';
+        
+        if (pendingTargets.length > 0) {
+            // 過濾重複的目標號碼 (如果不同版路推同一個號碼)
+            let uniquePreds = [];
+            pendingTargets.forEach(t => {
+                if(!uniquePreds.some(u => u.num === t.num)) uniquePreds.push(t);
+            });
+            
+            predBalls = uniquePreds.map(t => {
+                return `<div class="ball ${t.cssClass} pred-target">${pad(t.num)}</div>`;
+            }).join('');
+        } else {
+            predBalls = '<span style="color:#aaa; font-weight:normal;">無強烈訊號</span>';
         }
-        gridHtml += `</tr>`;
 
-        document.getElementById('gridBody').innerHTML = gridHtml;
+        listHtml += `
+        <tr class="prediction-row">
+            <td class="date-col">預測下期 👉</td>
+            <td colspan="2"><div class="num-group" style="justify-content:flex-start; padding-left:15%;">${predBalls}</div></td>
+        </tr>`;
+
+        document.getElementById('listBody').innerHTML = listHtml;
         document.getElementById('dashboard').style.display = 'block';
 
-        // 自動捲動到最底部 (最新日期)
-        let chartWrapper = document.querySelector('.chart-wrapper');
-        chartWrapper.scrollTop = chartWrapper.scrollHeight;
+        // 自動捲動到最底部
+        let listWrapper = document.querySelector('.list-wrapper');
+        listWrapper.scrollTop = listWrapper.scrollHeight;
     }
 </script>
 
