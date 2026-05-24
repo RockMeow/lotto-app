@@ -100,16 +100,16 @@
         
         <div class="controls">
             <select id="searchMode">
-                <option value="strict">定位 (位置相同)</option>
-                <option value="any" selected>不定位 (當期開出)</option>
+                <option value="strict">定位</option>
+                <option value="any" selected>不定位</option>
             </select>
-            <button onclick="runListEngine()">執行分析</button>
+            <button onclick="runListEngine()">分析</button>
         </div>
     </div>
 
     <div class="options-bar">
-        <label><input type="checkbox" id="chkOrig" checked onchange="toggleColumns()"> 顯示落球</label>
-        <label><input type="checkbox" id="chkSorted" checked onchange="toggleColumns()"> 顯示順球</label>
+        <label><input type="checkbox" id="chkOrig" checked onchange="toggleColumns()"> 落球</label>
+        <label><input type="checkbox" id="chkSorted" checked onchange="toggleColumns()"> 順球</label>
     </div>
 
     <div id="dashboard" style="display:none;">
