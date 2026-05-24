@@ -99,10 +99,6 @@
                 <option value="strict">定位 (位置相同)</option>
                 <option value="any" selected>不定位 (當期開出)</option>
             </select>
-            <select id="triggerCount">
-                <option value="2" selected>2 期連動 (雙重條件)</option>
-                <option value="3">3 期連動 (三重條件)</option>
-            </select>
             <button onclick="runListEngine()">執行分析</button>
         </div>
     </div>
@@ -216,137 +212,62 @@
         document.getElementById('mainContainer').classList.remove('isolate-mode');
 
         const searchMode = document.getElementById('searchMode').value;
-        const triggerCount = parseInt(document.getElementById('triggerCount').value);
         let allDiscoveredPatterns = [];
         const MAX_NUM = 49; 
 
-        // 搜尋版路
-        if (triggerCount === 2) {
-            for (let K = 1; K <= 10; K++) { // 擴充至下10期內
-                let cond1Idx = data.length - 1 - K;
-                let cond2Idx = data.length - 1; 
-                if (cond1Idx < 0) continue;
+        // 搜尋雙重條件版路 (10 期深層掃描)
+        for (let K = 1; K <= 10; K++) { 
+            let cond1Idx = data.length - 1 - K;
+            let cond2Idx = data.length - 1; 
+            if (cond1Idx < 0) continue;
 
-                let cond1Draw = data[cond1Idx];
-                let cond2Draw = data[cond2Idx];
+            let cond1Draw = data[cond1Idx];
+            let cond2Draw = data[cond2Idx];
 
-                for (let pos1 = 0; pos1 < cond1Draw.sortedNums.length; pos1++) {
-                    let val1 = cond1Draw.sortedNums[pos1];
-                    for (let pos2 = 0; pos2 < cond2Draw.sortedNums.length; pos2++) {
-                        let val2 = cond2Draw.sortedNums[pos2];
+            for (let pos1 = 0; pos1 < cond1Draw.sortedNums.length; pos1++) {
+                let val1 = cond1Draw.sortedNums[pos1];
+                for (let pos2 = 0; pos2 < cond2Draw.sortedNums.length; pos2++) {
+                    let val2 = cond2Draw.sortedNums[pos2];
 
-                        let historyMatches = [];
-                        for (let i = 0; i <= data.length - 2 - K; i++) {
-                            let isMatch1 = false, isMatch2 = false;
-                            if (searchMode === 'strict') {
-                                isMatch1 = data[i].sortedNums[pos1] === val1;
-                                isMatch2 = data[i + K].sortedNums[pos2] === val2;
-                            } else {
-                                isMatch1 = data[i].sortedNums.includes(val1);
-                                isMatch2 = data[i + K].sortedNums.includes(val2);
-                            }
-
-                            if (isMatch1 && isMatch2) {
-                                historyMatches.push({
-                                    triggerIdx1: i,
-                                    triggerIdx2: i + K,
-                                    targetIdx: i + K + 1,
-                                    targetNums: data[i + K + 1].origNums
-                                });
-                            }
+                    let historyMatches = [];
+                    for (let i = 0; i <= data.length - 2 - K; i++) {
+                        let isMatch1 = false, isMatch2 = false;
+                        if (searchMode === 'strict') {
+                            isMatch1 = data[i].sortedNums[pos1] === val1;
+                            isMatch2 = data[i + K].sortedNums[pos2] === val2;
+                        } else {
+                            isMatch1 = data[i].sortedNums.includes(val1);
+                            isMatch2 = data[i + K].sortedNums.includes(val2);
                         }
 
-                        if (historyMatches.length > 0) {
-                            let targetCounts = {};
-                            historyMatches.forEach(m => m.targetNums.forEach(n => targetCounts[n] = (targetCounts[n] || 0) + 1));
-                            let total = historyMatches.length;
-
-                            for (let n = 1; n <= MAX_NUM; n++) {
-                                if (targetCounts[n]) {
-                                    let hits = targetCounts[n];
-                                    let rate = hits / total;
-
-                                    if (rate >= 0.4 && total >= 2) {
-                                        let uniqueKey = searchMode === 'strict' ? `2_${K}_${pos1}_${val1}_${pos2}_${val2}_${n}` : `2_${K}_any_${val1}_any_${val2}_${n}`;
-                                        if (!allDiscoveredPatterns.some(p => p.key === uniqueKey)) {
-                                            allDiscoveredPatterns.push({
-                                                key: uniqueKey, type: 2, K, pos1, val1, pos2, val2, targetNum: n,
-                                                hits, total, rate, matches: historyMatches
-                                            });
-                                        }
-                                    }
-                                }
-                            }
+                        if (isMatch1 && isMatch2) {
+                            historyMatches.push({
+                                triggerIdx1: i,
+                                triggerIdx2: i + K,
+                                targetIdx: i + K + 1,
+                                targetNums: data[i + K + 1].origNums
+                            });
                         }
                     }
-                }
-            }
-        } else if (triggerCount === 3) {
-            for (let K1 = 1; K1 <= 10; K1++) { // 擴充至下10期內
-                for (let K2 = 1; K2 <= 10; K2++) { // 擴充至下10期內
-                    let cond1Idx = data.length - 1 - K1 - K2;
-                    let cond2Idx = data.length - 1 - K2;
-                    let cond3Idx = data.length - 1;
 
-                    if (cond1Idx < 0) continue;
+                    if (historyMatches.length > 0) {
+                        let targetCounts = {};
+                        historyMatches.forEach(m => m.targetNums.forEach(n => targetCounts[n] = (targetCounts[n] || 0) + 1));
+                        let total = historyMatches.length;
 
-                    let cond1Draw = data[cond1Idx];
-                    let cond2Draw = data[cond2Idx];
-                    let cond3Draw = data[cond3Idx];
+                        for (let n = 1; n <= MAX_NUM; n++) {
+                            if (targetCounts[n]) {
+                                let hits = targetCounts[n];
+                                let rate = hits / total;
 
-                    for (let pos1 = 0; pos1 < cond1Draw.sortedNums.length; pos1++) {
-                        let val1 = cond1Draw.sortedNums[pos1];
-                        for (let pos2 = 0; pos2 < cond2Draw.sortedNums.length; pos2++) {
-                            let val2 = cond2Draw.sortedNums[pos2];
-                            for (let pos3 = 0; pos3 < cond3Draw.sortedNums.length; pos3++) {
-                                let val3 = cond3Draw.sortedNums[pos3];
-
-                                let historyMatches = [];
-                                for (let i = 0; i <= data.length - 2 - K1 - K2; i++) {
-                                    let isM1 = false, isM2 = false, isM3 = false;
-                                    if (searchMode === 'strict') {
-                                        isM1 = data[i].sortedNums[pos1] === val1;
-                                        isM2 = data[i + K1].sortedNums[pos2] === val2;
-                                        isM3 = data[i + K1 + K2].sortedNums[pos3] === val3;
-                                    } else {
-                                        isM1 = data[i].sortedNums.includes(val1);
-                                        isM2 = data[i + K1].sortedNums.includes(val2);
-                                        isM3 = data[i + K1 + K2].sortedNums.includes(val3);
-                                    }
-
-                                    if (isM1 && isM2 && isM3) {
-                                        historyMatches.push({
-                                            tIdx1: i,
-                                            tIdx2: i + K1,
-                                            tIdx3: i + K1 + K2,
-                                            targetIdx: i + K1 + K2 + 1,
-                                            targetNums: data[i + K1 + K2 + 1].origNums
+                                // 篩選條件：勝率大於等於 40% 且至少發動過 2 次
+                                if (rate >= 0.4 && total >= 2) {
+                                    let uniqueKey = searchMode === 'strict' ? `2_${K}_${pos1}_${val1}_${pos2}_${val2}_${n}` : `2_${K}_any_${val1}_any_${val2}_${n}`;
+                                    if (!allDiscoveredPatterns.some(p => p.key === uniqueKey)) {
+                                        allDiscoveredPatterns.push({
+                                            key: uniqueKey, K, pos1, val1, pos2, val2, targetNum: n,
+                                            hits, total, rate, matches: historyMatches
                                         });
-                                    }
-                                }
-
-                                if (historyMatches.length > 0) {
-                                    let targetCounts = {};
-                                    historyMatches.forEach(m => m.targetNums.forEach(n => targetCounts[n] = (targetCounts[n] || 0) + 1));
-                                    let total = historyMatches.length;
-
-                                    for (let n = 1; n <= MAX_NUM; n++) {
-                                        if (targetCounts[n]) {
-                                            let hits = targetCounts[n];
-                                            let rate = hits / total;
-
-                                            if (rate >= 0.4 && total >= 1) {
-                                                let uniqueKey = searchMode === 'strict' 
-                                                    ? `3_${K1}_${K2}_${pos1}_${val1}_${pos2}_${val2}_${pos3}_${val3}_${n}` 
-                                                    : `3_${K1}_${K2}_any_${val1}_any_${val2}_any_${val3}_${n}`;
-                                                if (!allDiscoveredPatterns.some(p => p.key === uniqueKey)) {
-                                                    allDiscoveredPatterns.push({
-                                                        key: uniqueKey, type: 3, K1, K2, pos1, val1, pos2, val2, pos3, val3, targetNum: n,
-                                                        hits, total, rate, matches: historyMatches
-                                                    });
-                                                }
-                                            }
-                                        }
                                     }
                                 }
                             }
@@ -356,6 +277,7 @@
             }
         }
 
+        // 排序：先比命中次數，再比勝率
         allDiscoveredPatterns.sort((a, b) => b.hits - a.hits || b.rate - a.rate);
         
         let topPatterns = allDiscoveredPatterns;
@@ -373,29 +295,14 @@
             let cssClass = `bg-color-${colorIdx} pattern-${idx}`; 
             
             p.matches.forEach(match => {
-                if (p.type === 2) {
-                    if (searchMode === 'strict') {
-                        addCls(rowHighlights[match.triggerIdx1].sorted, p.pos1, cssClass);
-                        addCls(rowHighlights[match.triggerIdx2].sorted, p.pos2, cssClass);
-                    } else {
-                        data[match.triggerIdx1].origNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[match.triggerIdx1].orig, i, cssClass); });
-                        data[match.triggerIdx1].sortedNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[match.triggerIdx1].sorted, i, cssClass); });
-                        data[match.triggerIdx2].origNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[match.triggerIdx2].orig, i, cssClass); });
-                        data[match.triggerIdx2].sortedNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[match.triggerIdx2].sorted, i, cssClass); });
-                    }
-                } else if (p.type === 3) {
-                    if (searchMode === 'strict') {
-                        addCls(rowHighlights[match.tIdx1].sorted, p.pos1, cssClass);
-                        addCls(rowHighlights[match.tIdx2].sorted, p.pos2, cssClass);
-                        addCls(rowHighlights[match.tIdx3].sorted, p.pos3, cssClass);
-                    } else {
-                        data[match.tIdx1].origNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[match.tIdx1].orig, i, cssClass); });
-                        data[match.tIdx1].sortedNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[match.tIdx1].sorted, i, cssClass); });
-                        data[match.tIdx2].origNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[match.tIdx2].orig, i, cssClass); });
-                        data[match.tIdx2].sortedNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[match.tIdx2].sorted, i, cssClass); });
-                        data[match.tIdx3].origNums.forEach((n, i) => { if(n === p.val3) addCls(rowHighlights[match.tIdx3].orig, i, cssClass); });
-                        data[match.tIdx3].sortedNums.forEach((n, i) => { if(n === p.val3) addCls(rowHighlights[match.tIdx3].sorted, i, cssClass); });
-                    }
+                if (searchMode === 'strict') {
+                    addCls(rowHighlights[match.triggerIdx1].sorted, p.pos1, cssClass);
+                    addCls(rowHighlights[match.triggerIdx2].sorted, p.pos2, cssClass);
+                } else {
+                    data[match.triggerIdx1].origNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[match.triggerIdx1].orig, i, cssClass); });
+                    data[match.triggerIdx1].sortedNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[match.triggerIdx1].sorted, i, cssClass); });
+                    data[match.triggerIdx2].origNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[match.triggerIdx2].orig, i, cssClass); });
+                    data[match.triggerIdx2].sortedNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[match.triggerIdx2].sorted, i, cssClass); });
                 }
 
                 if(match.targetNums.includes(p.targetNum)) {
@@ -405,33 +312,16 @@
             });
 
             let lastIdx = data.length - 1;
+            let currentTrigger1 = lastIdx - p.K;
             
-            if (p.type === 2) {
-                let currentTrigger1 = lastIdx - p.K;
-                if (searchMode === 'strict') {
-                    addCls(rowHighlights[currentTrigger1].sorted, p.pos1, cssClass);
-                    addCls(rowHighlights[lastIdx].sorted, p.pos2, cssClass);
-                } else {
-                    data[currentTrigger1].origNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[currentTrigger1].orig, i, cssClass); });
-                    data[currentTrigger1].sortedNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[currentTrigger1].sorted, i, cssClass); });
-                    data[lastIdx].origNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[lastIdx].orig, i, cssClass); });
-                    data[lastIdx].sortedNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[lastIdx].sorted, i, cssClass); });
-                }
-            } else if (p.type === 3) {
-                let currentTrigger1 = lastIdx - p.K1 - p.K2;
-                let currentTrigger2 = lastIdx - p.K2;
-                if (searchMode === 'strict') {
-                    addCls(rowHighlights[currentTrigger1].sorted, p.pos1, cssClass);
-                    addCls(rowHighlights[currentTrigger2].sorted, p.pos2, cssClass);
-                    addCls(rowHighlights[lastIdx].sorted, p.pos3, cssClass);
-                } else {
-                    data[currentTrigger1].origNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[currentTrigger1].orig, i, cssClass); });
-                    data[currentTrigger1].sortedNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[currentTrigger1].sorted, i, cssClass); });
-                    data[currentTrigger2].origNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[currentTrigger2].orig, i, cssClass); });
-                    data[currentTrigger2].sortedNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[currentTrigger2].sorted, i, cssClass); });
-                    data[lastIdx].origNums.forEach((n, i) => { if(n === p.val3) addCls(rowHighlights[lastIdx].orig, i, cssClass); });
-                    data[lastIdx].sortedNums.forEach((n, i) => { if(n === p.val3) addCls(rowHighlights[lastIdx].sorted, i, cssClass); });
-                }
+            if (searchMode === 'strict') {
+                addCls(rowHighlights[currentTrigger1].sorted, p.pos1, cssClass);
+                addCls(rowHighlights[lastIdx].sorted, p.pos2, cssClass);
+            } else {
+                data[currentTrigger1].origNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[currentTrigger1].orig, i, cssClass); });
+                data[currentTrigger1].sortedNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[currentTrigger1].sorted, i, cssClass); });
+                data[lastIdx].origNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[lastIdx].orig, i, cssClass); });
+                data[lastIdx].sortedNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[lastIdx].sorted, i, cssClass); });
             }
         });
 
@@ -446,9 +336,7 @@
                 let isHit = m.targetNums.includes(p.targetNum);
                 let numsFormatted = m.targetNums.map(n => n === p.targetNum ? `<span style="font-weight:bold; color:#fff;">${pad(n)}</span>` : pad(n)).join(', ');
                 
-                let dateStr = p.type === 2 
-                    ? `${data[m.triggerIdx1].date} / ${data[m.triggerIdx2].date}` 
-                    : `${data[m.tIdx1].date} / ${data[m.tIdx2].date} / ${data[m.tIdx3].date}`;
+                let dateStr = `${data[m.triggerIdx1].date} / ${data[m.triggerIdx2].date}`;
 
                 return `<div class="history-row">
                     <span style="width:165px;">${dateStr}</span>
@@ -458,15 +346,13 @@
                 </div>`;
             }).join('');
 
-            let titleStr = p.type === 2 
-                ? `[${pad(p.val1)}] 拖 [${pad(p.val2)}] 預測 [${pad(p.targetNum)}]`
-                : `[${pad(p.val1)}] 拖 [${pad(p.val2)}] 拖 [${pad(p.val3)}] 預測 [${pad(p.targetNum)}]`;
+            let titleStr = `[${pad(p.val1)}] 拖 [${pad(p.val2)}] 預測 [${pad(p.targetNum)}]`;
 
             legendHtml += `
             <div class="legend-item bg-color-${colorIdx}">
                 <div class="legend-header" onclick="toggleHistory(${idx})">
                     <span>版路 ${idx+1}: ${titleStr}</span>
-                    <span>勝率 ${(p.rate*100).toFixed(0)}% ▼</span>
+                    <span>勝率 ${(p.rate*100).toFixed(0)}% (發動 ${p.total} 次 / 中 ${p.hits} 次) ▼</span>
                 </div>
                 <div class="history-list" id="history-${idx}">
                     ${historyHtml}
