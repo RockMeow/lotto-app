@@ -64,7 +64,7 @@
         .draw-list tr:hover { background-color: #2a2a2a; }
         
         .date-col { width: 100px; color: #888;}
-        .col-hit { width: 180px; text-align: left; padding-left: 15px !important; }
+        .col-trigger { width: 220px; text-align: left; padding-left: 15px !important; }
         .num-group { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;}
         
         /* 號碼球 */
@@ -82,7 +82,7 @@
         .pred-badge { font-size: 12px; color: #aaa; margin-right: 5px; }
         .pred-item { display: flex; align-items: center; background: #252525; border: 1px solid #444; padding: 4px 8px; border-radius: 4px; transition: opacity 0.3s;}
         
-        .hit-badge { display: inline-block; margin: 2px; transition: opacity 0.3s; border: 1px solid transparent; }
+        .trigger-badge { display: inline-block; margin: 2px; transition: opacity 0.3s; border: 1px solid transparent; }
 
         /* 高亮絕對隔離特效：只有屬於 active-pattern 的球與標籤會發亮，其餘強制暗化去色 */
         .container.isolate-mode .ball:not(.active-pattern) { 
@@ -95,7 +95,7 @@
         .container.isolate-mode .pred-item:not(.active-pattern) { 
             opacity: 0.1 !important; 
         }
-        .container.isolate-mode .hit-badge:not(.active-pattern) {
+        .container.isolate-mode .trigger-badge:not(.active-pattern) {
             opacity: 0.1 !important; 
             background: #2a2a2a !important; 
             color: #555 !important;
@@ -137,7 +137,7 @@
                     <tr>
                         <th class="date-col">日期</th>
                         <th class="col-sorted">順球排列</th>
-                        <th class="col-hit">版路命中紀錄</th>
+                        <th class="col-trigger">當期發動預測</th>
                     </tr>
                 </thead>
                 <tbody id="listBody"></tbody>
@@ -273,14 +273,14 @@
         
         let topPatterns = allDiscoveredPatterns;
         let rowHighlights = Array.from({length: data.length + 1}, () => ({ sorted: {} }));
-        let rowHits = Array.from({length: data.length + 1}, () => []);
+        let rowTriggers = Array.from({length: data.length}, () => []); // 記錄每一期發動了什麼版路
 
         function addCls(obj, idx, cls) {
             if(!obj[idx]) obj[idx] = cls;
             else if(!obj[idx].includes(cls)) obj[idx] += ' ' + cls;
         }
 
-        // 標記版路位置塗色與歷史命中紀錄
+        // 標記版路位置塗色與歷史發動紀錄
         topPatterns.forEach((p, idx) => {
             let colorIdx = idx % 5;
             let cssClass = `bg-color-${colorIdx} pattern-${idx}`; 
@@ -294,19 +294,28 @@
                     data[match.triggerIdx2].sortedNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[match.triggerIdx2].sorted, i, cssClass); });
                 }
 
-                if(match.targetNums.includes(p.targetNum)) {
+                let isHit = match.targetNums.includes(p.targetNum);
+
+                if(isHit) {
                     data[match.targetIdx].sortedNums.forEach((n, i) => { 
                         if(n === p.targetNum) { 
                             addCls(rowHighlights[match.targetIdx].sorted, i, cssClass); 
                             addCls(rowHighlights[match.targetIdx].sorted, i, 'target-glow'); 
                         } 
                     });
-                    
-                    // 記錄該期的命中標籤
-                    rowHits[match.targetIdx].push({ pIdx: idx, colorIdx: colorIdx, targetNum: p.targetNum });
                 }
+
+                // 記錄：在 triggerIdx2 這一期，版路條件已湊齊（發動），並預測 targetNum
+                rowTriggers[match.triggerIdx2].push({
+                    pIdx: idx,
+                    colorIdx: colorIdx,
+                    targetNum: p.targetNum,
+                    isHit: isHit,
+                    isPending: false
+                });
             });
 
+            // 最新一期的觸發狀態
             let lastIdx = data.length - 1;
             let currentTrigger1 = lastIdx - p.K;
             
@@ -317,6 +326,14 @@
                 data[currentTrigger1].sortedNums.forEach((n, i) => { if(n === p.val1) addCls(rowHighlights[currentTrigger1].sorted, i, cssClass); });
                 data[lastIdx].sortedNums.forEach((n, i) => { if(n === p.val2) addCls(rowHighlights[lastIdx].sorted, i, cssClass); });
             }
+
+            // 最新一期必定是剛發動，預測下一期 (Pending)
+            rowTriggers[lastIdx].push({
+                pIdx: idx,
+                colorIdx: colorIdx,
+                targetNum: p.targetNum,
+                isPending: true
+            });
         });
 
         // 繪製圖例與歷史紀錄
@@ -360,14 +377,17 @@
             let row = data[i];
             let sortedBalls = row.sortedNums.map((n, idx) => `<div class="ball ${rowHighlights[i].sorted[idx] || ''}">${pad(n)}</div>`).join('');
             
-            // 產生命中標籤 HTML
-            let hitBadges = rowHits[i].map(h => `<span class="pattern-badge hit-badge bg-color-${h.colorIdx} pattern-${h.pIdx}">#${h.pIdx+1} 拖中 ${pad(h.targetNum)}</span>`).join('');
+            // 產生當期發動標籤 HTML
+            let triggerBadges = rowTriggers[i].map(t => {
+                let statusIcon = t.isPending ? '⏳' : (t.isHit ? '✅' : '❌');
+                return `<span class="pattern-badge trigger-badge bg-color-${t.colorIdx} pattern-${t.pIdx}">#${t.pIdx+1} 預測 ${pad(t.targetNum)} ${statusIcon}</span>`;
+            }).join('');
 
             listHtml += `
             <tr>
                 <td class="date-col">${row.date}</td>
                 <td class="col-sorted"><div class="num-group">${sortedBalls}</div></td>
-                <td class="col-hit">${hitBadges}</td>
+                <td class="col-trigger">${triggerBadges}</td>
             </tr>`;
         }
 
