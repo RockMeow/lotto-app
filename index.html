@@ -20,14 +20,34 @@
         
         .options-bar { display: flex; gap: 15px; align-items: center; font-size: 14px; padding: 10px 0; border-bottom: 1px solid #333; margin-bottom: 15px;}
         
-        /* 圖例與歷史紀錄區 */
-        .legend-container { margin-bottom: 20px; }
-        .legend-item { margin-bottom: 10px; background: #252525; border: 1px solid #333; border-radius: 4px; overflow: hidden;}
-        .legend-header { padding: 12px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; background: #2a2a2a; color: #eee; transition: 0.2s;}
+        /* 🏆 優化：圖例與歷史紀錄區排版 */
+        .legend-container { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+            gap: 12px; 
+            margin-bottom: 20px; 
+            max-height: 380px; 
+            overflow-y: auto; 
+            padding-right: 5px;
+        }
+        .legend-container::-webkit-scrollbar { width: 6px; }
+        .legend-container::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+        
+        .legend-item { background: #252525; border: 1px solid #333; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column;}
+        .legend-header { padding: 10px 12px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #2a2a2a; color: #eee; transition: 0.2s;}
         .legend-header:hover { background: #333; }
-        .history-list { padding: 10px; font-size: 13px; color: #aaa; background: #1e1e1e; border-top: 1px solid #333; display: none;}
-        .history-row { padding: 6px 0; border-bottom: 1px dashed #333; display: flex; gap: 15px; }
+        
+        .pattern-badge { background: rgba(255,255,255,0.25); padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 6px; }
+        .pattern-title { display: flex; align-items: center; }
+        .pattern-stats { font-size: 12px; color: #ddd; opacity: 0.9;}
+        
+        .history-list { padding: 8px 12px; font-size: 13px; color: #aaa; background: #1e1e1e; border-top: 1px solid #333; display: none;}
+        .history-row { padding: 6px 0; border-bottom: 1px dashed #333; display: flex; align-items: center; gap: 10px; }
         .history-row:last-child { border-bottom: none; }
+        .hist-date { width: 130px; }
+        .hist-target { width: 100px; }
+        .hist-nums { flex: 1; letter-spacing: 0.5px; }
+        .hist-result { width: 30px; text-align: right; font-weight: bold; }
         
         /* 調整透明度的版路專屬顏色 */
         .bg-color-0 { background-color: rgba(231, 76, 60, 0.6) !important; color: #fff !important; border-color: rgba(231, 76, 60, 0.9) !important; }
@@ -65,7 +85,7 @@
         
         .hidden { display: none !important; }
 
-        /* 高亮絕對隔離特效：只有屬於 active-pattern 的球會發亮，其餘強制暗化去色 */
+        /* 高亮絕對隔離特效 */
         .container.isolate-mode .ball:not(.active-pattern) { 
             opacity: 0.1 !important; 
             background: #2a2a2a !important; 
@@ -96,8 +116,8 @@
         
         <div class="controls">
             <select id="searchMode">
-                <option value="strict">定位</option>
-                <option value="any" selected>不定位 </option>
+                <option value="strict">定位 (位置相同)</option>
+                <option value="any" selected>不定位 (當期開出)</option>
             </select>
             <button onclick="runListEngine()">執行分析</button>
         </div>
@@ -130,7 +150,6 @@
     let currentCsvData = "";
     const pad = (n) => n.toString().padStart(2, '0');
 
-    // 透過選項自動抓取 CSV 檔案
     async function loadCsvData() {
         const file = document.getElementById('csvSelect').value;
         try {
@@ -146,36 +165,24 @@
         }
     }
 
-    // 點選圖例標題：啟動隔離高亮模式
     function toggleHistory(idx) {
         const el = document.getElementById('history-' + idx);
         const container = document.getElementById('mainContainer');
         
-        // 若該版路已展開，則關閉並解除隔離模式
         if (el.style.display === 'block') {
             el.style.display = 'none';
             container.classList.remove('isolate-mode');
             document.querySelectorAll('.active-pattern').forEach(node => node.classList.remove('active-pattern'));
         } else {
-            // 先關閉其他版路紀錄
             document.querySelectorAll('.history-list').forEach(list => list.style.display = 'none');
-            
-            // 展開目前點選的版路
             el.style.display = 'block';
-            
-            // 啟動隔離模式
             container.classList.add('isolate-mode');
-            
-            // 清除之前的 active 標籤
             document.querySelectorAll('.active-pattern').forEach(node => node.classList.remove('active-pattern'));
-            
-            // 只為當前選擇的版路號碼加上 active 標籤
             document.querySelectorAll('.pattern-' + idx).forEach(node => node.classList.add('active-pattern'));
             document.querySelectorAll('.pred-idx-' + idx).forEach(node => node.classList.add('active-pattern'));
         }
     }
 
-    // 切換落球/順球顯示
     function toggleColumns() {
         const showOrig = document.getElementById('chkOrig').checked;
         const showSorted = document.getElementById('chkSorted').checked;
@@ -188,7 +195,6 @@
         });
     }
 
-    // 解析 CSV 字串資料
     function parseData() {
         if(!currentCsvData) return [];
         const lines = currentCsvData.trim().split('\n');
@@ -208,7 +214,6 @@
         const data = parseData();
         if (data.length < 5) return;
 
-        // 每次重新分析前，確保解除隔離模式
         document.getElementById('mainContainer').classList.remove('isolate-mode');
 
         const searchMode = document.getElementById('searchMode').value;
@@ -283,7 +288,6 @@
         let topPatterns = allDiscoveredPatterns;
         let rowHighlights = Array.from({length: data.length + 1}, () => ({ orig: {}, sorted: {} }));
 
-        // 疊加 CSS Class，並將 pattern-idx 加入
         function addCls(obj, idx, cls) {
             if(!obj[idx]) obj[idx] = cls;
             else if(!obj[idx].includes(cls)) obj[idx] += ' ' + cls;
@@ -325,34 +329,33 @@
             }
         });
 
-        // 重設外觀狀態
-        document.getElementById('mainContainer').className = 'container';
-
         // 繪製圖例與歷史紀錄
         let legendHtml = '';
         topPatterns.forEach((p, idx) => {
             let colorIdx = idx % 5;
             let historyHtml = p.matches.map(m => {
                 let isHit = m.targetNums.includes(p.targetNum);
-                let numsFormatted = m.targetNums.map(n => n === p.targetNum ? `<span style="font-weight:bold; color:#fff;">${pad(n)}</span>` : pad(n)).join(', ');
-                
+                let numsFormatted = m.targetNums.map(n => n === p.targetNum ? `<span style="color:#fff; font-weight:bold;">${pad(n)}</span>` : pad(n)).join(', ');
                 let dateStr = `${data[m.triggerIdx1].date} / ${data[m.triggerIdx2].date}`;
 
                 return `<div class="history-row">
-                    <span style="width:165px;">${dateStr}</span>
-                    <span>預測 ${data[m.targetIdx].date}</span>
-                    <span>[ ${numsFormatted} ]</span>
-                    <span>${isHit ? '中' : '-'}</span>
+                    <span class="hist-date">${dateStr}</span>
+                    <span class="hist-target">預測 ${data[m.targetIdx].date}</span>
+                    <span class="hist-nums">[ ${numsFormatted} ]</span>
+                    <span class="hist-result" style="color:${isHit ? '#4caf50' : '#888'}">${isHit ? '中' : 'X'}</span>
                 </div>`;
             }).join('');
 
-            let titleStr = `[${pad(p.val1)}] 拖 [${pad(p.val2)}] 預測 [${pad(p.targetNum)}]`;
+            let titleStr = `[${pad(p.val1)}] 拖 [${pad(p.val2)}] ➡️ [${pad(p.targetNum)}]`;
 
             legendHtml += `
             <div class="legend-item bg-color-${colorIdx}">
                 <div class="legend-header" onclick="toggleHistory(${idx})">
-                    <span>版路 ${idx+1}: ${titleStr}</span>
-                    <span>勝率 ${(p.rate*100).toFixed(0)}% (發動 ${p.total} 次 / 中 ${p.hits} 次) ▼</span>
+                    <div class="pattern-title">
+                        <span class="pattern-badge">#${idx+1}</span> 
+                        <span>${titleStr}</span>
+                    </div>
+                    <div class="pattern-stats">勝率 ${(p.rate*100).toFixed(0)}% (${p.hits}/${p.total}) ▼</div>
                 </div>
                 <div class="history-list" id="history-${idx}">
                     ${historyHtml}
@@ -381,7 +384,7 @@
             let colorIdx = idx % 5;
             return `
             <div class="pred-item pred-idx-${idx}">
-                <span class="pred-badge">版路 ${idx+1}</span>
+                <span class="pred-badge">#${idx+1}</span>
                 <div class="ball bg-color-${colorIdx} target-glow pattern-${idx}">${pad(p.targetNum)}</div>
             </div>
         `}).join('');
@@ -402,7 +405,6 @@
         listWrapper.scrollTop = listWrapper.scrollHeight;
     }
     
-    // 初始化自動讀取檔案
     window.onload = () => { loadCsvData(); };
 </script>
 
