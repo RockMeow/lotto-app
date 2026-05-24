@@ -222,7 +222,7 @@
 
         // 搜尋版路
         if (triggerCount === 2) {
-            for (let K = 1; K <= 3; K++) {
+            for (let K = 1; K <= 10; K++) { // 擴充至下10期內
                 let cond1Idx = data.length - 1 - K;
                 let cond2Idx = data.length - 1; 
                 if (cond1Idx < 0) continue;
@@ -282,8 +282,8 @@
                 }
             }
         } else if (triggerCount === 3) {
-            for (let K1 = 1; K1 <= 2; K1++) {
-                for (let K2 = 1; K2 <= 2; K2++) {
+            for (let K1 = 1; K1 <= 10; K1++) { // 擴充至下10期內
+                for (let K2 = 1; K2 <= 10; K2++) { // 擴充至下10期內
                     let cond1Idx = data.length - 1 - K1 - K2;
                     let cond2Idx = data.length - 1 - K2;
                     let cond3Idx = data.length - 1;
@@ -370,7 +370,7 @@
         // 標記版路位置塗色
         topPatterns.forEach((p, idx) => {
             let colorIdx = idx % 5;
-            let cssClass = `bg-color-${colorIdx} pattern-${idx}`; // 添加對應的 pattern 專屬 class
+            let cssClass = `bg-color-${colorIdx} pattern-${idx}`; 
             
             p.matches.forEach(match => {
                 if (p.type === 2) {
@@ -434,6 +434,9 @@
                 }
             }
         });
+
+        // 重設外觀狀態
+        document.getElementById('mainContainer').className = 'container';
 
         // 繪製圖例與歷史紀錄
         let legendHtml = '';
