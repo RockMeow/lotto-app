@@ -53,7 +53,7 @@
             display: flex; align-items: center; justify-content: center; 
             width: 30px; height: 30px; border-radius: 50%; 
             background: #2a2a2a; color: #ccc; font-size: 14px;
-            border: 1px solid #444; transition: opacity 0.3s;
+            border: 1px solid #444; transition: opacity 0.3s, background 0.3s;
         }
         
         .target-glow { box-shadow: 0 0 0 2px #fff; font-weight: bold; }
@@ -65,21 +65,17 @@
         
         .hidden { display: none !important; }
 
-        /* 高亮隔離特效：點選某個版路時，將其他的球淡化 */
-        .highlight-0 .ball:not(.bg-color-0) { opacity: 0.15 !important; border-color: transparent !important; }
-        .highlight-0 .pred-item:not(.pred-0) { opacity: 0.15 !important; }
-        
-        .highlight-1 .ball:not(.bg-color-1) { opacity: 0.15 !important; border-color: transparent !important; }
-        .highlight-1 .pred-item:not(.pred-1) { opacity: 0.15 !important; }
-        
-        .highlight-2 .ball:not(.bg-color-2) { opacity: 0.15 !important; border-color: transparent !important; }
-        .highlight-2 .pred-item:not(.pred-2) { opacity: 0.15 !important; }
-        
-        .highlight-3 .ball:not(.bg-color-3) { opacity: 0.15 !important; border-color: transparent !important; }
-        .highlight-3 .pred-item:not(.pred-3) { opacity: 0.15 !important; }
-        
-        .highlight-4 .ball:not(.bg-color-4) { opacity: 0.15 !important; border-color: transparent !important; }
-        .highlight-4 .pred-item:not(.pred-4) { opacity: 0.15 !important; }
+        /* 高亮絕對隔離特效：只有屬於 active-pattern 的球會發亮，其餘強制暗化去色 */
+        .container.isolate-mode .ball:not(.active-pattern) { 
+            opacity: 0.1 !important; 
+            background: #2a2a2a !important; 
+            border-color: transparent !important; 
+            color: #555 !important;
+            box-shadow: none !important;
+        }
+        .container.isolate-mode .pred-item:not(.active-pattern) { 
+            opacity: 0.1 !important; 
+        }
     </style>
 </head>
 <body>
@@ -154,21 +150,32 @@
         }
     }
 
-    // 點選圖例標題：展開歷史紀錄並高亮該版路的球
-    function toggleHistory(idx, colorIdx) {
+    // 點選圖例標題：啟動隔離高亮模式
+    function toggleHistory(idx) {
         const el = document.getElementById('history-' + idx);
         const container = document.getElementById('mainContainer');
         
-        // 若該版路已展開，則關閉並移除高亮
+        // 若該版路已展開，則關閉並解除隔離模式
         if (el.style.display === 'block') {
             el.style.display = 'none';
-            container.className = 'container';
+            container.classList.remove('isolate-mode');
+            document.querySelectorAll('.active-pattern').forEach(node => node.classList.remove('active-pattern'));
         } else {
             // 先關閉其他版路紀錄
             document.querySelectorAll('.history-list').forEach(list => list.style.display = 'none');
-            // 開啟當前版路，並設定對應的高亮 Class
-            container.className = 'container highlight-' + colorIdx;
+            
+            // 展開目前點選的版路
             el.style.display = 'block';
+            
+            // 啟動隔離模式
+            container.classList.add('isolate-mode');
+            
+            // 清除之前的 active 標籤
+            document.querySelectorAll('.active-pattern').forEach(node => node.classList.remove('active-pattern'));
+            
+            // 只為當前選擇的版路號碼加上 active 標籤
+            document.querySelectorAll('.pattern-' + idx).forEach(node => node.classList.add('active-pattern'));
+            document.querySelectorAll('.pred-idx-' + idx).forEach(node => node.classList.add('active-pattern'));
         }
     }
 
@@ -204,6 +211,9 @@
     function runListEngine() {
         const data = parseData();
         if (data.length < 5) return;
+
+        // 每次重新分析前，確保解除隔離模式
+        document.getElementById('mainContainer').classList.remove('isolate-mode');
 
         const searchMode = document.getElementById('searchMode').value;
         const triggerCount = parseInt(document.getElementById('triggerCount').value);
@@ -325,7 +335,6 @@
                                             let hits = targetCounts[n];
                                             let rate = hits / total;
 
-                                            // 三重條件很罕見，只要歷史曾出現 1 次且成功就會顯示
                                             if (rate >= 0.4 && total >= 1) {
                                                 let uniqueKey = searchMode === 'strict' 
                                                     ? `3_${K1}_${K2}_${pos1}_${val1}_${pos2}_${val2}_${pos3}_${val3}_${n}` 
@@ -349,12 +358,10 @@
 
         allDiscoveredPatterns.sort((a, b) => b.hits - a.hits || b.rate - a.rate);
         
-        // 顯示所有的版路 (無數量限制)
         let topPatterns = allDiscoveredPatterns;
-
         let rowHighlights = Array.from({length: data.length + 1}, () => ({ orig: {}, sorted: {} }));
 
-        // 輔助函數：疊加多重版路的 CSS Class (解決多版路重疊被覆寫的問題)
+        // 疊加 CSS Class，並將 pattern-idx 加入
         function addCls(obj, idx, cls) {
             if(!obj[idx]) obj[idx] = cls;
             else if(!obj[idx].includes(cls)) obj[idx] += ' ' + cls;
@@ -363,7 +370,7 @@
         // 標記版路位置塗色
         topPatterns.forEach((p, idx) => {
             let colorIdx = idx % 5;
-            let cssClass = `bg-color-${colorIdx}`;
+            let cssClass = `bg-color-${colorIdx} pattern-${idx}`; // 添加對應的 pattern 專屬 class
             
             p.matches.forEach(match => {
                 if (p.type === 2) {
@@ -428,9 +435,6 @@
             }
         });
 
-        // 重設外觀狀態
-        document.getElementById('mainContainer').className = 'container';
-
         // 繪製圖例與歷史紀錄
         let legendHtml = '';
         topPatterns.forEach((p, idx) => {
@@ -457,7 +461,7 @@
 
             legendHtml += `
             <div class="legend-item bg-color-${colorIdx}">
-                <div class="legend-header" onclick="toggleHistory(${idx}, ${colorIdx})">
+                <div class="legend-header" onclick="toggleHistory(${idx})">
                     <span>版路 ${idx+1}: ${titleStr}</span>
                     <span>勝率 ${(p.rate*100).toFixed(0)}% ▼</span>
                 </div>
@@ -487,9 +491,9 @@
         let predBalls = topPatterns.map((p, idx) => {
             let colorIdx = idx % 5;
             return `
-            <div class="pred-item pred-${colorIdx}">
+            <div class="pred-item pred-idx-${idx}">
                 <span class="pred-badge">版路 ${idx+1}</span>
-                <div class="ball bg-color-${colorIdx} target-glow">${pad(p.targetNum)}</div>
+                <div class="ball bg-color-${colorIdx} target-glow pattern-${idx}">${pad(p.targetNum)}</div>
             </div>
         `}).join('');
 
