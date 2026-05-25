@@ -94,6 +94,23 @@
             <span>資料狀態:</span>
             <span id="dataStatus" style="font-weight: bold;">讀取中...</span>
         </div>
+
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #dfe6e9;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="excludeZeroHead" checked onchange="runAnalysis()" style="width: 18px; height: 18px; cursor: pointer;">
+                <span style="font-weight: bold; font-size: 0.95rem;">排除 0 頭 (不包含 01~09)</span>
+            </label>
+        </div>
+
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #dfe6e9;">
+            <div style="font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; color: var(--primary);">➕ 新增當期開獎數據</div>
+            <input type="text" id="newDate" placeholder="日期 (例: 2026-05-26)" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #dfe6e9; margin-bottom: 8px; font-size: 0.95rem; outline: none;">
+            <input type="text" id="newNums" placeholder="開獎號碼 (逗號分隔，例: 13,24,31,35,38)" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #dfe6e9; margin-bottom: 10px; font-size: 0.95rem; outline: none;">
+            <div style="display: flex; gap: 10px;">
+                <button onclick="addNewData()" style="flex: 1; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem;">加入並分析</button>
+                <button onclick="downloadCSV()" style="flex: 1; padding: 10px; background: var(--success); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem;">下載更新 CSV</button>
+            </div>
+        </div>
     </div>
 
     <div class="section-title">🕒 目前追蹤中 (養三期)</div>
@@ -115,9 +132,12 @@
     function getIronBalls(tail) {
         let balls = [];
         let maxHeads = Math.floor(maxNum / 10);
-        for(let h = 1; h <= maxHeads; h++) {
+        let excludeZero = document.getElementById('excludeZeroHead').checked;
+        let startH = excludeZero ? 1 : 0; // 根據開關決定是否從 0 頭開始
+
+        for(let h = startH; h <= maxHeads; h++) {
             let n = h * 10 + tail;
-            if(n <= maxNum) balls.push(n);
+            if(n > 0 && n <= maxNum) balls.push(n); // > 0 是為了防止抽出 '00'
         }
         return balls;
     }
@@ -147,8 +167,6 @@
             }
             
             statusEl.innerText = `✅ 載入成功 (共 ${parsedData.length} 期)`;
-            
-            // 移除原本一次性算全域 rules 的函數呼叫，直接執行分析
             runAnalysis();
         } catch(e) { 
             statusEl.innerText = "❌ 讀取失敗 (需在本機伺服器環境執行)"; 
@@ -158,7 +176,59 @@
         }
     }
 
-    // 動態計算截至某一天 (currentIndex) 的拖牌統計數據 (避免未來數據洩漏)
+    // 新增：將手動輸入的數據加入系統並重跑分析
+    function addNewData() {
+        const dateVal = document.getElementById('newDate').value.trim();
+        const numsVal = document.getElementById('newNums').value.trim();
+        
+        if(!dateVal || !numsVal) {
+            alert("請完整輸入日期與號碼");
+            return;
+        }
+        
+        let numArr = numsVal.split(/[,、\s]+/).map(n => parseInt(n)).filter(n => !isNaN(n));
+        if(numArr.length === 0) {
+            alert("開獎號碼格式錯誤，請使用逗號分隔數字");
+            return;
+        }
+        
+        parsedData.push({ date: dateVal, nums: numArr });
+        document.getElementById('dataStatus').innerText = `✅ 載入成功 (共 ${parsedData.length} 期) - 含手動新增`;
+        
+        document.getElementById('newDate').value = '';
+        document.getElementById('newNums').value = '';
+        
+        runAnalysis();
+    }
+
+    // 新增：下載包含新數據的 CSV 檔案
+    function downloadCSV() {
+        if(parsedData.length === 0) {
+            alert("目前沒有數據可以下載");
+            return;
+        }
+
+        let maxCols = Math.max(...parsedData.map(d => d.nums.length));
+        let headerCols = ["Date"];
+        for(let i = 1; i <= maxCols; i++) headerCols.push(`Num${i}`);
+        
+        let csvContent = headerCols.join(',') + "\n";
+        parsedData.forEach(d => {
+            csvContent += `${d.date},${d.nums.join(',')}\n`;
+        });
+        
+        let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        let url = URL.createObjectURL(blob);
+        let link = document.createElement("a");
+        let baseFileName = document.getElementById('csvSelect').value.replace('.csv', '');
+        
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${baseFileName}_updated.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     function getRulesForDay(currentIndex) {
         let dStats = {}; let tStats = {};
         for (let i = 0; i < 10; i++) {
@@ -166,7 +236,8 @@
             tStats[i] = { total: 0, hits: new Array(10).fill(0) };
         }
 
-        // 只掃描 currentIndex 之前的歷史資料
+        let excludeZero = document.getElementById('excludeZeroHead').checked;
+
         for (let k = 0; k <= currentIndex; k++) {
             let tails = parsedData[k].nums.map(n => n % 10);
             let counts = new Array(10).fill(0);
@@ -176,8 +247,8 @@
             for (let j = 1; j <= 3; j++) {
                 if (k + j <= currentIndex) { 
                     parsedData[k + j].nums.forEach(n => {
-                        // 刻意去 0 頭
-                        if (n >= 10) next3ValidTails.add(n % 10); 
+                        // 根據開關決定是否計入 0 頭
+                        if (!excludeZero || n >= 10) next3ValidTails.add(n % 10); 
                     });
                 }
             }
@@ -211,7 +282,6 @@
         return localRules;
     }
 
-    // 接收動態規則來產生當日訊號
     function getSmartPatterns(nums, currentRules) {
         let patterns = [];
         let tails = nums.map(n => n % 10);
@@ -236,7 +306,6 @@
         let stats = { total: 0, hit: 0 };
 
         for (let i = 0; i < parsedData.length; i++) {
-            // 【修正核心】每天都使用當下累積的歷史資料來計算規則
             let currentRules = getRulesForDay(i);
             let patterns = getSmartPatterns(parsedData[i].nums, currentRules);
             
@@ -282,7 +351,6 @@
             });
         }
 
-        // 渲染正在追蹤的卡片
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
@@ -295,7 +363,6 @@
             </div>`
         }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無追蹤版路 ☕</div>';
 
-        // 渲染每一天的歷史紀錄
         const listHtml = dailyView.slice().reverse().map(d => {
             let eventsHtml = '';
             
@@ -340,7 +407,6 @@
         
         document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px; color:#999;">尚無紀錄</div>';
 
-        // 渲染統計摘要
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `💡 <b>歷史結算 (動態滾動回測)：</b>共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b>`;
