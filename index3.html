@@ -101,16 +101,6 @@
                 <span style="font-weight: bold; font-size: 0.95rem;">排除 0 頭 (不包含 01~09)</span>
             </label>
         </div>
-
-        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #dfe6e9;">
-            <div style="font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; color: var(--primary);">➕ 新增當期開獎數據</div>
-            <input type="text" id="newDate" placeholder="日期 (例: 2026-05-26)" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #dfe6e9; margin-bottom: 8px; font-size: 0.95rem; outline: none;">
-            <input type="text" id="newNums" placeholder="開獎號碼 (逗號分隔，例: 13,24,31,35,38)" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #dfe6e9; margin-bottom: 10px; font-size: 0.95rem; outline: none;">
-            <div style="display: flex; gap: 10px;">
-                <button onclick="addNewData()" style="flex: 1; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem;">加入並分析</button>
-                <button onclick="downloadCSV()" style="flex: 1; padding: 10px; background: var(--success); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem;">下載更新 CSV</button>
-            </div>
-        </div>
     </div>
 
     <div class="section-title">🕒 目前追蹤中 (養三期)</div>
@@ -174,59 +164,6 @@
             document.getElementById('resultList').innerHTML = '';
             document.getElementById('summaryArea').style.display = 'none';
         }
-    }
-
-    // 新增：將手動輸入的數據加入系統並重跑分析
-    function addNewData() {
-        const dateVal = document.getElementById('newDate').value.trim();
-        const numsVal = document.getElementById('newNums').value.trim();
-        
-        if(!dateVal || !numsVal) {
-            alert("請完整輸入日期與號碼");
-            return;
-        }
-        
-        let numArr = numsVal.split(/[,、\s]+/).map(n => parseInt(n)).filter(n => !isNaN(n));
-        if(numArr.length === 0) {
-            alert("開獎號碼格式錯誤，請使用逗號分隔數字");
-            return;
-        }
-        
-        parsedData.push({ date: dateVal, nums: numArr });
-        document.getElementById('dataStatus').innerText = `✅ 載入成功 (共 ${parsedData.length} 期) - 含手動新增`;
-        
-        document.getElementById('newDate').value = '';
-        document.getElementById('newNums').value = '';
-        
-        runAnalysis();
-    }
-
-    // 新增：下載包含新數據的 CSV 檔案
-    function downloadCSV() {
-        if(parsedData.length === 0) {
-            alert("目前沒有數據可以下載");
-            return;
-        }
-
-        let maxCols = Math.max(...parsedData.map(d => d.nums.length));
-        let headerCols = ["Date"];
-        for(let i = 1; i <= maxCols; i++) headerCols.push(`Num${i}`);
-        
-        let csvContent = headerCols.join(',') + "\n";
-        parsedData.forEach(d => {
-            csvContent += `${d.date},${d.nums.join(',')}\n`;
-        });
-        
-        let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        let url = URL.createObjectURL(blob);
-        let link = document.createElement("a");
-        let baseFileName = document.getElementById('csvSelect').value.replace('.csv', '');
-        
-        link.setAttribute("href", url);
-        link.setAttribute("download", `${baseFileName}_updated.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     }
 
     function getRulesForDay(currentIndex) {
