@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統(拖尾)</title>
+    <title>三期牌分析系統(拖尾) - 滾動回測版</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <style>
@@ -58,18 +58,18 @@
         /* Event Details */
         .hit-detail { background: #fdfaf0; padding: 8px; border-radius: 8px; margin-top: 8px; }
         .miss-detail { background: #f5f6f7; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #eee; }
-        .trigger-detail { background: #f0f8ff; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #cce5ff; } /* 新增：觸發樣式 */
+        .trigger-detail { background: #f0f8ff; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #cce5ff; }
 
         .hit-type { font-size: 0.85rem; font-weight: bold; color: #d35400; }
-        .trigger-type { font-size: 0.85rem; font-weight: bold; color: #0056b3; } /* 新增：觸發文字顏色 */
+        .trigger-type { font-size: 0.85rem; font-weight: bold; color: #0056b3; }
         
         .hit-nums { color: var(--success); font-weight: 900; font-size: 1rem; margin-top: 2px; }
         .miss-nums { color: #b2bec3; font-weight: 900; font-size: 1rem; margin-top: 2px; }
-        .trigger-nums { color: #004085; font-weight: 900; font-size: 1rem; margin-top: 2px; } /* 新增：觸發號碼顏色 */
+        .trigger-nums { color: #004085; font-weight: 900; font-size: 1rem; margin-top: 2px; }
 
         .hit-status { font-size: 0.75rem; color: var(--success); font-weight: bold; margin-top: 3px; }
         .miss-status { font-size: 0.75rem; color: #636e72; font-weight: bold; margin-top: 3px; }
-        .trigger-status { font-size: 0.75rem; color: #0056b3; font-weight: bold; margin-top: 3px; } /* 新增：觸發狀態顏色 */
+        .trigger-status { font-size: 0.75rem; color: #0056b3; font-weight: bold; margin-top: 3px; }
 
     </style>
 </head>
@@ -108,7 +108,6 @@
 <script>
     let parsedData = [];
     let maxNum = 39;
-    let rules = { double: {}, triple: {} }; 
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
@@ -148,7 +147,8 @@
             }
             
             statusEl.innerText = `✅ 載入成功 (共 ${parsedData.length} 期)`;
-            calculateRules();
+            
+            // 移除原本一次性算全域 rules 的函數呼叫，直接執行分析
             runAnalysis();
         } catch(e) { 
             statusEl.innerText = "❌ 讀取失敗 (需在本機伺服器環境執行)"; 
@@ -158,23 +158,26 @@
         }
     }
 
-    function calculateRules() {
+    // 動態計算截至某一天 (currentIndex) 的拖牌統計數據 (避免未來數據洩漏)
+    function getRulesForDay(currentIndex) {
         let dStats = {}; let tStats = {};
-        for(let i=0; i<10; i++) {
+        for (let i = 0; i < 10; i++) {
             dStats[i] = { total: 0, hits: new Array(10).fill(0) };
             tStats[i] = { total: 0, hits: new Array(10).fill(0) };
         }
 
-        for (let i = 0; i < parsedData.length - 1; i++) {
-            let tails = parsedData[i].nums.map(n => n % 10);
+        // 只掃描 currentIndex 之前的歷史資料
+        for (let k = 0; k <= currentIndex; k++) {
+            let tails = parsedData[k].nums.map(n => n % 10);
             let counts = new Array(10).fill(0);
             tails.forEach(t => counts[t]++);
 
             let next3ValidTails = new Set();
             for (let j = 1; j <= 3; j++) {
-                if (i + j < parsedData.length) {
-                    parsedData[i + j].nums.forEach(n => {
-                        if (n >= 10) next3ValidTails.add(n % 10);
+                if (k + j <= currentIndex) { 
+                    parsedData[k + j].nums.forEach(n => {
+                        // 刻意去 0 頭
+                        if (n >= 10) next3ValidTails.add(n % 10); 
                     });
                 }
             }
@@ -191,23 +194,25 @@
             }
         }
 
-        rules = { double: {}, triple: {} };
-        for(let t = 0; t < 10; t++) {
+        let localRules = { double: {}, triple: {} };
+        for (let t = 0; t < 10; t++) {
             let bestDTail = -1, maxDHit = -1;
-            for(let nt = 0; nt < 10; nt++) {
-                if(dStats[t].hits[nt] > maxDHit) { maxDHit = dStats[t].hits[nt]; bestDTail = nt; }
+            for (let nt = 0; nt < 10; nt++) {
+                if (dStats[t].hits[nt] > maxDHit) { maxDHit = dStats[t].hits[nt]; bestDTail = nt; }
             }
-            rules.double[t] = { targetTail: bestDTail, score: dStats[t].total > 0 ? (maxDHit / dStats[t].total * 100) : 0, total: dStats[t].total };
+            localRules.double[t] = { targetTail: bestDTail, score: dStats[t].total > 0 ? (maxDHit / dStats[t].total * 100) : 0, total: dStats[t].total };
 
             let bestTTail = -1, maxTHit = -1;
-            for(let nt = 0; nt < 10; nt++) {
-                if(tStats[t].hits[nt] > maxTHit) { maxTHit = tStats[t].hits[nt]; bestTTail = nt; }
+            for (let nt = 0; nt < 10; nt++) {
+                if (tStats[t].hits[nt] > maxTHit) { maxTHit = tStats[t].hits[nt]; bestTTail = nt; }
             }
-            rules.triple[t] = { targetTail: bestTTail, score: tStats[t].total > 0 ? (maxTHit / tStats[t].total * 100) : 0, total: tStats[t].total };
+            localRules.triple[t] = { targetTail: bestTTail, score: tStats[t].total > 0 ? (maxTHit / tStats[t].total * 100) : 0, total: tStats[t].total };
         }
+        return localRules;
     }
 
-    function getSmartPatterns(nums) {
+    // 接收動態規則來產生當日訊號
+    function getSmartPatterns(nums, currentRules) {
         let patterns = [];
         let tails = nums.map(n => n % 10);
         let counts = new Array(10).fill(0);
@@ -215,10 +220,10 @@
 
         for (let t = 0; t < 10; t++) {
             if (counts[t] >= 3) {
-                let r = rules.triple[t];
+                let r = currentRules.triple[t];
                 if(r && r.total > 0) patterns.push({ type: `三尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail), score: r.score });
             } else if (counts[t] >= 2) {
-                let r = rules.double[t];
+                let r = currentRules.double[t];
                 if(r && r.total > 0) patterns.push({ type: `雙尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail), score: r.score });
             }
         }
@@ -226,19 +231,19 @@
     }
 
     function runAnalysis() {
-        // 建立每一天的日誌陣列
         let dailyView = parsedData.map(d => ({ date: d.date, nums: d.nums, events: [] }));
         let tracking = [];
         let stats = { total: 0, hit: 0 };
 
         for (let i = 0; i < parsedData.length; i++) {
-            let patterns = getSmartPatterns(parsedData[i].nums);
+            // 【修正核心】每天都使用當下累積的歷史資料來計算規則
+            let currentRules = getRulesForDay(i);
+            let patterns = getSmartPatterns(parsedData[i].nums, currentRules);
             
             patterns.forEach(p => {
                 if (p.target.length === 0) return;
                 stats.total++;
                 
-                // 1. 記錄今天產生的「新訊號」
                 dailyView[i].events.push({
                     type: 'trigger',
                     pattern: p
@@ -246,7 +251,6 @@
 
                 let hitInfo = null;
                 
-                // 往後尋找三天內是否命中
                 for (let j = 1; j <= 3; j++) {
                     if (i + j < parsedData.length) {
                         let hitNums = intersect(p.target, parsedData[i+j].nums);
@@ -259,7 +263,6 @@
                 }
                 
                 if (hitInfo) {
-                    // 2. 如果有命中，把命中事件記錄在「命中那一天」
                     dailyView[hitInfo.hitIndex].events.push({
                         type: 'hit',
                         pattern: p,
@@ -268,10 +271,8 @@
                         hitNums: hitInfo.n
                     });
                 } else if (parsedData.length - 1 - i < 3) {
-                    // 尚未到期，加入目前追蹤中卡片
                     tracking.push({ ...p, date: parsedData[i].date, age: parsedData.length - i });
                 } else {
-                    // 3. 如果三期都沒命中，把失敗事件記錄在「第三天」
                     dailyView[i + 3].events.push({
                         type: 'miss',
                         pattern: p,
@@ -298,11 +299,9 @@
         const listHtml = dailyView.slice().reverse().map(d => {
             let eventsHtml = '';
             
-            // 判斷這一天是否有任何事件
             if (d.events.length === 0) {
                 eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無訊號</div>`;
             } else {
-                // 渲染這天發生的所有事件
                 eventsHtml = d.events.map(e => {
                     if (e.type === 'trigger') {
                         return `
@@ -344,7 +343,7 @@
         // 渲染統計摘要
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
-        document.getElementById('summaryArea').innerHTML = `💡 <b>歷史結算：</b>共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b>`;
+        document.getElementById('summaryArea').innerHTML = `💡 <b>歷史結算 (動態滾動回測)：</b>共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b>`;
     }
 
     window.onload = processData;
