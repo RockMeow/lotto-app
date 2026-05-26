@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>星級版路全自動挖掘系統</title>
+    <title>星級版路全自動挖掘系統 (邏輯修正版)</title>
     <meta name="theme-color" content="#3b82f6">
     <style>
         :root {
@@ -21,21 +21,17 @@
         body { font-family: -apple-system, system-ui, sans-serif; background-color: var(--bg); color: var(--text); padding: 10px; line-height: 1.4; }
         .container { max-width: 600px; margin: 0 auto; }
 
-        /* Header Area */
         .header { background: linear-gradient(135deg, var(--primary), #485460); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;}
         h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
 
-        /* Controls */
         .selector-box { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #dcdde1; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         select { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #dcdde1; font-size: 1rem; appearance: none; background: #fff; margin-bottom: 10px; cursor: pointer; outline: none; font-weight:bold; color: var(--primary);}
         select:focus { border-color: var(--accent); }
         .status-bar { font-size: 0.85rem; color: #747d8c; display: flex; align-items: center; gap: 5px; margin-top: 10px; }
         
-        /* Auto Scan Button */
         .btn-scan { width: 100%; background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(15, 185, 177, 0.3); transition: background 0.2s; margin-bottom: 5px; }
         .btn-scan:active { background: #0da8a1; transform: translateY(2px); }
 
-        /* Prediction Cards */
         .section-title { font-size: 1rem; font-weight: bold; margin: 15px 0 10px 5px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
         #predictionArea { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
         .pred-card { background: var(--card); padding: 15px; border-radius: 12px; border-left: 6px solid var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
@@ -47,16 +43,13 @@
         .score-high { background: #f7b731; color: #fff; }
         .score-perfect { background: var(--success); color: white; }
 
-        /* Summary Area */
         .summary { background: #e0f7fa; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #b2ebf2; color: #006064; }
 
-        /* Result List */
         .result-item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #dcdde1; }
         .res-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; border-bottom: 1px dashed #dcdde1; padding-bottom: 8px; }
         .res-date { font-weight: bold; color: var(--primary); }
         .res-actual { font-family: monospace; font-size: 1rem; color: #2f3542; font-weight: bold; }
         
-        /* Event Details */
         .hit-detail { background: #f0fdf4; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #bbf7d0; }
         .miss-detail { background: #f9fafb; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #eee; }
         .trigger-detail { background: #eff6ff; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #bfdbfe; }
@@ -92,7 +85,6 @@
         <button class="btn-scan" onclick="autoScanPatterns()">🚀 點此一鍵掃描最強版路</button>
         
         <select id="patternSelect" onchange="runAnalysis()" style="display:none; margin-top: 10px;">
-            <!-- 自動生成的版路會放這裡 -->
         </select>
 
         <div class="status-bar">
@@ -113,7 +105,7 @@
 <script>
     let parsedData = [];
     let maxNum = 39;
-    let dynamicConfigs = {}; // 儲存挖掘出來的版路
+    let dynamicConfigs = {}; 
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
@@ -162,12 +154,11 @@
         }
     }
 
-    // 核心引擎：掃描所有可能的規則組合
     function autoScanPatterns() {
         const statusEl = document.getElementById('dataStatus');
         statusEl.innerText = "🔍 AI 演算挖掘中，請稍候...";
         
-        setTimeout(() => { // 用 setTimeout 讓 UI 先更新狀態文字
+        setTimeout(() => { 
             const bases = [
                 {id: 'date', name: '日期'},
                 {id: 'min_num', name: '最小號'},
@@ -179,22 +170,24 @@
             const wdayNames = ['日', '一', '二', '三', '四', '五', '六'];
             
             let discovered = [];
-            dynamicConfigs = {}; // 清空之前的
+            dynamicConfigs = {}; 
 
-            // 窮舉迴圈
-            for(let w = 1; w <= 6; w++) { // 觸發星期 (跳過週日)
+            for(let w = 1; w <= 6; w++) { 
                 for(let b of bases) {
                     for(let off of offsetsList) {
-                        for(let span of [1, 2]) { // 1期(高風險高利) 或 2期(高容錯)
+                        for(let span of [1, 2]) { 
                             let tDays = [];
-                            for(let s = 1; s <= span; s++) {
+                            // 修正：從 s = 0 (當天) 開始計算
+                            for(let s = 0; s < span; s++) { 
                                 let d = (w + s) % 7;
-                                if(d !== 0) tDays.push(d); // 避開週日沒開獎的日子
+                                if(d !== 0) tDays.push(d); 
                             }
                             if(tDays.length === 0) continue;
 
                             let offStr = off.map(o => o >= 0 ? `+${o}` : `${o}`).join(',');
                             let configId = `auto_${w}_${b.id}_${off.join('_')}_${span}`;
+                            
+                            let targetNames = tDays.map(d => wdayNames[d]).join('、');
                             
                             let config = {
                                 id: configId,
@@ -203,13 +196,11 @@
                                 triggerWday: w,
                                 targetWdays: tDays,
                                 offsets: off,
-                                desc: `${offStr} (看${span}期)`
+                                desc: `${offStr} (用於週${targetNames})`
                             };
                             
-                            // 用歷史資料測算此規則勝率
                             let res = getHistoricalWinRate(parsedData.length - 1, config);
                             
-                            // 嚴格篩選：只抓出現次數 > 5 次，且勝率 >= 75% 的黃金版路
                             if (res.total >= 5 && res.score >= 75) {
                                 discovered.push({...config, finalScore: res.score, finalTotal: res.total});
                             }
@@ -218,13 +209,11 @@
                 }
             }
 
-            // 根據勝率排序，若勝率相同則看出現次數
             discovered.sort((x, y) => {
                 if(y.finalScore !== x.finalScore) return y.finalScore - x.finalScore;
                 return y.finalTotal - x.finalTotal;
             });
 
-            // 綁定到 UI 上
             const selectEl = document.getElementById('patternSelect');
             selectEl.innerHTML = '';
             
@@ -233,18 +222,17 @@
                 return;
             }
 
-            discovered.forEach((conf, index) => {
-                dynamicConfigs[conf.id] = conf; // 存入字典
+            discovered.forEach((conf) => {
+                dynamicConfigs[conf.id] = conf; 
                 let option = document.createElement('option');
                 option.value = conf.id;
-                // 選單顯示樣式：[85.7%] 週一日期版路 (+0,+1,+2) -> 用於2期
                 option.text = `[勝率 ${conf.finalScore.toFixed(1)}%] ${conf.name} 👉 偏移 ${conf.desc}`;
                 selectEl.appendChild(option);
             });
 
             selectEl.style.display = 'block';
             statusEl.innerText = `✅ 挖掘完成！共找出 ${discovered.length} 組黃金版路`;
-            runAnalysis(); // 自動執行第一名的分析
+            runAnalysis(); 
 
         }, 50);
     }
@@ -261,7 +249,6 @@
         }).filter(v => v !== null);
     }
 
-    // 計算特定規則在目前的歷史勝率
     function getHistoricalWinRate(currentIndex, patternConfig) {
         let totalTriggers = 0;
         let successfulTriggers = 0;
@@ -276,7 +263,8 @@
             let isHit = false;
 
             for (let targetWday of patternConfig.targetWdays) {
-                for (let j = 1; j <= 5; j++) { // 向後找開獎日
+                // 修正：從 j = 0 (當天) 開始向後找
+                for (let j = 0; j <= 5; j++) { 
                     if (i + j <= currentIndex) {
                         if (parsedData[i + j].weekday === targetWday) {
                             let hits = intersect(targets, parsedData[i + j].nums);
@@ -295,7 +283,6 @@
         };
     }
 
-    // 執行選定版路的呈現
     function runAnalysis() {
         const patternId = document.getElementById('patternSelect').value;
         const config = dynamicConfigs[patternId];
@@ -311,7 +298,7 @@
             let targets = calculateTargets(parsedData[i], config);
             if (targets.length === 0) continue;
 
-            let r = getHistoricalWinRate(i, config); // 嚴格遵守當下時空的歷史勝率
+            let r = getHistoricalWinRate(i, config); 
             stats.total++;
 
             let signalEvent = {
@@ -326,7 +313,8 @@
             let hitInfo = null;
             let maxPeriodsToCheck = 5;
 
-            for (let j = 1; j <= maxPeriodsToCheck; j++) { // 從下一期開始驗證
+            // 修正：從 j = 0 (當天) 開始向後找
+            for (let j = 0; j <= maxPeriodsToCheck; j++) { 
                 if (i + j < parsedData.length) {
                     let nextRow = parsedData[i + j];
                     if (config.targetWdays.includes(nextRow.weekday)) {
@@ -354,7 +342,8 @@
                 let passedTargetDay = false;
                 let missIndex = i;
                 
-                for(let k = 1; k <= 5; k++) {
+                // 找出該目標週期的最後一天
+                for(let k = 0; k <= 5; k++) {
                     if (i + k < parsedData.length) {
                         if (parsedData[i+k].weekday === lastTargetWday) {
                             passedTargetDay = true;
@@ -389,7 +378,7 @@
             return `
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 滾動勝率</div>
-                <h3>${t.name} <span class="target-tail">設定值: ${t.desc}</span></h3>
+                <h3>${t.name} <span class="target-tail">設定: ${t.desc}</span></h3>
                 <div class="pred-info">觸發基準日: ${t.date} </div>
                 <span class="nums-highlight">${t.targets.map(fNum).join(', ')}</span>
             </div>`
