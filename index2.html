@@ -99,7 +99,7 @@
         </div>
     </div>
 
-    <div class="section-title">🕒 目前最新訊號追蹤 (當期/養牌中)</div>
+    <div class="section-title">🕒 目前最新訊號追蹤 (等待開獎)</div>
     <div id="predictionArea"></div>
     
     <div id="summaryArea" class="summary" style="display:none;"></div>
@@ -115,15 +115,12 @@
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
     
-    // 取得給定日期的星期幾 (0=日, 1=一, 2=二, 3=三, 4=四, 5=五, 6=六)
     function getWeekDay(dateStr) {
-        // 假設年份為 2026
         let parts = dateStr.split('/');
         let date = new Date(2026, parseInt(parts[0]) - 1, parseInt(parts[1]));
         return date.getDay();
     }
 
-    // 取得日期號碼
     function getDateDay(dateStr) {
         return parseInt(dateStr.split('/')[1]);
     }
@@ -162,7 +159,6 @@
         }
     }
 
-    // 根據版路設定，動態計算出當天產生的 3 個目標號碼
     function calculateTargets(row, patternConfig) {
         let baseValue = 0;
         if (patternConfig.baseType === 'date') {
@@ -177,7 +173,6 @@
         }).filter(v => v !== null);
     }
 
-    // 動態滾動計算到 currentIndex 為止，該版路的歷史勝率
     function getHistoricalWinRate(currentIndex, patternConfig) {
         let totalTriggers = 0;
         let successfulTriggers = 0;
@@ -191,9 +186,7 @@
             totalTriggers++;
             let isHit = false;
 
-            // 檢查指定的驗證目標星期
             for (let targetWday of patternConfig.targetWdays) {
-                // 向後搜尋最多 5 期找符合星期的開獎
                 for (let j = 1; j <= 5; j++) {
                     if (i + j <= currentIndex) {
                         if (parsedData[i + j].weekday === targetWday) {
@@ -216,7 +209,6 @@
     function runAnalysis() {
         const patternType = document.getElementById('patternSelect').value;
         
-        // 版路參數設定定義字典
         const configs = {
             'mon_date': { name: '週一日期版路', baseType: 'date', triggerWday: 1, targetWdays: [1, 2], offsets: [0, 1, 2], desc: '加 0, 1, 2' },
             'tue_date': { name: '週二日期版路', baseType: 'date', triggerWday: 2, targetWdays: [2, 3], offsets: [3, 4, 5], desc: '加 3, 4, 5' },
@@ -231,13 +223,11 @@
         let stats = { total: 0, hit: 0 };
 
         for (let i = 0; i < parsedData.length; i++) {
-            // 如果不是觸發的星期幾，就跳過不建立訊號
             if (parsedData[i].weekday !== config.triggerWday) continue;
 
             let targets = calculateTargets(parsedData[i], config);
             if (targets.length === 0) continue;
 
-            // 滾動計算截止到這期為止的歷史勝率
             let r = getHistoricalWinRate(i, config);
             stats.total++;
 
@@ -250,12 +240,10 @@
             };
             dailyView[i].events.push(signalEvent);
 
-            // 檢查是否命中
             let hitInfo = null;
-            let checkedPeriodsCount = 0; 
-            let maxPeriodsToCheck = 4; // 向後找包含指定星期的期數
+            let maxPeriodsToCheck = 5;
 
-            for (let j = 1; j <= maxPeriodsToCheck; j++) {
+            for (let j = 0; j <= maxPeriodsToCheck; j++) {
                 if (i + j < parsedData.length) {
                     let nextRow = parsedData[i + j];
                     if (config.targetWdays.includes(nextRow.weekday)) {
@@ -279,25 +267,21 @@
                     hitWdayName: wdayNames[hitInfo.hitWday]
                 });
             } else {
-                // 檢查是否還在「養牌效期內」
-                let isExpired = false;
                 let lastTargetWday = config.targetWdays[config.targetWdays.length - 1];
-                
-                // 如果最後一個目標星期已經在歷史中過去了，代表失效（Miss）
                 let passedTargetDay = false;
-                for(let k = 1; k <= 5; k++) {
+                let missIndex = i;
+                
+                for(let k = 0; k <= 5; k++) {
                     if (i + k < parsedData.length) {
                         if (parsedData[i+k].weekday === lastTargetWday) {
                             passedTargetDay = true;
+                            missIndex = i + k;
                             break;
                         }
                     }
                 }
 
                 if (passedTargetDay) {
-                    // 已開獎完畢未命中
-                    // 為了畫面乾淨，我們把 Miss 記錄在觸發當週的最後一個目標日上
-                    let missIndex = Math.min(i + 3, parsedData.length - 1);
                     dailyView[missIndex].events.push({
                         type: 'miss',
                         name: config.name,
@@ -305,7 +289,6 @@
                         triggerDate: parsedData[i].date
                     });
                 } else {
-                    // 還沒開完，列入追蹤名單
                     tracking.push({
                         name: config.name,
                         desc: config.desc,
@@ -317,7 +300,6 @@
             }
         }
 
-        // 渲染最新預測
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
@@ -328,12 +310,11 @@
                 <div class="pred-info">觸發基準日: ${t.date} </div>
                 <span class="nums-highlight">${t.targets.map(fNum).join(', ')}</span>
             </div>`
-        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">該版路目前無最新訊號或已養牌結束 ☕</div>';
+        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">該版路目前無最新訊號或已驗證完畢 ☕</div>';
 
-        // 渲染歷史列表
         const wdayNames = ['日', '一', '二', '三', '四', '五', '六'];
         const listHtml = dailyView.slice().reverse().map(d => {
-            if (d.events.length === 0) return ''; // 只顯示有發生事件的日期，畫面更乾淨
+            if (d.events.length === 0) return ''; 
             
             let eventsHtml = d.events.map(e => {
                 if (e.type === 'trigger') {
@@ -353,7 +334,7 @@
                 } else if (e.type === 'miss') {
                     return `
                     <div class="miss-detail">
-                        <div class="hit-type" style="color:#636e72;">❌ 養牌落空 【${e.name}】</div>
+                        <div class="hit-type" style="color:#636e72;">❌ 版路落空 【${e.name}】</div>
                         <div class="miss-nums">失準號碼: ${e.targets.map(fNum).join(', ')}</div>
                         <div class="miss-status">歷史備忘: 起始觸發日為 ${e.triggerDate}</div>
                     </div>`;
@@ -370,7 +351,7 @@
             </div>`;
         }).join('');
         
-        document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px; color:#999;">尚報無符合版路紀錄</div>';
+        document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px; color:#999;">尚無符合版路紀錄</div>';
 
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
