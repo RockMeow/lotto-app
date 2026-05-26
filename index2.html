@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>星級版路全自動挖掘系統 (邏輯修正版)</title>
+    <title>星級版路全自動挖掘系統 (嚴格無未來函數版)</title>
     <meta name="theme-color" content="#3b82f6">
     <style>
         :root {
@@ -156,7 +156,7 @@
 
     function autoScanPatterns() {
         const statusEl = document.getElementById('dataStatus');
-        statusEl.innerText = "🔍 AI 演算挖掘中，請稍候...";
+        statusEl.innerText = "🔍 嚴格邏輯演算挖掘中，請稍候...";
         
         setTimeout(() => { 
             const bases = [
@@ -175,13 +175,22 @@
             for(let w = 1; w <= 6; w++) { 
                 for(let b of bases) {
                     for(let off of offsetsList) {
-                        for(let span of [1, 2]) { 
+                        for(let span of [1, 2]) { // span 代表我們要「看幾期」
                             let tDays = [];
-                            // 修正：從 s = 0 (當天) 開始計算
-                            for(let s = 0; s < span; s++) { 
+                            
+                            // 🌟 核心修正：動態起點！日期從當天(0)算起，號碼必須從隔天(1)算起
+                            let startS = (b.id === 'date') ? 0 : 1; 
+                            let s = startS;
+                            
+                            // 確保精確找滿設定的期數(span)，並自動跳過沒有開獎的週日
+                            while (tDays.length < span && s <= startS + 3) {
                                 let d = (w + s) % 7;
-                                if(d !== 0) tDays.push(d); 
+                                if (d !== 0) {
+                                    tDays.push(d);
+                                }
+                                s++;
                             }
+                            
                             if(tDays.length === 0) continue;
 
                             let offStr = off.map(o => o >= 0 ? `+${o}` : `${o}`).join(',');
@@ -194,14 +203,14 @@
                                 name: `週${wdayNames[w]} 【${b.name}】`,
                                 baseType: b.id,
                                 triggerWday: w,
-                                targetWdays: tDays,
+                                targetWdays: tDays, // 這裡已經是完美對應的星期了
                                 offsets: off,
                                 desc: `${offStr} (用於週${targetNames})`
                             };
                             
                             let res = getHistoricalWinRate(parsedData.length - 1, config);
                             
-                            if (res.total >= 5 && res.score >= 75) {
+                            if (res.total >= 5 && res.score >= 70) {
                                 discovered.push({...config, finalScore: res.score, finalTotal: res.total});
                             }
                         }
@@ -218,7 +227,7 @@
             selectEl.innerHTML = '';
             
             if (discovered.length === 0) {
-                statusEl.innerText = "⚠️ 找不到勝率 >75% 的版路，請等待新數據。";
+                statusEl.innerText = "⚠️ 找不到勝率 >70% 的版路，請等待新數據。";
                 return;
             }
 
@@ -263,7 +272,7 @@
             let isHit = false;
 
             for (let targetWday of patternConfig.targetWdays) {
-                // 修正：從 j = 0 (當天) 開始向後找
+                // 因為 targetWdays 已經嚴格設定好，這裡直接用 j=0 (含當天) 向後掃描即可
                 for (let j = 0; j <= 5; j++) { 
                     if (i + j <= currentIndex) {
                         if (parsedData[i + j].weekday === targetWday) {
@@ -313,7 +322,6 @@
             let hitInfo = null;
             let maxPeriodsToCheck = 5;
 
-            // 修正：從 j = 0 (當天) 開始向後找
             for (let j = 0; j <= maxPeriodsToCheck; j++) { 
                 if (i + j < parsedData.length) {
                     let nextRow = parsedData[i + j];
@@ -342,7 +350,6 @@
                 let passedTargetDay = false;
                 let missIndex = i;
                 
-                // 找出該目標週期的最後一天
                 for(let k = 0; k <= 5; k++) {
                     if (i + k < parsedData.length) {
                         if (parsedData[i+k].weekday === lastTargetWday) {
