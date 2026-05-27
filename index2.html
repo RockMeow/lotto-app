@@ -205,7 +205,7 @@
                                 triggerWday: w,
                                 targetWdays: tDays, // 這裡已經是完美對應的星期了
                                 offsets: off,
-                                desc: `${offStr} (用於週${targetNames})`
+                                desc: `${offStr} (週${targetNames})`
                             };
                             
                             let res = getHistoricalWinRate(parsedData.length - 1, config);
@@ -235,7 +235,7 @@
                 dynamicConfigs[conf.id] = conf; 
                 let option = document.createElement('option');
                 option.value = conf.id;
-                option.text = `[勝率 ${conf.finalScore.toFixed(1)}%] ${conf.name} 👉 偏移 ${conf.desc}`;
+                option.text = `[${conf.finalScore.toFixed(1)}%] ${conf.name} 👉 ${conf.desc}`;
                 selectEl.appendChild(option);
             });
 
@@ -389,7 +389,7 @@
                 <div class="pred-info">觸發基準日: ${t.date} </div>
                 <span class="nums-highlight">${t.targets.map(fNum).join(', ')}</span>
             </div>`
-        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">該版路目前無最新訊號或已驗證完畢 ☕</div>';
+        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">該版路目前無最新訊號或已開獎完畢 ☕</div>';
 
         const wdayNames = ['日', '一', '二', '三', '四', '五', '六'];
         const listHtml = dailyView.slice().reverse().map(d => {
