@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>星級版路全自動挖掘系統 (嚴格無未來函數版)</title>
+    <title>星期版路自動搜尋系統</title>
     <meta name="theme-color" content="#3b82f6">
     <style>
         :root {
@@ -70,7 +70,7 @@
 
 <div class="container">
     <div class="header">
-        <h1>星級版路全自動挖掘系統</h1>
+        <h1>星期版路自動搜尋系統</h1>
     </div>
     
     <div class="selector-box">
@@ -82,7 +82,7 @@
             <option value="Six_history_2026.csv">六合彩</option>
         </select>
         
-        <button class="btn-scan" onclick="autoScanPatterns()">🚀 點此一鍵掃描最強版路</button>
+        <button class="btn-scan" onclick="autoScanPatterns()">🚀 掃描</button>
         
         <select id="patternSelect" onchange="runAnalysis()" style="display:none; margin-top: 10px;">
         </select>
@@ -146,7 +146,7 @@
             
             statusEl.innerText = `✅ 載入成功 (${parsedData.length} 期)，請點擊掃描按鈕！`;
             document.getElementById('patternSelect').style.display = 'none';
-            document.getElementById('predictionArea').innerHTML = '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">請點擊上方按鈕掃描最強版路 🚀</div>';
+            document.getElementById('predictionArea').innerHTML = '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">請點擊上方按鈕掃描 🚀</div>';
             document.getElementById('resultList').innerHTML = '';
             document.getElementById('summaryArea').style.display = 'none';
         } catch(e) { 
@@ -240,7 +240,7 @@
             });
 
             selectEl.style.display = 'block';
-            statusEl.innerText = `✅ 挖掘完成！共找出 ${discovered.length} 組黃金版路`;
+            statusEl.innerText = `✅ 搜尋完成！共找出 ${discovered.length} 組版路`;
             runAnalysis(); 
 
         }, 50);
@@ -434,7 +434,7 @@
 
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
-        document.getElementById('summaryArea').innerHTML = `💡 <b>當前版路歷史總計 (動態滾動回測)：</b>共觸發 <b>${stats.total}</b> 次，成功命中 <b>${stats.hit}</b> 次，平均精準率達 <b>${hitRate}%</b>`;
+        document.getElementById('summaryArea').innerHTML = `💡 <b>目前版路歷史總計 (動態滾動回測)：</b>共觸發 <b>${stats.total}</b> 次，成功命中 <b>${stats.hit}</b> 次，平均精準率達 <b>${hitRate}%</b>`;
     }
 
     window.onload = processData;
