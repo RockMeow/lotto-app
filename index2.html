@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>星期版路自動搜尋系統</title>
-    <link rel="manifest" href="manifest2.json">
     <meta name="theme-color" content="#3b82f6">
     <style>
         :root {
@@ -43,6 +42,8 @@
         .score-tag { position: absolute; top: 0; right: 0; background: #dfe4ea; color: #2f3542; padding: 4px 10px; border-bottom-left-radius: 10px; font-size: 0.75rem; font-weight: bold; }
         .score-high { background: #f7b731; color: #fff; }
         .score-perfect { background: var(--success); color: white; }
+        
+        .virtual-tag { background: #e74c3c; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 5px; vertical-align: top;}
 
         .summary { background: #e0f7fa; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #b2ebf2; color: #006064; }
 
@@ -176,14 +177,12 @@
             for(let w = 1; w <= 6; w++) { 
                 for(let b of bases) {
                     for(let off of offsetsList) {
-                        for(let span of [1, 2]) { // span 代表我們要「看幾期」
+                        for(let span of [1, 2]) { 
                             let tDays = [];
                             
-                            // 🌟 核心修正：動態起點！日期從當天(0)算起，號碼必須從隔天(1)算起
                             let startS = (b.id === 'date') ? 0 : 1; 
                             let s = startS;
                             
-                            // 確保精確找滿設定的期數(span)，並自動跳過沒有開獎的週日
                             while (tDays.length < span && s <= startS + 3) {
                                 let d = (w + s) % 7;
                                 if (d !== 0) {
@@ -204,7 +203,7 @@
                                 name: `週${wdayNames[w]} (${b.name})`,
                                 baseType: b.id,
                                 triggerWday: w,
-                                targetWdays: tDays, // 這裡已經是完美對應的星期了
+                                targetWdays: tDays,
                                 offsets: off,
                                 desc: `${offStr} (週${targetNames})`
                             };
@@ -273,7 +272,6 @@
             let isHit = false;
 
             for (let targetWday of patternConfig.targetWdays) {
-                // 因為 targetWdays 已經嚴格設定好，這裡直接用 j=0 (含當天) 向後搜尋即可
                 for (let j = 0; j <= 5; j++) { 
                     if (i + j <= currentIndex) {
                         if (parsedData[i + j].weekday === targetWday) {
@@ -380,14 +378,56 @@
             }
         }
 
+        // 🌟 核心增補：虛擬「今日預測」生成器
+        // 如果這個版路是「日期版路」，而且 CSV 裡最新一天的「明天」或「後天」剛好吻合這個版路的觸發日，系統就直接幫您把號碼算出來！
+        if (parsedData.length > 0 && config.baseType === 'date') {
+            let lastRow = parsedData[parsedData.length - 1];
+            let lastDateParts = lastRow.date.split('/');
+            let lastDateObj = new Date(2026, parseInt(lastDateParts[0]) - 1, parseInt(lastDateParts[1]));
+            
+            // 往後看 1~3 天，看有沒有碰到這個版路的觸發星期
+            for(let offsetDays = 1; offsetDays <= 3; offsetDays++) {
+                let futureDateObj = new Date(lastDateObj);
+                futureDateObj.setDate(futureDateObj.getDate() + offsetDays);
+                let futureWday = futureDateObj.getDay();
+                
+                if (futureWday === config.triggerWday) {
+                    let futureMonth = String(futureDateObj.getMonth() + 1).padStart(2, '0');
+                    let futureDay = String(futureDateObj.getDate()).padStart(2, '0');
+                    let futureDateStr = `${futureMonth}/${futureDay}`;
+                    let futureDayNum = futureDateObj.getDate();
+                    
+                    // 利用虛擬行來計算 Target
+                    let virtualRow = { dayNum: futureDayNum };
+                    let virtualTargets = calculateTargets(virtualRow, config);
+                    
+                    if (virtualTargets.length > 0) {
+                        // 取得最新的勝率數據
+                        let currentWinRate = getHistoricalWinRate(parsedData.length - 1, config);
+                        
+                        tracking.unshift({
+                            name: config.name,
+                            desc: config.desc,
+                            targets: virtualTargets,
+                            date: futureDateStr,
+                            score: currentWinRate.score,
+                            isVirtual: true // 標記這是我們預推出來的
+                        });
+                        break; // 找到最近的一個就跳出
+                    }
+                }
+            }
+        }
+
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score >= 85 ? 'score-perfect' : (t.score >= 75 ? 'score-high' : '');
+            let virtualBadge = t.isVirtual ? '<span class="virtual-tag">提前佈局</span>' : '';
             return `
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 滾動勝率</div>
-                <h3>${t.name} <span class="target-tail">設定: ${t.desc}</span></h3>
-                <div class="pred-info">觸發基準日: ${t.date} </div>
+                <h3>${t.name} ${virtualBadge}</h3>
+                <div class="pred-info">觸發基準日: ${t.date} <span style="margin-left:5px;" class="target-tail">公式: ${t.desc}</span></div>
                 <span class="nums-highlight">${t.targets.map(fNum).join(', ')}</span>
             </div>`
         }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">該版路目前無最新訊號或已開獎完畢 ☕</div>';
