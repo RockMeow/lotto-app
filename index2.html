@@ -82,7 +82,7 @@
             <option value="Six_history_2026.csv">六合彩</option>
         </select>
         
-        <button class="btn-scan" onclick="autoScanPatterns()">掃描</button>
+        <button class="btn-scan" onclick="autoScanPatterns()">搜尋</button>
         
         <select id="patternSelect" onchange="runAnalysis()" style="display:none; margin-top: 10px;">
         </select>
@@ -144,9 +144,9 @@
                 parsedData.push({ date: cols[0], nums: nums, weekday: getWeekDay(cols[0]), dayNum: getDateDay(cols[0]) });
             }
             
-            statusEl.innerText = `✅ 載入成功 (${parsedData.length} 期)，請點擊掃描按鈕！`;
+            statusEl.innerText = `✅ 載入成功 (${parsedData.length} 期)，請點擊搜尋按鈕！`;
             document.getElementById('patternSelect').style.display = 'none';
-            document.getElementById('predictionArea').innerHTML = '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">請點擊上方按鈕掃描</div>';
+            document.getElementById('predictionArea').innerHTML = '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">請點擊上方搜尋按鈕</div>';
             document.getElementById('resultList').innerHTML = '';
             document.getElementById('summaryArea').style.display = 'none';
         } catch(e) { 
@@ -156,7 +156,7 @@
 
     function autoScanPatterns() {
         const statusEl = document.getElementById('dataStatus');
-        statusEl.innerText = "🔍 邏輯演算掃描中，請稍候...";
+        statusEl.innerText = "🔍 邏輯演算搜尋中，請稍候...";
         
         setTimeout(() => { 
             const bases = [
@@ -272,7 +272,7 @@
             let isHit = false;
 
             for (let targetWday of patternConfig.targetWdays) {
-                // 因為 targetWdays 已經嚴格設定好，這裡直接用 j=0 (含當天) 向後掃描即可
+                // 因為 targetWdays 已經嚴格設定好，這裡直接用 j=0 (含當天) 向後搜尋即可
                 for (let j = 0; j <= 5; j++) { 
                     if (i + j <= currentIndex) {
                         if (parsedData[i + j].weekday === targetWday) {
