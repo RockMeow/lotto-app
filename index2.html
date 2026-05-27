@@ -422,7 +422,7 @@
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score >= 85 ? 'score-perfect' : (t.score >= 75 ? 'score-high' : '');
-            let virtualBadge = t.isVirtual ? '<span class="virtual-tag">提前佈局</span>' : '';
+            let virtualBadge = t.isVirtual ? '<span class="virtual-tag">預測</span>' : '';
             return `
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 滾動勝率</div>
