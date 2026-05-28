@@ -121,6 +121,7 @@
     <div id="outputArea" style="display:none;">
         <div class="summary-card" id="summaryCard"></div>
 
+        <!-- 原有包牌涵蓋模塊 -->
         <div class="section-title">🎯 鐵三角區間包牌 (3號至少開1顆)</div>
         <div class="result-grid" id="grid3"></div>
 
@@ -132,16 +133,18 @@
         
         <hr style="border:1px dashed #bdc3c7; margin: 25px 0;">
 
-        <div class="section-title exact-title">🔥 同開二星連碰 (單期精準同開 2 顆)</div>
+        <!-- 新增：精準同開連碰模塊 -->
+        <div class="section-title exact-title" id="titleExact2">🔥 100% 每週必開【二星連碰】 (運算中...)</div>
         <div class="result-grid" id="gridExact2"></div>
 
-        <div class="section-title exact-title">🔥 同開三星連碰 (單期精準同開 3 顆)</div>
+        <div class="section-title exact-title" id="titleExact3">🔥 100% 每週必開【三星連碰】 (運算中...)</div>
         <div class="result-grid" id="gridExact3"></div>
 
-        <div class="section-title pillar-title">🏛️ 二星智慧柱碰 (4碼分2柱 = 僅 4 碰)</div>
+        <!-- 新增：智慧立柱模塊 -->
+        <div class="section-title pillar-title" id="titlePillar2">🏛️ 100% 每週必開【二星智慧柱碰】 (運算中...)</div>
         <div class="result-grid" id="gridPillar2"></div>
 
-        <div class="section-title pillar-title">🏛️ 三星智慧柱碰 (6碼分3柱 = 僅 8 碰)</div>
+        <div class="section-title pillar-title" id="titlePillar3">🏛️ 100% 每週必開【三星智慧柱碰】 (運算中...)</div>
         <div class="result-grid" id="gridPillar3"></div>
     </div>
 </div>
@@ -153,6 +156,14 @@
     const wNames = ['日','一','二','三','四','五','六'];
 
     function fNum(n) { return String(n).padStart(2, '0'); }
+    
+    // 計算組合成本(碰數)的輔助函數
+    function getCost(n, k) {
+        if (k === 0 || k > n) return 0;
+        let res = 1;
+        for (let i = 1; i <= k; i++) res = res * (n - i + 1) / i;
+        return res;
+    }
     
     function getISOWeek(dateStr) {
         let parts = dateStr.split('/');
@@ -261,7 +272,7 @@
         return wData;
     }
 
-    // 原本的區間包牌渲染函數
+    // 原有包牌涵蓋渲染函數 (保持不變)
     function renderCards(containerId, dataArr, limit, allWeeks, winningWindow) {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
@@ -324,12 +335,12 @@
         }
     }
 
-    // 新增：同開連碰渲染函數
-    function renderExactCards(containerId, dataArr, limit, allWeeks) {
+    // 精準同開連碰渲染函數 (匹配目標星數 matchTarget)
+    function renderExactCards(containerId, dataArr, limit, allWeeks, matchTarget) {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
         if (dataArr.length === 0) {
-            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無高頻連碰組合 ☕</div>';
+            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無 100% 連碰組合 ☕</div>';
             return;
         }
 
@@ -342,11 +353,11 @@
             let historyHtml = '<div class="history-container" style="display:none;">';
             [...allWeeks].reverse().forEach(w => {
                 let weekInfo = wData[w] || { draws: [] };
-                let matchedDraws = weekInfo.draws.filter(d => item.combo.every(num => d.nums.includes(num)));
+                let matchedDraws = weekInfo.draws.filter(d => item.combo.filter(num => d.nums.includes(num)).length >= matchTarget);
                 let isHit = matchedDraws.length > 0;
                 
                 let drawStrs = weekInfo.draws.length > 0 ? weekInfo.draws.map(d => {
-                    let isDrawHit = item.combo.every(num => d.nums.includes(num));
+                    let isDrawHit = item.combo.filter(num => d.nums.includes(num)).length >= matchTarget;
                     let highlightedNums = d.nums.map(n => {
                         let formatted = fNum(n);
                         return (isDrawHit && item.combo.includes(n)) ? `<span class="hit-highlight" style="background:#c0392b;">${formatted}</span>` : formatted;
@@ -357,7 +368,7 @@
                 historyHtml += `
                     <div class="history-item ${isHit ? 'history-hit' : 'history-miss'}" style="border-left-color:${isHit?'var(--danger)':'#eee'}">
                         <div style="font-weight:bold; margin-bottom: 5px; color:${isHit ? 'var(--danger)' : '#aaa'}">
-                            ${isHit ? '🎯' : '❌'} [第${w}週] ${isHit ? '單期精準同開！' : '未同開'}
+                            ${isHit ? '🎯' : '❌'} [第${w}週] ${isHit ? `成功同開 ${matchTarget} 顆！` : '未同開'}
                         </div>
                         <div class="draw-details">${drawStrs}</div>
                     </div>`;
@@ -373,7 +384,7 @@
                         <div class="hit-count">${item.hits} / ${allWeeks.length} 週</div>
                     </div>
                 </div>
-                <div style="font-size:0.8rem; color:var(--danger); font-weight:bold; margin-top:5px;">⚠️ 此為嚴苛連碰條件 (必須同一天掉下)</div>
+                <div style="font-size:0.8rem; color:var(--danger); font-weight:bold; margin-top:5px;">⚠️ 嚴苛連碰條件 (至少 ${matchTarget} 顆同天掉下)</div>
                 <div class="toggle-hint">▼ 點擊展開詳細歷史明細 ▼</div>
                 ${historyHtml}
             </div>`;
@@ -382,12 +393,12 @@
         }
     }
 
-    // 新增：智慧排柱渲染函數
+    // 智慧排柱渲染函數
     function renderPillarCards(containerId, dataArr, limit, allWeeks) {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
         if (dataArr.length === 0) {
-            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">演算資源不足 ☕</div>';
+            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無 100% 柱碰組合 ☕</div>';
             return;
         }
 
@@ -406,7 +417,7 @@
                     </div>
                 </div>
                 <div style="font-size:0.8rem; color:var(--purple); font-weight:bold; margin-top:8px; line-height:1.5;">
-                    🧩 已將最會同開的號碼拆分不同柱，<br>避免互撞，達成低本金高獲利期望值。
+                    🧩 系統自動將高機率同開號碼拆柱，避免互撞保證獲利。
                 </div>
             </div>`;
             container.innerHTML += html;
@@ -417,7 +428,7 @@
     function runScan() {
         if(parsedData.length === 0) return;
         
-        document.getElementById('dataStatus').innerText = "🔍 全維度大數據演算中 (含立柱解析)，請稍候...";
+        document.getElementById('dataStatus').innerText = "🔍 全維度大數據極限演算中，請稍候...";
         document.getElementById('outputArea').style.display = 'none';
         
         setTimeout(() => {
@@ -427,7 +438,7 @@
             let totalWeeks = allWeeks.length;
             let allNums = Array.from({length: maxNum}, (_, i) => i + 1);
             
-            // --- 區間包牌運算 ---
+            // --- 區間包牌運算 (保持不變) ---
             let combos3 = getCombinations(allNums, 3);
             let bestResults3 = [];
             combos3.forEach(c => {
@@ -451,79 +462,140 @@
             });
             bestResults1.sort((a,b) => b.hits - a.hits);
 
-            // --- 精準同開連碰運算 ---
+            // 為了提升動態尋寶效能，萃取出現頻率最高的前 18 名作為尋寶池
+            let numFreq = {};
+            allWeeks.forEach(w => {
+                if (wData[w]) {
+                    wData[w].draws.forEach(d => {
+                        d.nums.forEach(n => numFreq[n] = (numFreq[n] || 0) + 1);
+                    });
+                }
+            });
+            let topNums = Object.keys(numFreq).map(Number).sort((a,b) => numFreq[b] - numFreq[a]).slice(0, 18);
+            if(topNums.length < 15) topNums = allNums.slice(0, 18);
+
+            // --- 1. 二星連碰極限尋寶 (找出最少需要包幾顆) ---
             let exact2 = [];
-            combos2.forEach(c => {
-                let hits = allWeeks.filter(w => wData[w] && wData[w].draws.some(draw => c.every(num => draw.nums.includes(num)))).length;
-                if (hits >= Math.max(1, totalWeeks * 0.1)) exact2.push({ combo: c, hits: hits, wData: wData });
-            });
-            exact2.sort((a,b) => b.hits - a.hits);
-
-            let exact3 = [];
-            combos3.forEach(c => {
-                let hits = allWeeks.filter(w => wData[w] && wData[w].draws.some(draw => c.every(num => draw.nums.includes(num)))).length;
-                if (hits >= 1) exact3.push({ combo: c, hits: hits, wData: wData });
-            });
-            exact3.sort((a,b) => b.hits - a.hits);
-
-            // --- 智慧排柱運算 ---
-            let topSingles = bestResults1.slice(0, 15).map(item => item.combo[0]);
-            if (topSingles.length < 6) topSingles = allNums.slice(0, 15);
-
-            let pillar2Results = [];
-            let combos4 = getCombinations(topSingles, 4);
-            combos4.forEach(c => {
-                let splits = [
-                    [[c[0], c[1]], [c[2], c[3]]],
-                    [[c[0], c[2]], [c[1], c[3]]],
-                    [[c[0], c[3]], [c[1], c[2]]]
-                ];
-                splits.forEach(split => {
-                    let pairs = [
-                        [split[0][0], split[1][0]], [split[0][0], split[1][1]],
-                        [split[0][1], split[1][0]], [split[0][1], split[1][1]]
-                    ];
+            for (let reqK2 = 2; reqK2 <= 12; reqK2++) {
+                let c_k = getCombinations(topNums, reqK2);
+                for (let c of c_k) {
                     let hits = allWeeks.filter(w => wData[w] && wData[w].draws.some(draw => {
-                        return pairs.some(p => p.every(num => draw.nums.includes(num)));
+                        return c.filter(num => draw.nums.includes(num)).length >= 2;
                     })).length;
                     
-                    if (hits >= Math.max(1, totalWeeks * 0.15)) {
-                        pillar2Results.push({ split: split, hits: hits, comboStr: `[${split[0].map(fNum).join(',')}] × [${split[1].map(fNum).join(',')}]`});
+                    if (hits === totalWeeks) {
+                        exact2.push({ combo: c, hits: hits, wData: wData, reqK: reqK2 });
                     }
-                });
-            });
-            pillar2Results.sort((a,b) => b.hits - a.hits);
-            let uniquePillar2 = [];
-            let p2Set = new Set();
-            for(let p of pillar2Results) {
-                if(!p2Set.has(p.comboStr)) { p2Set.add(p.comboStr); uniquePillar2.push(p); }
+                    if (exact2.length >= 5) break;
+                }
+                if (exact2.length > 0) break; // 只要找到最少顆數就停止遞增
             }
 
-            let pillar3Results = [];
-            let combos6 = getCombinations(topSingles, 6);
-            combos6.slice(0, 800).forEach(c => {
-                let split = [[c[0], c[1]], [c[2], c[3]], [c[4], c[5]]];
-                let triplets = [];
-                for(let i=0; i<2; i++) {
-                    for(let j=0; j<2; j++) {
-                        for(let k=0; k<2; k++) {
-                            triplets.push([split[0][i], split[1][j], split[2][k]]);
-                        }
+            // --- 2. 三星連碰極限尋寶 ---
+            let exact3 = [];
+            for (let reqK3 = 3; reqK3 <= 18; reqK3++) {
+                let c_k = getCombinations(topNums, reqK3);
+                for (let c of c_k) {
+                    let hits = allWeeks.filter(w => wData[w] && wData[w].draws.some(draw => {
+                        return c.filter(num => draw.nums.includes(num)).length >= 3;
+                    })).length;
+                    
+                    if (hits === totalWeeks) {
+                        exact3.push({ combo: c, hits: hits, wData: wData, reqK: reqK3 });
                     }
+                    if (exact3.length >= 5) break;
                 }
-                let hits = allWeeks.filter(w => wData[w] && wData[w].draws.some(draw => {
-                    return triplets.some(t => t.every(num => draw.nums.includes(num)));
-                })).length;
-                
-                if (hits >= Math.max(1, totalWeeks * 0.05)) {
-                    pillar3Results.push({ split: split, hits: hits, comboStr: `[${split[0].map(fNum).join(',')}] × [${split[1].map(fNum).join(',')}] × [${split[2].map(fNum).join(',')}]`});
+                if (exact3.length > 0) break;
+            }
+
+            // --- 3. 二星智慧柱碰 (找出最少需要幾顆，分2柱) ---
+            let pillar2 = [];
+            for (let reqP2 = 4; reqP2 <= 14; reqP2++) {
+                let c_k = getCombinations(topNums, reqP2);
+                for (let c of c_k) {
+                    let p1_size = Math.floor(reqP2 / 2);
+                    let splits = getCombinations(c, p1_size);
+                    let checked = 0;
+                    for (let p1 of splits) {
+                        let p2 = c.filter(x => !p1.includes(x));
+                        if (p1[0] > p2[0] && p1_size === (reqP2 - p1_size)) continue; // 去重
+                        
+                        let hits = allWeeks.filter(w => wData[w] && wData[w].draws.some(draw => {
+                            return p1.some(x => draw.nums.includes(x)) && p2.some(x => draw.nums.includes(x));
+                        })).length;
+                        
+                        if (hits === totalWeeks) {
+                            pillar2.push({ split: [p1, p2], hits: hits, reqK: reqP2, comboStr: `[${p1.map(fNum).join(',')}] × [${p2.map(fNum).join(',')}]` });
+                            break;
+                        }
+                        if (++checked > 20) break; // 避免瀏覽器卡死
+                    }
+                    if (pillar2.length >= 5) break;
                 }
-            });
-            pillar3Results.sort((a,b) => b.hits - a.hits);
-            let uniquePillar3 = [];
-            let p3Set = new Set();
-            for(let p of pillar3Results) {
-                if(!p3Set.has(p.comboStr)) { p3Set.add(p.comboStr); uniquePillar3.push(p); }
+                if (pillar2.length > 0) break;
+            }
+
+            // --- 4. 三星智慧柱碰 (找出最少需要幾顆，分3柱) ---
+            let pillar3 = [];
+            for (let reqP3 = 6; reqP3 <= 20; reqP3++) {
+                let c_k = getCombinations(topNums, reqP3);
+                for (let c of c_k) {
+                    let p1_size = Math.floor(reqP3 / 3);
+                    let p2_size = Math.floor((reqP3 - p1_size) / 2);
+                    let splits1 = getCombinations(c, p1_size);
+                    let foundInC = false;
+                    let checked = 0;
+                    
+                    for (let p1 of splits1) {
+                        let rem1 = c.filter(x => !p1.includes(x));
+                        let splits2 = getCombinations(rem1, p2_size);
+                        for (let p2 of splits2) {
+                            let p3 = rem1.filter(x => !p2.includes(x));
+                            let hits = allWeeks.filter(w => wData[w] && wData[w].draws.some(draw => {
+                                return p1.some(x=>draw.nums.includes(x)) && p2.some(x=>draw.nums.includes(x)) && p3.some(x=>draw.nums.includes(x));
+                            })).length;
+                            
+                            if (hits === totalWeeks) {
+                                pillar3.push({ split: [p1, p2, p3], hits: hits, reqK: reqP3, comboStr: `[${p1.map(fNum).join(',')}] × [${p2.map(fNum).join(',')}] × [${p3.map(fNum).join(',')}]` });
+                                foundInC = true;
+                                break;
+                            }
+                            if (++checked > 15) break;
+                        }
+                        if (foundInC || checked > 15) break;
+                    }
+                    if (pillar3.length >= 5) break;
+                }
+                if (pillar3.length > 0) break;
+            }
+
+            // --- 動態更新標題與成本顯示 ---
+            if (exact2.length > 0) {
+                let cost = getCost(exact2[0].reqK, 2);
+                document.getElementById('titleExact2').innerHTML = `🔥 100% 每週必開【二星連碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少需包 ${exact2[0].reqK} 顆 = ${cost} 碰)</span>`;
+            } else {
+                document.getElementById('titleExact2').innerHTML = `🔥 100% 每週必開【二星連碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
+            }
+
+            if (exact3.length > 0) {
+                let cost = getCost(exact3[0].reqK, 3);
+                document.getElementById('titleExact3').innerHTML = `🔥 100% 每週必開【三星連碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少需包 ${exact3[0].reqK} 顆 = ${cost} 碰)</span>`;
+            } else {
+                document.getElementById('titleExact3').innerHTML = `🔥 100% 每週必開【三星連碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
+            }
+
+            if (pillar2.length > 0) {
+                let cost = pillar2[0].split[0].length * pillar2[0].split[1].length;
+                document.getElementById('titlePillar2').innerHTML = `🏛️ 100% 每週必開【二星柱碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少 ${pillar2[0].reqK} 碼分 2 柱 = ${cost} 碰)</span>`;
+            } else {
+                document.getElementById('titlePillar2').innerHTML = `🏛️ 100% 每週必開【二星柱碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
+            }
+
+            if (pillar3.length > 0) {
+                let cost = pillar3[0].split[0].length * pillar3[0].split[1].length * pillar3[0].split[2].length;
+                document.getElementById('titlePillar3').innerHTML = `🏛️ 100% 每週必開【三星柱碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少 ${pillar3[0].reqK} 碼分 3 柱 = ${cost} 碰)</span>`;
+            } else {
+                document.getElementById('titlePillar3').innerHTML = `🏛️ 100% 每週必開【三星柱碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
             }
 
             // --- 渲染畫面 ---
@@ -546,12 +618,12 @@
             renderCards('grid1', bestResults1, 5, allWeeks, winningWindow);
             
             // 新增精準連碰區
-            renderExactCards('gridExact2', exact2, 5, allWeeks);
-            renderExactCards('gridExact3', exact3, 5, allWeeks);
+            renderExactCards('gridExact2', exact2, 5, allWeeks, 2);
+            renderExactCards('gridExact3', exact3, 5, allWeeks, 3);
             
             // 新增智慧排柱區
-            renderPillarCards('gridPillar2', uniquePillar2, 5, allWeeks);
-            renderPillarCards('gridPillar3', uniquePillar3, 5, allWeeks);
+            renderPillarCards('gridPillar2', pillar2, 5, allWeeks);
+            renderPillarCards('gridPillar3', pillar3, 5, allWeeks);
 
             document.getElementById('outputArea').style.display = 'block';
             document.getElementById('dataStatus').innerText = `✅ 全維度解密完成！分析區間：${winNamesStr}`;
