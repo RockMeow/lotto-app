@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>區間包牌涵蓋率自動掃描系統 (停利實戰版)</title>
+    <title>區間包牌涵蓋率自動掃描系統 (含完整命中紀錄)</title>
     <meta name="theme-color" content="#2c3e50">
     <style>
         :root {
@@ -39,10 +39,14 @@
         .drawn-nums { font-family: monospace; font-size: 1.1rem; color: var(--danger); font-weight: bold; letter-spacing: 1px; }
 
         .result-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px; }
-        .combo-card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #e0e0e0; position: relative; display: flex; justify-content: space-between; align-items: center; }
+        
+        .combo-card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #e0e0e0; position: relative; display: flex; flex-direction: column; cursor: pointer; transition: background 0.2s; }
+        .combo-card:hover { background: #fafafa; }
+        
+        .combo-header { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         
         .combo-active { border-left: 6px solid var(--danger); box-shadow: 0 2px 8px rgba(192, 57, 43, 0.15); background: #fff5f5; }
-        .combo-done { border-left: 6px solid var(--success); opacity: 0.6; filter: grayscale(50%); }
+        .combo-done { border-left: 6px solid var(--success); opacity: 0.7; filter: grayscale(20%); }
         
         .combo-nums { font-size: 1.4rem; font-weight: 900; color: var(--primary); letter-spacing: 2px; }
         .combo-active .combo-nums { color: var(--danger); }
@@ -54,6 +58,13 @@
         .status-badge { position: absolute; top: -10px; right: 10px; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .badge-active { background: var(--danger); animation: pulse 2s infinite; }
         .badge-done { background: var(--success); }
+
+        .history-container { display: none; margin-top: 15px; border-top: 1px dashed #bdc3c7; padding-top: 10px; }
+        .history-item { font-size: 0.85rem; margin-bottom: 8px; padding: 6px; border-radius: 6px; background: #f8f9fa; }
+        .history-hit { border-left: 3px solid var(--success); }
+        .history-miss { border-left: 3px solid var(--danger); background: #fdf2f0; }
+        .draw-details { font-size: 0.75rem; color: #7f8c8d; margin-top: 3px; word-break: break-all; }
+        .toggle-hint { text-align: center; font-size: 0.75rem; color: #aaa; margin-top: 8px; font-weight: bold;}
 
         @keyframes pulse {
             0% { transform: scale(1); }
@@ -72,9 +83,9 @@
     
     <div class="selector-box">
         <select id="csvSelect" onchange="processData()">
-            <option value="539_history_2026.csv">今彩 539</option>
-            <option value="Fan_history_2026.csv">天天樂</option>
-            <option value="Ghana_history_2026.csv">迦納彩</option>
+            <option value="539_history_2026.csv">今彩 539 (週一至週六)</option>
+            <option value="Fan_history_2026.csv">天天樂 (週一至週日)</option>
+            <option value="Ghana_history_2026.csv">迦納彩 (週一至週六)</option>
             <option value="649_history_2026.csv">大樂透</option>
             <option value="Six_history_2026.csv">六合彩</option>
         </select>
@@ -82,10 +93,11 @@
         <select id="intervalSelect">
             <option value="1,2,3">【週初區間】 星期一 到 星期三</option>
             <option value="4,5,6">【週末區間】 星期四 到 星期六</option>
-            <option value="1,2,3,4,5,6">【全週區間】 星期一 到 星期六</option>
+            <option value="1,2,3,4,5,6">【六天全週】 星期一 到 星期六 (539/迦納專用)</option>
+            <option value="1,2,3,4,5,6,0">【七天全週】 星期一 到 星期日 (天天樂專用)</option>
         </select>
         
-        <button class="btn-scan" onclick="runScan()">🚀 自動掃描必開組合</button>
+        <button class="btn-scan" onclick="runScan()">🚀 自動掃描並產出報表</button>
         
         <div class="status-bar">
             <span>系統狀態:</span>
@@ -95,7 +107,7 @@
 
     <div id="outputArea" style="display:none;">
         <div class="summary-card" id="summaryCard">
-            </div>
+        </div>
 
         <div class="section-title">🎯 鐵三角 (3號組合 - 至少開1星)</div>
         <div class="result-grid" id="grid3"></div>
@@ -114,7 +126,7 @@
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     
-    // 計算 ISO 星期數 (用來分組每週資料)
+    // 計算 ISO 星期數 (週一為一週的開始，週日為結束)
     function getISOWeek(dateStr) {
         let parts = dateStr.split('/');
         let date = new Date(2026, parseInt(parts[0]) - 1, parseInt(parts[1]));
@@ -165,7 +177,6 @@
         }
     }
 
-    // 產生組合的遞迴函數
     function getCombinations(arr, k) {
         let result = [];
         function combine(temp, start) {
@@ -180,65 +191,63 @@
         return result;
     }
 
+    function toggleHistory(element) {
+        const historyContainer = element.querySelector('.history-container');
+        const hint = element.querySelector('.toggle-hint');
+        if (historyContainer.style.display === 'none') {
+            historyContainer.style.display = 'block';
+            hint.innerText = '▲ 點擊收合歷史紀錄 ▲';
+        } else {
+            historyContainer.style.display = 'none';
+            hint.innerText = '▼ 點擊展開完整命中紀錄 ▼';
+        }
+    }
+
     function runScan() {
         if(parsedData.length === 0) return;
         
         document.getElementById('dataStatus').innerText = "🔍 巨量運算中，請稍候...";
         document.getElementById('outputArea').style.display = 'none';
         
-        // 為了讓 UI 有時間更新，使用 setTimeout
         setTimeout(() => {
             const intervalVal = document.getElementById('intervalSelect').value.split(',').map(Number);
+            const wdayNames = ['日', '一', '二', '三', '四', '五', '六'];
             
             let weeksData = {};
             let maxWeekId = -1;
 
-            // 1. 將資料依照「週」分組，且只保留落在「指定區間」內的號碼
+            // 1. 將資料依照「週」分組，並完整保留該區間內每天的開獎明細
             parsedData.forEach(row => {
                 if (intervalVal.includes(row.wday)) {
-                    if (!weeksData[row.weekId]) weeksData[row.weekId] = new Set();
-                    row.nums.forEach(n => weeksData[row.weekId].add(n));
+                    if (!weeksData[row.weekId]) weeksData[row.weekId] = { nums: new Set(), draws: [] };
+                    row.nums.forEach(n => weeksData[row.weekId].nums.add(n));
+                    weeksData[row.weekId].draws.push(row);
                     if (row.weekId > maxWeekId) maxWeekId = row.weekId;
                 }
             });
 
-            // 確保該週至少有開過一天區間內的獎，才算有效週
-            const validWeeks = Object.keys(weeksData).filter(w => weeksData[w].size > 0);
+            const validWeeks = Object.keys(weeksData).map(Number).sort((a,b) => a - b);
             const totalWeeks = validWeeks.length;
             
-            // 抓出「最新一週」在該區間內已經開出的號碼 (用來判定是否達標)
-            const drawnThisWeek = weeksData[maxWeekId] ? Array.from(weeksData[maxWeekId]) : [];
+            const drawnThisWeek = weeksData[maxWeekId] ? Array.from(weeksData[maxWeekId].nums) : [];
 
             let allNums = Array.from({length: maxNum}, (_, i) => i + 1);
             
-            // 2. 統計單號 (車牌)
-            let singles = [];
-            allNums.forEach(n => {
-                let hits = validWeeks.filter(w => weeksData[w].has(n)).length;
-                if(hits > 0) singles.push({ combo: [n], hits: hits });
-            });
-            singles.sort((a, b) => b.hits - a.hits);
+            // 統計函數
+            function calculateHits(combos, threshold) {
+                let results = [];
+                combos.forEach(c => {
+                    let hits = validWeeks.filter(w => c.some(num => weeksData[w].nums.has(num))).length;
+                    if (hits >= threshold) results.push({ combo: c, hits: hits });
+                });
+                return results.sort((a, b) => b.hits - a.hits);
+            }
 
-            // 3. 統計雙星 (二星)
-            let combos2 = getCombinations(allNums, 2);
-            let results2 = [];
-            combos2.forEach(c => {
-                let hits = validWeeks.filter(w => c.some(num => weeksData[w].has(num))).length;
-                // 只保留勝率非常高的來減少記憶體負擔
-                if (hits >= totalWeeks - 3) results2.push({ combo: c, hits: hits });
-            });
-            results2.sort((a, b) => b.hits - a.hits);
+            let singles = calculateHits(allNums.map(n => [n]), 1);
+            let combos2 = calculateHits(getCombinations(allNums, 2), totalWeeks - 3); // 雙星高標
+            let combos3 = calculateHits(getCombinations(allNums, 3), totalWeeks - 1); // 鐵三角極高標
 
-            // 4. 統計鐵三角 (三星)
-            let combos3 = getCombinations(allNums, 3);
-            let results3 = [];
-            combos3.forEach(c => {
-                let hits = validWeeks.filter(w => c.some(num => weeksData[w].has(num))).length;
-                if (hits >= totalWeeks - 1) results3.push({ combo: c, hits: hits }); // 只保留近乎必開的
-            });
-            results3.sort((a, b) => b.hits - a.hits);
-
-            // 5. 渲染畫面函數
+            // 產生 HTML
             function renderCards(containerId, dataArr, limit) {
                 const container = document.getElementById(containerId);
                 container.innerHTML = '';
@@ -247,47 +256,69 @@
                 for (let item of dataArr) {
                     if (count >= limit) break;
                     
-                    // 檢查本週是否已開出該組合中的任何一碼
                     let isHitThisWeek = item.combo.some(n => drawnThisWeek.includes(n));
                     let hitRateStr = ((item.hits / totalWeeks) * 100).toFixed(1);
                     
                     let cardClass = isHitThisWeek ? 'combo-card combo-done' : 'combo-card combo-active';
                     let badgeHtml = isHitThisWeek 
-                        ? `<div class="status-badge badge-done">✅ 本週已達標</div>` 
-                        : `<div class="status-badge badge-active">🔥 本週尚未開出</div>`;
+                        ? `<div class="status-badge badge-done">✅ 本週已達標 (停止下注)</div>` 
+                        : `<div class="status-badge badge-active">🔥 本週未開 (把握機會)</div>`;
+
+                    // 產生歷史明細 HTML
+                    let historyHtml = '<div class="history-container" style="display:none;">';
+                    [...validWeeks].reverse().forEach(w => {
+                        let wData = weeksData[w];
+                        let matchedNums = item.combo.filter(n => wData.nums.has(n));
+                        let isHit = matchedNums.length > 0;
+                        
+                        let drawStrs = wData.draws.map(d => `${d.date}(${wdayNames[d.wday]}): ${d.nums.map(fNum).join(', ')}`).join('<br>');
+                        
+                        historyHtml += `
+                            <div class="history-item ${isHit ? 'history-hit' : 'history-miss'}">
+                                <div style="font-weight:bold; color:${isHit ? 'var(--success)' : 'var(--danger)'}">
+                                    ${isHit ? '✅' : '❌'} [第${w}週] ${isHit ? '命中: ' + matchedNums.map(fNum).join(', ') : '未命中'}
+                                </div>
+                                <div class="draw-details">${drawStrs}</div>
+                            </div>
+                        `;
+                    });
+                    historyHtml += '</div>';
 
                     let html = `
-                    <div class="${cardClass}">
+                    <div class="${cardClass}" onclick="toggleHistory(this)">
                         ${badgeHtml}
-                        <div class="combo-nums">${item.combo.map(fNum).join(' - ')}</div>
-                        <div class="combo-stats">
-                            <div class="hit-rate">${hitRateStr}%</div>
-                            <div class="hit-count">${item.hits} / ${totalWeeks} 週開出</div>
+                        <div class="combo-header">
+                            <div class="combo-nums">${item.combo.map(fNum).join(' - ')}</div>
+                            <div class="combo-stats">
+                                <div class="hit-rate">${hitRateStr}%</div>
+                                <div class="hit-count">${item.hits} / ${totalWeeks} 週</div>
+                            </div>
                         </div>
+                        <div class="toggle-hint">▼ 點擊展開完整命中紀錄 ▼</div>
+                        ${historyHtml}
                     </div>`;
+                    
                     container.innerHTML += html;
                     count++;
                 }
             }
 
-            // 渲染三大區塊
             renderCards('grid3', results3, 5);
             renderCards('grid2', results2, 5);
             renderCards('grid1', singles, 5);
 
-            // 渲染本週總結資訊
             const summaryHtml = `
-                <div class="week-status">📊 數據基底：分析過去 ${totalWeeks} 個星期</div>
+                <div class="week-status">📊 數據基底：精準分析過去 ${totalWeeks} 個星期</div>
                 <div>本週該區間【已開出號碼】：</div>
                 <div class="drawn-nums">${drawnThisWeek.length > 0 ? drawnThisWeek.sort((a,b)=>a-b).map(fNum).join(', ') : '本週區間尚未有開獎數據'}</div>
-                <div style="font-size:0.8rem; margin-top:5px; color:#7f8c8d;">※ 依據「開過就放」鐵律，顯示為綠色的組合請勿再追。</div>
+                <div style="font-size:0.8rem; margin-top:5px; color:#7f8c8d;">※ 點擊卡片可查看歷史命中明細。依據「開過就放」鐵律，顯示綠色勾勾的組合請勿再追。</div>
             `;
             document.getElementById('summaryCard').innerHTML = summaryHtml;
 
             document.getElementById('outputArea').style.display = 'block';
             document.getElementById('dataStatus').innerText = `✅ 掃描完成！分析樣本：${totalWeeks} 週`;
 
-        }, 50); // Timeout for UI rendering
+        }, 50); 
     }
 
     window.onload = processData;
