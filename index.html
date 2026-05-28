@@ -121,7 +121,6 @@
     <div id="outputArea" style="display:none;">
         <div class="summary-card" id="summaryCard"></div>
 
-        <!-- 原有包牌涵蓋模塊 -->
         <div class="section-title">🎯 鐵三角區間包牌 (3號至少開1顆)</div>
         <div class="result-grid" id="grid3"></div>
 
@@ -133,19 +132,44 @@
         
         <hr style="border:1px dashed #bdc3c7; margin: 25px 0;">
 
-        <!-- 新增：精準同開連碰模塊 -->
         <div class="section-title exact-title" id="titleExact2">🔥 100% 每週必開【二星連碰】 (運算中...)</div>
         <div class="result-grid" id="gridExact2"></div>
 
         <div class="section-title exact-title" id="titleExact3">🔥 100% 每週必開【三星連碰】 (運算中...)</div>
         <div class="result-grid" id="gridExact3"></div>
 
-        <!-- 新增：智慧立柱模塊 -->
+        <div class="section-title exact-title" id="titleExact4">🔥 100% 每週必開【四星連碰】 (運算中...)</div>
+        <div class="result-grid" id="gridExact4"></div>
+
+        <div class="section-title exact-title" id="titleExact5">🔥 100% 每週必開【五星連碰】 (運算中...)</div>
+        <div class="result-grid" id="gridExact5"></div>
+
         <div class="section-title pillar-title" id="titlePillar2">🏛️ 100% 每週必開【二星智慧柱碰】 (運算中...)</div>
         <div class="result-grid" id="gridPillar2"></div>
 
         <div class="section-title pillar-title" id="titlePillar3">🏛️ 100% 每週必開【三星智慧柱碰】 (運算中...)</div>
         <div class="result-grid" id="gridPillar3"></div>
+
+        <div class="section-title pillar-title" id="titlePillar4">🏛️ 100% 每週必開【四星智慧柱碰】 (運算中...)</div>
+        <div class="result-grid" id="gridPillar4"></div>
+
+        <div class="section-title pillar-title" id="titlePillar5">🏛️ 100% 每週必開【五星智慧柱碰】 (運算中...)</div>
+        <div class="result-grid" id="gridPillar5"></div>
+
+        <hr style="border:1px dashed #bdc3c7; margin: 25px 0;">
+
+        <div class="section-title exact-title" style="color:#2980b9; border-bottom-color:#2980b9;" id="titleMonthExact4">📅 100% 每月必開【四星連碰】 (運算中...)</div>
+        <div class="result-grid" id="gridMonthExact4"></div>
+
+        <div class="section-title exact-title" style="color:#2980b9; border-bottom-color:#2980b9;" id="titleMonthExact5">📅 100% 每月必開【五星連碰】 (運算中...)</div>
+        <div class="result-grid" id="gridMonthExact5"></div>
+
+        <div class="section-title pillar-title" style="color:#16a085; border-bottom-color:#16a085;" id="titleMonthPillar4">🏢 100% 每月必開【四星智慧柱碰】 (運算中...)</div>
+        <div class="result-grid" id="gridMonthPillar4"></div>
+
+        <div class="section-title pillar-title" style="color:#16a085; border-bottom-color:#16a085;" id="titleMonthPillar5">🏢 100% 每月必開【五星智慧柱碰】 (運算中...)</div>
+        <div class="result-grid" id="gridMonthPillar5"></div>
+
     </div>
 </div>
 
@@ -157,7 +181,6 @@
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     
-    // 計算組合成本(碰數)的輔助函數
     function getCost(n, k) {
         if (k === 0 || k > n) return 0;
         let res = 1;
@@ -217,10 +240,11 @@
                     if(!isNaN(n)) nums.push(n);
                 }
                 let dateParts = cols[0].split('/');
-                let dateObj = new Date(2026, parseInt(dateParts[0]) - 1, parseInt(dateParts[1]));
+                let monthId = parseInt(dateParts[0], 10);
+                let dateObj = new Date(2026, monthId - 1, parseInt(dateParts[1]));
                 let wday = dateObj.getDay(); 
                 let weekId = getISOWeek(cols[0]);
-                parsedData.push({ date: cols[0], nums: nums, wday: wday, weekId: weekId });
+                parsedData.push({ date: cols[0], nums: nums, wday: wday, weekId: weekId, monthId: monthId });
                 wdayCounts[wday] = (wdayCounts[wday] || 0) + 1;
             }
             let maxDraws = Math.max(...Object.values(wdayCounts));
@@ -272,7 +296,18 @@
         return wData;
     }
 
-    // 原有包牌涵蓋渲染函數 (保持不變)
+    function buildMData(winArr) {
+        let mData = {};
+        parsedData.forEach(row => {
+            if (winArr.includes(row.wday)) {
+                if (!mData[row.monthId]) mData[row.monthId] = { nums: new Set(), draws: [] };
+                row.nums.forEach(n => mData[row.monthId].nums.add(n));
+                mData[row.monthId].draws.push(row);
+            }
+        });
+        return mData;
+    }
+
     function renderCards(containerId, dataArr, limit, allWeeks, winningWindow) {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
@@ -335,7 +370,6 @@
         }
     }
 
-    // 精準同開連碰渲染函數 (匹配目標星數 matchTarget)
     function renderExactCards(containerId, dataArr, limit, allWeeks, matchTarget) {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
@@ -343,7 +377,6 @@
             container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無 100% 連碰組合 ☕</div>';
             return;
         }
-
         let count = 0;
         for (let item of dataArr) {
             if (count >= limit) break;
@@ -384,7 +417,7 @@
                         <div class="hit-count">${item.hits} / ${allWeeks.length} 週</div>
                     </div>
                 </div>
-                <div style="font-size:0.8rem; color:var(--danger); font-weight:bold; margin-top:5px;">⚠️ 嚴苛連碰條件 (至少 ${matchTarget} 顆同天掉下)</div>
+                <div style="font-size:0.8rem; color:var(--danger); font-weight:bold; margin-top:5px;">⚠️ 每週嚴苛連碰條件 (至少 ${matchTarget} 顆同天掉下)</div>
                 <div class="toggle-hint">▼ 點擊展開詳細歷史明細 ▼</div>
                 ${historyHtml}
             </div>`;
@@ -393,7 +426,62 @@
         }
     }
 
-    // 智慧排柱渲染函數
+    function renderMonthExactCards(containerId, dataArr, limit, allMonths, matchTarget) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        if (dataArr.length === 0) {
+            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無 100% 連碰組合 ☕</div>';
+            return;
+        }
+        let count = 0;
+        for (let item of dataArr) {
+            if (count >= limit) break;
+            let tData = item.tData;
+            let hitRateStr = ((item.hits / allMonths.length) * 100).toFixed(1);
+            
+            let historyHtml = '<div class="history-container" style="display:none;">';
+            [...allMonths].reverse().forEach(m => {
+                let monthInfo = tData[m] || { draws: [] };
+                let matchedDraws = monthInfo.draws.filter(d => item.combo.filter(num => d.nums.includes(num)).length >= matchTarget);
+                let isHit = matchedDraws.length > 0;
+                
+                let drawStrs = monthInfo.draws.length > 0 ? monthInfo.draws.map(d => {
+                    let isDrawHit = item.combo.filter(num => d.nums.includes(num)).length >= matchTarget;
+                    let highlightedNums = d.nums.map(n => {
+                        let formatted = fNum(n);
+                        return (isDrawHit && item.combo.includes(n)) ? `<span class="hit-highlight" style="background:#2980b9;">${formatted}</span>` : formatted;
+                    }).join(', ');
+                    return `📌 ${d.date}(週${wNames[d.wday]}): ${highlightedNums}`;
+                }).join('<br>') : '<span style="color:#aaa;">此月無開獎紀錄</span>';
+                
+                historyHtml += `
+                    <div class="history-item ${isHit ? 'history-hit' : 'history-miss'}" style="border-left-color:${isHit?'#2980b9':'#eee'}">
+                        <div style="font-weight:bold; margin-bottom: 5px; color:${isHit ? '#2980b9' : '#aaa'}">
+                            ${isHit ? '🎯' : '❌'} [第${m}月] ${isHit ? `成功同開 ${matchTarget} 顆！` : '未同開'}
+                        </div>
+                        <div class="draw-details">${drawStrs}</div>
+                    </div>`;
+            });
+            historyHtml += '</div>';
+
+            let html = `
+            <div class="combo-card combo-exact" style="border-left-color:#2980b9;" onclick="toggleHistory(this)">
+                <div class="combo-header">
+                    <div class="combo-nums" style="color:#2980b9;">${item.combo.map(fNum).join(' - ')}</div>
+                    <div class="combo-stats">
+                        <div class="hit-rate" style="color:#2980b9;">${hitRateStr}%</div>
+                        <div class="hit-count">${item.hits} / ${allMonths.length} 月</div>
+                    </div>
+                </div>
+                <div style="font-size:0.8rem; color:#2980b9; font-weight:bold; margin-top:5px;">⚠️ 每月嚴苛連碰條件 (至少 ${matchTarget} 顆同天掉下)</div>
+                <div class="toggle-hint">▼ 點擊展開詳細歷史明細 ▼</div>
+                ${historyHtml}
+            </div>`;
+            container.innerHTML += html;
+            count++;
+        }
+    }
+
     function renderPillarCards(containerId, dataArr, limit, allWeeks) {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
@@ -401,12 +489,10 @@
             container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無 100% 柱碰組合 ☕</div>';
             return;
         }
-
         let count = 0;
         for (let item of dataArr) {
             if (count >= limit) break;
             let hitRateStr = ((item.hits / allWeeks.length) * 100).toFixed(1);
-            
             let html = `
             <div class="combo-card combo-pillar">
                 <div class="combo-header">
@@ -425,17 +511,54 @@
         }
     }
 
+    function renderMonthPillarCards(containerId, dataArr, limit, allMonths) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        if (dataArr.length === 0) {
+            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無 100% 柱碰組合 ☕</div>';
+            return;
+        }
+        let count = 0;
+        for (let item of dataArr) {
+            if (count >= limit) break;
+            let hitRateStr = ((item.hits / allMonths.length) * 100).toFixed(1);
+            let html = `
+            <div class="combo-card combo-pillar" style="border-left-color:#16a085; background:#e8f8f5;">
+                <div class="combo-header">
+                    <div class="combo-nums" style="color:#16a085;">${item.comboStr}</div>
+                    <div class="combo-stats">
+                        <div class="hit-rate" style="color:#16a085;">${hitRateStr}%</div>
+                        <div class="hit-count">${item.hits} / ${allMonths.length} 月</div>
+                    </div>
+                </div>
+                <div style="font-size:0.8rem; color:#16a085; font-weight:bold; margin-top:8px; line-height:1.5;">
+                    🏢 每月限定智慧排柱，低風險穩定打法。
+                </div>
+            </div>`;
+            container.innerHTML += html;
+            count++;
+        }
+    }
+
     function runScan() {
         if(parsedData.length === 0) return;
         
-        document.getElementById('dataStatus').innerText = "🔍 全維度大數據極限演算中，請稍候...";
+        document.getElementById('dataStatus').innerText = "🔍 啟動全維度與月份矩陣演算，請稍候...";
         document.getElementById('outputArea').style.display = 'none';
         
         setTimeout(() => {
             let winningWindow = document.getElementById('intervalSelect').value.split(',').map(Number);
+            
+            // 週數據
             let wData = buildWData(winningWindow);
             let allWeeks = Object.keys(wData).map(Number).sort((a,b)=>a-b);
             let totalWeeks = allWeeks.length;
+
+            // 月數據
+            let mData = buildMData(winningWindow);
+            let allMonths = Object.keys(mData).map(Number).sort((a,b)=>a-b);
+            let totalMonths = allMonths.length;
+
             let allNums = Array.from({length: maxNum}, (_, i) => i + 1);
             
             // --- 區間包牌運算 (保持不變) ---
@@ -462,7 +585,7 @@
             });
             bestResults1.sort((a,b) => b.hits - a.hits);
 
-            // 為了提升動態尋寶效能，萃取出現頻率最高的前 18 名作為尋寶池
+            // 萃取出現頻率最高的前 18 名作為尋寶池，避免瀏覽器當機
             let numFreq = {};
             allWeeks.forEach(w => {
                 if (wData[w]) {
@@ -472,131 +595,117 @@
                 }
             });
             let topNums = Object.keys(numFreq).map(Number).sort((a,b) => numFreq[b] - numFreq[a]).slice(0, 18);
-            if(topNums.length < 15) topNums = allNums.slice(0, 18);
+            if(topNums.length < 18) topNums = allNums.slice(0, 18);
 
-            // --- 1. 二星連碰極限尋寶 (找出最少需要包幾顆) ---
-            let exact2 = [];
-            for (let reqK2 = 2; reqK2 <= 12; reqK2++) {
-                let c_k = getCombinations(topNums, reqK2);
-                for (let c of c_k) {
-                    let hits = allWeeks.filter(w => wData[w] && wData[w].draws.some(draw => {
-                        return c.filter(num => draw.nums.includes(num)).length >= 2;
-                    })).length;
-                    
-                    if (hits === totalWeeks) {
-                        exact2.push({ combo: c, hits: hits, wData: wData, reqK: reqK2 });
+            // --- 尋寶共用函數 ---
+            function findExactMatches(dataObj, totalPeriods, keys, targetStars) {
+                let results = [];
+                for (let reqK = targetStars; reqK <= 18; reqK++) {
+                    let c_k = getCombinations(topNums, reqK);
+                    for (let c of c_k) {
+                        let hits = keys.filter(k => dataObj[k] && dataObj[k].draws.some(draw => {
+                            return c.filter(num => draw.nums.includes(num)).length >= targetStars;
+                        })).length;
+                        if (hits === totalPeriods) {
+                            results.push({ combo: c, hits: hits, wData: dataObj, tData: dataObj, reqK: reqK });
+                        }
+                        if (results.length >= 5) break;
                     }
-                    if (exact2.length >= 5) break;
+                    if (results.length > 0) break;
                 }
-                if (exact2.length > 0) break; // 只要找到最少顆數就停止遞增
+                return results;
             }
 
-            // --- 2. 三星連碰極限尋寶 ---
-            let exact3 = [];
-            for (let reqK3 = 3; reqK3 <= 18; reqK3++) {
-                let c_k = getCombinations(topNums, reqK3);
-                for (let c of c_k) {
-                    let hits = allWeeks.filter(w => wData[w] && wData[w].draws.some(draw => {
-                        return c.filter(num => draw.nums.includes(num)).length >= 3;
-                    })).length;
-                    
-                    if (hits === totalWeeks) {
-                        exact3.push({ combo: c, hits: hits, wData: wData, reqK: reqK3 });
-                    }
-                    if (exact3.length >= 5) break;
-                }
-                if (exact3.length > 0) break;
-            }
-
-            // --- 3. 二星智慧柱碰 (找出最少需要幾顆，分2柱) ---
-            let pillar2 = [];
-            for (let reqP2 = 4; reqP2 <= 14; reqP2++) {
-                let c_k = getCombinations(topNums, reqP2);
-                for (let c of c_k) {
-                    let p1_size = Math.floor(reqP2 / 2);
-                    let splits = getCombinations(c, p1_size);
-                    let checked = 0;
-                    for (let p1 of splits) {
-                        let p2 = c.filter(x => !p1.includes(x));
-                        if (p1[0] > p2[0] && p1_size === (reqP2 - p1_size)) continue; // 去重
+            function findPillars(dataObj, totalPeriods, keys, targetStars) {
+                let results = [];
+                for (let reqP = targetStars; reqP <= 20; reqP++) {
+                    let c_k = getCombinations(topNums, reqP);
+                    for (let c of c_k) {
+                        let split = [];
+                        let chunkSize = Math.floor(reqP / targetStars);
+                        let remainder = reqP % targetStars;
+                        let offset = 0;
+                        for(let i=0; i<targetStars; i++) {
+                            let size = chunkSize + (i < remainder ? 1 : 0);
+                            split.push(c.slice(offset, offset + size));
+                            offset += size;
+                        }
                         
-                        let hits = allWeeks.filter(w => wData[w] && wData[w].draws.some(draw => {
-                            return p1.some(x => draw.nums.includes(x)) && p2.some(x => draw.nums.includes(x));
+                        let hits = keys.filter(k => dataObj[k] && dataObj[k].draws.some(draw => {
+                            return split.every(p => p.some(x=>draw.nums.includes(x)));
                         })).length;
                         
-                        if (hits === totalWeeks) {
-                            pillar2.push({ split: [p1, p2], hits: hits, reqK: reqP2, comboStr: `[${p1.map(fNum).join(',')}] × [${p2.map(fNum).join(',')}]` });
+                        if (hits === totalPeriods) {
+                            results.push({ split: split, hits: hits, reqK: reqP, comboStr: split.map(p => `[${p.map(fNum).join(',')}]`).join('×') });
                             break;
                         }
-                        if (++checked > 20) break; // 避免瀏覽器卡死
                     }
-                    if (pillar2.length >= 5) break;
+                    if (results.length > 0) break;
                 }
-                if (pillar2.length > 0) break;
+                return results;
             }
 
-            // --- 4. 三星智慧柱碰 (找出最少需要幾顆，分3柱) ---
-            let pillar3 = [];
-            for (let reqP3 = 6; reqP3 <= 20; reqP3++) {
-                let c_k = getCombinations(topNums, reqP3);
-                for (let c of c_k) {
-                    let p1_size = Math.floor(reqP3 / 3);
-                    let p2_size = Math.floor((reqP3 - p1_size) / 2);
-                    let splits1 = getCombinations(c, p1_size);
-                    let foundInC = false;
-                    let checked = 0;
-                    
-                    for (let p1 of splits1) {
-                        let rem1 = c.filter(x => !p1.includes(x));
-                        let splits2 = getCombinations(rem1, p2_size);
-                        for (let p2 of splits2) {
-                            let p3 = rem1.filter(x => !p2.includes(x));
-                            let hits = allWeeks.filter(w => wData[w] && wData[w].draws.some(draw => {
-                                return p1.some(x=>draw.nums.includes(x)) && p2.some(x=>draw.nums.includes(x)) && p3.some(x=>draw.nums.includes(x));
-                            })).length;
-                            
-                            if (hits === totalWeeks) {
-                                pillar3.push({ split: [p1, p2, p3], hits: hits, reqK: reqP3, comboStr: `[${p1.map(fNum).join(',')}] × [${p2.map(fNum).join(',')}] × [${p3.map(fNum).join(',')}]` });
-                                foundInC = true;
-                                break;
-                            }
-                            if (++checked > 15) break;
-                        }
-                        if (foundInC || checked > 15) break;
-                    }
-                    if (pillar3.length >= 5) break;
+            // --- 執行每週四星、五星尋寶 ---
+            let exact2 = findExactMatches(wData, totalWeeks, allWeeks, 2);
+            let exact3 = findExactMatches(wData, totalWeeks, allWeeks, 3);
+            let exact4 = findExactMatches(wData, totalWeeks, allWeeks, 4);
+            let exact5 = findExactMatches(wData, totalWeeks, allWeeks, 5);
+
+            let pillar2 = findPillars(wData, totalWeeks, allWeeks, 2);
+            let pillar3 = findPillars(wData, totalWeeks, allWeeks, 3);
+            let pillar4 = findPillars(wData, totalWeeks, allWeeks, 4);
+            let pillar5 = findPillars(wData, totalWeeks, allWeeks, 5);
+
+            // --- 執行每月四星、五星尋寶 ---
+            let mExact4 = findExactMatches(mData, totalMonths, allMonths, 4);
+            let mExact5 = findExactMatches(mData, totalMonths, allMonths, 5);
+            let mPillar4 = findPillars(mData, totalMonths, allMonths, 4);
+            let mPillar5 = findPillars(mData, totalMonths, allMonths, 5);
+
+            // --- 動態更新標題與成本顯示 (每週) ---
+            const updateTitle = (id, title, arr, stars) => {
+                if (arr.length > 0) {
+                    let cost = getCost(arr[0].reqK, stars);
+                    document.getElementById(id).innerHTML = `🔥 100% 每週必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少需包 ${arr[0].reqK} 顆 = ${cost} 碰)</span>`;
+                } else {
+                    document.getElementById(id).innerHTML = `🔥 100% 每週必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
                 }
-                if (pillar3.length > 0) break;
-            }
+            };
+            const updatePillarTitle = (id, title, arr, pillars, isMonthly=false) => {
+                let icon = isMonthly ? '🏢' : '🏛️';
+                let timeText = isMonthly ? '每月' : '每週';
+                if (arr.length > 0) {
+                    let cost = arr[0].split.reduce((acc, val) => acc * val.length, 1);
+                    document.getElementById(id).innerHTML = `${icon} 100% ${timeText}必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少 ${arr[0].reqK} 碼分 ${pillars} 柱 = ${cost} 碰)</span>`;
+                } else {
+                    document.getElementById(id).innerHTML = `${icon} 100% ${timeText}必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
+                }
+            };
 
-            // --- 動態更新標題與成本顯示 ---
-            if (exact2.length > 0) {
-                let cost = getCost(exact2[0].reqK, 2);
-                document.getElementById('titleExact2').innerHTML = `🔥 100% 每週必開【二星連碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少需包 ${exact2[0].reqK} 顆 = ${cost} 碰)</span>`;
-            } else {
-                document.getElementById('titleExact2').innerHTML = `🔥 100% 每週必開【二星連碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
-            }
+            updateTitle('titleExact2', '二星連碰', exact2, 2);
+            updateTitle('titleExact3', '三星連碰', exact3, 3);
+            updateTitle('titleExact4', '四星連碰', exact4, 4);
+            updateTitle('titleExact5', '五星連碰', exact5, 5);
 
-            if (exact3.length > 0) {
-                let cost = getCost(exact3[0].reqK, 3);
-                document.getElementById('titleExact3').innerHTML = `🔥 100% 每週必開【三星連碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少需包 ${exact3[0].reqK} 顆 = ${cost} 碰)</span>`;
-            } else {
-                document.getElementById('titleExact3').innerHTML = `🔥 100% 每週必開【三星連碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
-            }
+            updatePillarTitle('titlePillar2', '二星智慧柱碰', pillar2, 2);
+            updatePillarTitle('titlePillar3', '三星智慧柱碰', pillar3, 3);
+            updatePillarTitle('titlePillar4', '四星智慧柱碰', pillar4, 4);
+            updatePillarTitle('titlePillar5', '五星智慧柱碰', pillar5, 5);
 
-            if (pillar2.length > 0) {
-                let cost = pillar2[0].split[0].length * pillar2[0].split[1].length;
-                document.getElementById('titlePillar2').innerHTML = `🏛️ 100% 每週必開【二星柱碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少 ${pillar2[0].reqK} 碼分 2 柱 = ${cost} 碰)</span>`;
-            } else {
-                document.getElementById('titlePillar2').innerHTML = `🏛️ 100% 每週必開【二星柱碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
-            }
-
-            if (pillar3.length > 0) {
-                let cost = pillar3[0].split[0].length * pillar3[0].split[1].length * pillar3[0].split[2].length;
-                document.getElementById('titlePillar3').innerHTML = `🏛️ 100% 每週必開【三星柱碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少 ${pillar3[0].reqK} 碼分 3 柱 = ${cost} 碰)</span>`;
-            } else {
-                document.getElementById('titlePillar3').innerHTML = `🏛️ 100% 每週必開【三星柱碰】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
-            }
+            // --- 動態更新標題與成本顯示 (每月) ---
+            const updateMonthExactTitle = (id, title, arr, stars) => {
+                if (arr.length > 0) {
+                    let cost = getCost(arr[0].reqK, stars);
+                    document.getElementById(id).innerHTML = `📅 100% 每月必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少需包 ${arr[0].reqK} 顆 = ${cost} 碰)</span>`;
+                } else {
+                    document.getElementById(id).innerHTML = `📅 100% 每月必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
+                }
+            };
+            
+            updateMonthExactTitle('titleMonthExact4', '四星連碰', mExact4, 4);
+            updateMonthExactTitle('titleMonthExact5', '五星連碰', mExact5, 5);
+            updatePillarTitle('titleMonthPillar4', '四星智慧柱碰', mPillar4, 4, true);
+            updatePillarTitle('titleMonthPillar5', '五星智慧柱碰', mPillar5, 5, true);
 
             // --- 渲染畫面 ---
             let maxWeekId = Math.max(...allWeeks);
@@ -606,7 +715,7 @@
 
             const summaryHtml = `
                 <div class="week-status">📌 綜合分析區間：【${winNamesStr}】</div>
-                <div style="font-size:0.85rem; color:#7f8c8d; margin-bottom:5px;">📊 數據基底：涵蓋過去 ${totalWeeks} 個星期</div>
+                <div style="font-size:0.85rem; color:#7f8c8d; margin-bottom:5px;">📊 數據基底：涵蓋過去 ${totalWeeks} 個星期 / ${totalMonths} 個月份</div>
                 <div>本週此區間【已開出總號碼】：</div>
                 <div class="drawn-nums">${drawnThisWeek.length > 0 ? drawnThisWeek.sort((a,b)=>a-b).map(fNum).join(', ') : '本週區間尚未有開獎數據'}</div>
             `;
@@ -617,16 +726,28 @@
             renderCards('grid2', bestResults2, 5, allWeeks, winningWindow);
             renderCards('grid1', bestResults1, 5, allWeeks, winningWindow);
             
-            // 新增精準連碰區
+            // 每週精準連碰區
             renderExactCards('gridExact2', exact2, 5, allWeeks, 2);
             renderExactCards('gridExact3', exact3, 5, allWeeks, 3);
+            renderExactCards('gridExact4', exact4, 5, allWeeks, 4);
+            renderExactCards('gridExact5', exact5, 5, allWeeks, 5);
             
-            // 新增智慧排柱區
+            // 每週智慧排柱區
             renderPillarCards('gridPillar2', pillar2, 5, allWeeks);
             renderPillarCards('gridPillar3', pillar3, 5, allWeeks);
+            renderPillarCards('gridPillar4', pillar4, 5, allWeeks);
+            renderPillarCards('gridPillar5', pillar5, 5, allWeeks);
+
+            // 每月精準連碰區
+            renderMonthExactCards('gridMonthExact4', mExact4, 5, allMonths, 4);
+            renderMonthExactCards('gridMonthExact5', mExact5, 5, allMonths, 5);
+
+            // 每月智慧排柱區
+            renderMonthPillarCards('gridMonthPillar4', mPillar4, 5, allMonths);
+            renderMonthPillarCards('gridMonthPillar5', mPillar5, 5, allMonths);
 
             document.getElementById('outputArea').style.display = 'block';
-            document.getElementById('dataStatus').innerText = `✅ 全維度解密完成！分析區間：${winNamesStr}`;
+            document.getElementById('dataStatus').innerText = `✅ 矩陣解密完成！分析區間：${winNamesStr}`;
 
         }, 50); 
     }
