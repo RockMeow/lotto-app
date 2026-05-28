@@ -66,7 +66,6 @@
         .draw-details { font-size: 0.8rem; color: #555; margin-top: 5px; word-break: break-all; line-height: 1.6;}
         .toggle-hint { text-align: center; font-size: 0.75rem; color: #aaa; margin-top: 8px; font-weight: bold;}
 
-        /* 高亮命中號碼的樣式 */
         .hit-highlight {
             background-color: var(--accent);
             color: #fff;
@@ -160,7 +159,6 @@
             return arr.map(d => '週' + wNames[d]).join('、'); 
         }
 
-        // 如果該彩種開獎天數超過3天 (例如539、天天樂)，自動切分前半與後半區間
         if(wdays.length > 3) {
             let half = Math.ceil(wdays.length / 2);
             let firstHalf = wdays.slice(0, half);
@@ -170,7 +168,6 @@
             select.innerHTML += `<option value="${secondHalf.join(',')}">【後半區間】 ${getNames(secondHalf)}</option>`;
         }
         
-        // 全區間選項 (大樂透或六合彩可能只會顯示這個)
         select.innerHTML += `<option value="${allStr}">【全區間】 ${getNames(wdays)}</option>`;
     }
 
@@ -187,6 +184,8 @@
             const lines = text.trim().split('\n');
             
             parsedData = [];
+            let wdayCounts = {}; // 用來記錄每個星期幾出現的總次數
+
             for(let i = 1; i < lines.length; i++) {
                 let cols = lines[i].split(',').map(s => s.trim());
                 if(cols.length < 6 || isNaN(parseInt(cols[1]))) continue;
@@ -202,13 +201,23 @@
                 let weekId = getISOWeek(cols[0]);
                 
                 parsedData.push({ date: cols[0], nums: nums, wday: wday, weekId: weekId });
+                
+                // 統計星期幾出現的次數
+                wdayCounts[wday] = (wdayCounts[wday] || 0) + 1;
             }
             
-            // 自動偵測歷史中真正有開獎的星期幾，並排序 (週一1 ~ 週日0放最後)
-            availableWdays = Array.from(new Set(parsedData.map(d => d.wday))).sort((a,b) => (a===0?7:a) - (b===0?7:b));
+            // 找出歷史中最常開獎的天數次數 (例如 21 次)
+            let maxDraws = Math.max(...Object.values(wdayCounts));
+
+            // 過濾掉節日偶發加開的防呆機制：只保留出現次數大於最大值 50% 的星期
+            availableWdays = Object.keys(wdayCounts)
+                .map(Number)
+                .filter(w => wdayCounts[w] > maxDraws * 0.5)
+                .sort((a,b) => (a===0?7:a) - (b===0?7:b));
+                
             updateIntervalDropdown(availableWdays);
 
-            statusEl.innerText = `✅ 彩種解析完成 (開獎天數: ${availableWdays.length}天)`;
+            statusEl.innerText = `✅ 彩種解析完成 (常規開獎: ${availableWdays.length}天)`;
             document.getElementById('outputArea').style.display = 'none';
         } catch(e) { 
             statusEl.innerText = "❌ 讀取失敗 (請檢查本機環境或檔名)"; 
@@ -244,8 +253,9 @@
     function buildWData(winArr) {
         let wData = {};
         parsedData.forEach(row => {
-            if (!wData[row.weekId]) wData[row.weekId] = { nums: new Set(), draws: [] };
+            // 在過濾歷史紀錄時，確保這筆紀錄是正規開獎日 (winArr 內)，才放入該週統計
             if (winArr.includes(row.wday)) {
+                if (!wData[row.weekId]) wData[row.weekId] = { nums: new Set(), draws: [] };
                 row.nums.forEach(n => wData[row.weekId].nums.add(n));
                 wData[row.weekId].draws.push(row);
             }
@@ -285,7 +295,6 @@
                 let matchedNums = item.combo.filter(n => weekInfo.nums.has(n));
                 let isHit = matchedNums.length > 0;
                 
-                // 產生歷史日期的字串，命中號碼使用 hit-highlight 樣式
                 let drawStrs = weekInfo.draws.length > 0 
                     ? weekInfo.draws.map(d => {
                         let highlightedNums = d.nums.map(n => {
@@ -334,38 +343,36 @@
         
         setTimeout(() => {
             let winningWindow = document.getElementById('intervalSelect').value.split(',').map(Number);
-            let allWeeks = Array.from(new Set(parsedData.map(d => d.weekId))).sort((a,b)=>a-b);
+            
+            // 建立過濾後的有效週次名單
+            let wData = buildWData(winningWindow);
+            let allWeeks = Object.keys(wData).map(Number).sort((a,b)=>a-b);
             let totalWeeks = allWeeks.length;
             let allNums = Array.from({length: maxNum}, (_, i) => i + 1);
             
-            let wData = buildWData(winningWindow);
-            
-            // 鐵三角演算
             let combos3 = getCombinations(allNums, 3);
             let bestResults3 = [];
             combos3.forEach(c => {
-                let hits = allWeeks.filter(w => wData[w] && wData[w].nums.size > 0 && c.some(num => wData[w].nums.has(num))).length;
-                if (hits >= totalWeeks - 1) { // 允許 1 次容錯
+                let hits = allWeeks.filter(w => wData[w].nums.size > 0 && c.some(num => wData[w].nums.has(num))).length;
+                if (hits >= totalWeeks - 1) { 
                     bestResults3.push({ combo: c, hits: hits, wData: wData });
                 }
             });
             bestResults3.sort((a,b) => b.hits - a.hits);
             
-            // 雙星演算
             let combos2 = getCombinations(allNums, 2);
             let bestResults2 = [];
             combos2.forEach(c => {
-                let hits = allWeeks.filter(w => wData[w] && wData[w].nums.size > 0 && c.some(num => wData[w].nums.has(num))).length;
-                if (hits >= totalWeeks - 3) { // 允許 3 次容錯
+                let hits = allWeeks.filter(w => wData[w].nums.size > 0 && c.some(num => wData[w].nums.has(num))).length;
+                if (hits >= totalWeeks - 3) { 
                     bestResults2.push({ combo: c, hits: hits, wData: wData });
                 }
             });
             bestResults2.sort((a,b) => b.hits - a.hits);
 
-            // 單支演算
             let bestResults1 = [];
             allNums.forEach(n => {
-                let hits = allWeeks.filter(w => wData[w] && wData[w].nums.size > 0 && wData[w].nums.has(n)).length;
+                let hits = allWeeks.filter(w => wData[w].nums.size > 0 && wData[w].nums.has(n)).length;
                 if (hits > 0) {
                     bestResults1.push({ combo: [n], hits: hits, wData: wData });
                 }
