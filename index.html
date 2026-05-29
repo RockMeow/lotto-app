@@ -667,9 +667,9 @@
             const updateTitle = (id, title, arr, stars) => {
                 if (arr.length > 0) {
                     let cost = getCost(arr[0].reqK, stars);
-                    document.getElementById(id).innerHTML = `🔥 100% 每週必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少需包 ${arr[0].reqK} 顆 = ${cost} 碰)</span>`;
+                    document.getElementById(id).innerHTML = `🔥 每週必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少需包 ${arr[0].reqK} 顆 = ${cost} 碰)</span>`;
                 } else {
-                    document.getElementById(id).innerHTML = `🔥 100% 每週必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
+                    document.getElementById(id).innerHTML = `🔥 每週必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
                 }
             };
             const updatePillarTitle = (id, title, arr, pillars, isMonthly=false) => {
@@ -697,9 +697,9 @@
             const updateMonthExactTitle = (id, title, arr, stars) => {
                 if (arr.length > 0) {
                     let cost = getCost(arr[0].reqK, stars);
-                    document.getElementById(id).innerHTML = `📅 100% 每月必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少需包 ${arr[0].reqK} 顆 = ${cost} 碰)</span>`;
+                    document.getElementById(id).innerHTML = `📅 每月必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少需包 ${arr[0].reqK} 顆 = ${cost} 碰)</span>`;
                 } else {
-                    document.getElementById(id).innerHTML = `📅 100% 每月必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
+                    document.getElementById(id).innerHTML = `📅 每月必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
                 }
             };
             
@@ -717,7 +717,7 @@
             const summaryHtml = `
                 <div class="week-status">📌 分析區間：【${winNamesStr}】</div>
                 <div style="font-size:0.85rem; color:#7f8c8d; margin-bottom:5px;">📊 數據基底：涵蓋過去 ${totalWeeks} 個星期 / ${totalMonths} 個月份</div>
-                <div>本週此區間【已開出號碼】：</div>
+                <div>本週目前已開出號碼：</div>
                 <div class="drawn-nums">${drawnThisWeek.length > 0 ? drawnThisWeek.sort((a,b)=>a-b).map(fNum).join(', ') : '本週區間尚未有開獎數據'}</div>
             `;
             document.getElementById('summaryCard').innerHTML = summaryHtml;
