@@ -251,7 +251,7 @@
             let maxDraws = Math.max(...Object.values(wdayCounts));
             availableWdays = Object.keys(wdayCounts).map(Number).filter(w => wdayCounts[w] > maxDraws * 0.5).sort((a,b) => (a===0?7:a) - (b===0?7:b));
             updateIntervalDropdown(availableWdays);
-            statusEl.innerText = `✅ 彩種解析完成 (常規開獎: ${availableWdays.length}天)`;
+            statusEl.innerText = `✅ 彩球類型分析完成 (常規開獎: ${availableWdays.length}天)`;
             document.getElementById('outputArea').style.display = 'none';
         } catch(e) { 
             statusEl.innerText = "❌ 讀取失敗 (請檢查本機環境或檔名)"; 
@@ -474,7 +474,7 @@
                         <div class="hit-count">${item.hits} / ${allMonths.length} 月</div>
                     </div>
                 </div>
-                <div style="font-size:0.8rem; color:#2980b9; font-weight:bold; margin-top:5px;">⚠️ 每月嚴苛連碰條件 (至少 ${matchTarget} 顆同天掉下)</div>
+                <div style="font-size:0.8rem; color:#2980b9; font-weight:bold; margin-top:5px;">⚠️ 每月連碰條件 (至少 ${matchTarget} 顆同天掉下)</div>
                 <div class="toggle-hint">▼ 點擊展開詳細歷史明細 ▼</div>
                 ${historyHtml}
             </div>`;
@@ -533,7 +533,7 @@
                     </div>
                 </div>
                 <div style="font-size:0.8rem; color:#16a085; font-weight:bold; margin-top:8px; line-height:1.5;">
-                    🏢 每月限定智慧排柱，低風險穩定打法。
+                    🏢 每月限定智慧柱碰。
                 </div>
             </div>`;
             container.innerHTML += html;
