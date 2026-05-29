@@ -375,7 +375,7 @@
         const container = document.getElementById(containerId);
         container.innerHTML = '';
         if (dataArr.length === 0) {
-            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無 100% 連碰組合 ☕</div>';
+            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無連碰組合 ☕</div>';
             return;
         }
         let count = 0;
@@ -431,7 +431,7 @@
         const container = document.getElementById(containerId);
         container.innerHTML = '';
         if (dataArr.length === 0) {
-            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無 100% 連碰組合 ☕</div>';
+            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無連碰組合 ☕</div>';
             return;
         }
         let count = 0;
@@ -487,7 +487,7 @@
         const container = document.getElementById(containerId);
         container.innerHTML = '';
         if (dataArr.length === 0) {
-            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無 100% 柱碰組合 ☕</div>';
+            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無柱碰組合 ☕</div>';
             return;
         }
         let count = 0;
@@ -516,7 +516,7 @@
         const container = document.getElementById(containerId);
         container.innerHTML = '';
         if (dataArr.length === 0) {
-            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無 100% 柱碰組合 ☕</div>';
+            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無柱碰組合 ☕</div>';
             return;
         }
         let count = 0;
@@ -677,9 +677,9 @@
                 let timeText = isMonthly ? '每月' : '每週';
                 if (arr.length > 0) {
                     let cost = arr[0].split.reduce((acc, val) => acc * val.length, 1);
-                    document.getElementById(id).innerHTML = `${icon} 100% ${timeText}必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少 ${arr[0].reqK} 碼分 ${pillars} 柱 = ${cost} 碰)</span>`;
+                    document.getElementById(id).innerHTML = `${icon} ${timeText}必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少 ${arr[0].reqK} 碼分 ${pillars} 柱 = ${cost} 碰)</span>`;
                 } else {
-                    document.getElementById(id).innerHTML = `${icon} 100% ${timeText}必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
+                    document.getElementById(id).innerHTML = `${icon} ${timeText}必開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
                 }
             };
 
