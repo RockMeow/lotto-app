@@ -122,6 +122,9 @@
     <div id="outputArea" style="display:none;">
         <div class="summary-card" id="summaryCard"></div>
 
+        <div class="section-title exact-title" style="color:#e74c3c; border-bottom-color:#e74c3c;" id="titlePattern">🔮 最新期拖牌版路 (準三進四)</div>
+        <div class="result-grid" id="gridPattern"></div>
+
         <div class="section-title">3顆至少開1顆</div>
         <div class="result-grid" id="grid3"></div>
 
@@ -307,6 +310,39 @@
             }
         });
         return mData;
+    }
+
+    // --- 新增：渲染拖牌版路卡片函數 ---
+    function renderPatternCards(containerId, dataArr) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        if (dataArr.length === 0) {
+            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">本期查無「準三進四」完美連準拖牌版路 ☕</div>';
+            return;
+        }
+
+        for (let item of dataArr) {
+            let historyStr = item.records.map(r => `📌 ${r}`).join('<br>');
+            let html = `
+            <div class="combo-card" style="border-left: 6px solid #e74c3c; background: #fff5f5;" onclick="toggleHistory(this)">
+                <div class="combo-header">
+                    <div class="combo-nums" style="color: #e74c3c;">${fNum(item.trigger)} 拖 ${fNum(item.target)}</div>
+                    <div class="combo-stats">
+                        <div class="hit-rate" style="color: #e74c3c;">100%</div>
+                        <div class="hit-count">準 3 進 4</div>
+                    </div>
+                </div>
+                <div style="font-size:0.8rem; color: #c0392b; font-weight:bold; margin-top:5px;">⚠️ 觸發條件：最新期已開出 ${fNum(item.trigger)}，強勢推薦 ${fNum(item.target)}</div>
+                <div class="toggle-hint">▼ 點擊展開詳細歷史明細 ▼</div>
+                <div class="history-container" style="display:none;">
+                    <div class="history-item history-hit">
+                        <div style="font-weight:bold; margin-bottom: 5px; color:var(--success)">✅ 近三期完美連準紀錄</div>
+                        <div class="draw-details">${historyStr}</div>
+                    </div>
+                </div>
+            </div>`;
+            container.innerHTML += html;
+        }
     }
 
     function renderCards(containerId, dataArr, limit, allWeeks, winningWindow) {
@@ -708,6 +744,48 @@
             updatePillarTitle('titleMonthPillar4', '四星智慧柱碰', mPillar4, 4, true);
             updatePillarTitle('titleMonthPillar5', '五星智慧柱碰', mPillar5, 5, true);
 
+            // --- 新增：完美連準拖牌 (準三進四) 演算 ---
+            let latestDraw = parsedData[parsedData.length - 1];
+            let latestNums = latestDraw.nums;
+            let patternResults = [];
+
+            for (let triggerNum of latestNums) {
+                for (let targetNum = 1; targetNum <= maxNum; targetNum++) {
+                    if (triggerNum === targetNum) continue;
+
+                    let triggerIndices = [];
+                    for (let i = 0; i < parsedData.length - 1; i++) {
+                        if (parsedData[i].nums.includes(triggerNum)) {
+                            triggerIndices.push(i);
+                        }
+                    }
+
+                    if (triggerIndices.length >= 3) {
+                        let recentTriggers = triggerIndices.slice(-3);
+                        let isPerfectMatch = true;
+                        let matchRecords = [];
+
+                        for (let idx of recentTriggers) {
+                            let nextDraw = parsedData[idx + 1];
+                            if (!nextDraw.nums.includes(targetNum)) {
+                                isPerfectMatch = false;
+                                break;
+                            } else {
+                                matchRecords.push(`${parsedData[idx].date} 開 ${fNum(triggerNum)} ➡️ ${nextDraw.date} 開 <span class="hit-highlight" style="background:#e74c3c;">${fNum(targetNum)}</span>`);
+                            }
+                        }
+
+                        if (isPerfectMatch) {
+                            patternResults.push({
+                                trigger: triggerNum,
+                                target: targetNum,
+                                records: matchRecords
+                            });
+                        }
+                    }
+                }
+            }
+
             // --- 渲染畫面 ---
             let maxWeekId = Math.max(...allWeeks);
             let targetWData = wData[maxWeekId] || { nums: new Set() };
@@ -721,6 +799,9 @@
                 <div class="drawn-nums">${drawnThisWeek.length > 0 ? drawnThisWeek.sort((a,b)=>a-b).map(fNum).join(', ') : '本週區間尚未有開獎數據'}</div>
             `;
             document.getElementById('summaryCard').innerHTML = summaryHtml;
+
+            // 渲染新增的拖牌版路
+            renderPatternCards('gridPattern', patternResults);
 
             // 原有包牌區
             renderCards('grid3', bestResults3, 5, allWeeks, winningWindow);
