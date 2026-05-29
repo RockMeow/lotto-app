@@ -110,7 +110,7 @@
             <option value="">載入中，請稍候...</option>
         </select>
         
-        <button class="btn-scan" onclick="runScan()">🚀 執行全方位大數據演算</button>
+        <button class="btn-scan" onclick="runScan()">🚀 執行數據演算</button>
         
         <div class="status-bar">
             <span>系統狀態:</span>
@@ -121,13 +121,13 @@
     <div id="outputArea" style="display:none;">
         <div class="summary-card" id="summaryCard"></div>
 
-        <div class="section-title">🎯 鐵三角區間包牌 (3號至少開1顆)</div>
+        <div class="section-title">區間包牌 (3顆至少開1顆)</div>
         <div class="result-grid" id="grid3"></div>
 
-        <div class="section-title">⭐⭐ 黃金雙星區間包牌 (2號至少開1顆)</div>
+        <div class="section-title">區間包牌 (2顆至少開1顆)</div>
         <div class="result-grid" id="grid2"></div>
 
-        <div class="section-title">🚗 霸主單支 (最強區間坐車號)</div>
+        <div class="section-title">(區間坐車) 坐車</div>
         <div class="result-grid" id="grid1"></div>
         
         <hr style="border:1px dashed #bdc3c7; margin: 25px 0;">
@@ -212,10 +212,10 @@
             let half = Math.ceil(wdays.length / 2);
             let firstHalf = wdays.slice(0, half);
             let secondHalf = wdays.slice(half);
-            select.innerHTML += `<option value="${firstHalf.join(',')}">【前半區間】 ${getNames(firstHalf)}</option>`;
-            select.innerHTML += `<option value="${secondHalf.join(',')}">【後半區間】 ${getNames(secondHalf)}</option>`;
+            select.innerHTML += `<option value="${firstHalf.join(',')}">${getNames(firstHalf)}</option>`;
+            select.innerHTML += `<option value="${secondHalf.join(',')}">${getNames(secondHalf)}</option>`;
         }
-        select.innerHTML += `<option value="${allStr}">【全區間】 ${getNames(wdays)}</option>`;
+        select.innerHTML += `<option value="${allStr}">${getNames(wdays)}</option>`;
     }
 
     async function processData() {
