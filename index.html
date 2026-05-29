@@ -110,7 +110,7 @@
             <option value="">載入中，請稍候...</option>
         </select>
         
-        <button class="btn-scan" onclick="runScan()">🚀 執行數據演算</button>
+        <button class="btn-scan" onclick="runScan()">🚀 執行分析</button>
         
         <div class="status-bar">
             <span>系統狀態:</span>
@@ -543,7 +543,7 @@
     function runScan() {
         if(parsedData.length === 0) return;
         
-        document.getElementById('dataStatus').innerText = "🔍 啟動全維度與月份矩陣演算，請稍候...";
+        document.getElementById('dataStatus').innerText = "🔍 請稍候...";
         document.getElementById('outputArea').style.display = 'none';
         
         setTimeout(() => {
@@ -714,9 +714,9 @@
             let winNamesStr = winningWindow.map(d => '週'+wNames[d]).join('、');
 
             const summaryHtml = `
-                <div class="week-status">📌 綜合分析區間：【${winNamesStr}】</div>
+                <div class="week-status">📌 分析區間：【${winNamesStr}】</div>
                 <div style="font-size:0.85rem; color:#7f8c8d; margin-bottom:5px;">📊 數據基底：涵蓋過去 ${totalWeeks} 個星期 / ${totalMonths} 個月份</div>
-                <div>本週此區間【已開出總號碼】：</div>
+                <div>本週此區間【已開出號碼】：</div>
                 <div class="drawn-nums">${drawnThisWeek.length > 0 ? drawnThisWeek.sort((a,b)=>a-b).map(fNum).join(', ') : '本週區間尚未有開獎數據'}</div>
             `;
             document.getElementById('summaryCard').innerHTML = summaryHtml;
@@ -747,7 +747,7 @@
             renderMonthPillarCards('gridMonthPillar5', mPillar5, 5, allMonths);
 
             document.getElementById('outputArea').style.display = 'block';
-            document.getElementById('dataStatus').innerText = `✅ 矩陣解密完成！分析區間：${winNamesStr}`;
+            document.getElementById('dataStatus').innerText = `✅ 分析完成！分析區間：${winNamesStr}`;
 
         }, 50); 
     }
