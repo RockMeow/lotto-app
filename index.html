@@ -111,7 +111,7 @@
             <option value="">載入中，請稍候...</option>
         </select>
         
-        <button class="btn-scan" onclick="runScan()">🚀 執行分析</button>
+        <button class="btn-scan" onclick="runScan()">分析</button>
         
         <div class="status-bar">
             <span>系統狀態:</span>
@@ -418,7 +418,7 @@
                         <div class="hit-count">${item.hits} / ${allWeeks.length} 週</div>
                     </div>
                 </div>
-                <div style="font-size:0.8rem; color:var(--danger); font-weight:bold; margin-top:5px;">⚠️ 每週嚴苛連碰條件 (至少 ${matchTarget} 顆同天掉下)</div>
+                <div style="font-size:0.8rem; color:var(--danger); font-weight:bold; margin-top:5px;">⚠️ 每週連碰條件 (至少 ${matchTarget} 顆同天掉下)</div>
                 <div class="toggle-hint">▼ 點擊展開詳細歷史明細 ▼</div>
                 ${historyHtml}
             </div>`;
