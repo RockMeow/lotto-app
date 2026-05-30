@@ -6,76 +6,101 @@
     <title>PRO 網格交易終端 | Quant Terminal</title>
     <style>
         /* ==========================================
-           專業看盤軟體 (Dark Mode) UI 設計
+           專業看盤軟體 (Dark Mode) UI 設計 + 手機自適應
            ========================================== */
         :root {
-            --bg-base: #0a0e17;       /* 深邃黑背景 */
-            --bg-panel: #131b29;      /* 面板底色 */
-            --bg-input: #1c2638;      /* 輸入框底色 */
-            --text-main: #c9d1d9;     /* 主文字色 */
-            --text-dim: #8b949e;      /* 次要文字 */
-            --accent-blue: #2196f3;   /* 專業科技藍 */
-            --trade-buy: #00e676;     /* 亮螢光綠 (買進/獲利) */
-            --trade-sell: #ff1744;    /* 亮螢光紅 (賣出/虧損) */
+            --bg-base: #0a0e17;       
+            --bg-panel: #131b29;      
+            --bg-input: #1c2638;      
+            --text-main: #c9d1d9;     
+            --text-dim: #8b949e;      
+            --accent-blue: #2196f3;   
+            --trade-buy: #00e676;     
+            --trade-sell: #ff1744;    
             --border-color: #2d3748;
         }
         
         * { box-sizing: border-box; }
-        body { font-family: 'Consolas', 'Monaco', 'Courier New', monospace; background-color: var(--bg-base); color: var(--text-main); margin: 0; padding: 10px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* 網格佈局：左側控制台，右側終端機 */
-        .layout { display: flex; gap: 10px; height: calc(100vh - 40px); margin-top: 10px; }
-        .sidebar { width: 350px; display: flex; flex-direction: column; gap: 10px; }
+        /* 移除原本鎖死高度的設定，讓手機可以自然上下滑動 */
+        body { 
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
+            background-color: var(--bg-base); 
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 10px; 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+        }
+        
+        /* 預設為電腦版的雙欄佈局 */
+        .layout { display: flex; gap: 10px; margin-top: 10px; flex: 1; flex-direction: row; }
+        .sidebar { width: 350px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
         .main-content { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
         
         .panel { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; overflow-y: auto; }
         .panel-header { font-size: 1.1em; font-weight: bold; color: var(--accent-blue); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* 元件樣式 */
         .pool-amount { font-size: 2.2em; font-weight: bold; color: var(--trade-buy); margin: 5px 0; text-shadow: 0 0 10px rgba(0,230,118,0.2); }
         .input-group { display: flex; gap: 8px; margin-bottom: 15px; }
-        .input-group input { flex: 1; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px; border-radius: 4px; font-family: inherit; font-size: 1em; }
+        .input-group input { flex: 1; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px; border-radius: 4px; font-family: inherit; font-size: 1.1em; } /* 稍微加大 input 方便手機點擊 */
         
-        .btn { background: #2b3a4a; color: white; border: 1px solid #4a5e78; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-family: inherit; width: 100%; transition: all 0.2s; }
+        .btn { background: #2b3a4a; color: white; border: 1px solid #4a5e78; padding: 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-family: inherit; width: 100%; transition: all 0.2s; font-size: 1.05em; }
         .btn:hover { background: #3c4f63; }
-        .btn-action { background: var(--accent-blue); border-color: #1976d2; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-size: 1.1em; padding: 12px;}
+        .btn-action { background: var(--accent-blue); border-color: #1976d2; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-size: 1.1em; padding: 15px;}
         .btn-action:hover { background: #1e88e5; }
         .btn-danger { background: transparent; border: 1px solid var(--trade-sell); color: var(--trade-sell); margin-top: auto; }
         .btn-danger:hover { background: rgba(255, 23, 68, 0.1); }
-        .btn-stop { background: var(--trade-sell); color: white; border: none; display: none; }
+        .btn-stop { background: var(--trade-sell); color: white; border: none; display: none; padding: 15px; font-size: 1.1em; }
         
-        /* 標籤與清單 */
-        .stock-tag { display: inline-block; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 4px 8px; border-radius: 4px; margin: 3px; font-size: 0.9em; }
+        .stock-tag { display: inline-block; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 6px 10px; border-radius: 4px; margin: 3px; font-size: 0.95em; }
         
-        /* 終端機日誌 */
-        .terminal { flex: 1; background: #000; border: 1px solid #333; padding: 12px; font-size: 0.95em; line-height: 1.5; overflow-y: auto; border-radius: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
-        .terminal-row { border-bottom: 1px dashed #222; padding: 3px 0; }
+        .terminal { flex: 1; background: #000; border: 1px solid #333; padding: 12px; font-size: 0.95em; line-height: 1.5; overflow-y: auto; border-radius: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); min-height: 350px; }
+        .terminal-row { border-bottom: 1px dashed #222; padding: 4px 0; }
         
-        /* 專業表格 */
         table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        th { text-align: left; padding: 8px; border-bottom: 2px solid var(--border-color); color: var(--text-dim); position: sticky; top: 0; background: var(--bg-panel); }
-        td { padding: 8px; border-bottom: 1px solid var(--border-color); }
-        .badge { padding: 3px 6px; border-radius: 3px; font-size: 0.85em; font-weight: bold; color: #000; }
+        th { text-align: left; padding: 10px 8px; border-bottom: 2px solid var(--border-color); color: var(--text-dim); position: sticky; top: 0; background: var(--bg-panel); }
+        td { padding: 10px 8px; border-bottom: 1px solid var(--border-color); }
+        .badge { padding: 4px 6px; border-radius: 3px; font-size: 0.85em; font-weight: bold; color: #000; }
         
-        /* 顏色輔助 */
         .c-buy { color: var(--trade-buy); } .c-sell { color: var(--trade-sell); }
         .bg-buy { background: var(--trade-buy); } .bg-sell { background: var(--trade-sell); } .bg-sys { background: var(--accent-blue); color: white;}
         .highlight { color: #ffd600; font-weight: bold; }
         
-        /* 進度條 */
         .progress-wrapper { width: 100%; background: var(--bg-input); border-radius: 4px; overflow: hidden; height: 10px; margin-top: 10px; display: none; }
         .progress-bar { height: 100%; background: var(--accent-blue); width: 0%; transition: width 0.2s; }
         
-        /* 頂部 Header */
-        header { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
-        header h1 { margin: 0; font-size: 1.5em; letter-spacing: 2px; color: #fff; }
+        header { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 5px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        header h1 { margin: 0; font-size: 1.5em; letter-spacing: 1px; color: #fff; }
         header span { color: var(--text-dim); font-size: 0.9em; }
+
+        /* ==========================================
+           為手機螢幕加入的自適應變形 (Media Query)
+           ========================================== */
+        @media (max-width: 768px) {
+            .layout { 
+                flex-direction: column; /* 將雙欄改為上下排列 */
+            }
+            .sidebar { 
+                width: 100%; /* 左側控制台佔滿寬度 */
+            }
+            header h1 { 
+                font-size: 1.2em; /* 縮小標題以免破版 */
+            }
+            .terminal { 
+                min-height: 400px; /* 確保手機上的日誌區有足夠高度可滑動 */
+            }
+            .panel {
+                padding: 10px;
+            }
+        }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>QUANT TERMINAL v10.0 <span style="color: var(--accent-blue);">[PRO]</span></h1>
+    <h1>QUANT TERMINAL <span style="color: var(--accent-blue);">[PRO]</span></h1>
     <span id="clock">00:00:00</span>
 </header>
 
@@ -85,7 +110,7 @@
             <div class="panel-header">CAPITAL POOL (資金池)</div>
             <div class="pool-amount" id="poolAmount">$0</div>
             <div class="input-group" style="margin-top: 10px;">
-                <input type="number" id="depositAmount" placeholder="輸入注入金額 (USD/TWD)...">
+                <input type="number" id="depositAmount" placeholder="輸入注入金額 (TWD)...">
                 <button class="btn" style="width: auto;" onclick="manualDeposit()">注入</button>
             </div>
         </div>
@@ -116,8 +141,7 @@
 
         <div class="panel" style="flex: 2;">
             <div class="panel-header">LEDGER & HOLDINGS (歷史帳本)</div>
-            <div style="overflow-y: auto; max-height: 100%;">
-                <table>
+            <div style="overflow-x: auto;"> <table>
                     <thead><tr><th>DATE</th><th>TICKER</th><th>ACTION</th><th>SHARES</th><th>PRICE/AMT</th></tr></thead>
                     <tbody id="ledgerBody"></tbody>
                 </table>
@@ -131,10 +155,9 @@
     // 參數設定與資料庫管理 (保留原邏輯)
     // ==========================================
     const STOP_LOSS_PCT = 0.15;
-    let IS_SCANNING = false; // 控制全市場掃描中斷
+    let IS_SCANNING = false;
     let ABORT_REQUESTED = false;
 
-    // 更新時鐘
     setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -195,27 +218,29 @@
     }
 
     // ==========================================
-    // 動態全市場抓取 (TWSE OpenAPI)
+    // 動態全市場抓取 (修正 TWSE CORS 阻擋問題)
     // ==========================================
     async function fetchEntireMarketList() {
         logMsg("[API] 正在連接證交所 (TWSE) 獲取全市場即時清單...", "highlight");
         try {
-            // 直接呼叫台灣證券交易所公開 API
-            const res = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL');
+            // 【修復連線】透過 corsproxy.io 代理 TWSE 的 API，解決瀏覽器 CORS 阻擋問題
+            const url = 'https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL';
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+            
+            const res = await fetch(proxyUrl);
             const data = await res.json();
-            // 過濾：只抓取長度為 4 的標準股票與 ETF 代碼
+            
             const codes = data.map(item => item.Code).filter(code => code.length === 4);
             logMsg(`[API] 成功獲取 ${codes.length} 檔上市股票/ETF代碼。`, "c-buy");
             return codes;
         } catch (e) {
-            logMsg("[API ERROR] TWSE 連線失敗，啟用內建核心備用名單。", "c-sell");
-            // 若 TWSE 當機，使用備用大型權值清單
+            logMsg("[API ERROR] TWSE 連線或解析失敗，啟用內建核心備用名單。", "c-sell");
             return ["0050", "0056", "00878", "00919", "00713", "006208", "2330", "2317", "2454", "2881", "2882", "2891"];
         }
     }
 
     // ==========================================
-    // 核心數據抓取 (包含真實歷史日期) - 保持不變
+    // 核心數據抓取 (保持不變)
     // ==========================================
     async function fetchStockDataWithDates(stock, range="1y") {
         const url = `https://query1.finance.yahoo.com/v8/finance/chart/${stock}.TW?interval=1d&range=${range}`;
@@ -250,7 +275,7 @@
     }
 
     // ==========================================
-    // 詳細回測引擎 - 保持不變
+    // 詳細回測引擎 (保持不變)
     // ==========================================
     function runDetailedBacktest(data, capital) {
         let simPool = capital;
@@ -308,7 +333,7 @@
     function abortScan() { ABORT_REQUESTED = true; }
 
     // ==========================================
-    // 終極全自動大腦主程式 - 介面與全市場融合
+    // 終極全自動大腦主程式 (保持不變)
     // ==========================================
     async function masterExecute() {
         if(IS_SCANNING) return;
@@ -329,24 +354,21 @@
         logMsg(`==================================================`);
         logMsg(`[PHASE 1] 啟動全市場掃描分析引擎`, "highlight");
         
-        // 1. 動態抓取全市場名單
         const marketPool = await fetchEntireMarketList();
         let foundNew = false;
         
         status.innerText = "SCANNING MARKET...";
         
-        // 2. 執行全市場掃描
         for (let i = 0; i < marketPool.length; i++) {
             if(ABORT_REQUESTED) { logMsg("[!] 使用者強制中止掃描。", "c-sell"); break; }
             
             let stock = marketPool[i];
-            // 更新進度條
             pBar.style.width = `${((i+1)/marketPool.length)*100}%`;
             
             if(monitoredList.includes(stock)) continue; 
             
             let data = await fetchStockDataWithDates(stock, "6mo");
-            await sleep(150); // 防禦性節流，避免被鎖 IP
+            await sleep(150); 
             if (!data) continue;
 
             let c = data.closes;
