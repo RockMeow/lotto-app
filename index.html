@@ -122,6 +122,7 @@
     <div id="outputArea" style="display:none;">
         <div class="summary-card" id="summaryCard"></div>
 
+        <!-- 最新期拖牌版路區塊 -->
         <div class="section-title exact-title" style="color:#e74c3c; border-bottom-color:#e74c3c;" id="titlePattern">🔮 最新期拖牌版路 (準三進四)</div>
         <div class="result-grid" id="gridPattern"></div>
 
@@ -173,6 +174,33 @@
 
         <div class="section-title pillar-title" style="color:#16a085; border-bottom-color:#16a085;" id="titleMonthPillar5">🏢 每月必開【五星智慧柱碰】 (運算中...)</div>
         <div class="result-grid" id="gridMonthPillar5"></div>
+
+        <!-- 新增：當月還未開的連碰與柱碰 -->
+        <hr style="border:1px dashed #bdc3c7; margin: 25px 0;">
+
+        <div class="section-title exact-title" style="color:#d35400; border-bottom-color:#d35400;" id="titleMonthUnopenedExact2">⚠️ 當月未開【二星連碰】 (運算中...)</div>
+        <div class="result-grid" id="gridMonthUnopenedExact2"></div>
+
+        <div class="section-title exact-title" style="color:#d35400; border-bottom-color:#d35400;" id="titleMonthUnopenedExact3">⚠️ 當月未開【三星連碰】 (運算中...)</div>
+        <div class="result-grid" id="gridMonthUnopenedExact3"></div>
+
+        <div class="section-title exact-title" style="color:#d35400; border-bottom-color:#d35400;" id="titleMonthUnopenedExact4">⚠️ 當月未開【四星連碰】 (運算中...)</div>
+        <div class="result-grid" id="gridMonthUnopenedExact4"></div>
+
+        <div class="section-title exact-title" style="color:#d35400; border-bottom-color:#d35400;" id="titleMonthUnopenedExact5">⚠️ 當月未開【五星連碰】 (運算中...)</div>
+        <div class="result-grid" id="gridMonthUnopenedExact5"></div>
+
+        <div class="section-title pillar-title" style="color:#8e44ad; border-bottom-color:#8e44ad;" id="titleMonthUnopenedPillar2">⚠️ 當月未開【二星智慧柱碰】 (運算中...)</div>
+        <div class="result-grid" id="gridMonthUnopenedPillar2"></div>
+
+        <div class="section-title pillar-title" style="color:#8e44ad; border-bottom-color:#8e44ad;" id="titleMonthUnopenedPillar3">⚠️ 當月未開【三星智慧柱碰】 (運算中...)</div>
+        <div class="result-grid" id="gridMonthUnopenedPillar3"></div>
+
+        <div class="section-title pillar-title" style="color:#8e44ad; border-bottom-color:#8e44ad;" id="titleMonthUnopenedPillar4">⚠️ 當月未開【四星智慧柱碰】 (運算中...)</div>
+        <div class="result-grid" id="gridMonthUnopenedPillar4"></div>
+
+        <div class="section-title pillar-title" style="color:#8e44ad; border-bottom-color:#8e44ad;" id="titleMonthUnopenedPillar5">⚠️ 當月未開【五星智慧柱碰】 (運算中...)</div>
+        <div class="result-grid" id="gridMonthUnopenedPillar5"></div>
 
     </div>
 </div>
@@ -312,12 +340,11 @@
         return mData;
     }
 
-    // --- 新增：渲染拖牌版路卡片函數 ---
     function renderPatternCards(containerId, dataArr) {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
         if (dataArr.length === 0) {
-            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">本期查無「準三進四」連準拖牌版路 ☕</div>';
+            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">本期查無「準三進四」完美連準拖牌版路 ☕</div>';
             return;
         }
 
@@ -332,7 +359,7 @@
                         <div class="hit-count">準 3 進 4</div>
                     </div>
                 </div>
-                <div style="font-size:0.8rem; color: #c0392b; font-weight:bold; margin-top:5px;">⚠️ 觸發條件：最新期已開出 ${fNum(item.trigger)}，推薦 ${fNum(item.target)}</div>
+                <div style="font-size:0.8rem; color: #c0392b; font-weight:bold; margin-top:5px;">⚠️ 觸發條件：最新期已開出 ${fNum(item.trigger)}，強勢推薦 ${fNum(item.target)}</div>
                 <div class="toggle-hint">▼ 點擊展開詳細歷史明細 ▼</div>
                 <div class="history-container" style="display:none;">
                     <div class="history-item history-hit">
@@ -454,7 +481,7 @@
                         <div class="hit-count">${item.hits} / ${allWeeks.length} 週</div>
                     </div>
                 </div>
-                <div style="font-size:0.8rem; color:var(--danger); font-weight:bold; margin-top:5px;">⚠️ 每週連碰條件 (至少 ${matchTarget} 顆同期出現)</div>
+                <div style="font-size:0.8rem; color:var(--danger); font-weight:bold; margin-top:5px;">⚠️ 每週連碰條件 (至少 ${matchTarget} 顆同天掉下)</div>
                 <div class="toggle-hint">▼ 點擊展開詳細歷史明細 ▼</div>
                 ${historyHtml}
             </div>`;
@@ -577,6 +604,93 @@
         }
     }
 
+    // --- 當月未開連碰渲染函數 ---
+    function renderUnopenedMonthExactCards(containerId, dataArr, limit, allMonths, matchTarget) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        if (dataArr.length === 0) {
+            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無當月未開連碰組合 ☕</div>';
+            return;
+        }
+        let count = 0;
+        for (let item of dataArr) {
+            if (count >= limit) break;
+            let tData = item.tData;
+            
+            let historyHtml = '<div class="history-container" style="display:none;">';
+            [...allMonths].reverse().forEach(m => {
+                let monthInfo = tData[m] || { draws: [] };
+                let matchedDraws = monthInfo.draws.filter(d => item.combo.filter(num => d.nums.includes(num)).length >= matchTarget);
+                let isHit = matchedDraws.length > 0;
+                
+                let drawStrs = monthInfo.draws.length > 0 ? monthInfo.draws.map(d => {
+                    let isDrawHit = item.combo.filter(num => d.nums.includes(num)).length >= matchTarget;
+                    let highlightedNums = d.nums.map(n => {
+                        let formatted = fNum(n);
+                        return (isDrawHit && item.combo.includes(n)) ? `<span class="hit-highlight" style="background:#d35400;">${formatted}</span>` : formatted;
+                    }).join(', ');
+                    return `📌 ${d.date}(週${wNames[d.wday]}): ${highlightedNums}`;
+                }).join('<br>') : '<span style="color:#aaa;">此月無開獎紀錄</span>';
+                
+                historyHtml += `
+                    <div class="history-item ${isHit ? 'history-hit' : 'history-miss'}" style="border-left-color:${isHit?'#d35400':'#eee'}">
+                        <div style="font-weight:bold; margin-bottom: 5px; color:${isHit ? '#d35400' : '#aaa'}">
+                            ${isHit ? '🎯' : '❌'} [第${m}月] ${isHit ? `成功同開 ${matchTarget} 顆！` : '未同開'}
+                        </div>
+                        <div class="draw-details">${drawStrs}</div>
+                    </div>`;
+            });
+            historyHtml += '</div>';
+
+            let html = `
+            <div class="combo-card combo-exact" style="border-left-color:#d35400; background:#fffaf0;" onclick="toggleHistory(this)">
+                <div class="status-badge badge-active" style="background:#d35400;">⚠️ 當月尚未開出</div>
+                <div class="combo-header">
+                    <div class="combo-nums" style="color:#d35400;">${item.combo.map(fNum).join(' - ')}</div>
+                    <div class="combo-stats">
+                        <div class="hit-rate" style="color:#d35400;">聽牌中</div>
+                        <div class="hit-count">前 ${allMonths.length - 1} 個月全開</div>
+                    </div>
+                </div>
+                <div style="font-size:0.8rem; color:#d35400; font-weight:bold; margin-top:5px;">⚠️ 當月抓漏條件 (至少 ${matchTarget} 顆同期出現)</div>
+                <div class="toggle-hint">▼ 點擊展開詳細歷史明細 ▼</div>
+                ${historyHtml}
+            </div>`;
+            container.innerHTML += html;
+            count++;
+        }
+    }
+
+    // --- 當月未開柱碰渲染函數 ---
+    function renderUnopenedMonthPillarCards(containerId, dataArr, limit, allMonths) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        if (dataArr.length === 0) {
+            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">查無當月未開柱碰組合 ☕</div>';
+            return;
+        }
+        let count = 0;
+        for (let item of dataArr) {
+            if (count >= limit) break;
+            let html = `
+            <div class="combo-card combo-pillar" style="border-left-color:#8e44ad; background:#f9f5fa;">
+                <div class="status-badge badge-active" style="background:#8e44ad;">⚠️ 當月尚未開出</div>
+                <div class="combo-header">
+                    <div class="combo-nums" style="color:#8e44ad;">${item.comboStr}</div>
+                    <div class="combo-stats">
+                        <div class="hit-rate" style="color:#8e44ad;">聽牌中</div>
+                        <div class="hit-count">前 ${allMonths.length - 1} 個月全開</div>
+                    </div>
+                </div>
+                <div style="font-size:0.8rem; color:#8e44ad; font-weight:bold; margin-top:8px; line-height:1.5;">
+                    🏢 當月漏網之魚，智慧防撞柱碰。
+                </div>
+            </div>`;
+            container.innerHTML += html;
+            count++;
+        }
+    }
+
     function runScan() {
         if(parsedData.length === 0) return;
         
@@ -622,7 +736,7 @@
             });
             bestResults1.sort((a,b) => b.hits - a.hits);
 
-            // 萃取出現頻率最高的前 18 名作為尋寶池，避免瀏覽器當機
+            // 萃取出現頻率最高的前 18 名作為尋寶池
             let numFreq = {};
             allWeeks.forEach(w => {
                 if (wData[w]) {
@@ -682,7 +796,75 @@
                 return results;
             }
 
-            // --- 執行每週四星、五星尋寶 ---
+            // --- 當月還未開尋寶函數 ---
+            function findUnopenedExactMatches(dataObj, keys, targetStars) {
+                let results = [];
+                if (keys.length < 2) return results;
+                let lastKey = keys[keys.length - 1];
+                let previousKeys = keys.slice(0, -1);
+                let totalPrevPeriods = previousKeys.length;
+
+                for (let reqK = targetStars; reqK <= 18; reqK++) {
+                    let c_k = getCombinations(topNums, reqK);
+                    for (let c of c_k) {
+                        let prevHits = previousKeys.filter(k => dataObj[k] && dataObj[k].draws.some(draw => {
+                            return c.filter(num => draw.nums.includes(num)).length >= targetStars;
+                        })).length;
+                        if (prevHits === totalPrevPeriods) {
+                            let currHit = dataObj[lastKey] && dataObj[lastKey].draws.some(draw => {
+                                return c.filter(num => draw.nums.includes(num)).length >= targetStars;
+                            });
+                            if (!currHit) {
+                                results.push({ combo: c, hits: prevHits, wData: dataObj, tData: dataObj, reqK: reqK });
+                            }
+                        }
+                        if (results.length >= 5) break;
+                    }
+                    if (results.length > 0) break;
+                }
+                return results;
+            }
+
+            function findUnopenedPillars(dataObj, keys, targetStars) {
+                let results = [];
+                if (keys.length < 2) return results;
+                let lastKey = keys[keys.length - 1];
+                let previousKeys = keys.slice(0, -1);
+                let totalPrevPeriods = previousKeys.length;
+
+                for (let reqP = targetStars; reqP <= 20; reqP++) {
+                    let c_k = getCombinations(topNums, reqP);
+                    for (let c of c_k) {
+                        let split = [];
+                        let chunkSize = Math.floor(reqP / targetStars);
+                        let remainder = reqP % targetStars;
+                        let offset = 0;
+                        for(let i=0; i<targetStars; i++) {
+                            let size = chunkSize + (i < remainder ? 1 : 0);
+                            split.push(c.slice(offset, offset + size));
+                            offset += size;
+                        }
+                        
+                        let prevHits = previousKeys.filter(k => dataObj[k] && dataObj[k].draws.some(draw => {
+                            return split.every(p => p.some(x=>draw.nums.includes(x)));
+                        })).length;
+                        
+                        if (prevHits === totalPrevPeriods) {
+                            let currHit = dataObj[lastKey] && dataObj[lastKey].draws.some(draw => {
+                                return split.every(p => p.some(x=>draw.nums.includes(x)));
+                            });
+                            if (!currHit) {
+                                results.push({ split: split, hits: prevHits, reqK: reqP, comboStr: split.map(p => `[${p.map(fNum).join(',')}]`).join('×') });
+                                break;
+                            }
+                        }
+                    }
+                    if (results.length > 0) break;
+                }
+                return results;
+            }
+
+            // --- 執行每週二至五星尋寶 ---
             let exact2 = findExactMatches(wData, totalWeeks, allWeeks, 2);
             let exact3 = findExactMatches(wData, totalWeeks, allWeeks, 3);
             let exact4 = findExactMatches(wData, totalWeeks, allWeeks, 4);
@@ -693,11 +875,22 @@
             let pillar4 = findPillars(wData, totalWeeks, allWeeks, 4);
             let pillar5 = findPillars(wData, totalWeeks, allWeeks, 5);
 
-            // --- 執行每月四星、五星尋寶 ---
+            // --- 執行每月四至五星尋寶 ---
             let mExact4 = findExactMatches(mData, totalMonths, allMonths, 4);
             let mExact5 = findExactMatches(mData, totalMonths, allMonths, 5);
             let mPillar4 = findPillars(mData, totalMonths, allMonths, 4);
             let mPillar5 = findPillars(mData, totalMonths, allMonths, 5);
+
+            // --- 執行當月未開尋寶 (新增 2, 3 星) ---
+            let mUnopenedExact2 = findUnopenedExactMatches(mData, allMonths, 2);
+            let mUnopenedExact3 = findUnopenedExactMatches(mData, allMonths, 3);
+            let mUnopenedExact4 = findUnopenedExactMatches(mData, allMonths, 4);
+            let mUnopenedExact5 = findUnopenedExactMatches(mData, allMonths, 5);
+            
+            let mUnopenedPillar2 = findUnopenedPillars(mData, allMonths, 2);
+            let mUnopenedPillar3 = findUnopenedPillars(mData, allMonths, 3);
+            let mUnopenedPillar4 = findUnopenedPillars(mData, allMonths, 4);
+            let mUnopenedPillar5 = findUnopenedPillars(mData, allMonths, 5);
 
             // --- 動態更新標題與成本顯示 (每週) ---
             const updateTitle = (id, title, arr, stars) => {
@@ -744,7 +937,35 @@
             updatePillarTitle('titleMonthPillar4', '四星智慧柱碰', mPillar4, 4, true);
             updatePillarTitle('titleMonthPillar5', '五星智慧柱碰', mPillar5, 5, true);
 
-            // --- 新增：完美連準拖牌 (準三進四) 演算 ---
+            // --- 動態更新標題 (當月未開) ---
+            const updateUnopenedMonthExactTitle = (id, title, arr, stars) => {
+                if (arr.length > 0) {
+                    let cost = getCost(arr[0].reqK, stars);
+                    document.getElementById(id).innerHTML = `⚠️ 當月未開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少需包 ${arr[0].reqK} 顆 = ${cost} 碰)</span>`;
+                } else {
+                    document.getElementById(id).innerHTML = `⚠️ 當月未開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
+                }
+            };
+            const updateUnopenedMonthPillarTitle = (id, title, arr, pillars) => {
+                if (arr.length > 0) {
+                    let cost = arr[0].split.reduce((acc, val) => acc * val.length, 1);
+                    document.getElementById(id).innerHTML = `⚠️ 當月未開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(最少 ${arr[0].reqK} 碼分 ${pillars} 柱 = ${cost} 碰)</span>`;
+                } else {
+                    document.getElementById(id).innerHTML = `⚠️ 當月未開【${title}】 <span style="font-size:0.9rem; color:#7f8c8d; margin-left:10px;">(查無組合)</span>`;
+                }
+            };
+
+            updateUnopenedMonthExactTitle('titleMonthUnopenedExact2', '二星連碰', mUnopenedExact2, 2);
+            updateUnopenedMonthExactTitle('titleMonthUnopenedExact3', '三星連碰', mUnopenedExact3, 3);
+            updateUnopenedMonthExactTitle('titleMonthUnopenedExact4', '四星連碰', mUnopenedExact4, 4);
+            updateUnopenedMonthExactTitle('titleMonthUnopenedExact5', '五星連碰', mUnopenedExact5, 5);
+            
+            updateUnopenedMonthPillarTitle('titleMonthUnopenedPillar2', '二星智慧柱碰', mUnopenedPillar2, 2);
+            updateUnopenedMonthPillarTitle('titleMonthUnopenedPillar3', '三星智慧柱碰', mUnopenedPillar3, 3);
+            updateUnopenedMonthPillarTitle('titleMonthUnopenedPillar4', '四星智慧柱碰', mUnopenedPillar4, 4);
+            updateUnopenedMonthPillarTitle('titleMonthUnopenedPillar5', '五星智慧柱碰', mUnopenedPillar5, 5);
+
+            // --- 完美連準拖牌 (準三進四) 演算 ---
             let latestDraw = parsedData[parsedData.length - 1];
             let latestNums = latestDraw.nums;
             let patternResults = [];
@@ -827,6 +1048,17 @@
             // 每月智慧排柱區
             renderMonthPillarCards('gridMonthPillar4', mPillar4, 5, allMonths);
             renderMonthPillarCards('gridMonthPillar5', mPillar5, 5, allMonths);
+
+            // --- 新增：當月未開區塊渲染 (加入 2, 3 星) ---
+            renderUnopenedMonthExactCards('gridMonthUnopenedExact2', mUnopenedExact2, 5, allMonths, 2);
+            renderUnopenedMonthExactCards('gridMonthUnopenedExact3', mUnopenedExact3, 5, allMonths, 3);
+            renderUnopenedMonthExactCards('gridMonthUnopenedExact4', mUnopenedExact4, 5, allMonths, 4);
+            renderUnopenedMonthExactCards('gridMonthUnopenedExact5', mUnopenedExact5, 5, allMonths, 5);
+            
+            renderUnopenedMonthPillarCards('gridMonthUnopenedPillar2', mUnopenedPillar2, 5, allMonths);
+            renderUnopenedMonthPillarCards('gridMonthUnopenedPillar3', mUnopenedPillar3, 5, allMonths);
+            renderUnopenedMonthPillarCards('gridMonthUnopenedPillar4', mUnopenedPillar4, 5, allMonths);
+            renderUnopenedMonthPillarCards('gridMonthUnopenedPillar5', mUnopenedPillar5, 5, allMonths);
 
             document.getElementById('outputArea').style.display = 'block';
             document.getElementById('dataStatus').innerText = `✅ 分析完成！分析區間：${winNamesStr}`;
