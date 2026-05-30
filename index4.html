@@ -6,24 +6,33 @@
     <title>純前端 | 零股網格交易系統</title>
     <style>
         :root {
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --primary-color: #2c3e50;
-            --accent-color: #27ae60;
+            --bg-color: #f4f7f6; --card-bg: #ffffff;
+            --primary-color: #2c3e50; --accent-color: #27ae60;
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--primary-color);
+            background-color: var(--bg-color); color: var(--primary-color);
             margin: 0; padding: 20px;
         }
         .container { max-width: 900px; margin: 0 auto; }
         .header { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }
         .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        
         .btn { background: var(--primary-color); color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-size: 1em; width: 100%; margin-bottom: 10px; font-weight: bold;}
         .btn:hover { background: #1a252f; }
         .btn-blue { background: #2980b9; } .btn-blue:hover { background: #1c5980; }
         .btn-red { background: #e74c3c; } .btn-red:hover { background: #c0392b; }
+        .btn-small { width: auto; padding: 6px 12px; margin: 0; }
+        
+        /* 股票池標籤設計 */
+        .stock-tag {
+            display: inline-block; background: #e0e6ed; padding: 5px 10px; 
+            border-radius: 15px; margin: 5px; font-weight: bold;
+        }
+        .stock-tag span { cursor: pointer; color: #c0392b; margin-left: 5px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        .input-group input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
         .log-box { height: 150px; overflow-y: auto; background: #2c3e50; color: #ecf0f1; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.9em; margin-bottom: 20px;}
@@ -33,14 +42,24 @@
 
 <div class="container">
     <div class="header">
-        <h1>📈 網格交易中心 (純前端極簡版)</h1>
+        <h1>📈 網格交易中心 (動態股票池防護版)</h1>
     </div>
 
     <div class="log-box" id="sysLog">系統已就緒。等待操作...</div>
 
     <div class="card">
+        <h2>🎯 監控股票池設定</h2>
+        <div class="input-group">
+            <input type="text" id="newStockInput" placeholder="輸入台股代號 (如: 2330, 0050)..." maxlength="6">
+            <button class="btn btn-blue btn-small" onclick="addStock()">＋ 新增標的</button>
+        </div>
+        <div id="stockTagsArea">
+            </div>
+    </div>
+
+    <div class="card">
         <h2>💰 資金池與控制台</h2>
-        <p style="color: #7f8c8d; margin-top: -10px;">每月 5 號自動儲值 1,000 元</p>
+        <p style="color: #7f8c8d; margin-top: -10px;">每月 5 號自動儲值 1,000 元 (遇假日遞延)</p>
         <h1 style="color: var(--accent-color); margin: 10px 0;" id="poolAmount">$0</h1>
         
         <button class="btn btn-blue" onclick="runScanner()" id="btnScan">🔍 1. 手動啟動雷達掃描</button>
@@ -61,23 +80,64 @@
 
 <script>
     // ==========================================
-    // 1. 虛擬帳本管理 (LocalStorage)
+    // 1. 動態股票池管理
+    // ==========================================
+    const DEFAULT_POOL = ["00878", "0056", "2881", "2882"];
+    
+    function getStockPool() {
+        return JSON.parse(localStorage.getItem('gridStockPool')) || DEFAULT_POOL;
+    }
+    function saveStockPool(pool) {
+        localStorage.setItem('gridStockPool', JSON.stringify(pool));
+        renderStockPool();
+    }
+    
+    function renderStockPool() {
+        const pool = getStockPool();
+        const area = document.getElementById('stockTagsArea');
+        area.innerHTML = pool.map(stock => 
+            `<div class="stock-tag">${stock} <span onclick="removeStock('${stock}')">✖</span></div>`
+        ).join('');
+    }
+
+    function addStock() {
+        const input = document.getElementById('newStockInput');
+        const stock = input.value.trim();
+        if(!stock) return;
+        
+        const pool = getStockPool();
+        if(pool.includes(stock)) {
+            alert("該股票已在清單中！");
+            return;
+        }
+        pool.push(stock);
+        saveStockPool(pool);
+        input.value = '';
+        logMsg(`✅ 成功新增監控標的：${stock}`);
+    }
+
+    function removeStock(stock) {
+        let pool = getStockPool();
+        pool = pool.filter(s => s !== stock);
+        saveStockPool(pool);
+        logMsg(`🗑️ 已移除監控標的：${stock}`);
+    }
+
+    // ==========================================
+    // 2. 虛擬帳本管理
     // ==========================================
     const MONTHLY_DEPOSIT = 1000;
-    const STOCK_POOL = ["00878", "0056", "2881", "2882"]; 
 
     function getLedger() {
-        return JSON.parse(localStorage.getItem('gridLedger_v2')) || { pool: 0, logs: [], holdings: [] };
+        return JSON.parse(localStorage.getItem('gridLedger_v3')) || { pool: 0, logs: [], holdings: [] };
     }
-    
     function saveLedger(ledger) {
-        localStorage.setItem('gridLedger_v2', JSON.stringify(ledger));
+        localStorage.setItem('gridLedger_v3', JSON.stringify(ledger));
         loadUI();
     }
-    
     function clearLedger() {
         if(confirm("確定要刪除所有紀錄嗎？資金池與庫存將歸零。")) {
-            localStorage.removeItem('gridLedger_v2');
+            localStorage.removeItem('gridLedger_v3');
             logMsg("🗑️ 帳本已重置。");
             loadUI();
         }
@@ -92,11 +152,9 @@
         [...ledger.logs].reverse().forEach(log => {
             let color = log.action.includes('BUY') ? '#27ae60' : (log.action.includes('SELL') ? '#c0392b' : '#2980b9');
             tbody.innerHTML += `<tr>
-                <td>${log.date}</td>
-                <td>${log.stock}</td>
+                <td>${log.date}</td><td>${log.stock}</td>
                 <td><span style="background:${color}; color:white; padding:3px 6px; border-radius:4px; font-size:0.85em;">${log.action}</span></td>
-                <td>${log.shares}</td>
-                <td>$${log.price}</td>
+                <td>${log.shares}</td><td>$${log.price}</td>
             </tr>`;
         });
     }
@@ -108,7 +166,7 @@
     }
 
     // ==========================================
-    // 2. 核心數據抓取與技術指標 (改用 corsproxy.io)
+    // 3. 核心數據抓取 (包含日期防呆)
     // ==========================================
     async function fetchStockData(stock) {
         const url = `https://query1.finance.yahoo.com/v8/finance/chart/${stock}.TW?interval=1d&range=6mo`;
@@ -122,7 +180,8 @@
             
             let closes = [], highs = [], lows = [];
             for(let i=0; i<quotes.close.length; i++) {
-                if(quotes.close[i] !== null) {
+                // 必須確保高、低、收盤價皆非空值才納入計算 (過濾假日假數據)
+                if(quotes.close[i] !== null && quotes.high[i] !== null && quotes.low[i] !== null) {
                     closes.push(quotes.close[i]);
                     highs.push(quotes.high[i]);
                     lows.push(quotes.low[i]);
@@ -135,12 +194,12 @@
         }
     }
 
+    // 數學指標公式
     function calcSMA(data, period) {
         let sum = 0;
         for(let i = data.length - period; i < data.length; i++) sum += data[i];
         return sum / period;
     }
-    
     function calcStdDev(data, period, sma) {
         let sumSq = 0;
         for(let i = data.length - period; i < data.length; i++) {
@@ -148,7 +207,6 @@
         }
         return Math.sqrt(sumSq / period);
     }
-    
     function calcATR(highs, lows, closes, period=14) {
         let trs = [];
         for(let i = 1; i < closes.length; i++) {
@@ -161,15 +219,21 @@
     }
 
     // ==========================================
-    // 3. 交易邏輯執行
+    // 4. 交易邏輯執行 (加入休市防護)
     // ==========================================
     async function runScanner() {
+        const currentPool = getStockPool();
+        if(currentPool.length === 0) {
+            logMsg("⚠️ 股票池為空，請先新增標的！");
+            return null;
+        }
+
         logMsg("📡 開始掃描市場尋找地板價標的...");
         document.getElementById('btnScan').disabled = true;
         let bestTarget = null;
         let bestScore = 999;
 
-        for (let stock of STOCK_POOL) {
+        for (let stock of currentPool) {
             let data = await fetchStockData(stock);
             if (!data || data.closes.length < 20) continue;
 
@@ -196,8 +260,16 @@
     }
 
     async function executeGrid() {
-        let ledger = getLedger();
         let today = new Date();
+        
+        // 🛡️ 週末防護機制：星期六 (6) 或星期日 (0) 直接阻擋
+        let dayOfWeek = today.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            logMsg("⏸️ 今日為週末休市，停止執行網格與儲值運算以防重複記錄。");
+            return;
+        }
+
+        let ledger = getLedger();
         let todayStr = today.toISOString().split('T')[0];
         document.getElementById('btnExec').disabled = true;
 
@@ -267,7 +339,7 @@
                 logMsg(`🛒 【買進】以 ${currentPrice.toFixed(2)} 元買進 ${shares} 股。`);
                 actionTaken = true;
             } else if (ledger.pool > 0) {
-                logMsg("⏳ 已達買點，但資金池餘額不足。");
+                logMsg("⏳ 已達買點，但資金池餘額不足最低 10 股。");
             }
         }
 
@@ -277,7 +349,11 @@
         document.getElementById('btnExec').disabled = false;
     }
 
-    window.onload = loadUI;
+    // 初始化網頁
+    window.onload = () => {
+        renderStockPool();
+        loadUI();
+    };
 </script>
 
 </body>
