@@ -34,7 +34,6 @@
         .btn-scan { width: 100%; background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 1.05rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(230, 126, 34, 0.3); transition: background 0.2s; margin-bottom: 5px; }
         .btn-scan:active { background: #d35400; transform: translateY(2px); }
 
-        /* 新增折疊樣式 */
         .section-title { font-size: 1.1rem; font-weight: 900; margin: 20px 0 10px 5px; color: var(--primary); display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; cursor: pointer; user-select: none; transition: opacity 0.2s; }
         .section-title:active { opacity: 0.7; }
         .section-title::after { content: '▼'; font-size: 0.8rem; margin-left: auto; transition: transform 0.3s ease; color: inherit; }
@@ -47,7 +46,6 @@
         .week-status { font-weight: bold; color: var(--secondary); margin-bottom: 5px; font-size:1.05rem; }
         .drawn-nums { font-family: monospace; font-size: 1.1rem; color: var(--danger); font-weight: bold; letter-spacing: 1px; }
 
-        /* 預設隱藏區塊 */
         .result-grid { display: none; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px; }
         
         .combo-card { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #e0e0e0; position: relative; display: flex; flex-direction: column; cursor: pointer; transition: background 0.2s; }
@@ -128,6 +126,7 @@
     <div id="outputArea" style="display:none;">
         <div class="summary-card" id="summaryCard"></div>
 
+        <!-- 最新期拖牌版路區塊 -->
         <div class="section-title exact-title collapsed" onclick="toggleSection(this)" style="color:#e74c3c; border-bottom-color:#e74c3c;" id="titlePattern">最新期拖牌版路 (準三進四)</div>
         <div class="result-grid" id="gridPattern"></div>
 
@@ -137,12 +136,14 @@
         <div class="section-title collapsed" onclick="toggleSection(this)">2顆至少開1顆</div>
         <div class="result-grid" id="grid2"></div>
 
+        <!-- 區間限定2顆二星連碰 -->
         <div class="section-title collapsed" onclick="toggleSection(this)" style="color:#d35400; border-bottom-color:#d35400;">區間只限定2顆的二星連碰</div>
         <div class="result-grid" id="grid2_2star"></div>
 
         <div class="section-title collapsed" onclick="toggleSection(this)">坐車</div>
         <div class="result-grid" id="grid1"></div>
         
+        <!-- 每週必開 區塊 -->
         <hr style="border:1px dashed #bdc3c7; margin: 25px 0;">
 
         <div class="section-title exact-title collapsed" onclick="toggleSection(this)" id="titleExact2">每週必開【二星連碰】 (運算中...)</div>
@@ -169,6 +170,7 @@
         <div class="section-title pillar-title collapsed" onclick="toggleSection(this)" id="titlePillar5">每週必開【五星柱碰】 (運算中...)</div>
         <div class="result-grid" id="gridPillar5"></div>
 
+        <!-- 本週未開 區塊 -->
         <hr style="border:1px dashed #bdc3c7; margin: 25px 0;">
 
         <div class="section-title exact-title collapsed" onclick="toggleSection(this)" style="color:#d35400; border-bottom-color:#d35400;" id="titleWeekUnopenedExact2">本週未開【二星連碰】 (運算中...)</div>
@@ -195,6 +197,7 @@
         <div class="section-title pillar-title collapsed" onclick="toggleSection(this)" style="color:#8e44ad; border-bottom-color:#8e44ad;" id="titleWeekUnopenedPillar5">本週未開【五星柱碰】 (運算中...)</div>
         <div class="result-grid" id="gridWeekUnopenedPillar5"></div>
 
+        <!-- 每月必開 區塊 -->
         <hr style="border:1px dashed #bdc3c7; margin: 25px 0;">
 
         <div class="section-title exact-title collapsed" onclick="toggleSection(this)" style="color:#2980b9; border-bottom-color:#2980b9;" id="titleMonthExact2">每月必開【二星連碰】 (運算中...)</div>
@@ -221,6 +224,7 @@
         <div class="section-title pillar-title collapsed" onclick="toggleSection(this)" style="color:#16a085; border-bottom-color:#16a085;" id="titleMonthPillar5">每月必開【五星柱碰】 (運算中...)</div>
         <div class="result-grid" id="gridMonthPillar5"></div>
 
+        <!-- 當月未開 區塊 -->
         <hr style="border:1px dashed #bdc3c7; margin: 25px 0;">
 
         <div class="section-title exact-title collapsed" onclick="toggleSection(this)" style="color:#d35400; border-bottom-color:#d35400;" id="titleMonthUnopenedExact2">當月未開【二星連碰】 (運算中...)</div>
@@ -258,7 +262,6 @@
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     
-    // 區塊折疊切換
     function toggleSection(el) {
         el.classList.toggle('collapsed');
         let grid = el.nextElementSibling;
@@ -426,7 +429,6 @@
         }
     }
 
-    // 加入 matchAll 參數，支援二星連碰的區間運算
     function renderCards(containerId, dataArr, limit, allWeeks, winningWindow, matchAll = false) {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
@@ -444,8 +446,9 @@
             let hitRateStr = ((item.hits / allWeeks.length) * 100).toFixed(1);
             let winNamesStr = winningWindow.map(d => '週'+wNames[d]).join('、');
             
-            let cardClass = isHitThisWeek ? 'combo-card combo-done' : 'combo-card combo-active';
-            let badgeHtml = isHitThisWeek ? `<div class="status-badge badge-done">✅ 本週已開出</div>` : `<div class="status-badge badge-active">🔥 本週還未開</div>`;
+            let cardClass = isHitThisWeek ? 'combo-card' : 'combo-card combo-active';
+            let extraStyle = isHitThisWeek ? 'style="border-left: 6px solid #2980b9; background: #f4f9fd;"' : '';
+            let badgeHtml = isHitThisWeek ? `<div class="status-badge" style="background:#2980b9; animation: pulse 2s infinite;">⏭️ 數據已出，開始下期養牌</div>` : `<div class="status-badge badge-active">🔥 本週還未開</div>`;
             
             let historyHtml = '<div class="history-container" style="display:none;">';
             [...allWeeks].reverse().forEach(w => {
@@ -471,7 +474,7 @@
             historyHtml += '</div>';
 
             let html = `
-            <div class="${cardClass}" onclick="toggleHistory(this)">
+            <div class="${cardClass}" ${extraStyle} onclick="toggleHistory(this)">
                 ${badgeHtml}
                 <div class="combo-header">
                     <div class="combo-nums">${item.combo.map(fNum).join(' - ')}</div>
@@ -529,6 +532,7 @@
 
             let html = `
             <div class="combo-card combo-exact" onclick="toggleHistory(this)">
+                <div class="status-badge" style="background:#2980b9; animation: pulse 2s infinite;">⏭️ 數據已出，開始下週養牌</div>
                 <div class="combo-header">
                     <div class="combo-nums">${item.combo.map(fNum).join(' - ')}</div>
                     <div class="combo-stats">
@@ -585,6 +589,7 @@
 
             let html = `
             <div class="combo-card combo-exact" style="border-left-color:#2980b9;" onclick="toggleHistory(this)">
+                <div class="status-badge" style="background:#2980b9; animation: pulse 2s infinite;">⏭️ 數據已出，開始下月養牌</div>
                 <div class="combo-header">
                     <div class="combo-nums" style="color:#2980b9;">${item.combo.map(fNum).join(' - ')}</div>
                     <div class="combo-stats">
@@ -614,6 +619,7 @@
             let hitRateStr = ((item.hits / allWeeks.length) * 100).toFixed(1);
             let html = `
             <div class="combo-card combo-pillar">
+                <div class="status-badge" style="background:#2980b9; animation: pulse 2s infinite;">⏭️ 數據已出，開始下週養牌</div>
                 <div class="combo-header">
                     <div class="combo-nums">${item.comboStr}</div>
                     <div class="combo-stats">
@@ -643,6 +649,7 @@
             let hitRateStr = ((item.hits / allMonths.length) * 100).toFixed(1);
             let html = `
             <div class="combo-card combo-pillar" style="border-left-color:#16a085; background:#e8f8f5;">
+                <div class="status-badge" style="background:#2980b9; animation: pulse 2s infinite;">⏭️ 數據已出，開始下月養牌</div>
                 <div class="combo-header">
                     <div class="combo-nums" style="color:#16a085;">${item.comboStr}</div>
                     <div class="combo-stats">
@@ -861,19 +868,17 @@
             
             let combos2 = getCombinations(allNums, 2);
             let bestResults2 = [];
-            let bestResults2_2star = []; // 新增：2顆二星連碰
+            let bestResults2_2star = []; 
 
             combos2.forEach(c => {
-                // 兩顆至少開一顆
                 let hits = allWeeks.filter(w => wData[w].nums.size > 0 && c.some(num => wData[w].nums.has(num))).length;
                 if (hits >= totalWeeks - 3) bestResults2.push({ combo: c, hits: hits, wData: wData });
 
-                // 新增：區間內必須兩顆都開出 (二星連碰)
                 let hitsAll = allWeeks.filter(w => wData[w].nums.size > 0 && c.every(num => wData[w].nums.has(num))).length;
                 if (hitsAll >= 1) bestResults2_2star.push({ combo: c, hits: hitsAll, wData: wData });
             });
             bestResults2.sort((a,b) => b.hits - a.hits);
-            bestResults2_2star.sort((a,b) => b.hits - a.hits); // 依照出現次數排序
+            bestResults2_2star.sort((a,b) => b.hits - a.hits);
 
             let bestResults1 = [];
             allNums.forEach(n => {
@@ -882,7 +887,6 @@
             });
             bestResults1.sort((a,b) => b.hits - a.hits);
 
-            // 萃取出現頻率最高的前 18 名作為尋寶池
             let numFreq = {};
             allWeeks.forEach(w => {
                 if (wData[w]) {
@@ -894,7 +898,6 @@
             let topNums = Object.keys(numFreq).map(Number).sort((a,b) => numFreq[b] - numFreq[a]).slice(0, 18);
             if(topNums.length < 18) topNums = allNums.slice(0, 18);
 
-            // --- 尋寶共用函數 (已解鎖全部數量限制) ---
             function findExactMatches(dataObj, totalPeriods, keys, targetStars) {
                 let results = [];
                 for (let reqK = targetStars; reqK <= 18; reqK++) {
@@ -940,7 +943,6 @@
                 return results;
             }
 
-            // --- 未開尋寶函數 (已解鎖全部數量限制) ---
             function findUnopenedExactMatches(dataObj, keys, targetStars) {
                 let results = [];
                 if (keys.length < 2) return results;
@@ -1006,7 +1008,7 @@
                 return results;
             }
 
-            // --- 執行每週二至五星尋寶 ---
+            // --- 執行運算 ---
             let exact2 = findExactMatches(wData, totalWeeks, allWeeks, 2);
             let exact3 = findExactMatches(wData, totalWeeks, allWeeks, 3);
             let exact4 = findExactMatches(wData, totalWeeks, allWeeks, 4);
@@ -1017,7 +1019,6 @@
             let pillar4 = findPillars(wData, totalWeeks, allWeeks, 4);
             let pillar5 = findPillars(wData, totalWeeks, allWeeks, 5);
 
-            // --- 執行每月二至五星尋寶 ---
             let mExact2 = findExactMatches(mData, totalMonths, allMonths, 2);
             let mExact3 = findExactMatches(mData, totalMonths, allMonths, 3);
             let mExact4 = findExactMatches(mData, totalMonths, allMonths, 4);
@@ -1028,7 +1029,6 @@
             let mPillar4 = findPillars(mData, totalMonths, allMonths, 4);
             let mPillar5 = findPillars(mData, totalMonths, allMonths, 5);
 
-            // --- 執行本週未開尋寶 (新增 2~5 星) ---
             let wUnopenedExact2 = findUnopenedExactMatches(wData, allWeeks, 2);
             let wUnopenedExact3 = findUnopenedExactMatches(wData, allWeeks, 3);
             let wUnopenedExact4 = findUnopenedExactMatches(wData, allWeeks, 4);
@@ -1039,7 +1039,6 @@
             let wUnopenedPillar4 = findUnopenedPillars(wData, allWeeks, 4);
             let wUnopenedPillar5 = findUnopenedPillars(wData, allWeeks, 5);
 
-            // --- 執行當月未開尋寶 (2~5 星) ---
             let mUnopenedExact2 = findUnopenedExactMatches(mData, allMonths, 2);
             let mUnopenedExact3 = findUnopenedExactMatches(mData, allMonths, 3);
             let mUnopenedExact4 = findUnopenedExactMatches(mData, allMonths, 4);
@@ -1050,7 +1049,7 @@
             let mUnopenedPillar4 = findUnopenedPillars(mData, allMonths, 4);
             let mUnopenedPillar5 = findUnopenedPillars(mData, allMonths, 5);
 
-            // --- 動態更新標題與成本顯示 (每週) ---
+            // --- 動態更新標題與成本顯示 ---
             const updateTitle = (id, title, arr, stars) => {
                 if (arr.length > 0) {
                     let cost = getCost(arr[0].reqK, stars);
@@ -1080,7 +1079,6 @@
             updatePillarTitle('titlePillar4', '四星柱碰', pillar4, 4);
             updatePillarTitle('titlePillar5', '五星柱碰', pillar5, 5);
 
-            // --- 動態更新標題 (本週未開) ---
             const updateUnopenedWeekExactTitle = (id, title, arr, stars) => {
                 if (arr.length > 0) {
                     let cost = getCost(arr[0].reqK, stars);
@@ -1108,7 +1106,6 @@
             updateUnopenedWeekPillarTitle('titleWeekUnopenedPillar4', '四星柱碰', wUnopenedPillar4, 4);
             updateUnopenedWeekPillarTitle('titleWeekUnopenedPillar5', '五星柱碰', wUnopenedPillar5, 5);
 
-            // --- 動態更新標題與成本顯示 (每月) ---
             const updateMonthExactTitle = (id, title, arr, stars) => {
                 if (arr.length > 0) {
                     let cost = getCost(arr[0].reqK, stars);
@@ -1128,7 +1125,6 @@
             updatePillarTitle('titleMonthPillar4', '四星柱碰', mPillar4, 4, true);
             updatePillarTitle('titleMonthPillar5', '五星柱碰', mPillar5, 5, true);
 
-            // --- 動態更新標題 (當月未開) ---
             const updateUnopenedMonthExactTitle = (id, title, arr, stars) => {
                 if (arr.length > 0) {
                     let cost = getCost(arr[0].reqK, stars);
@@ -1213,31 +1209,26 @@
             `;
             document.getElementById('summaryCard').innerHTML = summaryHtml;
 
-            // 渲染新增的拖牌版路
             renderPatternCards('gridPattern', patternResults);
 
-            // 原有包牌區 (解鎖數量)
             renderCards('grid3', bestResults3, 9999, allWeeks, winningWindow);
             renderCards('grid2', bestResults2, 9999, allWeeks, winningWindow);
             
-            // 新增：限定兩顆的二星連碰區塊，必須 matchAll = true
+            // 區間限定2顆二星連碰
             renderCards('grid2_2star', bestResults2_2star, 9999, allWeeks, winningWindow, true);
             
             renderCards('grid1', bestResults1, 9999, allWeeks, winningWindow);
             
-            // 每週精準連碰區 (解鎖數量)
             renderExactCards('gridExact2', exact2, 9999, allWeeks, 2);
             renderExactCards('gridExact3', exact3, 9999, allWeeks, 3);
             renderExactCards('gridExact4', exact4, 9999, allWeeks, 4);
             renderExactCards('gridExact5', exact5, 9999, allWeeks, 5);
             
-            // 每週智慧排柱區 (解鎖數量)
             renderPillarCards('gridPillar2', pillar2, 9999, allWeeks);
             renderPillarCards('gridPillar3', pillar3, 9999, allWeeks);
             renderPillarCards('gridPillar4', pillar4, 9999, allWeeks);
             renderPillarCards('gridPillar5', pillar5, 9999, allWeeks);
 
-            // 本週未開區塊渲染 (解鎖數量)
             renderUnopenedWeekExactCards('gridWeekUnopenedExact2', wUnopenedExact2, 9999, allWeeks, 2);
             renderUnopenedWeekExactCards('gridWeekUnopenedExact3', wUnopenedExact3, 9999, allWeeks, 3);
             renderUnopenedWeekExactCards('gridWeekUnopenedExact4', wUnopenedExact4, 9999, allWeeks, 4);
@@ -1248,19 +1239,16 @@
             renderUnopenedWeekPillarCards('gridWeekUnopenedPillar4', wUnopenedPillar4, 9999, allWeeks);
             renderUnopenedWeekPillarCards('gridWeekUnopenedPillar5', wUnopenedPillar5, 9999, allWeeks);
 
-            // 每月精準連碰區 (解鎖數量)
             renderMonthExactCards('gridMonthExact2', mExact2, 9999, allMonths, 2);
             renderMonthExactCards('gridMonthExact3', mExact3, 9999, allMonths, 3);
             renderMonthExactCards('gridMonthExact4', mExact4, 9999, allMonths, 4);
             renderMonthExactCards('gridMonthExact5', mExact5, 9999, allMonths, 5);
 
-            // 每月智慧排柱區 (解鎖數量)
             renderMonthPillarCards('gridMonthPillar2', mPillar2, 9999, allMonths);
             renderMonthPillarCards('gridMonthPillar3', mPillar3, 9999, allMonths);
             renderMonthPillarCards('gridMonthPillar4', mPillar4, 9999, allMonths);
             renderMonthPillarCards('gridMonthPillar5', mPillar5, 9999, allMonths);
 
-            // 當月未開區塊渲染 (解鎖數量)
             renderUnopenedMonthExactCards('gridMonthUnopenedExact2', mUnopenedExact2, 9999, allMonths, 2);
             renderUnopenedMonthExactCards('gridMonthUnopenedExact3', mUnopenedExact3, 9999, allMonths, 3);
             renderUnopenedMonthExactCards('gridMonthUnopenedExact4', mUnopenedExact4, 9999, allMonths, 4);
