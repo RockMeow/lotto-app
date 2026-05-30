@@ -5,65 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>純前端 | 零股網格交易系統</title>
     <style>
-        :root {
-            --bg-color: #f4f7f6; --card-bg: #ffffff;
-            --primary-color: #2c3e50; --accent-color: #27ae60;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color); color: var(--primary-color);
-            margin: 0; padding: 20px;
-        }
+        :root { --bg-color: #f4f7f6; --card-bg: #ffffff; --primary-color: #2c3e50; --accent-color: #27ae60; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--primary-color); margin: 0; padding: 20px; }
         .container { max-width: 900px; margin: 0 auto; }
         .header { border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }
         .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        
         .btn { background: var(--primary-color); color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-size: 1em; width: 100%; margin-bottom: 10px; font-weight: bold;}
         .btn:hover { background: #1a252f; }
         .btn-blue { background: #2980b9; } .btn-blue:hover { background: #1c5980; }
         .btn-red { background: #e74c3c; } .btn-red:hover { background: #c0392b; }
-        .btn-small { width: auto; padding: 6px 12px; margin: 0; }
-        
-        /* 股票池標籤設計 */
-        .stock-tag {
-            display: inline-block; background: #e0e6ed; padding: 5px 10px; 
-            border-radius: 15px; margin: 5px; font-weight: bold;
-        }
-        .stock-tag span { cursor: pointer; color: #c0392b; margin-left: 5px; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
-        .input-group input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex-grow: 1; }
-        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
-        .log-box { height: 150px; overflow-y: auto; background: #2c3e50; color: #ecf0f1; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.9em; margin-bottom: 20px;}
+        /* 日誌區塊放大，方便閱讀假日建議 */
+        .log-box { height: 250px; overflow-y: auto; background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.95em; margin-bottom: 20px; line-height: 1.5;}
+        .highlight { color: #f1c40f; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>📈 網格交易中心 (動態股票池防護版)</h1>
+        <h1>📈 網格交易中心 (自動掃描與假日預演版)</h1>
     </div>
 
     <div class="log-box" id="sysLog">系統已就緒。等待操作...</div>
 
     <div class="card">
-        <h2>🎯 監控股票池設定</h2>
-        <div class="input-group">
-            <input type="text" id="newStockInput" placeholder="輸入台股代號 (如: 2330, 0050)..." maxlength="6">
-            <button class="btn btn-blue btn-small" onclick="addStock()">＋ 新增標的</button>
-        </div>
-        <div id="stockTagsArea">
-            </div>
-    </div>
-
-    <div class="card">
         <h2>💰 資金池與控制台</h2>
-        <p style="color: #7f8c8d; margin-top: -10px;">每月 5 號自動儲值 1,000 元 (遇假日遞延)</p>
+        <p style="color: #7f8c8d; margin-top: -10px;">每月 5 號自動儲值 1,000 元</p>
         <h1 style="color: var(--accent-color); margin: 10px 0;" id="poolAmount">$0</h1>
         
-        <button class="btn btn-blue" onclick="runScanner()" id="btnScan">🔍 1. 手動啟動雷達掃描</button>
-        <button class="btn" onclick="executeGrid()" id="btnExec">▶ 2. 執行今日網格判斷</button>
+        <button class="btn btn-blue" onclick="runScanner()" id="btnScan">🔍 1. 全自動掃描市場尋找最佳標的</button>
+        <button class="btn" onclick="executeGrid()" id="btnExec">▶ 2. 執行今日網格判斷 (假日提供掛單建議)</button>
         <button class="btn btn-red" onclick="clearLedger()">⚠️ 清除瀏覽器帳本重置</button>
     </div>
 
@@ -80,64 +53,30 @@
 
 <script>
     // ==========================================
-    // 1. 動態股票池管理
+    // 1. 內建超級高流動性名單 (Mega Pool)
+    // 為了避免瀏覽器崩潰，精選 20 檔最適合零股網格的優質標的
     // ==========================================
-    const DEFAULT_POOL = ["00878", "0056", "2881", "2882"];
-    
-    function getStockPool() {
-        return JSON.parse(localStorage.getItem('gridStockPool')) || DEFAULT_POOL;
-    }
-    function saveStockPool(pool) {
-        localStorage.setItem('gridStockPool', JSON.stringify(pool));
-        renderStockPool();
-    }
-    
-    function renderStockPool() {
-        const pool = getStockPool();
-        const area = document.getElementById('stockTagsArea');
-        area.innerHTML = pool.map(stock => 
-            `<div class="stock-tag">${stock} <span onclick="removeStock('${stock}')">✖</span></div>`
-        ).join('');
-    }
+    const MEGA_POOL = [
+        "0050", "0056", "00878", "00919", "00713", "006208", 
+        "2330", "2317", "2454", "2881", "2882", "2891", 
+        "1216", "2002", "2308", "2412", "3045", "2382", "2886", "2884"
+    ];
 
-    function addStock() {
-        const input = document.getElementById('newStockInput');
-        const stock = input.value.trim();
-        if(!stock) return;
-        
-        const pool = getStockPool();
-        if(pool.includes(stock)) {
-            alert("該股票已在清單中！");
-            return;
-        }
-        pool.push(stock);
-        saveStockPool(pool);
-        input.value = '';
-        logMsg(`✅ 成功新增監控標的：${stock}`);
-    }
-
-    function removeStock(stock) {
-        let pool = getStockPool();
-        pool = pool.filter(s => s !== stock);
-        saveStockPool(pool);
-        logMsg(`🗑️ 已移除監控標的：${stock}`);
-    }
-
-    // ==========================================
-    // 2. 虛擬帳本管理
-    // ==========================================
     const MONTHLY_DEPOSIT = 1000;
 
+    // ==========================================
+    // 2. 虛擬帳本管理 (LocalStorage)
+    // ==========================================
     function getLedger() {
-        return JSON.parse(localStorage.getItem('gridLedger_v3')) || { pool: 0, logs: [], holdings: [] };
+        return JSON.parse(localStorage.getItem('gridLedger_v4')) || { pool: 0, logs: [], holdings: [] };
     }
     function saveLedger(ledger) {
-        localStorage.setItem('gridLedger_v3', JSON.stringify(ledger));
+        localStorage.setItem('gridLedger_v4', JSON.stringify(ledger));
         loadUI();
     }
     function clearLedger() {
         if(confirm("確定要刪除所有紀錄嗎？資金池與庫存將歸零。")) {
-            localStorage.removeItem('gridLedger_v3');
+            localStorage.removeItem('gridLedger_v4');
             logMsg("🗑️ 帳本已重置。");
             loadUI();
         }
@@ -159,14 +98,15 @@
         });
     }
 
-    function logMsg(msg) {
+    function logMsg(msg, isHighlight = false) {
         const box = document.getElementById('sysLog');
-        box.innerHTML += `<br>[${new Date().toLocaleTimeString()}] ${msg}`;
+        const formattedMsg = isHighlight ? `<span class="highlight">${msg}</span>` : msg;
+        box.innerHTML += `<br>[${new Date().toLocaleTimeString()}] ${formattedMsg}`;
         box.scrollTop = box.scrollHeight;
     }
 
     // ==========================================
-    // 3. 核心數據抓取 (包含日期防呆)
+    // 3. 核心數據抓取與數學指標
     // ==========================================
     async function fetchStockData(stock) {
         const url = `https://query1.finance.yahoo.com/v8/finance/chart/${stock}.TW?interval=1d&range=6mo`;
@@ -175,12 +115,10 @@
         try {
             const res = await fetch(proxyUrl);
             const parsed = await res.json();
-            const result = parsed.chart.result[0];
-            const quotes = result.indicators.quote[0];
+            const quotes = parsed.chart.result[0].indicators.quote[0];
             
             let closes = [], highs = [], lows = [];
             for(let i=0; i<quotes.close.length; i++) {
-                // 必須確保高、低、收盤價皆非空值才納入計算 (過濾假日假數據)
                 if(quotes.close[i] !== null && quotes.high[i] !== null && quotes.low[i] !== null) {
                     closes.push(quotes.close[i]);
                     highs.push(quotes.high[i]);
@@ -188,13 +126,9 @@
                 }
             }
             return { closes, highs, lows };
-        } catch (e) {
-            logMsg(`❌ 抓取 ${stock} 失敗，伺服器無回應。`);
-            return null;
-        }
+        } catch (e) { return null; }
     }
 
-    // 數學指標公式
     function calcSMA(data, period) {
         let sum = 0;
         for(let i = data.length - period; i < data.length; i++) sum += data[i];
@@ -202,9 +136,7 @@
     }
     function calcStdDev(data, period, sma) {
         let sumSq = 0;
-        for(let i = data.length - period; i < data.length; i++) {
-            sumSq += Math.pow(data[i] - sma, 2);
-        }
+        for(let i = data.length - period; i < data.length; i++) sumSq += Math.pow(data[i] - sma, 2);
         return Math.sqrt(sumSq / period);
     }
     function calcATR(highs, lows, closes, period=14) {
@@ -219,21 +151,21 @@
     }
 
     // ==========================================
-    // 4. 交易邏輯執行 (加入休市防護)
+    // 4. 自動掃描與交易邏輯
     // ==========================================
     async function runScanner() {
-        const currentPool = getStockPool();
-        if(currentPool.length === 0) {
-            logMsg("⚠️ 股票池為空，請先新增標的！");
-            return null;
-        }
-
-        logMsg("📡 開始掃描市場尋找地板價標的...");
+        logMsg("📡 開始自動掃描高流動性名單...");
         document.getElementById('btnScan').disabled = true;
         let bestTarget = null;
         let bestScore = 999;
+        
+        // 為了避免 proxy 擋掉，這裡加入了一點進度提示
+        let count = 0;
 
-        for (let stock of currentPool) {
+        for (let stock of MEGA_POOL) {
+            count++;
+            if (count % 5 === 0) logMsg(`...已掃描 ${count}/${MEGA_POOL.length} 檔標的...`);
+            
             let data = await fetchStockData(stock);
             if (!data || data.closes.length < 20) continue;
 
@@ -246,6 +178,7 @@
             let cv = std / ma20;
             let distance = (currentPrice - lowerBand) / lowerBand;
 
+            // 確保波動穩定且處於地板價
             if (cv > 0.01 && cv < 0.08) { 
                 if (distance < bestScore) {
                     bestScore = distance;
@@ -253,29 +186,26 @@
                 }
             }
         }
-        if (bestTarget) logMsg(`🏆 掃描完成！最佳佈局標的為：【${bestTarget}】`);
-        else logMsg("⚠️ 目前市場波動過大，無適合標的。");
+        
+        if (bestTarget) logMsg(`🏆 掃描完成！自動鎖定最佳佈局標的為：【${bestTarget}】`, true);
+        else logMsg("⚠️ 目前市場整體波動過大，無適合標的。");
+        
         document.getElementById('btnScan').disabled = false;
         return bestTarget;
     }
 
     async function executeGrid() {
         let today = new Date();
-        
-        // 🛡️ 週末防護機制：星期六 (6) 或星期日 (0) 直接阻擋
-        let dayOfWeek = today.getDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            logMsg("⏸️ 今日為週末休市，停止執行網格與儲值運算以防重複記錄。");
-            return;
-        }
-
         let ledger = getLedger();
         let todayStr = today.toISOString().split('T')[0];
         document.getElementById('btnExec').disabled = true;
 
-        // 1. 發薪日邏輯
+        // 🛡️ 判斷是否為休市日 (0=週日, 6=週六)
+        let isHoliday = (today.getDay() === 0 || today.getDay() === 6);
+
+        // 1. 發薪日邏輯 (若休市則延後至開盤日發放)
         let lastDeposit = ledger.logs.filter(l => l.action === 'DEPOSIT').pop();
-        if (today.getDate() >= 5) {
+        if (today.getDate() >= 5 && !isHoliday) {
             let currentMonth = todayStr.substring(0, 7);
             let lastDepositMonth = lastDeposit ? lastDeposit.date.substring(0, 7) : "";
             
@@ -292,7 +222,6 @@
 
         if (!targetStock) {
             logMsg("⏸️ 無合適目標，系統待命。");
-            saveLedger(ledger);
             document.getElementById('btnExec').disabled = false;
             return;
         }
@@ -303,28 +232,57 @@
 
         let currentPrice = data.closes[data.closes.length-1];
         let atr = calcATR(data.highs, data.lows, data.closes, 14);
-        logMsg(`▶ ${targetStock} 市價: ${currentPrice.toFixed(2)} | ATR: ${atr.toFixed(2)}`);
+        
+        // ------------------------------------------
+        // 🛡️ 假日預演模式 (只算不扣錢、不寫入帳本)
+        // ------------------------------------------
+        if (isHoliday) {
+            logMsg(`⏸️ 今日為週末休市，不執行實質交易。`);
+            logMsg(`---------- 【下週一預先掛單建議】 ----------`, true);
+            logMsg(`▶ 標的: ${targetStock} | 週五收盤價: $${currentPrice.toFixed(2)}`);
+            
+            if (holding) {
+                logMsg(`👉 停利目標：請掛單【賣出】$${holding.target.toFixed(2)}`, true);
+                logMsg(`👉 停損防線：若跌破 $${(holding.buyPrice * 0.85).toFixed(2)} 請手動停損`, true);
+            } else {
+                let buyPoint = currentPrice - atr;
+                let shares = Math.floor(ledger.pool / buyPoint);
+                if (shares >= 10) {
+                    logMsg(`👉 佈局建議：請掛單【買進】${shares} 股，價格 $${buyPoint.toFixed(2)}`, true);
+                    logMsg(`   (預計花費約 $${(shares * buyPoint).toFixed(0)})`);
+                } else {
+                    logMsg(`👉 資金池目前僅剩 $${ledger.pool.toFixed(0)}，資金不足，下週請繼續觀望。`);
+                }
+            }
+            logMsg(`--------------------------------------------`, true);
+            document.getElementById('btnExec').disabled = false;
+            return; // 終止後續真實扣款邏輯
+        }
 
+        // ------------------------------------------
+        // ⚔️ 正常交易日執行模式 (平日)
+        // ------------------------------------------
+        logMsg(`▶ ${targetStock} 市價: ${currentPrice.toFixed(2)} | ATR: ${atr.toFixed(2)}`);
         let actionTaken = false;
 
-        // 4. 判斷賣出
+        // 判斷賣出
         if (holding) {
             if (currentPrice >= holding.target) {
                 ledger.pool += currentPrice * holding.shares;
                 ledger.logs.push({date: todayStr, stock: targetStock, action: 'SELL_PROFIT', shares: holding.shares, price: currentPrice.toFixed(2)});
                 ledger.holdings = []; 
-                logMsg(`🚨 【停利】成功賣出 ${holding.shares} 股！`);
+                logMsg(`🚨 【停利】成功賣出 ${holding.shares} 股！`, true);
                 actionTaken = true;
             } else if (currentPrice <= holding.buyPrice * 0.85) { 
                 ledger.pool += currentPrice * holding.shares;
                 ledger.logs.push({date: todayStr, stock: targetStock, action: 'SELL_LOSS', shares: holding.shares, price: currentPrice.toFixed(2)});
                 ledger.holdings = [];
-                logMsg(`🩸 【停損】跌幅達 15%，認賠殺出。`);
+                logMsg(`🩸 【停損】跌幅達 15%，認賠殺出。`, true);
                 actionTaken = true;
             }
         }
 
-        // 5. 判斷買進
+        // 判斷買進
         let isHolding = ledger.holdings.length > 0;
         let lastBuyPrice = isHolding ? ledger.holdings[ledger.holdings.length-1].buyPrice : currentPrice + atr;
         let buyPoint = lastBuyPrice - atr;
@@ -336,7 +294,7 @@
                 let target = buyPoint + (atr * 1.5);
                 ledger.holdings.push({stock: targetStock, shares: shares, buyPrice: currentPrice, target: target});
                 ledger.logs.push({date: todayStr, stock: targetStock, action: 'BUY', shares: shares, price: currentPrice.toFixed(2)});
-                logMsg(`🛒 【買進】以 ${currentPrice.toFixed(2)} 元買進 ${shares} 股。`);
+                logMsg(`🛒 【買進】以 ${currentPrice.toFixed(2)} 元買進 ${shares} 股。`, true);
                 actionTaken = true;
             } else if (ledger.pool > 0) {
                 logMsg("⏳ 已達買點，但資金池餘額不足最低 10 股。");
@@ -349,11 +307,7 @@
         document.getElementById('btnExec').disabled = false;
     }
 
-    // 初始化網頁
-    window.onload = () => {
-        renderStockPool();
-        loadUI();
-    };
+    window.onload = loadUI;
 </script>
 
 </body>
