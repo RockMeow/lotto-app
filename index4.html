@@ -53,7 +53,7 @@
             <div id="stockTagsArea" style="margin-top: 10px;"></div>
         </div>
         
-        <button class="btn btn-blue" onclick="masterExecute()" id="btnMaster">🚀 啟動全自動大腦 (掃描 ➔ 回測明細 ➔ 網格掛單)</button>
+        <button class="btn btn-blue" onclick="masterExecute()" id="btnMaster">🚀 啟動全自動大腦 (掃描全市場 ➔ 回測明細 ➔ 網格掛單)</button>
         <button class="btn btn-red" onclick="clearLedger()">⚠️ 重置所有帳本與清單</button>
     </div>
 
@@ -74,18 +74,26 @@
     // ==========================================
     const STOP_LOSS_PCT = 0.15; // 15% 停損防線
     
-    // 台股超級名單 (代表全市場掃描的標的池)
+    // 擴充版：台股全市場代表性名單 (近 80 檔，涵蓋所有高流動性 ETF 與大型/中型權值股)
     const MARKET_POOL = [
-        "0050", "0056", "00878", "00919", "00713", "006208", "00929", "00712",
-        "2330", "2317", "2454", "2308", "2382", "3231", "2356",
-        "2881", "2882", "2891", "2886", "2884", "2892", "2880", "1216", "2002"
+        "0050", "0051", "0052", "0056", "006208", "00692", "00701", "00713", "00731", "00850", 
+        "00878", "00881", "00891", "00900", "00915", "00919", "00922", "00923", "00929",
+        "1101", "1102", "1216", "1301", "1303", "1326", "1402", "1590", "2002", "2207",
+        "2303", "2308", "2317", "2324", "2330", "2345", "2353", "2356", "2357", "2379",
+        "2382", "2395", "2408", "2409", "2412", "2454", "2603", "2609", "2615", "2801",
+        "2880", "2881", "2882", "2883", "2884", "2885", "2886", "2887", "2890", "2891",
+        "2892", "2912", "3008", "3034", "3045", "3231", "3481", "3711", "4904", "4938",
+        "5871", "5876", "5880", "6505", "9904"
     ];
 
-    function getMonitoredList() { return JSON.parse(localStorage.getItem('gridList_v8')) || ["00878", "2881"]; }
-    function saveMonitoredList(list) { localStorage.setItem('gridList_v8', JSON.stringify(list)); renderTags(); }
+    // 延遲工具：防止瀏覽器崩潰與 Proxy 阻擋
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    function getMonitoredList() { return JSON.parse(localStorage.getItem('gridList_v9')) || ["00878", "2881"]; }
+    function saveMonitoredList(list) { localStorage.setItem('gridList_v9', JSON.stringify(list)); renderTags(); }
     
-    function getLedger() { return JSON.parse(localStorage.getItem('gridLedger_v8')) || { pool: 0, logs: [], holdings: [] }; }
-    function saveLedger(ledger) { localStorage.setItem('gridLedger_v8', JSON.stringify(ledger)); loadUI(); }
+    function getLedger() { return JSON.parse(localStorage.getItem('gridLedger_v9')) || { pool: 0, logs: [], holdings: [] }; }
+    function saveLedger(ledger) { localStorage.setItem('gridLedger_v9', JSON.stringify(ledger)); loadUI(); }
 
     function renderTags() {
         const list = getMonitoredList();
@@ -112,8 +120,8 @@
 
     function clearLedger() {
         if(confirm("確定重置？這會清除你的資金池、庫存、交易歷史與監控清單！")) {
-            localStorage.removeItem('gridLedger_v8');
-            localStorage.removeItem('gridList_v8');
+            localStorage.removeItem('gridLedger_v9');
+            localStorage.removeItem('gridList_v9');
             logMsg("🗑️ 系統已完全重置。");
             renderTags(); loadUI();
         }
@@ -125,7 +133,7 @@
         if(type === 'highlight') fMsg = `<span class="highlight">${msg}</span>`;
         if(type === 'success') fMsg = `<span class="success">${msg}</span>`;
         if(type === 'danger') fMsg = `<span class="danger">${msg}</span>`;
-        box.innerHTML += `<br>${fMsg}`; // 移除時間戳，讓排版更乾淨
+        box.innerHTML += `<br>${fMsg}`;
         box.scrollTop = box.scrollHeight;
     }
 
@@ -183,12 +191,12 @@
     // ==========================================
     function runDetailedBacktest(data, capital) {
         let simPool = capital;
-        if(simPool < 1000) simPool = 10000; // 如果餘額太低無法回測，防呆預設一萬
+        if(simPool < 1000) simPool = 10000; 
         let initialCapital = simPool;
         
         let simHoldings = [];
         let trades = 0, wins = 0;
-        let historyLog = []; // 儲存回測明細
+        let historyLog = []; 
         
         let d = data.dates, c = data.closes, h = data.highs, l = data.lows;
         
@@ -196,14 +204,12 @@
             let currentPrice = c[i];
             let currentDate = d[i];
             
-            // 計算 14日 ATR
             let trSum = 0;
             for(let j = i-13; j <= i; j++) {
                 trSum += Math.max(h[j]-l[j], Math.abs(h[j]-c[j-1]), Math.abs(l[j]-c[j-1]));
             }
             let currentATR = trSum / 14;
 
-            // 檢查賣出 (停利/停損)
             for(let j = simHoldings.length - 1; j >= 0; j--) {
                 let hold = simHoldings[j];
                 if (currentPrice >= hold.target) {
@@ -219,7 +225,6 @@
                 }
             }
 
-            // 檢查買進
             let refPrice = simHoldings.length > 0 ? simHoldings[simHoldings.length-1].buyPrice : currentPrice + currentATR;
             let buyPoint = refPrice - currentATR;
             
@@ -247,21 +252,29 @@
     // ==========================================
     async function masterExecute() {
         const btn = document.getElementById('btnMaster');
-        btn.innerText = "🧠 全自動運算中，請稍候..."; btn.disabled = true;
-        document.getElementById('sysLog').innerHTML = ''; // 清空日誌
+        btn.innerText = "🧠 全自動運算中，這可能需要幾分鐘，請稍候..."; btn.disabled = true;
+        document.getElementById('sysLog').innerHTML = ''; 
         
         let ledger = getLedger();
         let monitoredList = getMonitoredList();
         
         logMsg(`=========================================`, 'highlight');
-        logMsg(`[STEP 1] 啟動全市場掃描 (尋找地板價標的)`);
+        logMsg(`[STEP 1] 啟動全市場掃描 (共 ${MARKET_POOL.length} 檔高流動性標的)`);
         
         let foundNew = false;
-        // 掃描全市場池，符合的加入監控清單
+        let scanCount = 0;
+        
         for (let stock of MARKET_POOL) {
-            if(monitoredList.includes(stock)) continue; // 已在清單內跳過
+            if(monitoredList.includes(stock)) continue; 
             
+            scanCount++;
+            if (scanCount % 10 === 0) logMsg(`  ⏳ 系統掃描中... 已分析 ${scanCount} 檔標的`);
+
             let data = await fetchStockDataWithDates(stock, "6mo");
+            
+            // 關鍵防護：每次抓取暫停 0.3 秒，避免瀏覽器崩潰與 IP 被封鎖
+            await sleep(300); 
+
             if (!data) continue;
 
             let c = data.closes;
@@ -271,14 +284,14 @@
             let lowerBand = ma20 - (2 * std);
             
             if ((std/ma20) > 0.01 && (std/ma20) < 0.08) { 
-                if (currentPrice <= lowerBand * 1.01) { // 靠近或跌破下軌
+                if (currentPrice <= lowerBand * 1.01) { 
                     monitoredList.push(stock);
                     foundNew = true;
                     logMsg(`  ✅ 發現【${stock}】跌至布林下軌，已自動加入監控清單！`, 'success');
                 }
             }
         }
-        if(!foundNew) logMsg(`  - 目前全市場無新增符合條件之股票。`);
+        if(!foundNew) logMsg(`  - 掃描完成。全市場目前無新增符合地板價條件之股票。`);
         saveMonitoredList(monitoredList);
         
         logMsg(`\n[STEP 2] 針對監控清單進行回測 (使用當前資金 $${ledger.pool.toFixed(0)})`);
@@ -289,6 +302,7 @@
 
         for (let stock of monitoredList) {
             let data = await fetchStockDataWithDates(stock, "1y");
+            await sleep(300); // 回測抓取也加入微幅延遲保護
             if (!data || data.closes.length < 200) continue;
             
             let report = runDetailedBacktest(data, ledger.pool);
@@ -305,7 +319,6 @@
         if (bestTarget) {
             logMsg(`\n🏆 決策完成！鎖定最佳網格標的：【${bestTarget}】`, 'highlight');
             logMsg(`📊 歷史回測明細 (本金 $${bestReport.testCapital.toFixed(0)}):`);
-            // 印出完整的交易歷史明細
             bestReport.historyLog.forEach(l => logMsg(l));
             logMsg(`  -------------------------`);
             logMsg(`  總交易: ${bestReport.trades} 趟 | 勝率: ${bestReport.winRate}% | 淨利: +$${bestReport.totalProfit.toFixed(0)}`, 'success');
@@ -322,8 +335,7 @@
             for(let j = i-13; j <= i; j++) trSum += Math.max(h[j]-l[j], Math.abs(h[j]-c[j-1]), Math.abs(l[j]-c[j-1]));
             let atr = trSum / 14;
 
-            // 判斷庫存
-            let holding = ledger.holdings[0]; // 假設專注操作一檔
+            let holding = ledger.holdings[0];
 
             if (isHoliday) {
                 logMsg(`⚠️ 今日為週末休市，停止實際扣款，提供下週一預先掛單建議：`, 'highlight');
@@ -343,7 +355,6 @@
                     }
                 }
             } else {
-                // 平日真實交易邏輯
                 let actionTaken = false;
                 let todayStr = today.toISOString().split('T')[0];
 
@@ -382,7 +393,7 @@
         }
 
         logMsg(`=========================================`, 'highlight');
-        btn.innerText = "🚀 啟動全自動大腦 (掃描 ➔ 回測明細 ➔ 網格掛單)"; btn.disabled = false;
+        btn.innerText = "🚀 啟動全自動大腦 (掃描全市場 ➔ 回測明細 ➔ 網格掛單)"; btn.disabled = false;
     }
 
     window.onload = () => { renderTags(); loadUI(); };
