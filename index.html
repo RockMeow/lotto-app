@@ -317,7 +317,7 @@
         const container = document.getElementById(containerId);
         container.innerHTML = '';
         if (dataArr.length === 0) {
-            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">本期查無「準三進四」完美連準拖牌版路 ☕</div>';
+            container.innerHTML = '<div style="padding:15px; color:#7f8c8d; text-align:center; background:var(--card); border-radius:12px;">本期查無「準三進四」連準拖牌版路 ☕</div>';
             return;
         }
 
@@ -332,7 +332,7 @@
                         <div class="hit-count">準 3 進 4</div>
                     </div>
                 </div>
-                <div style="font-size:0.8rem; color: #c0392b; font-weight:bold; margin-top:5px;">⚠️ 觸發條件：最新期已開出 ${fNum(item.trigger)}，強勢推薦 ${fNum(item.target)}</div>
+                <div style="font-size:0.8rem; color: #c0392b; font-weight:bold; margin-top:5px;">⚠️ 觸發條件：最新期已開出 ${fNum(item.trigger)}，推薦 ${fNum(item.target)}</div>
                 <div class="toggle-hint">▼ 點擊展開詳細歷史明細 ▼</div>
                 <div class="history-container" style="display:none;">
                     <div class="history-item history-hit">
@@ -454,7 +454,7 @@
                         <div class="hit-count">${item.hits} / ${allWeeks.length} 週</div>
                     </div>
                 </div>
-                <div style="font-size:0.8rem; color:var(--danger); font-weight:bold; margin-top:5px;">⚠️ 每週連碰條件 (至少 ${matchTarget} 顆同天掉下)</div>
+                <div style="font-size:0.8rem; color:var(--danger); font-weight:bold; margin-top:5px;">⚠️ 每週連碰條件 (至少 ${matchTarget} 顆同期出現)</div>
                 <div class="toggle-hint">▼ 點擊展開詳細歷史明細 ▼</div>
                 ${historyHtml}
             </div>`;
