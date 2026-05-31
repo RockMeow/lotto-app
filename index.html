@@ -2,57 +2,622 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>數學魔法遊樂場</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>國小一年級趣味數學冒險</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #fff0f5; }
-        .box { background: white; padding: 20px; border-radius: 20px; margin: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .dot { display: inline-block; width: 30px; height: 30px; background: #ff7675; border-radius: 50%; margin: 5px; }
-        button { font-size: 20px; padding: 10px 20px; cursor: pointer; }
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans CJK TC", sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            background-color: #ffffff;
+            border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 700px;
+            padding: 30px;
+            text-align: center;
+            border: 6px solid #bce2ff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: #ff6b6b;
+            font-size: 28px;
+            margin-top: 0;
+            text-shadow: 2px 2px 0px #ffe3e3;
+            animation: bounce Title 2s infinite alternate;
+        }
+
+        /* 模式選擇鈕 */
+        .mode-selection {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 25px;
+            gap: 10px;
+        }
+
+        .mode-btn {
+            background-color: #ffd32a;
+            border: none;
+            border-bottom: 4px solid #ffa801;
+            border-radius: 15px;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #3d3d3d;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        }
+
+        .mode-btn.active {
+            background-color: #ff5e57;
+            border-bottom: 4px solid #dd4b39;
+            color: white;
+            transform: translateY(2px);
+            border-bottom-width: 0px;
+            margin-top: 4px;
+        }
+
+        /* 計分板與進度 */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            color: #4bcffa;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .progress-container {
+            background-color: #f1f2f6;
+            border-radius: 10px;
+            height: 15px;
+            width: 100%;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #4cd137, #44bd32);
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* 題目顯示 */
+        .question-box {
+            font-size: 56px;
+            font-weight: 800;
+            color: #2f3542;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .question-box span {
+            display: inline-block;
+        }
+
+        /* 十格陣視覺輔助 */
+        .ten-frame-container {
+            margin: 25px auto;
+            max-width: 450px;
+        }
+        
+        .ten-frame-title {
+            font-size: 16px;
+            color: #747d8c;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .ten-frame {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 8px;
+            background-color: #f1f2f6;
+            padding: 12px;
+            border-radius: 15px;
+            border: 3px solid #ced6e0;
+        }
+
+        .cell {
+            background-color: #ffffff;
+            border: 2px dashed #a4b0be;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .dot {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            transform: scale(0);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .dot.red {
+            background: radial-gradient(circle, #ff7675, #d63031);
+            box-shadow: 0 4px 6px rgba(214, 48, 49, 0.4);
+        }
+
+        .dot.blue {
+            background: radial-gradient(circle, #74b9ff, #0984e3);
+            box-shadow: 0 4px 6px rgba(9, 132, 227, 0.4);
+        }
+
+        /* 減法被拿走的外觀 */
+        .dot.removed {
+            opacity: 0.25;
+            position: relative;
+        }
+        .dot.removed::after {
+            content: "✕";
+            position: absolute;
+            color: #d63031;
+            font-size: 28px;
+            font-weight: bold;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 1;
+        }
+
+        /* 選項按鈕 */
+        .options-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .option-btn {
+            background-color: #ffffff;
+            border: 3px solid #e4e7eb;
+            border-bottom: 7px solid #e4e7eb;
+            border-radius: 20px;
+            padding: 20px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #2f3542;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .option-btn:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
+        }
+
+        .option-btn:active {
+            transform: translateY(4px);
+            border-bottom-width: 3px;
+        }
+
+        /* 答題回饋效果 */
+        .feedback-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .feedback-content {
+            font-size: 80px;
+            transform: scale(0.5);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .correct-bg {
+            background-color: rgba(76, 209, 55, 0.15);
+        }
+        
+        .wrong-bg {
+            background-color: rgba(235, 77, 75, 0.15);
+        }
+
+        /* 動態特效動畫 */
+        @keyframes popIn {
+            to { transform: scale(1); }
+        }
+
+        @keyframes titleBounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-5px); }
+        }
+
+        .shake {
+            animation: shakeAnim 0.4s ease-in-out;
+        }
+
+        @keyframes shakeAnim {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        /* 慶祝彩色碎紙 */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #ffd32a;
+            animation: particle 1s ease-out forwards;
+            border-radius: 50%;
+        }
+
+        @keyframes particle {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--x), var(--y)) scale(0); opacity: 0; }
+        }
+
+        /* 結算畫面 */
+        .summary-view {
+            display: none;
+        }
+
+        .restart-btn {
+            background-color: #4cd137;
+            color: white;
+            border: none;
+            border-bottom: 5px solid #44bd32;
+            border-radius: 15px;
+            padding: 15px 40px;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.2s ease;
+        }
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76,209,55,0.4);
+        }
     </style>
 </head>
 <body>
 
-    <div class="box">
-        <h2>視覺加法：數字積木</h2>
-        <div id="visual-sum"></div>
-        <p id="sum-text">3 + 2 = ?</p>
-        <button onclick="playSum()">換個題目</button>
+    <div class="game-container" id="gameWindow">
+        <div class="feedback-overlay" id="feedbackOverlay">
+            <div class="feedback-content" id="feedbackContent">🌟</div>
+        </div>
+
+        <div id="quizView">
+            <h1>填滿格子大冒險 🎮</h1>
+            
+            <div class="mode-selection">
+                <button class="mode-btn active" onclick="setMode('add')">10以內加法</button>
+                <button class="mode-btn" onclick="setMode('sub')">10以內減法</button>
+                <button class="mode-btn" onclick="setMode('advanced')">湊十法挑戰</button>
+            </div>
+
+            <div class="status-bar">
+                <div id="scoreText">得分⭐: 0</div>
+                <div id="questionNumText">題數: 1/5</div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div class="question-box">
+                <span id="num1">5</span>
+                <span id="operator">+</span>
+                <span id="num2">3</span>
+                <span>=</span>
+                <span style="color: #ff9f43;">?</span>
+            </div>
+
+            <div class="ten-frame-container">
+                <div class="ten-frame-title" id="helperTitle">小提示：數數看格子裡的點點哦！</div>
+                <div class="ten-frame" id="tenFrame">
+                    </div>
+            </div>
+
+            <div class="options-container" id="optionsContainer">
+                </div>
+        </div>
+
+        <div class="summary-view" id="summaryView">
+            <h1 style="font-size: 40px;">🎉 太棒了！完成了！ 🎉</h1>
+            <p style="font-size: 24px; font-weight: bold; margin: 30px 0;" id="finalScoreText">你得到了 5 顆星星！</p>
+            <div style="font-size: 80px; margin-bottom: 30px;">🏆✨</div>
+            <button class="restart-btn" onclick="resetGame()">再玩一次 🚀</button>
+        </div>
     </div>
 
-    <div class="box">
-        <h2>乘法跳躍：青蛙找荷葉</h2>
-        <div id="jump-game"></div>
-        <p id="jump-text">3 x 4 = ?</p>
-        <button onclick="playJump()">換個題目</button>
-    </div>
+    <script>
+        let currentMode = 'add'; // add, sub, advanced
+        let currentQuestionIdx = 1;
+        const totalQuestions = 5;
+        let score = 0;
+        let correctAnswer = 0;
+        let isWaitingForNext = false;
 
-<script>
-    // 加法練習：用圓點模擬數字
-    function playSum() {
-        let a = Math.floor(Math.random() * 5) + 1;
-        let b = Math.floor(Math.random() * 5) + 1;
-        let container = document.getElementById('visual-sum');
-        container.innerHTML = "";
-        for(let i=0; i<a+b; i++) {
-            let dot = document.createElement('div');
-            dot.className = 'dot';
-            container.appendChild(dot);
+        // 初始化遊戲
+        function initGame() {
+            currentQuestionIdx = 1;
+            score = 0;
+            isWaitingForNext = false;
+            document.getElementById('quizView').style.display = 'block';
+            document.getElementById('summaryView').style.display = 'none';
+            updateStatusBar();
+            generateQuestion();
         }
-        document.getElementById('sum-text').innerText = `${a} + ${b} = ${a+b}`;
-    }
 
-    // 乘法跳躍：用文字呈現跳躍過程
-    function playJump() {
-        let a = Math.floor(Math.random() * 4) + 2; // 每跳 a 格
-        let b = Math.floor(Math.random() * 4) + 2; // 跳 b 次
-        let result = a * b;
-        let steps = [];
-        for(let i=1; i<=b; i++) steps.push(i*a);
-        document.getElementById('jump-text').innerText = 
-            `${a} x ${b} = 跳跳看：${steps.join(' -> ')} = ${result}`;
-    }
+        // 切換模式
+        function setMode(mode) {
+            if (isWaitingForNext) return;
+            currentMode = mode;
+            // 變更按鈕樣式
+            const buttons = document.querySelectorAll('.mode-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            initGame();
+        }
 
-    playSum(); playJump();
-</script>
+        // 更新狀態資訊
+        function updateStatusBar() {
+            document.getElementById('scoreText').innerText = `得分⭐: ${score}`;
+            document.getElementById('questionNumText').innerText = `題數: ${currentQuestionIdx}/${totalQuestions}`;
+            const progressPercent = ((currentQuestionIdx - 1) / totalQuestions) * 100;
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+        }
+
+        // 出題邏輯
+        function generateQuestion() {
+            let n1, n2, op;
+            
+            if (currentMode === 'add') {
+                op = '+';
+                // 10以內的加法
+                correctAnswer = Math.floor(Math.random() * 9) + 2; // 答案在 2~10 之間
+                n1 = Math.floor(Math.random() * (correctAnswer - 1)) + 1;
+                n2 = correctAnswer - n1;
+            } else if (currentMode === 'sub') {
+                op = '-';
+                // 10以內的減法
+                n1 = Math.floor(Math.random() * 9) + 2; // 被減數 2~10
+                correctAnswer = Math.floor(Math.random() * n1); // 答案 0 ~ n1-1
+                n2 = n1 - correctAnswer;
+            } else {
+                op = '+';
+                // 湊十法挑戰 (答案在 11~18)
+                n1 = Math.floor(Math.random() * 4) + 6; // 6,7,8,9
+                n2 = Math.floor(Math.random() * 4) + 6; // 6,7,8,9
+                correctAnswer = n1 + n2;
+            }
+
+            document.getElementById('num1').innerText = n1;
+            document.getElementById('operator').innerText = op;
+            document.getElementById('num2').innerText = n2;
+
+            renderTenFrame(n1, n2, op);
+            generateOptions(correctAnswer);
+        }
+
+        // 渲染十格陣 (支持超過10的進位擴展陣列)
+        function renderTenFrame(n1, n2, op) {
+            const frame = document.getElementById('tenFrame');
+            frame.innerHTML = '';
+            
+            // 決定需要幾個格子。若答案或數字大於10，則動態變成「雙十格陣」(20格)
+            let totalCells = 10;
+            if (n1 > 10 || (n1 + n2 > 10 && op === '+')) {
+                totalCells = 20;
+                frame.style.gridTemplateColumns = "repeat(5, 1fr)";
+                frame.style.gridTemplateRows = "repeat(4, 1fr)";
+            } else {
+                frame.style.gridTemplateColumns = "repeat(5, 1fr)";
+                frame.style.gridTemplateRows = "repeat(2, 1fr)";
+            }
+
+            // 建立格子結構
+            for (let i = 0; i < totalCells; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                frame.appendChild(cell);
+            }
+
+            const cells = frame.querySelectorAll('.cell');
+
+            if (op === '+') {
+                // 加法：先畫第一組紅球，再畫第二組藍球
+                let cellIdx = 0;
+                // 紅球
+                for (let i = 0; i < n1; i++) {
+                    if (cellIdx < totalCells) {
+                        createDot(cells[cellIdx], 'red', i * 50);
+                        cellIdx++;
+                    }
+                }
+                // 藍球
+                for (let i = 0; i < n2; i++) {
+                    if (cellIdx < totalCells) {
+                        createDot(cells[cellIdx], 'blue', (n1 + i) * 50);
+                        cellIdx++;
+                    }
+                }
+            } else if (op === '-') {
+                // 減法：先畫總數紅球，然後將其中後面幾顆加上「拿走」的特效
+                for (let i = 0; i < n1; i++) {
+                    if (i < totalCells) {
+                        // 如果是被減去的數量，就加上 removed 樣式
+                        const isRemoved = i >= (n1 - n2);
+                        createDot(cells[i], 'red' + (isRemoved ? ' removed' : ''), i * 50);
+                    }
+                }
+            }
+        }
+
+        function createDot(parentCell, className, delay) {
+            const dot = document.createElement('div');
+            dot.className = `dot ${className}`;
+            dot.style.animationDelay = `${delay}ms`;
+            parentCell.appendChild(dot);
+        }
+
+        // 生成4個選項
+        function generateOptions(correct) {
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+
+            let options = [correct];
+            while (options.length < 4) {
+                // 產生正確答案上下浮動的干擾項
+                let offset = (Math.floor(Math.random() * 3) + 1) * (Math.random() < 0.5 ? 1 : -1);
+                let fakeAns = correct + offset;
+                if (fakeAns >= 0 && !options.includes(fakeAns)) {
+                    options.push(fakeAns);
+                }
+            }
+
+            // 洗牌打亂順序
+            options.sort(() => Math.random() - 0.5);
+
+            options.forEach(val => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = val;
+                btn.onclick = () => checkAnswer(val, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        // 檢查答案
+        function checkAnswer(selected, clickedBtn) {
+            if (isWaitingForNext) return;
+            isWaitingForNext = true;
+
+            const overlay = document.getElementById('feedbackOverlay');
+            const content = document.getElementById('feedbackContent');
+            const gameWindow = document.getElementById('gameWindow');
+
+            if (selected === correctAnswer) {
+                // 答對了
+                score++;
+                overlay.className = "feedback-overlay correct-bg";
+                content.innerText = "❤️ 答對了！";
+                overlay.style.opacity = 1;
+                content.style.transform = "scale(1)";
+                
+                // 觸發撒花特效
+                createConfettiEffect();
+
+                setTimeout(() => {
+                    nextQuestion();
+                }, 1500);
+            } else {
+                // 答錯了
+                overlay.className = "feedback-overlay wrong-bg";
+                content.innerText = "💡 再試試看！";
+                overlay.style.opacity = 1;
+                content.style.transform = "scale(1)";
+                
+                // 讓視窗震動
+                gameWindow.classList.add('shake');
+                clickedBtn.style.borderColor = '#ff4d4d';
+                clickedBtn.style.color = '#ff4d4d';
+
+                setTimeout(() => {
+                    overlay.style.opacity = 0;
+                    content.style.transform = "scale(0.5)";
+                    gameWindow.classList.remove('shake');
+                    isWaitingForNext = false; // 允許重新作答本題
+                }, 1200);
+            }
+        }
+
+        // 下一題或進入結算
+        function nextQuestion() {
+            document.getElementById('feedbackOverlay').style.opacity = 0;
+            document.getElementById('feedbackContent').style.transform = "scale(0.5)";
+
+            if (currentQuestionIdx < totalQuestions) {
+                currentQuestionIdx++;
+                updateStatusBar();
+                isWaitingForNext = false;
+                generateQuestion();
+            } else {
+                // 遊戲結束，顯示結算
+                document.getElementById('progressBar').style.width = `100%`;
+                setTimeout(() => {
+                    document.getElementById('quizView').style.display = 'none';
+                    document.getElementById('summaryView').style.display = 'block';
+                    document.getElementById('finalScoreText').innerText = `你在 ${totalQuestions} 題中答對了，獲得了 ${score} 顆星星！`;
+                }, 500);
+            }
+        }
+
+        // 重置遊戲
+        function resetGame() {
+            initGame();
+        }
+
+        // 碎紙灑花粒子效果
+        function createConfettiEffect() {
+            const windowEl = document.getElementById('gameWindow');
+            const colors = ['#ffd32a', '#ff4d4d', '#4cd137', '#0984e3', '#e056fd'];
+            
+            for (let i = 0; i < 40; i++) {
+                const p = document.createElement('div');
+                p.className = 'confetti';
+                p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                // 隨機發散角度與距離
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 150 + 50;
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
+                
+                p.style.setProperty('--x', `${x}px`);
+                p.style.setProperty('--y', `${y}px`);
+                
+                // 隨機出生位置 (在視窗中央周圍)
+                p.style.left = `calc(50% + ${Math.random() * 40 - 20}px)`;
+                p.style.top = `calc(50% + ${Math.random() * 40 - 20}px)`;
+                
+                windowEl.appendChild(p);
+                
+                // 動畫結束後移除
+                setTimeout(() => p.remove(), 1000);
+            }
+        }
+
+        // 網頁載入時自動執行一次
+        window.onload = initGame;
+    </script>
 </body>
 </html>
