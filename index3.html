@@ -148,7 +148,6 @@
         return `${fmt(mon)} ~ ${fmt(sun)}`;
     }
 
-    // 新增：加入 currentIndex 參數，依照歷史數據篩選出最熱門的 2 顆號碼
     function getIronBalls(tail, currentIndex) {
         let balls = [];
         let maxHeads = Math.floor(maxNum / 10);
@@ -160,7 +159,7 @@
             if(n > 0 && n <= maxNum) balls.push(n);
         }
 
-        // 根據歷史出現頻率篩選到剩 2 顆
+        // 根據歷史出現頻率篩選到剩 2 顆 (1顆最熱，1顆最冷)
         if (currentIndex !== undefined && balls.length > 2) {
             let counts = {};
             balls.forEach(b => counts[b] = 0);
@@ -173,9 +172,13 @@
             }
             
             // 依照開出次數由高到低排序
-            balls.sort((a, b) => counts[b] - counts[a]);
-            // 只保留前 2 顆
-            balls = balls.slice(0, 2);
+            let sortedBalls = [...balls].sort((a, b) => counts[b] - counts[a]);
+            
+            // 挑選第 1 名 (最熱門) 與最後 1 名 (最冷門)
+            balls = [sortedBalls[0], sortedBalls[sortedBalls.length - 1]];
+            
+            // 重新依照數字大小排序，方便閱讀
+            balls.sort((a, b) => a - b);
         }
 
         return balls;
@@ -267,7 +270,6 @@
         return localRules;
     }
 
-    // 新增：加入 currentIndex 傳遞給 getIronBalls
     function getSmartPatterns(nums, currentRules, currentIndex) {
         let patterns = [];
         let tails = nums.map(n => n % 10);
@@ -328,7 +330,6 @@
 
         for (let i = 0; i < parsedData.length; i++) {
             let currentRules = getRulesForDay(i);
-            // 新增：把當前迴圈的 i (currentIndex) 傳進去
             let patterns = getSmartPatterns(parsedData[i].nums, currentRules, i);
             
             patterns.forEach(p => {
