@@ -71,6 +71,11 @@
         .miss-status { font-size: 0.75rem; color: #636e72; font-weight: bold; margin-top: 3px; }
         .trigger-status { font-size: 0.75rem; color: #0056b3; font-weight: bold; margin-top: 3px; }
 
+        /* PnL Week Summary */
+        .week-summary { background: #fffcf0; border: 1px solid #f1c40f; padding: 15px; border-radius: 12px; margin: 20px 0 15px 0; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(241,196,15,0.15); }
+        .week-summary .pnl-positive { color: var(--success); }
+        .week-summary .pnl-negative { color: var(--danger); }
+        .pnl-row { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; color: #2d3436; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -116,18 +121,38 @@
     let parsedData = [];
     let maxNum = 39;
 
+    const COST_PER_BALL = 38;
+    const REBATE_RATE = 0.2107;
+    const WIN_MULTIPLIER = 5.5789;
+
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
+
+    function getWeekRange(dateStr) {
+        let normalized = dateStr.replace(/\//g, '-');
+        let d = new Date(normalized);
+        if(isNaN(d)) return "未知週次";
+        let day = d.getDay(); 
+        let diffToMonday = d.getDate() - day + (day === 0 ? -6 : 1); 
+        
+        let mon = new Date(d); mon.setDate(diffToMonday);
+        let sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+        
+        let pad = (n) => String(n).padStart(2, '0');
+        let fmt = (dateObj) => `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}`;
+        
+        return `${fmt(mon)} ~ ${fmt(sun)}`;
+    }
 
     function getIronBalls(tail) {
         let balls = [];
         let maxHeads = Math.floor(maxNum / 10);
         let excludeZero = document.getElementById('excludeZeroHead').checked;
-        let startH = excludeZero ? 1 : 0; // 根據開關決定是否從 0 頭開始
+        let startH = excludeZero ? 1 : 0;
 
         for(let h = startH; h <= maxHeads; h++) {
             let n = h * 10 + tail;
-            if(n > 0 && n <= maxNum) balls.push(n); // > 0 是為了防止抽出 '00'
+            if(n > 0 && n <= maxNum) balls.push(n);
         }
         return balls;
     }
@@ -184,7 +209,6 @@
             for (let j = 1; j <= 3; j++) {
                 if (k + j <= currentIndex) { 
                     parsedData[k + j].nums.forEach(n => {
-                        // 根據開關決定是否計入 0 頭
                         if (!excludeZero || n >= 10) next3ValidTails.add(n % 10); 
                     });
                 }
@@ -237,10 +261,40 @@
         return patterns.sort((a,b)=>b.score-a.score).slice(0, 3);
     }
 
+    function renderWeekSummary(weekStr, stats) {
+        let net = stats.win - stats.cost;
+        let netClass = net >= 0 ? 'pnl-positive' : 'pnl-negative';
+        let netSign = net >= 0 ? '+' : '';
+        return `
+        <div class="week-summary">
+            <div style="color: var(--primary); margin-bottom: 8px; border-bottom: 1px dashed #f1c40f; padding-bottom: 5px; font-weight: 900; font-size: 0.95rem;">
+                📅 結算週次：${weekStr}
+            </div>
+            <div class="pnl-row">
+                <span>下注總球數: ${stats.bets} (命中 ${stats.hits})</span>
+            </div>
+            <div class="pnl-row">
+                <span>總成本 (扣退水): ${stats.cost.toFixed(1)}</span>
+                <span>總獎金: ${stats.win.toFixed(1)}</span>
+            </div>
+            <div class="pnl-row" style="margin-top: 10px; font-size: 1.1rem; border-top: 1px solid #f9e79f; padding-top: 8px;">
+                <span>週淨損益:</span>
+                <span class="${netClass}">${netSign}${net.toFixed(1)}</span>
+            </div>
+        </div>`;
+    }
+
     function runAnalysis() {
-        let dailyView = parsedData.map(d => ({ date: d.date, nums: d.nums, events: [] }));
+        let dailyView = parsedData.map(d => ({ 
+            date: d.date, 
+            nums: d.nums, 
+            events: [], 
+            pnl: { cost: 0, win: 0, bets: 0, hits: 0 } 
+        }));
+        
         let tracking = [];
         let stats = { total: 0, hit: 0 };
+        let totalStats = { cost: 0, win: 0, bets: 0, hits: 0 };
 
         for (let i = 0; i < parsedData.length; i++) {
             let currentRules = getRulesForDay(i);
@@ -268,6 +322,25 @@
                     }
                 }
                 
+                // 損益計算邏輯
+                let maxPeriod = hitInfo ? hitInfo.p : 3;
+                for (let j = 1; j <= maxPeriod; j++) {
+                    let playIndex = i + j;
+                    if (playIndex < parsedData.length) {
+                        let numBets = p.target.length;
+                        let costAmount = numBets * COST_PER_BALL;
+                        let rebateAmount = costAmount * REBATE_RATE;
+                        
+                        dailyView[playIndex].pnl.bets += numBets;
+                        dailyView[playIndex].pnl.cost += (costAmount - rebateAmount);
+                        
+                        if (hitInfo && playIndex === hitInfo.hitIndex) {
+                            dailyView[playIndex].pnl.hits += hitInfo.n.length;
+                            dailyView[playIndex].pnl.win += (hitInfo.n.length * COST_PER_BALL * WIN_MULTIPLIER);
+                        }
+                    }
+                }
+                
                 if (hitInfo) {
                     dailyView[hitInfo.hitIndex].events.push({
                         type: 'hit',
@@ -288,6 +361,7 @@
             });
         }
 
+        // 渲染「目前追蹤中」卡片
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
@@ -300,9 +374,36 @@
             </div>`
         }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無追蹤版路 ☕</div>';
 
-        const listHtml = dailyView.slice().reverse().map(d => {
-            let eventsHtml = '';
+        // 渲染「每日開獎與訊號紀錄」含每週損益結算
+        let reversedData = dailyView.slice().reverse();
+        let chunksHtml = [];
+        let currentWeek = null;
+        let weekStats = { cost: 0, win: 0, bets: 0, hits: 0 };
+        let currentWeekDaysHtml = [];
+
+        reversedData.forEach(d => {
+            let week = getWeekRange(d.date);
             
+            // 換週判斷，輸出上一週總結與該週明細
+            if (week !== currentWeek) {
+                if (currentWeek) {
+                    chunksHtml.push(renderWeekSummary(currentWeek, weekStats) + currentWeekDaysHtml.join(''));
+                }
+                currentWeek = week;
+                weekStats = { cost: 0, win: 0, bets: 0, hits: 0 };
+                currentWeekDaysHtml = [];
+            }
+
+            // 累加該週與歷史總損益
+            weekStats.cost += d.pnl.cost;
+            weekStats.win += d.pnl.win;
+            weekStats.bets += d.pnl.bets;
+            weekStats.hits += d.pnl.hits;
+            
+            totalStats.cost += d.pnl.cost;
+            totalStats.win += d.pnl.win;
+
+            let eventsHtml = '';
             if (d.events.length === 0) {
                 eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無訊號</div>`;
             } else {
@@ -332,21 +433,33 @@
                 }).join('');
             }
 
-            return `
+            currentWeekDaysHtml.push(`
             <div class="result-item">
                 <div class="res-header">
                     <span class="res-date">開獎日: ${d.date}</span>
                     <span class="res-actual">${d.nums.map(fNum).join(' ')}</span>
                 </div>
                 ${eventsHtml}
-            </div>`;
-        }).join('');
-        
-        document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px; color:#999;">尚無紀錄</div>';
+            </div>`);
+        });
 
+        // 處理最後一週
+        if (currentWeek) {
+            chunksHtml.push(renderWeekSummary(currentWeek, weekStats) + currentWeekDaysHtml.join(''));
+        }
+        
+        document.getElementById('resultList').innerHTML = chunksHtml.join('') || '<div style="text-align:center;padding:20px; color:#999;">尚無紀錄</div>';
+
+        // 渲染整體歷史摘要
+        let totalNet = totalStats.win - totalStats.cost;
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
-        document.getElementById('summaryArea').innerHTML = `💡 <b>歷史結算 (動態滾動回測)：</b>共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b>`;
+        document.getElementById('summaryArea').innerHTML = `
+            💡 <b>歷史結算 (動態滾動回測)：</b><br>
+            共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b><br>
+            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #b3e5fc; font-size: 0.95rem;">
+                💰 <b>歷史總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
+            </div>`;
     }
 
     window.onload = processData;
