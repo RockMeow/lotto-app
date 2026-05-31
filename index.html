@@ -2,509 +2,414 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>國小一年級趣味數學冒險</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>魔法心算大冒險</title>
     <style>
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { box-sizing: border-box; }
         
         body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans CJK TC", sans-serif;
-            background-color: #f0f8ff;
-            color: #333;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #fff3e0;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            touch-action: manipulation; /* 改善移動端點擊延遲 */
         }
 
         .game-container {
             background-color: #ffffff;
-            border-radius: 30px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border-radius: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 700px;
-            padding: 30px;
+            max-width: 600px;
+            padding: 20px;
             text-align: center;
-            border: 6px solid #bce2ff;
+            border: 5px solid #ffcc80;
             position: relative;
             overflow: hidden;
+        }
+
+        .top-bar {
+            margin-bottom: 15px;
         }
 
         h1 {
-            color: #ff6b6b;
-            font-size: 28px;
-            margin-top: 0;
-            text-shadow: 2px 2px 0px #ffe3e3;
-            animation: bounce Title 2s infinite alternate;
+            color: #ff7043;
+            font-size: 26px;
+            margin: 0;
+            text-shadow: 1px 1px 0px #ffe0b2;
+            animation: titleBounce 2s infinite alternate;
         }
 
-        /* 模式選擇鈕 */
+        /* 模式選擇 (針對手機優化成 2x2 排列或自動換行) */
         .mode-selection {
             display: flex;
-            justify-content: space-around;
-            margin-bottom: 25px;
-            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 8px;
         }
-
         .mode-btn {
-            background-color: #ffd32a;
+            background-color: #ffe082;
             border: none;
-            border-bottom: 4px solid #ffa801;
-            border-radius: 15px;
-            padding: 12px 20px;
-            font-size: 16px;
+            border-bottom: 4px solid #ffb300;
+            border-radius: 12px;
+            padding: 10px 8px;
+            font-size: 15px;
             font-weight: bold;
-            color: #3d3d3d;
+            color: #5d4037;
             cursor: pointer;
-            transition: all 0.2s ease;
-            flex: 1;
+            transition: all 0.2s;
+            flex: 1 1 40%; /* 手機上自動變成兩排 */
+            min-width: 110px;
+            -webkit-tap-highlight-color: transparent; /* 取消手機點擊的藍色預設底色 */
         }
-
-        .mode-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
-        }
-
-        .mode-btn.active {
-            background-color: #ff5e57;
-            border-bottom: 4px solid #dd4b39;
-            color: white;
+        /* 專為手機觸控設計的按下效果 */
+        .mode-btn:active {
             transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+        .mode-btn.active {
+            background-color: #ff9800;
             border-bottom-width: 0px;
-            margin-top: 4px;
+            transform: translateY(4px);
+            color: white;
         }
 
-        /* 計分板與進度 */
+        /* 狀態列 */
         .status-bar {
             display: flex;
             justify-content: space-between;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
-            color: #4bcffa;
-            margin-bottom: 20px;
-            padding: 0 10px;
+            color: #29b6f6;
+            margin-bottom: 10px;
+            padding: 0 5px;
         }
-
         .progress-container {
-            background-color: #f1f2f6;
+            background-color: #eeeeee;
             border-radius: 10px;
-            height: 15px;
-            width: 100%;
-            margin-bottom: 25px;
-            overflow: hidden;
+            height: 12px;
+            margin-bottom: 20px;
         }
-
         .progress-bar {
-            background: linear-gradient(90deg, #4cd137, #44bd32);
+            background: linear-gradient(90deg, #66bb6a, #43a047);
             height: 100%;
             width: 0%;
+            border-radius: 10px;
             transition: width 0.4s ease;
         }
 
-        /* 題目顯示 */
+        /* 題目區 */
         .question-box {
-            font-size: 56px;
+            font-size: 48px;
             font-weight: 800;
-            color: #2f3542;
-            margin: 20px 0;
+            color: #37474f;
+            margin: 15px 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .question-box span {
-            display: inline-block;
-        }
-
-        /* 十格陣視覺輔助 */
-        .ten-frame-container {
-            margin: 25px auto;
-            max-width: 450px;
-        }
-        
-        .ten-frame-title {
+        /* 視覺輔助區 */
+        .visual-container {
+            margin: 15px auto;
+            min-height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
             font-size: 16px;
-            color: #747d8c;
-            margin-bottom: 8px;
-            font-weight: bold;
         }
 
-        .ten-frame {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(2, 1fr);
-            gap: 8px;
-            background-color: #f1f2f6;
-            padding: 12px;
-            border-radius: 15px;
-            border: 3px solid #ced6e0;
-        }
-
-        .cell {
-            background-color: #ffffff;
-            border: 2px dashed #a4b0be;
-            aspect-ratio: 1;
-            border-radius: 12px;
+        /* 算式家族/好朋友專用視覺 */
+        .bond-diagram {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            position: relative;
-        }
-
-        .dot {
-            width: 80%;
-            height: 80%;
-            border-radius: 50%;
-            transform: scale(0);
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-
-        .dot.red {
-            background: radial-gradient(circle, #ff7675, #d63031);
-            box-shadow: 0 4px 6px rgba(214, 48, 49, 0.4);
-        }
-
-        .dot.blue {
-            background: radial-gradient(circle, #74b9ff, #0984e3);
-            box-shadow: 0 4px 6px rgba(9, 132, 227, 0.4);
-        }
-
-        /* 減法被拿走的外觀 */
-        .dot.removed {
-            opacity: 0.25;
-            position: relative;
-        }
-        .dot.removed::after {
-            content: "✕";
-            position: absolute;
-            color: #d63031;
-            font-size: 28px;
             font-weight: bold;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            opacity: 1;
+            font-size: 22px;
+        }
+        .bond-top {
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            background-color: #ce93d8;
+            color: white;
+            display: flex; justify-content: center; align-items: center;
+            margin-bottom: 20px;
+        }
+        .bond-bottom { display: flex; gap: 30px; }
+        .bond-circle {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background-color: #81d4fa;
+            color: #01579b;
+            display: flex; justify-content: center; align-items: center;
+            position: relative;
+        }
+        .bond-line {
+            position: absolute;
+            width: 3px; height: 35px;
+            background-color: #bdbdbd;
+            top: -28px;
+            z-index: -1;
+        }
+        .bond-line.left { transform: rotate(25deg); left: 25px; }
+        .bond-line.right { transform: rotate(-25deg); right: 25px; }
+
+        /* 乘法專用視覺 */
+        .multiply-groups { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px;}
+        .plate {
+            background-color: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            border-radius: 50%;
+            padding: 8px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+            align-items: center;
+            justify-items: center;
+            min-width: 50px; min-height: 50px;
+        }
+        .apple {
+            width: 12px; height: 12px;
+            background-color: #ef5350;
+            border-radius: 50%;
+            animation: popIn 0.3s forwards;
         }
 
-        /* 選項按鈕 */
+        /* 選項按鈕 (大尺寸方便手指點擊) */
         .options-container {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-top: 25px;
+            gap: 12px;
+            margin-top: 15px;
         }
-
         .option-btn {
             background-color: #ffffff;
-            border: 3px solid #e4e7eb;
-            border-bottom: 7px solid #e4e7eb;
-            border-radius: 20px;
-            padding: 20px;
+            border: 2px solid #cfd8dc;
+            border-bottom: 6px solid #cfd8dc;
+            border-radius: 18px;
+            padding: 15px 10px;
             font-size: 32px;
             font-weight: bold;
-            color: #2f3542;
+            color: #37474f;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: all 0.1s;
+            -webkit-tap-highlight-color: transparent;
         }
-
-        .option-btn:hover {
-            background-color: #f8f9fa;
-            transform: translateY(-2px);
-        }
-
         .option-btn:active {
             transform: translateY(4px);
-            border-bottom-width: 3px;
+            border-bottom-width: 2px;
+            background-color: #eceff1;
         }
 
-        /* 答題回饋效果 */
+        /* 回饋特效 */
         .feedback-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s ease;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 10; pointer-events: none; opacity: 0; transition: opacity 0.2s;
         }
+        .feedback-content { font-size: 80px; transform: scale(0.5); transition: transform 0.3s; }
+        .correct-bg { background-color: rgba(102, 187, 106, 0.2); }
+        .wrong-bg { background-color: rgba(239, 83, 80, 0.2); }
 
-        .feedback-content {
-            font-size: 80px;
-            transform: scale(0.5);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .correct-bg {
-            background-color: rgba(76, 209, 55, 0.15);
-        }
-        
-        .wrong-bg {
-            background-color: rgba(235, 77, 75, 0.15);
-        }
-
-        /* 動態特效動畫 */
-        @keyframes popIn {
-            to { transform: scale(1); }
-        }
-
-        @keyframes titleBounce {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-5px); }
-        }
-
-        .shake {
-            animation: shakeAnim 0.4s ease-in-out;
-        }
-
+        /* 動畫 */
+        @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @keyframes titleBounce { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
+        .shake { animation: shakeAnim 0.4s ease-in-out; }
         @keyframes shakeAnim {
             0%, 100% { transform: translateX(0); }
             20%, 60% { transform: translateX(-10px); }
             40%, 80% { transform: translateX(10px); }
         }
-
-        /* 慶祝彩色碎紙 */
         .confetti {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: #ffd32a;
+            position: absolute; width: 10px; height: 10px; border-radius: 50%;
             animation: particle 1s ease-out forwards;
-            border-radius: 50%;
         }
-
         @keyframes particle {
             0% { transform: translate(0, 0) scale(1); opacity: 1; }
             100% { transform: translate(var(--x), var(--y)) scale(0); opacity: 0; }
         }
 
-        /* 結算畫面 */
-        .summary-view {
-            display: none;
-        }
-
+        #summaryView { display: none; padding: 20px 0; }
         .restart-btn {
-            background-color: #4cd137;
-            color: white;
-            border: none;
-            border-bottom: 5px solid #44bd32;
-            border-radius: 15px;
-            padding: 15px 40px;
-            font-size: 22px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: all 0.2s ease;
+            background-color: #4caf50; color: white; border: none; border-bottom: 5px solid #388e3c;
+            border-radius: 15px; padding: 15px 30px; font-size: 22px; font-weight: bold; cursor: pointer;
+            margin-top: 15px; width: 100%; max-width: 250px;
+            -webkit-tap-highlight-color: transparent;
         }
-        .restart-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(76,209,55,0.4);
+        .restart-btn:active {
+            transform: translateY(3px); border-bottom-width: 2px;
+        }
+        
+        .helper-text {
+            background: #fff3e0; padding: 12px; border-radius: 12px; border: 2px dashed #ffb300; font-size: 15px; color: #5d4037; line-height: 1.4;
         }
     </style>
 </head>
 <body>
 
     <div class="game-container" id="gameWindow">
+        
+        <div class="top-bar">
+            <h1>✨ 魔法心算大冒險 ✨</h1>
+        </div>
+
         <div class="feedback-overlay" id="feedbackOverlay">
             <div class="feedback-content" id="feedbackContent">🌟</div>
         </div>
 
         <div id="quizView">
-            <h1>填滿格子大冒險 🎮</h1>
-            
             <div class="mode-selection">
-                <button class="mode-btn active" onclick="setMode('add')">10以內加法</button>
-                <button class="mode-btn" onclick="setMode('sub')">10以內減法</button>
-                <button class="mode-btn" onclick="setMode('advanced')">湊十法挑戰</button>
+                <button class="mode-btn active" onclick="setMode('bonds')">找好朋友 (湊10)</button>
+                <button class="mode-btn" onclick="setMode('doubles')">雙胞胎數</button>
+                <button class="mode-btn" onclick="setMode('family')">算式家族</button>
+                <button class="mode-btn" onclick="setMode('multiply')">乘法魔法</button>
             </div>
 
             <div class="status-bar">
                 <div id="scoreText">得分⭐: 0</div>
                 <div id="questionNumText">題數: 1/5</div>
             </div>
-            <div class="progress-container">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
+            <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
 
-            <div class="question-box">
-                <span id="num1">5</span>
-                <span id="operator">+</span>
-                <span id="num2">3</span>
-                <span>=</span>
-                <span style="color: #ff9f43;">?</span>
-            </div>
-
-            <div class="ten-frame-container">
-                <div class="ten-frame-title" id="helperTitle">小提示：數數看格子裡的點點哦！</div>
-                <div class="ten-frame" id="tenFrame">
-                    </div>
-            </div>
-
-            <div class="options-container" id="optionsContainer">
+            <div class="question-box" id="questionDisplay">
                 </div>
+
+            <div class="visual-container" id="visualContainer">
+                </div>
+
+            <div class="options-container" id="optionsContainer"></div>
         </div>
 
-        <div class="summary-view" id="summaryView">
-            <h1 style="font-size: 40px;">🎉 太棒了！完成了！ 🎉</h1>
-            <p style="font-size: 24px; font-weight: bold; margin: 30px 0;" id="finalScoreText">你得到了 5 顆星星！</p>
-            <div style="font-size: 80px; margin-bottom: 30px;">🏆✨</div>
+        <div id="summaryView">
+            <h1 style="font-size: 36px;">🎉 挑戰成功！ 🎉</h1>
+            <p style="font-size: 20px; margin: 20px 0; font-weight:bold; color:#ff7043;" id="finalScoreText"></p>
+            <div style="font-size: 80px; margin-bottom: 20px;">🏆</div>
             <button class="restart-btn" onclick="resetGame()">再玩一次 🚀</button>
         </div>
     </div>
 
     <script>
-        let currentMode = 'add'; // add, sub, advanced
+        let currentMode = 'bonds'; 
         let currentQuestionIdx = 1;
         const totalQuestions = 5;
         let score = 0;
         let correctAnswer = 0;
         let isWaitingForNext = false;
 
-        // 初始化遊戲
         function initGame() {
-            currentQuestionIdx = 1;
-            score = 0;
-            isWaitingForNext = false;
+            currentQuestionIdx = 1; score = 0; isWaitingForNext = false;
             document.getElementById('quizView').style.display = 'block';
             document.getElementById('summaryView').style.display = 'none';
             updateStatusBar();
             generateQuestion();
         }
 
-        // 切換模式
         function setMode(mode) {
             if (isWaitingForNext) return;
             currentMode = mode;
-            // 變更按鈕樣式
-            const buttons = document.querySelectorAll('.mode-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
             initGame();
         }
 
-        // 更新狀態資訊
         function updateStatusBar() {
             document.getElementById('scoreText').innerText = `得分⭐: ${score}`;
             document.getElementById('questionNumText').innerText = `題數: ${currentQuestionIdx}/${totalQuestions}`;
-            const progressPercent = ((currentQuestionIdx - 1) / totalQuestions) * 100;
-            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+            document.getElementById('progressBar').style.width = `${((currentQuestionIdx - 1) / totalQuestions) * 100}%`;
         }
 
-        // 出題邏輯
         function generateQuestion() {
-            let n1, n2, op;
-            
-            if (currentMode === 'add') {
-                op = '+';
-                // 10以內的加法
-                correctAnswer = Math.floor(Math.random() * 9) + 2; // 答案在 2~10 之間
-                n1 = Math.floor(Math.random() * (correctAnswer - 1)) + 1;
-                n2 = correctAnswer - n1;
-            } else if (currentMode === 'sub') {
-                op = '-';
-                // 10以內的減法
-                n1 = Math.floor(Math.random() * 9) + 2; // 被減數 2~10
-                correctAnswer = Math.floor(Math.random() * n1); // 答案 0 ~ n1-1
-                n2 = n1 - correctAnswer;
-            } else {
-                op = '+';
-                // 湊十法挑戰 (答案在 11~18)
-                n1 = Math.floor(Math.random() * 4) + 6; // 6,7,8,9
-                n2 = Math.floor(Math.random() * 4) + 6; // 6,7,8,9
+            let qHtml = "";
+            let vHtml = "";
+
+            if (currentMode === 'bonds') {
+                let n1 = Math.floor(Math.random() * 9) + 1;
+                correctAnswer = 10 - n1;
+                qHtml = `<span>${n1}</span> <span>+</span> <span style="color:#ff9800">?</span> <span>=</span> <span>10</span>`;
+                
+                vHtml = `
+                <div class="bond-diagram">
+                    <div class="bond-top">10</div>
+                    <div class="bond-bottom">
+                        <div class="bond-circle"><div class="bond-line left"></div>${n1}</div>
+                        <div class="bond-circle" style="background-color:#ffe082;"><div class="bond-line right"></div>?</div>
+                    </div>
+                </div>`;
+            } 
+            else if (currentMode === 'doubles') {
+                let n1 = Math.floor(Math.random() * 6) + 3; // 3~8
+                let isNearDouble = Math.random() > 0.5;
+                let n2 = isNearDouble ? n1 + 1 : n1;
                 correctAnswer = n1 + n2;
+                
+                qHtml = `<span>${n1}</span> <span>+</span> <span>${n2}</span> <span>=</span> <span style="color:#ff9800">?</span>`;
+                
+                let helperText = isNearDouble ? `想一想：${n1} + ${n1} = ${n1*2}<br>再多 1 是多少呢？` : `💡 雙胞胎數字相加！`;
+                vHtml = `<div class="helper-text" style="color: #00796b; border-color:#80cbc4;">${helperText}</div>`;
+            }
+            else if (currentMode === 'family') {
+                let a = Math.floor(Math.random() * 7) + 2;
+                let b = Math.floor(Math.random() * 7) + 2;
+                let sum = a + b;
+                correctAnswer = a;
+                
+                qHtml = `<span>${sum}</span> <span>-</span> <span>${b}</span> <span>=</span> <span style="color:#ff9800">?</span>`;
+                vHtml = `
+                <div class="helper-text">
+                    <strong>💡 因為我們知道：</strong><br>
+                    <span style="font-size:1.2em; color:#d84315;">${a} + ${b} = ${sum}</span><br>
+                    所以它們是一家人！
+                </div>`;
+            }
+            else if (currentMode === 'multiply') {
+                let groupSize = Math.floor(Math.random() * 3) + 2; // 2~4個
+                let numGroups = Math.floor(Math.random() * 4) + 2; // 2~5盤
+                correctAnswer = groupSize * numGroups;
+                
+                qHtml = `<span>${groupSize}</span> <span style="font-size:0.8em">×</span> <span>${numGroups}</span> <span>=</span> <span style="color:#ff9800">?</span>`;
+                
+                let platesHtml = '';
+                for(let i=0; i<numGroups; i++) {
+                    let apples = '';
+                    for(let j=0; j<groupSize; j++) {
+                        apples += `<div class="apple" style="animation-delay:${(i*groupSize+j)*50}ms"></div>`;
+                    }
+                    platesHtml += `<div class="plate">${apples}</div>`;
+                }
+                vHtml = `
+                <div style="text-align:center;">
+                    <div style="margin-bottom:5px; font-size:14px; color:#5d4037;">
+                        💡 也就是 <b>${numGroups}</b> 盤蘋果，每盤 <b>${groupSize}</b> 顆
+                    </div>
+                    <div class="multiply-groups">${platesHtml}</div>
+                </div>`;
             }
 
-            document.getElementById('num1').innerText = n1;
-            document.getElementById('operator').innerText = op;
-            document.getElementById('num2').innerText = n2;
-
-            renderTenFrame(n1, n2, op);
+            document.getElementById('questionDisplay').innerHTML = qHtml;
+            document.getElementById('visualContainer').innerHTML = vHtml;
             generateOptions(correctAnswer);
         }
 
-        // 渲染十格陣 (支持超過10的進位擴展陣列)
-        function renderTenFrame(n1, n2, op) {
-            const frame = document.getElementById('tenFrame');
-            frame.innerHTML = '';
-            
-            // 決定需要幾個格子。若答案或數字大於10，則動態變成「雙十格陣」(20格)
-            let totalCells = 10;
-            if (n1 > 10 || (n1 + n2 > 10 && op === '+')) {
-                totalCells = 20;
-                frame.style.gridTemplateColumns = "repeat(5, 1fr)";
-                frame.style.gridTemplateRows = "repeat(4, 1fr)";
-            } else {
-                frame.style.gridTemplateColumns = "repeat(5, 1fr)";
-                frame.style.gridTemplateRows = "repeat(2, 1fr)";
-            }
-
-            // 建立格子結構
-            for (let i = 0; i < totalCells; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                frame.appendChild(cell);
-            }
-
-            const cells = frame.querySelectorAll('.cell');
-
-            if (op === '+') {
-                // 加法：先畫第一組紅球，再畫第二組藍球
-                let cellIdx = 0;
-                // 紅球
-                for (let i = 0; i < n1; i++) {
-                    if (cellIdx < totalCells) {
-                        createDot(cells[cellIdx], 'red', i * 50);
-                        cellIdx++;
-                    }
-                }
-                // 藍球
-                for (let i = 0; i < n2; i++) {
-                    if (cellIdx < totalCells) {
-                        createDot(cells[cellIdx], 'blue', (n1 + i) * 50);
-                        cellIdx++;
-                    }
-                }
-            } else if (op === '-') {
-                // 減法：先畫總數紅球，然後將其中後面幾顆加上「拿走」的特效
-                for (let i = 0; i < n1; i++) {
-                    if (i < totalCells) {
-                        // 如果是被減去的數量，就加上 removed 樣式
-                        const isRemoved = i >= (n1 - n2);
-                        createDot(cells[i], 'red' + (isRemoved ? ' removed' : ''), i * 50);
-                    }
-                }
-            }
-        }
-
-        function createDot(parentCell, className, delay) {
-            const dot = document.createElement('div');
-            dot.className = `dot ${className}`;
-            dot.style.animationDelay = `${delay}ms`;
-            parentCell.appendChild(dot);
-        }
-
-        // 生成4個選項
         function generateOptions(correct) {
             const container = document.getElementById('optionsContainer');
             container.innerHTML = '';
-
             let options = [correct];
+            
             while (options.length < 4) {
-                // 產生正確答案上下浮動的干擾項
                 let offset = (Math.floor(Math.random() * 3) + 1) * (Math.random() < 0.5 ? 1 : -1);
                 let fakeAns = correct + offset;
-                if (fakeAns >= 0 && !options.includes(fakeAns)) {
+                if (fakeAns > 0 && !options.includes(fakeAns)) {
                     options.push(fakeAns);
                 }
             }
-
-            // 洗牌打亂順序
             options.sort(() => Math.random() - 0.5);
 
             options.forEach(val => {
@@ -516,51 +421,40 @@
             });
         }
 
-        // 檢查答案
-        function checkAnswer(selected, clickedBtn) {
+        function checkAnswer(selected, btn) {
             if (isWaitingForNext) return;
             isWaitingForNext = true;
 
             const overlay = document.getElementById('feedbackOverlay');
             const content = document.getElementById('feedbackContent');
-            const gameWindow = document.getElementById('gameWindow');
+            const windowEl = document.getElementById('gameWindow');
 
             if (selected === correctAnswer) {
-                // 答對了
                 score++;
                 overlay.className = "feedback-overlay correct-bg";
-                content.innerText = "❤️ 答對了！";
+                content.innerText = "⭕";
                 overlay.style.opacity = 1;
                 content.style.transform = "scale(1)";
-                
-                // 觸發撒花特效
-                createConfettiEffect();
-
-                setTimeout(() => {
-                    nextQuestion();
-                }, 1500);
+                createConfetti();
+                setTimeout(nextQuestion, 1500);
             } else {
-                // 答錯了
                 overlay.className = "feedback-overlay wrong-bg";
-                content.innerText = "💡 再試試看！";
+                content.innerText = "❌";
                 overlay.style.opacity = 1;
                 content.style.transform = "scale(1)";
-                
-                // 讓視窗震動
-                gameWindow.classList.add('shake');
-                clickedBtn.style.borderColor = '#ff4d4d';
-                clickedBtn.style.color = '#ff4d4d';
+                windowEl.classList.add('shake');
+                btn.style.borderColor = '#ff5252';
+                btn.style.color = '#ff5252';
 
                 setTimeout(() => {
                     overlay.style.opacity = 0;
                     content.style.transform = "scale(0.5)";
-                    gameWindow.classList.remove('shake');
-                    isWaitingForNext = false; // 允許重新作答本題
-                }, 1200);
+                    windowEl.classList.remove('shake');
+                    isWaitingForNext = false;
+                }, 1000); // 縮短手機上的錯誤等待時間
             }
         }
 
-        // 下一題或進入結算
         function nextQuestion() {
             document.getElementById('feedbackOverlay').style.opacity = 0;
             document.getElementById('feedbackContent').style.transform = "scale(0.5)";
@@ -571,7 +465,6 @@
                 isWaitingForNext = false;
                 generateQuestion();
             } else {
-                // 遊戲結束，顯示結算
                 document.getElementById('progressBar').style.width = `100%`;
                 setTimeout(() => {
                     document.getElementById('quizView').style.display = 'none';
@@ -581,42 +474,27 @@
             }
         }
 
-        // 重置遊戲
-        function resetGame() {
-            initGame();
-        }
+        function resetGame() { initGame(); }
 
-        // 碎紙灑花粒子效果
-        function createConfettiEffect() {
+        function createConfetti() {
             const windowEl = document.getElementById('gameWindow');
-            const colors = ['#ffd32a', '#ff4d4d', '#4cd137', '#0984e3', '#e056fd'];
-            
-            for (let i = 0; i < 40; i++) {
+            const colors = ['#ffca28', '#ef5350', '#66bb6a', '#29b6f6', '#ab47bc'];
+            // 為了手機效能考量，粒子數量稍微減少
+            for (let i = 0; i < 30; i++) { 
                 const p = document.createElement('div');
                 p.className = 'confetti';
                 p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                
-                // 隨機發散角度與距離
                 const angle = Math.random() * Math.PI * 2;
-                const distance = Math.random() * 150 + 50;
-                const x = Math.cos(angle) * distance;
-                const y = Math.sin(angle) * distance;
-                
-                p.style.setProperty('--x', `${x}px`);
-                p.style.setProperty('--y', `${y}px`);
-                
-                // 隨機出生位置 (在視窗中央周圍)
-                p.style.left = `calc(50% + ${Math.random() * 40 - 20}px)`;
-                p.style.top = `calc(50% + ${Math.random() * 40 - 20}px)`;
-                
+                const distance = Math.random() * 100 + 30;
+                p.style.setProperty('--x', `${Math.cos(angle) * distance}px`);
+                p.style.setProperty('--y', `${Math.sin(angle) * distance}px`);
+                p.style.left = `calc(50% + ${Math.random() * 20 - 10}px)`;
+                p.style.top = `calc(50% + ${Math.random() * 20 - 10}px)`;
                 windowEl.appendChild(p);
-                
-                // 動畫結束後移除
                 setTimeout(() => p.remove(), 1000);
             }
         }
 
-        // 網頁載入時自動執行一次
         window.onload = initGame;
     </script>
 </body>
