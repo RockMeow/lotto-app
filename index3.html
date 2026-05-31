@@ -148,7 +148,8 @@
         return `${fmt(mon)} ~ ${fmt(sun)}`;
     }
 
-    function getIronBalls(tail) {
+    // 新增：加入 currentIndex 參數，依照歷史數據篩選出最熱門的 2 顆號碼
+    function getIronBalls(tail, currentIndex) {
         let balls = [];
         let maxHeads = Math.floor(maxNum / 10);
         let excludeZero = document.getElementById('excludeZeroHead').checked;
@@ -158,6 +159,25 @@
             let n = h * 10 + tail;
             if(n > 0 && n <= maxNum) balls.push(n);
         }
+
+        // 根據歷史出現頻率篩選到剩 2 顆
+        if (currentIndex !== undefined && balls.length > 2) {
+            let counts = {};
+            balls.forEach(b => counts[b] = 0);
+            
+            // 統計從第 0 期到當前觸發期數，這些號碼出現過幾次
+            for(let k = 0; k <= currentIndex; k++) {
+                parsedData[k].nums.forEach(n => {
+                    if (counts[n] !== undefined) counts[n]++;
+                });
+            }
+            
+            // 依照開出次數由高到低排序
+            balls.sort((a, b) => counts[b] - counts[a]);
+            // 只保留前 2 顆
+            balls = balls.slice(0, 2);
+        }
+
         return balls;
     }
 
@@ -247,7 +267,8 @@
         return localRules;
     }
 
-    function getSmartPatterns(nums, currentRules) {
+    // 新增：加入 currentIndex 傳遞給 getIronBalls
+    function getSmartPatterns(nums, currentRules, currentIndex) {
         let patterns = [];
         let tails = nums.map(n => n % 10);
         let counts = new Array(10).fill(0);
@@ -256,10 +277,10 @@
         for (let t = 0; t < 10; t++) {
             if (counts[t] >= 3) {
                 let r = currentRules.triple[t];
-                if(r && r.total > 0) patterns.push({ type: `三尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail), score: r.score });
+                if(r && r.total > 0) patterns.push({ type: `三尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score });
             } else if (counts[t] >= 2) {
                 let r = currentRules.double[t];
-                if(r && r.total > 0) patterns.push({ type: `雙尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail), score: r.score });
+                if(r && r.total > 0) patterns.push({ type: `雙尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score });
             }
         }
         return patterns.sort((a,b)=>b.score-a.score).slice(0, 3);
@@ -300,7 +321,6 @@
         let stats = { total: 0, hit: 0 };
         let totalStats = { cost: 0, win: 0, bets: 0, hits: 0 };
 
-        // 讀取手動輸入的倍率，並計算當前的單球成本
         let userMultiplier = parseFloat(document.getElementById('betMultiplier').value);
         if (isNaN(userMultiplier) || userMultiplier <= 0) userMultiplier = 0.01;
         let ratio = userMultiplier / 0.01;
@@ -308,7 +328,8 @@
 
         for (let i = 0; i < parsedData.length; i++) {
             let currentRules = getRulesForDay(i);
-            let patterns = getSmartPatterns(parsedData[i].nums, currentRules);
+            // 新增：把當前迴圈的 i (currentIndex) 傳進去
+            let patterns = getSmartPatterns(parsedData[i].nums, currentRules, i);
             
             patterns.forEach(p => {
                 if (p.target.length === 0) return;
@@ -332,7 +353,6 @@
                     }
                 }
                 
-                // 損益計算邏輯 (套用新的動態成本)
                 let maxPeriod = hitInfo ? hitInfo.p : 3;
                 for (let j = 1; j <= maxPeriod; j++) {
                     let playIndex = i + j;
@@ -371,7 +391,6 @@
             });
         }
 
-        // 渲染「目前追蹤中」卡片
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
@@ -384,7 +403,6 @@
             </div>`
         }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無追蹤版路 ☕</div>';
 
-        // 渲染「每日開獎與訊號紀錄」含每週損益結算
         let reversedData = dailyView.slice().reverse();
         let chunksHtml = [];
         let currentWeek = null;
@@ -394,7 +412,6 @@
         reversedData.forEach(d => {
             let week = getWeekRange(d.date);
             
-            // 換週判斷，輸出上一週總結與該週明細
             if (week !== currentWeek) {
                 if (currentWeek) {
                     chunksHtml.push(renderWeekSummary(currentWeek, weekStats) + currentWeekDaysHtml.join(''));
@@ -404,7 +421,6 @@
                 currentWeekDaysHtml = [];
             }
 
-            // 累加該週與歷史總損益
             weekStats.cost += d.pnl.cost;
             weekStats.win += d.pnl.win;
             weekStats.bets += d.pnl.bets;
@@ -453,14 +469,12 @@
             </div>`);
         });
 
-        // 處理最後一週
         if (currentWeek) {
             chunksHtml.push(renderWeekSummary(currentWeek, weekStats) + currentWeekDaysHtml.join(''));
         }
         
         document.getElementById('resultList').innerHTML = chunksHtml.join('') || '<div style="text-align:center;padding:20px; color:#999;">尚無紀錄</div>';
 
-        // 渲染整體歷史摘要
         let totalNet = totalStats.win - totalStats.cost;
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
