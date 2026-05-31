@@ -106,6 +106,15 @@
                 <span style="font-weight: bold; font-size: 0.95rem;">排除 0 頭 (不包含 01~09)</span>
             </label>
             <label style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: bold; font-size: 0.95rem;">預測球數：</span>
+                <select id="ballCountSelect" onchange="runAnalysis()" style="width: 80px; padding: 4px 8px; border-radius: 6px; border: 1px solid #dfe6e9; font-size: 0.95rem; outline: none; margin-bottom: 0;">
+                    <option value="1">1 顆</option>
+                    <option value="2" selected>2 顆</option>
+                    <option value="3">3 顆</option>
+                    <option value="4">4 顆</option>
+                </select>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-weight: bold; font-size: 0.95rem;">下注倍率：</span>
                 <input type="number" id="betMultiplier" value="0.01" step="0.01" min="0.01" onchange="runAnalysis()" style="width: 80px; padding: 4px 8px; border-radius: 6px; border: 1px solid #dfe6e9; font-size: 0.95rem; outline: none;">
             </label>
@@ -166,13 +175,14 @@
         let maxHeads = Math.floor(maxNum / 10);
         let excludeZero = document.getElementById('excludeZeroHead').checked;
         let startH = excludeZero ? 1 : 0;
+        let selectedBallCount = parseInt(document.getElementById('ballCountSelect').value) || 2;
 
         for(let h = startH; h <= maxHeads; h++) {
             let n = h * 10 + tail;
             if(n > 0 && n <= maxNum) balls.push(n);
         }
 
-        if (currentIndex !== undefined && balls.length > 2) {
+        if (currentIndex !== undefined && balls.length > selectedBallCount) {
             let counts = {};
             balls.forEach(b => counts[b] = 0);
             for(let k = 0; k <= currentIndex; k++) {
@@ -181,7 +191,7 @@
                 });
             }
             balls.sort((a, b) => counts[b] - counts[a]);
-            balls = balls.slice(0, 2);
+            balls = balls.slice(0, selectedBallCount);
             balls.sort((a, b) => a - b);
         }
         return balls;
