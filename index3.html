@@ -100,10 +100,14 @@
             <span id="dataStatus" style="font-weight: bold;">讀取中...</span>
         </div>
 
-        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #dfe6e9;">
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #dfe6e9; display: flex; flex-direction: column; gap: 12px;">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="excludeZeroHead" checked onchange="runAnalysis()" style="width: 18px; height: 18px; cursor: pointer;">
                 <span style="font-weight: bold; font-size: 0.95rem;">排除 0 頭 (不包含 01~09)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: bold; font-size: 0.95rem;">下注倍率：</span>
+                <input type="number" id="betMultiplier" value="0.01" step="0.01" min="0.01" onchange="runAnalysis()" style="width: 80px; padding: 4px 8px; border-radius: 6px; border: 1px solid #dfe6e9; font-size: 0.95rem; outline: none;">
             </label>
         </div>
     </div>
@@ -296,6 +300,12 @@
         let stats = { total: 0, hit: 0 };
         let totalStats = { cost: 0, win: 0, bets: 0, hits: 0 };
 
+        // 讀取手動輸入的倍率，並計算當前的單球成本
+        let userMultiplier = parseFloat(document.getElementById('betMultiplier').value);
+        if (isNaN(userMultiplier) || userMultiplier <= 0) userMultiplier = 0.01;
+        let ratio = userMultiplier / 0.01;
+        let currentCostPerBall = COST_PER_BALL * ratio;
+
         for (let i = 0; i < parsedData.length; i++) {
             let currentRules = getRulesForDay(i);
             let patterns = getSmartPatterns(parsedData[i].nums, currentRules);
@@ -322,13 +332,13 @@
                     }
                 }
                 
-                // 損益計算邏輯
+                // 損益計算邏輯 (套用新的動態成本)
                 let maxPeriod = hitInfo ? hitInfo.p : 3;
                 for (let j = 1; j <= maxPeriod; j++) {
                     let playIndex = i + j;
                     if (playIndex < parsedData.length) {
                         let numBets = p.target.length;
-                        let costAmount = numBets * COST_PER_BALL;
+                        let costAmount = numBets * currentCostPerBall;
                         let rebateAmount = costAmount * REBATE_RATE;
                         
                         dailyView[playIndex].pnl.bets += numBets;
@@ -336,7 +346,7 @@
                         
                         if (hitInfo && playIndex === hitInfo.hitIndex) {
                             dailyView[playIndex].pnl.hits += hitInfo.n.length;
-                            dailyView[playIndex].pnl.win += (hitInfo.n.length * COST_PER_BALL * WIN_MULTIPLIER);
+                            dailyView[playIndex].pnl.win += (hitInfo.n.length * currentCostPerBall * WIN_MULTIPLIER);
                         }
                     }
                 }
