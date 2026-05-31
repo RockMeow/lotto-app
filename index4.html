@@ -9,8 +9,8 @@
            Mobile-First (手機優先) App 級別 UI
            ========================================== */
         :root {
-            --bg-base: #0f172a;       /* 深藍黑背景 */
-            --bg-card: #1e293b;       /* 卡片底色 */
+            --bg-base: #0f172a;       
+            --bg-card: #1e293b;       
             --bg-input: #0f172a;
             --text-main: #f8fafc;
             --text-dim: #94a3b8;
@@ -28,7 +28,6 @@
             margin: 0; padding: 0; min-height: 100vh;
         }
         
-        /* 頂部導航列 */
         header { 
             background-color: var(--bg-card); padding: 15px 20px; 
             border-bottom: 1px solid var(--border-color);
@@ -37,7 +36,6 @@
         }
         header h1 { margin: 0; font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
         
-        /* 主要內容區 */
         .container { padding: 15px; display: flex; flex-direction: column; gap: 15px; padding-bottom: 100px;}
         
         .card { 
@@ -46,10 +44,8 @@
         }
         .card-title { font-size: 0.95rem; font-weight: 700; color: var(--text-dim); margin-top: 0; margin-bottom: 12px; text-transform: uppercase;}
         
-        /* 資金池 */
         .pool-amount { font-size: 2.5rem; font-weight: 800; color: var(--accent-green); margin: 0; }
         
-        /* 輸入框與小按鈕 */
         .input-row { display: flex; gap: 10px; margin-top: 15px; }
         .input-row input { 
             flex: 1; background: var(--bg-input); border: 1px solid var(--border-color); 
@@ -60,7 +56,6 @@
             padding: 0 20px; border-radius: 8px; font-weight: 700; cursor: pointer; 
         }
         
-        /* 三大核心控制按鈕 (大拇指友善) */
         .action-group { display: flex; flex-direction: column; gap: 12px; margin-top: 5px;}
         .btn-huge { 
             width: 100%; border: none; padding: 18px; border-radius: 12px; 
@@ -73,7 +68,6 @@
         .btn-test { background: linear-gradient(135deg, #d97706, #f59e0b); }
         .btn-grid { background: linear-gradient(135deg, #059669, #10b981); }
         
-        /* 終端機日誌 */
         .terminal-box { 
             background: #000; border: 1px solid #222; border-radius: 8px; 
             padding: 12px; height: 280px; overflow-y: auto; 
@@ -85,11 +79,9 @@
         .c-warn { color: #facc15; }
         .c-info { color: var(--accent-blue); }
         
-        /* 監控標籤 */
         .tag-area { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;}
         .tag { background: var(--bg-input); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;}
         
-        /* 歷史帳本表格 */
         .table-container { overflow-x: auto; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; white-space: nowrap; }
         th { text-align: left; padding: 12px 8px; color: var(--text-dim); border-bottom: 1px solid var(--border-color); }
@@ -99,7 +91,6 @@
         .bg-sell { background: var(--accent-red); } 
         .bg-sys { background: var(--accent-blue); }
         
-        /* 重置按鈕 */
         .btn-reset { background: transparent; border: 1px solid var(--accent-red); color: var(--accent-red); padding: 12px; width: 100%; border-radius: 8px; font-weight: 700; margin-top: 10px;}
     </style>
 </head>
@@ -133,7 +124,7 @@
             🔍 1. 全市場掃描 (尋找地板價)
         </button>
         <button class="btn-huge btn-test" onclick="step2_RunBacktest()" id="btnTest">
-            📊 2. 執行回測 (驗證勝率)
+            📊 2. 執行回測 (預算過濾與推薦)
         </button>
         <button class="btn-huge btn-grid" onclick="step3_ExecuteGrid()" id="btnGrid">
             🛒 3. 網格掛單 (判斷與交易)
@@ -149,7 +140,7 @@
         <h2 class="card-title">LEDGER 歷史帳本</h2>
         <div class="table-container">
             <table>
-                <thead><tr><th>日期</th><th>標的</th><th>動作</th><th>股數</th><th>金額</th></tr></thead>
+                <thead><tr><th>日期</th><th>標的名稱</th><th>動作</th><th>股數</th><th>金額</th></tr></thead>
                 <tbody id="ledgerBody"></tbody>
             </table>
         </div>
@@ -159,14 +150,24 @@
 </div>
 
 <script>
-    // ==========================================
-    // 系統狀態與資料庫
-    // ==========================================
     const STOP_LOSS_PCT = 0.15;
     setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-    // 取得資料
+    // ==========================================
+    // 股票中文名稱對照系統
+    // ==========================================
+    function getStockName(code) {
+        if (code === 'SYS' || code === 'SYSTEM') return '系統';
+        const map = JSON.parse(localStorage.getItem('quant_stock_names')) || {};
+        const fallback = {"0050":"元大台灣50", "0056":"元大高股息", "00878":"國泰永續高股息", "00919":"群益台灣精選高息", "00713":"元大台灣高息低波", "006208":"富邦台50", "2330":"台積電", "2317":"鴻海", "2454":"聯發科", "2881":"富邦金", "2882":"國泰金", "2891":"中信金"};
+        let name = map[code] || fallback[code] || "";
+        return name ? `${code} ${name}` : code;
+    }
+
+    // ==========================================
+    // 資料庫管理
+    // ==========================================
     function getCandidates() { return JSON.parse(localStorage.getItem('quant_candidates')) || []; }
     function saveCandidates(list) { localStorage.setItem('quant_candidates', JSON.stringify(list)); renderTags(); }
     
@@ -176,7 +177,7 @@
     function renderTags() {
         const list = getCandidates();
         document.getElementById('stockTagsArea').innerHTML = list.length > 0 
-            ? list.map(s => `<div class="tag">${s}</div>`).join('') 
+            ? list.map(s => `<div class="tag">${getStockName(s)}</div>`).join('') 
             : "<span style='color: var(--text-dim); font-size: 0.85rem;'>目前無名單。請點擊「1. 全市場掃描」。</span>";
     }
 
@@ -190,7 +191,7 @@
             let priceStr = log.action === 'DEPOSIT' ? `+$${log.price}` : `$${log.price}`;
             tbody.innerHTML += `<tr>
                 <td>${log.date.substring(5)}</td>
-                <td style="font-weight:bold;">${log.stock}</td>
+                <td style="font-weight:bold;">${getStockName(log.stock)}</td>
                 <td><span class="badge ${bgClass}">${log.action}</span></td>
                 <td>${log.shares || '-'}</td><td>${priceStr}</td>
             </tr>`;
@@ -233,10 +234,20 @@
             const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
             const res = await fetch(proxyUrl);
             const data = await res.json();
-            return data.map(item => item.Code).filter(code => code.length === 4);
+            
+            let nameMap = {};
+            let codes = [];
+            data.forEach(item => {
+                if(item.Code.length === 4) {
+                    codes.push(item.Code);
+                    nameMap[item.Code] = item.Name;
+                }
+            });
+            localStorage.setItem('quant_stock_names', JSON.stringify(nameMap));
+            return codes;
         } catch (e) {
-            logMsg("證交所 API 異常，啟用本地核心 50 檔備用清單。", "c-warn");
-            return ["0050", "0056", "00878", "00919", "00713", "006208", "2330", "2317", "2454", "2881", "2882", "2891"]; // 簡化展示
+            logMsg("證交所 API 異常，啟用本地核心備用清單。", "c-warn");
+            return ["0050", "0056", "00878", "00919", "00713", "006208", "2330", "2317", "2454", "2881", "2882", "2891"]; 
         }
     }
 
@@ -269,7 +280,7 @@
     }
 
     // ==========================================
-    // BUTTON 1: 全市場掃描
+    // STEP 1: 全市場掃描
     // ==========================================
     async function step1_ScanMarket() {
         const btn = document.getElementById('btnScan');
@@ -288,7 +299,7 @@
             if (scanned % 50 === 0) logMsg(`...已掃描 ${scanned} 檔標的`);
             
             let data = await fetchStockData(stock, "6mo");
-            await sleep(100); // 防禦 API 被鎖
+            await sleep(100); 
             
             if (!data || data.closes.length < 20) continue;
 
@@ -296,11 +307,10 @@
             let currentPrice = c[c.length-1];
             let stats = calcStats(c);
             
-            // 放寬條件：波動度放寬至 0.15，距離下軌放寬至 1.03，避免 1000 檔全滅
             if (stats.cv > 0.01 && stats.cv < 0.15) { 
                 if (currentPrice <= stats.lower * 1.03) { 
                     candidates.push(stock);
-                    logMsg(`[命中] ${stock} 跌近地板價！`, "c-buy");
+                    logMsg(`[命中] ${getStockName(stock)} 跌近地板價！`, "c-buy");
                 }
             }
         }
@@ -311,66 +321,82 @@
     }
 
     // ==========================================
-    // BUTTON 2: 執行回測
+    // STEP 2: 執行回測 (資金池預算推薦)
     // ==========================================
     async function step2_RunBacktest() {
         const candidates = getCandidates();
         if (candidates.length === 0) return alert("待回測清單為空！請先執行第 1 步掃描。");
         
-        const btn = document.getElementById('btnTest');
-        btn.disabled = true; btn.innerText = "⏳ 回測運算中...";
-        logMsg("========== [STEP 2 啟動] ==========", "c-info");
-        
         let ledger = getLedger();
-        let capital = ledger.pool < 1000 ? 10000 : ledger.pool;
+        let capital = ledger.pool;
+        
+        if (capital === 0) {
+            alert("資金池為 $0，請先注入資金才能推薦符合預算的股票！");
+            return;
+        }
+
+        const btn = document.getElementById('btnTest');
+        btn.disabled = true; btn.innerText = "⏳ 回測預算過濾中...";
+        logMsg("========== [STEP 2 啟動] ==========", "c-info");
+        logMsg(`根據您的資金池餘額 ($${capital})，篩選能買滿 10 股且勝率最高的標的...`);
         
         let bestTarget = null;
         let maxProfit = -999999;
 
         for (let stock of candidates) {
-            logMsg(`正在回測 ${stock}...`);
+            logMsg(`分析 ${getStockName(stock)}...`);
             let data = await fetchStockData(stock, "1y");
             await sleep(100);
             if (!data || data.closes.length < 200) {
-                logMsg(`  -> ${stock} 歷史數據不足，跳過。`, "c-sell"); continue;
+                logMsg(`  -> 歷史數據不足，跳過。`, "c-sell"); continue;
+            }
+            
+            let c = data.closes;
+            let currentPrice = c[c.length-1];
+            let minRequired = currentPrice * 10; // 至少需要買10股的本金
+            
+            // 💰 【關鍵修改】過濾掉買不起的股票
+            if (capital < minRequired) {
+                logMsg(`  -> 市價 $${currentPrice.toFixed(2)}，最低 10 股需 $${minRequired.toFixed(0)}。預算不足，剔除！`, "c-warn"); 
+                continue;
             }
             
             // 執行沙盤推演
             let simPool = capital;
             let simHoldings = [];
             let trades = 0, wins = 0;
-            let d = data.dates, c = data.closes, h = data.highs, l = data.lows;
+            let h = data.highs, l = data.lows;
             
             for(let i = 20; i < c.length; i++) {
-                let currentPrice = c[i];
+                let p = c[i];
                 let trSum = 0;
                 for(let j = i-13; j <= i; j++) trSum += Math.max(h[j]-l[j], Math.abs(h[j]-c[j-1]), Math.abs(l[j]-c[j-1]));
                 let atr = trSum / 14;
 
                 for(let j = simHoldings.length - 1; j >= 0; j--) {
-                    if (currentPrice >= simHoldings[j].target) {
-                        simPool += currentPrice * simHoldings[j].shares; trades++; wins++; simHoldings.splice(j, 1);
-                    } else if (currentPrice <= simHoldings[j].buyPrice * (1 - STOP_LOSS_PCT)) {
-                        simPool += currentPrice * simHoldings[j].shares; trades++; simHoldings.splice(j, 1);
+                    if (p >= simHoldings[j].target) {
+                        simPool += p * simHoldings[j].shares; trades++; wins++; simHoldings.splice(j, 1);
+                    } else if (p <= simHoldings[j].buyPrice * (1 - STOP_LOSS_PCT)) {
+                        simPool += p * simHoldings[j].shares; trades++; simHoldings.splice(j, 1);
                     }
                 }
 
-                let refPrice = simHoldings.length > 0 ? simHoldings[simHoldings.length-1].buyPrice : currentPrice + atr;
+                let refPrice = simHoldings.length > 0 ? simHoldings[simHoldings.length-1].buyPrice : p + atr;
                 let buyPoint = refPrice - atr;
-                if (currentPrice <= buyPoint) {
-                    let shares = Math.floor(simPool / currentPrice);
+                if (p <= buyPoint) {
+                    let shares = Math.floor(simPool / p);
                     if (shares >= 10) { 
-                        simPool -= shares * currentPrice;
-                        simHoldings.push({ buyPrice: currentPrice, shares: shares, target: buyPoint + (atr * 1.5) });
+                        simPool -= shares * p;
+                        simHoldings.push({ buyPrice: p, shares: shares, target: buyPoint + (atr * 1.5) });
                     }
                 }
             }
             
             let finalValue = simPool;
-            for(let h of simHoldings) finalValue += h.shares * c[c.length-1];
+            for(let hold of simHoldings) finalValue += hold.shares * c[c.length-1];
             let totalProfit = finalValue - capital;
             
-            logMsg(`  -> 交易 ${trades} 次，純利 $${totalProfit.toFixed(0)}`);
+            logMsg(`  -> 交易 ${trades} 次，預期純利 $${totalProfit.toFixed(0)}`);
             
             if (trades > 0 && totalProfit > 0 && totalProfit > maxProfit) {
                 maxProfit = totalProfit;
@@ -381,19 +407,19 @@
         if (bestTarget) {
             ledger.bestTarget = bestTarget;
             saveLedger(ledger);
-            logMsg(`[決策] 回測最佳標的為：${bestTarget}，預期獲利最高！`, "c-buy");
+            logMsg(`[推薦] 符合預算且獲利最佳標的為：${getStockName(bestTarget)}！`, "c-buy");
             logMsg(`系統已鎖定目標。請執行第 3 步進行實盤掛單。`, "c-info");
         } else {
             ledger.bestTarget = null;
             saveLedger(ledger);
-            logMsg(`[警告] 清單內所有標的回測皆為虧損，建議空手觀望。`, "c-sell");
+            logMsg(`[警告] 清單內無符合您的預算且能獲利的標的，建議注入資金或觀望。`, "c-sell");
         }
         
-        btn.innerText = "📊 2. 執行回測 (驗證勝率)"; btn.disabled = false;
+        btn.innerText = "📊 2. 執行回測 (預算過濾與推薦)"; btn.disabled = false;
     }
 
     // ==========================================
-    // BUTTON 3: 網格掛單
+    // STEP 3: 網格掛單
     // ==========================================
     async function step3_ExecuteGrid() {
         let ledger = getLedger();
@@ -418,7 +444,7 @@
         let atr = trSum / 14;
 
         let holding = ledger.holdings[0];
-        logMsg(`標的: ${targetStock} | 市價: $${currentPrice.toFixed(2)} | ATR: $${atr.toFixed(2)}`);
+        logMsg(`標的: ${getStockName(targetStock)} | 市價: $${currentPrice.toFixed(2)} | ATR: $${atr.toFixed(2)}`);
 
         if (isHoliday) {
             logMsg(`[假日模式] 週末休市，提供下週一預先掛單建議：`, "c-warn");
