@@ -132,8 +132,19 @@
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
+    // 新增：計算號碼遺漏期數
+    function getOmit(num, currentIndex) {
+        let omit = 0;
+        for (let k = currentIndex; k >= 0; k--) {
+            if (parsedData[k].nums.includes(num)) {
+                return omit;
+            }
+            omit++;
+        }
+        return omit;
+    }
+
     function getWeekRange(dateStr) {
-        // 強制補上 2026 年（如果原字串沒有包含年份的話）
         let dateWithYear = dateStr.includes('2026') ? dateStr : `2026/${dateStr}`;
         let normalized = dateWithYear.replace(/\//g, '-');
         
@@ -162,26 +173,18 @@
             if(n > 0 && n <= maxNum) balls.push(n);
         }
 
-        // 根據歷史出現頻率篩選到剩 2 顆 (2顆最熱門)
         if (currentIndex !== undefined && balls.length > 2) {
             let counts = {};
             balls.forEach(b => counts[b] = 0);
-            
-            // 統計從第 0 期到當前觸發期數，這些號碼出現過幾次
             for(let k = 0; k <= currentIndex; k++) {
                 parsedData[k].nums.forEach(n => {
                     if (counts[n] !== undefined) counts[n]++;
                 });
             }
-            
-            // 依照開出次數由高到低排序
             balls.sort((a, b) => counts[b] - counts[a]);
-            // 挑選前 2 名 (最熱門)
             balls = balls.slice(0, 2);
-            // 重新依照數字大小排序，方便閱讀
             balls.sort((a, b) => a - b);
         }
-
         return balls;
     }
 
@@ -220,10 +223,13 @@
     }
 
     function getRulesForDay(currentIndex) {
-        let dStats = {}; let tStats = {};
+        let dStats = {}; let tStats = {}; let nStats = {};
         for (let i = 0; i < 10; i++) {
             dStats[i] = { total: 0, hits: new Array(10).fill(0) };
             tStats[i] = { total: 0, hits: new Array(10).fill(0) };
+        }
+        for (let i = 1; i <= maxNum; i++) {
+            nStats[i] = { total: 0, hits: new Array(maxNum + 1).fill(0) };
         }
 
         let excludeZero = document.getElementById('excludeZeroHead').checked;
@@ -234,10 +240,15 @@
             tails.forEach(t => counts[t]++);
 
             let next3ValidTails = new Set();
+            let next3ValidNums = new Set();
+
             for (let j = 1; j <= 3; j++) {
                 if (k + j <= currentIndex) { 
                     parsedData[k + j].nums.forEach(n => {
-                        if (!excludeZero || n >= 10) next3ValidTails.add(n % 10); 
+                        if (!excludeZero || n >= 10) {
+                            next3ValidTails.add(n % 10); 
+                            next3ValidNums.add(n);
+                        }
                     });
                 }
             }
@@ -252,9 +263,15 @@
                     next3ValidTails.forEach(nt => tStats[t].hits[nt]++);
                 }
             }
+            
+            // 號碼拖號碼統計
+            parsedData[k].nums.forEach(n => {
+                nStats[n].total++;
+                next3ValidNums.forEach(nt => nStats[n].hits[nt]++);
+            });
         }
 
-        let localRules = { double: {}, triple: {} };
+        let localRules = { double: {}, triple: {}, number: {} };
         for (let t = 0; t < 10; t++) {
             let bestDTail = -1, maxDHit = -1;
             for (let nt = 0; nt < 10; nt++) {
@@ -268,6 +285,24 @@
             }
             localRules.triple[t] = { targetTail: bestTTail, score: tStats[t].total > 0 ? (maxTHit / tStats[t].total * 100) : 0, total: tStats[t].total };
         }
+        
+        for (let i = 1; i <= maxNum; i++) {
+            let hitArr = [];
+            for (let nt = 1; nt <= maxNum; nt++) {
+                if (!excludeZero || nt >= 10) {
+                    hitArr.push({ n: nt, h: nStats[i].hits[nt] });
+                }
+            }
+            hitArr.sort((a, b) => b.h - a.h);
+            if (hitArr.length >= 2) {
+                let targets = [hitArr[0].n, hitArr[1].n].sort((a, b) => a - b);
+                localRules.number[i] = {
+                    targets: targets,
+                    score: nStats[i].total > 0 ? (hitArr[0].h / nStats[i].total * 100) : 0,
+                    total: nStats[i].total
+                };
+            }
+        }
         return localRules;
     }
 
@@ -280,12 +315,31 @@
         for (let t = 0; t < 10; t++) {
             if (counts[t] >= 3) {
                 let r = currentRules.triple[t];
-                if(r && r.total > 0) patterns.push({ type: `三尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score });
+                if(r && r.total > 0) patterns.push({ type: `三尾拖牌 (${t}尾)`, targetTail: r.targetTail, targetType: 'tail', target: getIronBalls(r.targetTail, currentIndex), score: r.score });
             } else if (counts[t] >= 2) {
                 let r = currentRules.double[t];
-                if(r && r.total > 0) patterns.push({ type: `雙尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score });
+                if(r && r.total > 0) patterns.push({ type: `雙尾拖牌 (${t}尾)`, targetTail: r.targetTail, targetType: 'tail', target: getIronBalls(r.targetTail, currentIndex), score: r.score });
             }
         }
+        
+        nums.forEach(n => {
+            let r = currentRules.number[n];
+            if (r && r.total > 0) {
+                patterns.push({
+                    type: `單號拖牌 (${fNum(n)})`,
+                    targetTail: null,
+                    targetType: 'number',
+                    target: r.targets,
+                    score: r.score
+                });
+            }
+        });
+
+        // 加入遺漏期字串
+        patterns.forEach(p => {
+            p.targetDisplay = p.target.map(n => `${fNum(n)}(漏${getOmit(n, currentIndex)})`);
+        });
+
         return patterns.sort((a,b)=>b.score-a.score).slice(0, 3);
     }
 
@@ -396,12 +450,13 @@
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
+            let targetLabel = t.targetType === 'number' ? '拖號碼' : `拖 ${t.targetTail} 尾`;
             return `
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 勝率</div>
-                <h3>${t.type} <span class="target-tail">拖 ${t.targetTail} 尾</span></h3>
+                <h3>${t.type} <span class="target-tail">${targetLabel}</span></h3>
                 <div class="pred-info">觸發日: ${t.date} | 養牌第 ${t.age} 期</div>
-                <span class="nums-highlight">${t.target.map(fNum).join(', ')}</span>
+                <span class="nums-highlight">${t.targetDisplay.join(', ')}</span>
             </div>`
         }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">目前無追蹤版路 ☕</div>';
 
@@ -436,25 +491,26 @@
                 eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無訊號</div>`;
             } else {
                 eventsHtml = d.events.map(e => {
+                    let targetLabel = e.pattern.targetType === 'number' ? '拖號碼' : `拖 ${e.pattern.targetTail} 尾`;
                     if (e.type === 'trigger') {
                         return `
                         <div class="trigger-detail">
-                            <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
-                            <div class="trigger-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div>
+                            <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">${targetLabel}</span></div>
+                            <div class="trigger-nums">預測號碼: ${e.pattern.targetDisplay.join(', ')}</div>
                             <div class="trigger-status">👉 開始養牌三期</div>
                         </div>`;
                     } else if (e.type === 'hit') {
                         return `
                         <div class="hit-detail">
-                            <div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
+                            <div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">${targetLabel}</span></div>
                             <div class="hit-nums">命中號碼: ${e.hitNums.map(fNum).join(', ')}</div>
                             <div class="hit-status">🎯 觸發日: ${e.triggerDate} (於第 ${e.hitPeriod} 期獲利)</div>
                         </div>`;
                     } else if (e.type === 'miss') {
                         return `
                         <div class="miss-detail">
-                            <div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
-                            <div class="miss-nums">預測號碼: ${e.pattern.target.map(fNum).join(', ')}</div>
+                            <div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">${targetLabel}</span></div>
+                            <div class="miss-nums">預測號碼: ${e.pattern.targetDisplay.join(', ')}</div>
                             <div class="miss-status">❌ 養牌三期未中 (觸發日: ${e.triggerDate})</div>
                         </div>`;
                     }
