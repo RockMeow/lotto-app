@@ -2,176 +2,182 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PRO 網格交易終端 | Quant Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quant App | 網格交易終端</title>
     <style>
         /* ==========================================
-           專業看盤軟體 (Dark Mode) UI 設計 + 手機自適應
+           Mobile-First (手機優先) App 級別 UI
            ========================================== */
         :root {
-            --bg-base: #0a0e17;       
-            --bg-panel: #131b29;      
-            --bg-input: #1c2638;      
-            --text-main: #c9d1d9;     
-            --text-dim: #8b949e;      
-            --accent-blue: #2196f3;   
-            --trade-buy: #00e676;     
-            --trade-sell: #ff1744;    
-            --border-color: #2d3748;
+            --bg-base: #0f172a;       /* 深藍黑背景 */
+            --bg-card: #1e293b;       /* 卡片底色 */
+            --bg-input: #0f172a;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --border-color: #334155;
         }
         
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        /* 移除原本鎖死高度的設定，讓手機可以自然上下滑動 */
         body { 
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
-            background-color: var(--bg-base); 
-            color: var(--text-main); 
-            margin: 0; 
-            padding: 10px; 
-            min-height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-base); color: var(--text-main);
+            margin: 0; padding: 0; min-height: 100vh;
         }
         
-        /* 預設為電腦版的雙欄佈局 */
-        .layout { display: flex; gap: 10px; margin-top: 10px; flex: 1; flex-direction: row; }
-        .sidebar { width: 350px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
-        .main-content { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-        
-        .panel { background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; overflow-y: auto; }
-        .panel-header { font-size: 1.1em; font-weight: bold; color: var(--accent-blue); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
-        
-        .pool-amount { font-size: 2.2em; font-weight: bold; color: var(--trade-buy); margin: 5px 0; text-shadow: 0 0 10px rgba(0,230,118,0.2); }
-        .input-group { display: flex; gap: 8px; margin-bottom: 15px; }
-        .input-group input { flex: 1; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px; border-radius: 4px; font-family: inherit; font-size: 1.1em; } /* 稍微加大 input 方便手機點擊 */
-        
-        .btn { background: #2b3a4a; color: white; border: 1px solid #4a5e78; padding: 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-family: inherit; width: 100%; transition: all 0.2s; font-size: 1.05em; }
-        .btn:hover { background: #3c4f63; }
-        .btn-action { background: var(--accent-blue); border-color: #1976d2; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-size: 1.1em; padding: 15px;}
-        .btn-action:hover { background: #1e88e5; }
-        .btn-danger { background: transparent; border: 1px solid var(--trade-sell); color: var(--trade-sell); margin-top: auto; }
-        .btn-danger:hover { background: rgba(255, 23, 68, 0.1); }
-        .btn-stop { background: var(--trade-sell); color: white; border: none; display: none; padding: 15px; font-size: 1.1em; }
-        
-        .stock-tag { display: inline-block; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); padding: 6px 10px; border-radius: 4px; margin: 3px; font-size: 0.95em; }
-        
-        .terminal { flex: 1; background: #000; border: 1px solid #333; padding: 12px; font-size: 0.95em; line-height: 1.5; overflow-y: auto; border-radius: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); min-height: 350px; }
-        .terminal-row { border-bottom: 1px dashed #222; padding: 4px 0; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        th { text-align: left; padding: 10px 8px; border-bottom: 2px solid var(--border-color); color: var(--text-dim); position: sticky; top: 0; background: var(--bg-panel); }
-        td { padding: 10px 8px; border-bottom: 1px solid var(--border-color); }
-        .badge { padding: 4px 6px; border-radius: 3px; font-size: 0.85em; font-weight: bold; color: #000; }
-        
-        .c-buy { color: var(--trade-buy); } .c-sell { color: var(--trade-sell); }
-        .bg-buy { background: var(--trade-buy); } .bg-sell { background: var(--trade-sell); } .bg-sys { background: var(--accent-blue); color: white;}
-        .highlight { color: #ffd600; font-weight: bold; }
-        
-        .progress-wrapper { width: 100%; background: var(--bg-input); border-radius: 4px; overflow: hidden; height: 10px; margin-top: 10px; display: none; }
-        .progress-bar { height: 100%; background: var(--accent-blue); width: 0%; transition: width 0.2s; }
-        
-        header { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 5px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
-        header h1 { margin: 0; font-size: 1.5em; letter-spacing: 1px; color: #fff; }
-        header span { color: var(--text-dim); font-size: 0.9em; }
-
-        /* ==========================================
-           為手機螢幕加入的自適應變形 (Media Query)
-           ========================================== */
-        @media (max-width: 768px) {
-            .layout { 
-                flex-direction: column; /* 將雙欄改為上下排列 */
-            }
-            .sidebar { 
-                width: 100%; /* 左側控制台佔滿寬度 */
-            }
-            header h1 { 
-                font-size: 1.2em; /* 縮小標題以免破版 */
-            }
-            .terminal { 
-                min-height: 400px; /* 確保手機上的日誌區有足夠高度可滑動 */
-            }
-            .panel {
-                padding: 10px;
-            }
+        /* 頂部導航列 */
+        header { 
+            background-color: var(--bg-card); padding: 15px 20px; 
+            border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
         }
+        header h1 { margin: 0; font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
+        
+        /* 主要內容區 */
+        .container { padding: 15px; display: flex; flex-direction: column; gap: 15px; padding-bottom: 100px;}
+        
+        .card { 
+            background: var(--bg-card); border: 1px solid var(--border-color); 
+            border-radius: 12px; padding: 16px; 
+        }
+        .card-title { font-size: 0.95rem; font-weight: 700; color: var(--text-dim); margin-top: 0; margin-bottom: 12px; text-transform: uppercase;}
+        
+        /* 資金池 */
+        .pool-amount { font-size: 2.5rem; font-weight: 800; color: var(--accent-green); margin: 0; }
+        
+        /* 輸入框與小按鈕 */
+        .input-row { display: flex; gap: 10px; margin-top: 15px; }
+        .input-row input { 
+            flex: 1; background: var(--bg-input); border: 1px solid var(--border-color); 
+            color: var(--text-main); padding: 12px; border-radius: 8px; font-size: 1rem; 
+        }
+        .btn-small { 
+            background: var(--border-color); color: var(--text-main); border: none; 
+            padding: 0 20px; border-radius: 8px; font-weight: 700; cursor: pointer; 
+        }
+        
+        /* 三大核心控制按鈕 (大拇指友善) */
+        .action-group { display: flex; flex-direction: column; gap: 12px; margin-top: 5px;}
+        .btn-huge { 
+            width: 100%; border: none; padding: 18px; border-radius: 12px; 
+            font-size: 1.1rem; font-weight: 800; color: white; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.1s;
+        }
+        .btn-huge:active { transform: scale(0.98); }
+        .btn-scan { background: linear-gradient(135deg, #4f46e5, #3b82f6); }
+        .btn-test { background: linear-gradient(135deg, #d97706, #f59e0b); }
+        .btn-grid { background: linear-gradient(135deg, #059669, #10b981); }
+        
+        /* 終端機日誌 */
+        .terminal-box { 
+            background: #000; border: 1px solid #222; border-radius: 8px; 
+            padding: 12px; height: 280px; overflow-y: auto; 
+            font-family: monospace; font-size: 0.85rem; line-height: 1.6;
+        }
+        .log-row { border-bottom: 1px solid #111; padding: 4px 0; word-break: break-all;}
+        .c-buy { color: var(--accent-green); } 
+        .c-sell { color: var(--accent-red); }
+        .c-warn { color: #facc15; }
+        .c-info { color: var(--accent-blue); }
+        
+        /* 監控標籤 */
+        .tag-area { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;}
+        .tag { background: var(--bg-input); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;}
+        
+        /* 歷史帳本表格 */
+        .table-container { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; white-space: nowrap; }
+        th { text-align: left; padding: 12px 8px; color: var(--text-dim); border-bottom: 1px solid var(--border-color); }
+        td { padding: 12px 8px; border-bottom: 1px solid var(--border-color); }
+        .badge { padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 0.75rem; color: #fff;}
+        .bg-buy { background: var(--accent-green); } 
+        .bg-sell { background: var(--accent-red); } 
+        .bg-sys { background: var(--accent-blue); }
+        
+        /* 重置按鈕 */
+        .btn-reset { background: transparent; border: 1px solid var(--accent-red); color: var(--accent-red); padding: 12px; width: 100%; border-radius: 8px; font-weight: 700; margin-top: 10px;}
     </style>
 </head>
 <body>
 
 <header>
-    <h1>QUANT TERMINAL <span style="color: var(--accent-blue);">[PRO]</span></h1>
-    <span id="clock">00:00:00</span>
+    <h1>QUANT APP <span style="color: var(--accent-blue);">PRO</span></h1>
+    <span id="clock" style="font-size: 0.9rem; font-family: monospace; color: var(--text-dim);">00:00:00</span>
 </header>
 
-<div class="layout">
-    <div class="sidebar">
-        <div class="panel">
-            <div class="panel-header">CAPITAL POOL (資金池)</div>
-            <div class="pool-amount" id="poolAmount">$0</div>
-            <div class="input-group" style="margin-top: 10px;">
-                <input type="number" id="depositAmount" placeholder="輸入注入金額 (TWD)...">
-                <button class="btn" style="width: auto;" onclick="manualDeposit()">注入</button>
-            </div>
-        </div>
-
-        <div class="panel" style="flex: 1;">
-            <div class="panel-header">MONITOR LIST (動態清單)</div>
-            <div style="font-size: 0.85em; color: var(--text-dim); margin-bottom: 10px;">※ 啟動掃描後，系統將自動從證交所撈取全市場名單並加入符合者</div>
-            <div id="stockTagsArea"></div>
-        </div>
-        
-        <button class="btn btn-action" onclick="masterExecute()" id="btnMaster">▶ 啟動全市場自動大腦</button>
-        <button class="btn btn-stop" onclick="abortScan()" id="btnStop">⏹ 強制中止掃描</button>
-        <button class="btn btn-danger" onclick="clearLedger()">[!] RESET SYSTEM</button>
-    </div>
-
-    <div class="main-content">
-        <div class="panel" style="flex: 3; display: flex; flex-direction: column;">
-            <div class="panel-header" style="display: flex; justify-content: space-between;">
-                <span>SYSTEM LOG (運算終端)</span>
-                <span id="scanStatus" style="color: var(--text-dim); font-size: 0.85em;">IDLE</span>
-            </div>
-            <div class="progress-wrapper" id="progressWrapper"><div class="progress-bar" id="progressBar"></div></div>
-            <div class="terminal" id="sysLog">
-                <div class="terminal-row" style="color: var(--text-dim);">[SYSTEM] 初始化完成。準備連接 TWSE OpenAPI...</div>
-                <div class="terminal-row" style="color: var(--text-dim);">[SYSTEM] 請設定資金池，並點擊左下方「啟動全市場自動大腦」開始運算。</div>
-            </div>
-        </div>
-
-        <div class="panel" style="flex: 2;">
-            <div class="panel-header">LEDGER & HOLDINGS (歷史帳本)</div>
-            <div style="overflow-x: auto;"> <table>
-                    <thead><tr><th>DATE</th><th>TICKER</th><th>ACTION</th><th>SHARES</th><th>PRICE/AMT</th></tr></thead>
-                    <tbody id="ledgerBody"></tbody>
-                </table>
-            </div>
+<div class="container">
+    
+    <div class="card">
+        <h2 class="card-title">CAPITAL POOL 資金池</h2>
+        <div class="pool-amount" id="poolAmount">$0</div>
+        <div class="input-row">
+            <input type="number" id="depositAmount" placeholder="輸入注入金額...">
+            <button class="btn-small" onclick="manualDeposit()">注入</button>
         </div>
     </div>
+
+    <div class="card">
+        <h2 class="card-title">SYSTEM TERMINAL 運算日誌</h2>
+        <div class="terminal-box" id="sysLog">
+            <div class="log-row" style="color: var(--text-dim);">[系統就緒] 獨立操作模式已啟動。</div>
+        </div>
+    </div>
+
+    <div class="action-group">
+        <button class="btn-huge btn-scan" onclick="step1_ScanMarket()" id="btnScan">
+            🔍 1. 全市場掃描 (尋找地板價)
+        </button>
+        <button class="btn-huge btn-test" onclick="step2_RunBacktest()" id="btnTest">
+            📊 2. 執行回測 (驗證勝率)
+        </button>
+        <button class="btn-huge btn-grid" onclick="step3_ExecuteGrid()" id="btnGrid">
+            🛒 3. 網格掛單 (判斷與交易)
+        </button>
+    </div>
+
+    <div class="card" style="margin-top: 10px;">
+        <h2 class="card-title">MONITOR LIST 待回測清單</h2>
+        <div class="tag-area" id="stockTagsArea"></div>
+    </div>
+
+    <div class="card">
+        <h2 class="card-title">LEDGER 歷史帳本</h2>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>日期</th><th>標的</th><th>動作</th><th>股數</th><th>金額</th></tr></thead>
+                <tbody id="ledgerBody"></tbody>
+            </table>
+        </div>
+        <button class="btn-reset" onclick="clearLedger()">⚠️ 重置所有系統資料</button>
+    </div>
+
 </div>
 
 <script>
     // ==========================================
-    // 參數設定與資料庫管理 (保留原邏輯)
+    // 系統狀態與資料庫
     // ==========================================
     const STOP_LOSS_PCT = 0.15;
-    let IS_SCANNING = false;
-    let ABORT_REQUESTED = false;
-
     setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-    function getMonitoredList() { return JSON.parse(localStorage.getItem('gridList_v10')) || []; }
-    function saveMonitoredList(list) { localStorage.setItem('gridList_v10', JSON.stringify(list)); renderTags(); }
+    // 取得資料
+    function getCandidates() { return JSON.parse(localStorage.getItem('quant_candidates')) || []; }
+    function saveCandidates(list) { localStorage.setItem('quant_candidates', JSON.stringify(list)); renderTags(); }
     
-    function getLedger() { return JSON.parse(localStorage.getItem('gridLedger_v10')) || { pool: 0, logs: [], holdings: [] }; }
-    function saveLedger(ledger) { localStorage.setItem('gridLedger_v10', JSON.stringify(ledger)); loadUI(); }
+    function getLedger() { return JSON.parse(localStorage.getItem('quant_ledger')) || { pool: 0, logs: [], holdings: [], bestTarget: null }; }
+    function saveLedger(ledger) { localStorage.setItem('quant_ledger', JSON.stringify(ledger)); loadUI(); }
 
     function renderTags() {
-        const list = getMonitoredList();
+        const list = getCandidates();
         document.getElementById('stockTagsArea').innerHTML = list.length > 0 
-            ? list.map(s => `<div class="stock-tag">${s}</div>`).join('') 
-            : "<span style='color: var(--text-dim);'>[ EMPTY ]</span>";
+            ? list.map(s => `<div class="tag">${s}</div>`).join('') 
+            : "<span style='color: var(--text-dim); font-size: 0.85rem;'>目前無名單。請點擊「1. 全市場掃描」。</span>";
     }
 
     function loadUI() {
@@ -183,7 +189,8 @@
             let bgClass = log.action.includes('BUY') ? 'bg-buy' : (log.action.includes('SELL') ? 'bg-sell' : 'bg-sys');
             let priceStr = log.action === 'DEPOSIT' ? `+$${log.price}` : `$${log.price}`;
             tbody.innerHTML += `<tr>
-                <td style="color: var(--text-dim);">${log.date}</td><td style="font-weight:bold;">${log.stock}</td>
+                <td>${log.date.substring(5)}</td>
+                <td style="font-weight:bold;">${log.stock}</td>
                 <td><span class="badge ${bgClass}">${log.action}</span></td>
                 <td>${log.shares || '-'}</td><td>${priceStr}</td>
             </tr>`;
@@ -191,10 +198,10 @@
     }
 
     function clearLedger() {
-        if(confirm("DANGER: 確定重置？這會清除你的資金池、庫存、交易歷史與監控清單！")) {
-            localStorage.removeItem('gridLedger_v10');
-            localStorage.removeItem('gridList_v10');
-            logMsg("[SYSTEM] 系統已完全重置。", "c-sell");
+        if(confirm("警告：這將清除資金池、庫存與歷史紀錄！確定執行？")) {
+            localStorage.removeItem('quant_ledger');
+            localStorage.removeItem('quant_candidates');
+            logMsg("系統資料已清空。", "c-sell");
             renderTags(); loadUI();
         }
     }
@@ -202,7 +209,7 @@
     function logMsg(msg, cssClass = '') {
         const box = document.getElementById('sysLog');
         const time = new Date().toLocaleTimeString('en-US', {hour12: false});
-        box.innerHTML += `<div class="terminal-row ${cssClass}"><span style="color: var(--text-dim);">[${time}]</span> ${msg}</div>`;
+        box.innerHTML += `<div class="log-row ${cssClass}"><span style="color: var(--text-dim);">[${time}]</span> ${msg}</div>`;
         box.scrollTop = box.scrollHeight;
     }
 
@@ -212,294 +219,256 @@
         if (isNaN(amt) || amt <= 0) return alert("請輸入有效金額");
         let ledger = getLedger();
         ledger.pool += amt;
-        ledger.logs.push({date: new Date().toISOString().split('T')[0], stock: 'SYSTEM', action: 'DEPOSIT', shares: 0, price: amt});
+        ledger.logs.push({date: new Date().toISOString().split('T')[0], stock: 'SYS', action: 'DEPOSIT', shares: 0, price: amt});
         saveLedger(ledger); input.value = '';
-        logMsg(`[DEPOSIT] 注入資金 $${amt}，帳戶總額: $${ledger.pool.toFixed(0)}`, 'c-buy');
+        logMsg(`資金池注入 $${amt}`, 'c-buy');
     }
 
     // ==========================================
-    // 動態全市場抓取 (修正 TWSE CORS 阻擋問題)
+    // 網路 API 工具
     // ==========================================
     async function fetchEntireMarketList() {
-        logMsg("[API] 正在連接證交所 (TWSE) 獲取全市場即時清單...", "highlight");
         try {
-            // 【修復連線】透過 corsproxy.io 代理 TWSE 的 API，解決瀏覽器 CORS 阻擋問題
             const url = 'https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL';
             const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-            
             const res = await fetch(proxyUrl);
             const data = await res.json();
-            
-            const codes = data.map(item => item.Code).filter(code => code.length === 4);
-            logMsg(`[API] 成功獲取 ${codes.length} 檔上市股票/ETF代碼。`, "c-buy");
-            return codes;
+            return data.map(item => item.Code).filter(code => code.length === 4);
         } catch (e) {
-            logMsg("[API ERROR] TWSE 連線或解析失敗，啟用內建核心備用名單。", "c-sell");
-            return ["0050", "0056", "00878", "00919", "00713", "006208", "2330", "2317", "2454", "2881", "2882", "2891"];
+            logMsg("證交所 API 異常，啟用本地核心 50 檔備用清單。", "c-warn");
+            return ["0050", "0056", "00878", "00919", "00713", "006208", "2330", "2317", "2454", "2881", "2882", "2891"]; // 簡化展示
         }
     }
 
-    // ==========================================
-    // 核心數據抓取 (保持不變)
-    // ==========================================
-    async function fetchStockDataWithDates(stock, range="1y") {
+    async function fetchStockData(stock, range="1y") {
         const url = `https://query1.finance.yahoo.com/v8/finance/chart/${stock}.TW?interval=1d&range=${range}`;
         const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
         try {
             const res = await fetch(proxyUrl);
             const parsed = await res.json();
-            const result = parsed.chart.result[0];
-            const quotes = result.indicators.quote[0];
-            const timestamps = result.timestamp;
+            const quotes = parsed.chart.result[0].indicators.quote[0];
+            const timestamps = parsed.chart.result[0].timestamp;
             
             let dates = [], closes = [], highs = [], lows = [];
             for(let i=0; i<quotes.close.length; i++) {
                 if(quotes.close[i] !== null && quotes.high[i] !== null && quotes.low[i] !== null) {
-                    let d = new Date(timestamps[i] * 1000);
-                    dates.push(d.toISOString().split('T')[0]);
-                    closes.push(quotes.close[i]); 
-                    highs.push(quotes.high[i]); 
-                    lows.push(quotes.low[i]);
+                    dates.push(new Date(timestamps[i] * 1000).toISOString().split('T')[0]);
+                    closes.push(quotes.close[i]); highs.push(quotes.high[i]); lows.push(quotes.low[i]);
                 }
             }
             return { dates, closes, highs, lows };
         } catch (e) { return null; }
     }
 
-    function calcSMA(data, period) {
-        let sum = 0; for(let i = data.length - period; i < data.length; i++) sum += data[i]; return sum / period;
-    }
-    function calcStdDev(data, period, sma) {
-        let sumSq = 0; for(let i = data.length - period; i < data.length; i++) sumSq += Math.pow(data[i] - sma, 2);
-        return Math.sqrt(sumSq / period);
-    }
-
-    // ==========================================
-    // 詳細回測引擎 (保持不變)
-    // ==========================================
-    function runDetailedBacktest(data, capital) {
-        let simPool = capital;
-        if(simPool < 1000) simPool = 10000; 
-        let initialCapital = simPool;
-        let simHoldings = [];
-        let trades = 0, wins = 0;
-        let historyLog = []; 
-        let d = data.dates, c = data.closes, h = data.highs, l = data.lows;
-        
-        for(let i = 20; i < c.length; i++) {
-            let currentPrice = c[i];
-            let currentDate = d[i];
-            
-            let trSum = 0;
-            for(let j = i-13; j <= i; j++) trSum += Math.max(h[j]-l[j], Math.abs(h[j]-c[j-1]), Math.abs(l[j]-c[j-1]));
-            let currentATR = trSum / 14;
-
-            for(let j = simHoldings.length - 1; j >= 0; j--) {
-                let hold = simHoldings[j];
-                if (currentPrice >= hold.target) {
-                    simPool += currentPrice * hold.shares;
-                    let profit = (currentPrice - hold.buyPrice) * hold.shares;
-                    historyLog.push(`    > [${currentDate}] 🟢 停利賣出 ${hold.shares}股 @ $${currentPrice.toFixed(2)} (Profit: +$${profit.toFixed(0)})`);
-                    trades++; wins++; simHoldings.splice(j, 1);
-                } else if (currentPrice <= hold.buyPrice * (1 - STOP_LOSS_PCT)) {
-                    simPool += currentPrice * hold.shares;
-                    let loss = (hold.buyPrice - currentPrice) * hold.shares;
-                    historyLog.push(`    > [${currentDate}] 🔴 停損賣出 ${hold.shares}股 @ $${currentPrice.toFixed(2)} (Loss: -$${loss.toFixed(0)})`);
-                    trades++; simHoldings.splice(j, 1);
-                }
-            }
-
-            let refPrice = simHoldings.length > 0 ? simHoldings[simHoldings.length-1].buyPrice : currentPrice + currentATR;
-            let buyPoint = refPrice - currentATR;
-            
-            if (currentPrice <= buyPoint) {
-                let shares = Math.floor(simPool / currentPrice);
-                if (shares >= 10) { 
-                    simPool -= shares * currentPrice;
-                    simHoldings.push({ buyPrice: currentPrice, shares: shares, target: buyPoint + (currentATR * 1.5) });
-                    historyLog.push(`    > [${currentDate}] 🛒 網格買進 ${shares}股 @ $${currentPrice.toFixed(2)}`);
-                }
-            }
-        }
-        
-        let finalValue = simPool;
-        for(let h of simHoldings) finalValue += h.shares * c[c.length-1];
-        
-        let totalProfit = finalValue - initialCapital;
-        let winRate = trades > 0 ? (wins / trades * 100).toFixed(1) : 0;
-        return { trades, winRate, totalProfit, historyLog, testCapital: initialCapital };
+    function calcStats(data) {
+        let sum = 0; for(let i=data.length-20; i<data.length; i++) sum += data[i];
+        let ma20 = sum / 20;
+        let sumSq = 0; for(let i=data.length-20; i<data.length; i++) sumSq += Math.pow(data[i] - ma20, 2);
+        let std = Math.sqrt(sumSq / 20);
+        return { ma20, std, lower: ma20 - (2 * std), cv: std / ma20 };
     }
 
-    function abortScan() { ABORT_REQUESTED = true; }
-
     // ==========================================
-    // 終極全自動大腦主程式 (保持不變)
+    // BUTTON 1: 全市場掃描
     // ==========================================
-    async function masterExecute() {
-        if(IS_SCANNING) return;
-        IS_SCANNING = true; ABORT_REQUESTED = false;
+    async function step1_ScanMarket() {
+        const btn = document.getElementById('btnScan');
+        btn.disabled = true; btn.innerText = "⏳ 掃描全市場中...";
+        logMsg("========== [STEP 1 啟動] ==========", "c-info");
+        logMsg("開始撈取 TWSE 全市場名單...");
         
-        const btn = document.getElementById('btnMaster');
-        const btnStop = document.getElementById('btnStop');
-        const pWrapper = document.getElementById('progressWrapper');
-        const pBar = document.getElementById('progressBar');
-        const status = document.getElementById('scanStatus');
-        
-        btn.style.display = 'none'; btnStop.style.display = 'block'; pWrapper.style.display = 'block';
-        document.getElementById('sysLog').innerHTML = ''; 
-        
-        let ledger = getLedger();
-        let monitoredList = getMonitoredList();
-        
-        logMsg(`==================================================`);
-        logMsg(`[PHASE 1] 啟動全市場掃描分析引擎`, "highlight");
-        
+        let candidates = [];
         const marketPool = await fetchEntireMarketList();
-        let foundNew = false;
+        let scanned = 0;
         
-        status.innerText = "SCANNING MARKET...";
+        logMsg(`共取得 ${marketPool.length} 檔標的，開始過濾...`);
         
-        for (let i = 0; i < marketPool.length; i++) {
-            if(ABORT_REQUESTED) { logMsg("[!] 使用者強制中止掃描。", "c-sell"); break; }
+        for (let stock of marketPool) {
+            scanned++;
+            if (scanned % 50 === 0) logMsg(`...已掃描 ${scanned} 檔標的`);
             
-            let stock = marketPool[i];
-            pBar.style.width = `${((i+1)/marketPool.length)*100}%`;
+            let data = await fetchStockData(stock, "6mo");
+            await sleep(100); // 防禦 API 被鎖
             
-            if(monitoredList.includes(stock)) continue; 
-            
-            let data = await fetchStockDataWithDates(stock, "6mo");
-            await sleep(150); 
-            if (!data) continue;
+            if (!data || data.closes.length < 20) continue;
 
             let c = data.closes;
             let currentPrice = c[c.length-1];
-            let ma20 = calcSMA(c, 20);
-            let std = calcStdDev(c, 20, ma20);
-            let lowerBand = ma20 - (2 * std);
+            let stats = calcStats(c);
             
-            if ((std/ma20) > 0.01 && (std/ma20) < 0.08) { 
-                if (currentPrice <= lowerBand * 1.01) { 
-                    monitoredList.push(stock);
-                    foundNew = true;
-                    logMsg(`[HIT] 發現標的 [${stock}] 跌至布林下軌，新增至監控清單！`, 'c-buy');
+            // 放寬條件：波動度放寬至 0.15，距離下軌放寬至 1.03，避免 1000 檔全滅
+            if (stats.cv > 0.01 && stats.cv < 0.15) { 
+                if (currentPrice <= stats.lower * 1.03) { 
+                    candidates.push(stock);
+                    logMsg(`[命中] ${stock} 跌近地板價！`, "c-buy");
                 }
             }
         }
         
-        if(!foundNew && !ABORT_REQUESTED) logMsg(`[INFO] 全市場無新增符合地板價條件之股票。`);
-        saveMonitoredList(monitoredList);
+        saveCandidates(candidates);
+        logMsg(`掃描結束。共 ${candidates.length} 檔股票符合初步條件。`, "c-info");
+        btn.innerText = "🔍 1. 全市場掃描 (尋找地板價)"; btn.disabled = false;
+    }
+
+    // ==========================================
+    // BUTTON 2: 執行回測
+    // ==========================================
+    async function step2_RunBacktest() {
+        const candidates = getCandidates();
+        if (candidates.length === 0) return alert("待回測清單為空！請先執行第 1 步掃描。");
         
-        if(!ABORT_REQUESTED) {
-            logMsg(`\n[PHASE 2] 針對監控清單進行回測驗證 (Base: $${ledger.pool.toFixed(0)})`, "highlight");
-            status.innerText = "RUNNING BACKTEST...";
-            pBar.style.width = `0%`;
-            
-            let bestTarget = null;
-            let maxProfit = -999999;
-            let bestReport = null;
-            let bestData = null;
+        const btn = document.getElementById('btnTest');
+        btn.disabled = true; btn.innerText = "⏳ 回測運算中...";
+        logMsg("========== [STEP 2 啟動] ==========", "c-info");
+        
+        let ledger = getLedger();
+        let capital = ledger.pool < 1000 ? 10000 : ledger.pool;
+        
+        let bestTarget = null;
+        let maxProfit = -999999;
 
-            for (let i = 0; i < monitoredList.length; i++) {
-                let stock = monitoredList[i];
-                pBar.style.width = `${((i+1)/monitoredList.length)*100}%`;
-                
-                let data = await fetchStockDataWithDates(stock, "1y");
-                await sleep(150); 
-                if (!data || data.closes.length < 200) continue;
-                
-                let report = runDetailedBacktest(data, ledger.pool);
-                if (report.trades > 0 && report.totalProfit > 0) {
-                    if (report.totalProfit > maxProfit) {
-                        maxProfit = report.totalProfit;
-                        bestTarget = stock;
-                        bestReport = report;
-                        bestData = data;
-                    }
-                }
+        for (let stock of candidates) {
+            logMsg(`正在回測 ${stock}...`);
+            let data = await fetchStockData(stock, "1y");
+            await sleep(100);
+            if (!data || data.closes.length < 200) {
+                logMsg(`  -> ${stock} 歷史數據不足，跳過。`, "c-sell"); continue;
             }
-
-            if (bestTarget) {
-                logMsg(`\n[DECISION] 運算完成！鎖定最佳網格標的：[${bestTarget}]`, 'highlight');
-                logMsg(`[BACKTEST] 歷史明細 (Sim Capital: $${bestReport.testCapital.toFixed(0)}):`);
-                bestReport.historyLog.forEach(l => logMsg(l));
-                logMsg(`  -----------------------------------------`);
-                logMsg(`  > Trades: ${bestReport.trades} | Win Rate: ${bestReport.winRate}% | Net Profit: +$${bestReport.totalProfit.toFixed(0)}`, 'c-buy');
-                
-                logMsg(`\n[PHASE 3] 執行網格判斷與掛單生成`, "highlight");
-                
-                let today = new Date();
-                let isHoliday = (today.getDay() === 0 || today.getDay() === 6);
-                let c = bestData.closes, h = bestData.highs, l = bestData.lows;
-                let currentPrice = c[c.length-1];
-                
+            
+            // 執行沙盤推演
+            let simPool = capital;
+            let simHoldings = [];
+            let trades = 0, wins = 0;
+            let d = data.dates, c = data.closes, h = data.highs, l = data.lows;
+            
+            for(let i = 20; i < c.length; i++) {
+                let currentPrice = c[i];
                 let trSum = 0;
-                let idx = c.length - 1;
-                for(let j = idx-13; j <= idx; j++) trSum += Math.max(h[j]-l[j], Math.abs(h[j]-c[j-1]), Math.abs(l[j]-c[j-1]));
+                for(let j = i-13; j <= i; j++) trSum += Math.max(h[j]-l[j], Math.abs(h[j]-c[j-1]), Math.abs(l[j]-c[j-1]));
                 let atr = trSum / 14;
 
-                let holding = ledger.holdings[0];
-
-                if (isHoliday) {
-                    logMsg(`[WARN] 偵測到週末休市，進入 Advance Order (預先掛單) 模式。`, 'highlight');
-                    logMsg(`  > TICKER: ${bestTarget} | CLOSE: $${currentPrice.toFixed(2)} | ATR: $${atr.toFixed(2)}`);
-                    
-                    if (holding) {
-                        logMsg(`  > ACTION: 停利目標請掛單【賣出】$${holding.target.toFixed(2)}`, 'c-buy');
-                        logMsg(`  > STOP LOSS: 若跌破 $${(holding.buyPrice * (1-STOP_LOSS_PCT)).toFixed(2)} 須手動停損`, 'c-sell');
-                    } else {
-                        let buyPoint = currentPrice - atr;
-                        let shares = Math.floor(ledger.pool / buyPoint);
-                        if (shares >= 10) {
-                            logMsg(`  > ACTION: 請預先掛單【買進】${shares} 股 @ $${buyPoint.toFixed(2)}`, 'c-buy');
-                            logMsg(`  > ESTIMATED COST: $${(shares * buyPoint).toFixed(0)}`);
-                        } else {
-                            logMsg(`[WARN] 資金池 ($${ledger.pool.toFixed(0)}) 不足，無法滿足最低 10 股門檻。`);
-                        }
+                for(let j = simHoldings.length - 1; j >= 0; j--) {
+                    if (currentPrice >= simHoldings[j].target) {
+                        simPool += currentPrice * simHoldings[j].shares; trades++; wins++; simHoldings.splice(j, 1);
+                    } else if (currentPrice <= simHoldings[j].buyPrice * (1 - STOP_LOSS_PCT)) {
+                        simPool += currentPrice * simHoldings[j].shares; trades++; simHoldings.splice(j, 1);
                     }
-                } else {
-                    let actionTaken = false;
-                    let todayStr = today.toISOString().split('T')[0];
-
-                    if (holding) {
-                        if (currentPrice >= holding.target) {
-                            ledger.pool += currentPrice * holding.shares;
-                            ledger.logs.push({date: todayStr, stock: bestTarget, action: 'SELL_PROFIT', shares: holding.shares, price: currentPrice.toFixed(2)});
-                            ledger.holdings = []; logMsg(`[EXECUTE] 🚨 停利賣出 ${holding.shares} 股！`, 'c-buy'); actionTaken = true;
-                        } else if (currentPrice <= holding.buyPrice * (1 - STOP_LOSS_PCT)) { 
-                            ledger.pool += currentPrice * holding.shares;
-                            ledger.logs.push({date: todayStr, stock: bestTarget, action: 'SELL_LOSS', shares: holding.shares, price: currentPrice.toFixed(2)});
-                            ledger.holdings = []; logMsg(`[EXECUTE] 🩸 跌破防線，認賠殺出。`, 'c-sell'); actionTaken = true;
-                        }
-                    }
-
-                    let isHolding = ledger.holdings.length > 0;
-                    let lastBuyPrice = isHolding ? ledger.holdings[ledger.holdings.length-1].buyPrice : currentPrice + atr;
-                    let buyPoint = lastBuyPrice - atr;
-
-                    if (currentPrice <= buyPoint && !actionTaken) {
-                        let shares = Math.floor(ledger.pool / currentPrice);
-                        if (shares >= 10) {
-                            ledger.pool -= shares * currentPrice;
-                            let target = buyPoint + (atr * 1.5);
-                            ledger.holdings.push({stock: bestTarget, shares: shares, buyPrice: currentPrice, target: target});
-                            ledger.logs.push({date: todayStr, stock: bestTarget, action: 'BUY', shares: shares, price: currentPrice.toFixed(2)});
-                            logMsg(`[EXECUTE] 🛒 買進 ${shares} 股 @ $${currentPrice.toFixed(2)}`, 'c-buy'); actionTaken = true;
-                        } else if (ledger.pool > 0) { logMsg(`[WARN] 達買點 ($${buyPoint.toFixed(2)})，但餘額不足買 10 股。`); }
-                    }
-                    
-                    if (!actionTaken && ledger.pool > 0) logMsg("[INFO] 今日未達買賣點，維持現有狀態。");
-                    saveLedger(ledger);
                 }
-            } else {
-                logMsg(`\n[WARN] 監控清單無標的通過回測驗證，強制維持空手觀望。`, 'c-sell');
+
+                let refPrice = simHoldings.length > 0 ? simHoldings[simHoldings.length-1].buyPrice : currentPrice + atr;
+                let buyPoint = refPrice - atr;
+                if (currentPrice <= buyPoint) {
+                    let shares = Math.floor(simPool / currentPrice);
+                    if (shares >= 10) { 
+                        simPool -= shares * currentPrice;
+                        simHoldings.push({ buyPrice: currentPrice, shares: shares, target: buyPoint + (atr * 1.5) });
+                    }
+                }
+            }
+            
+            let finalValue = simPool;
+            for(let h of simHoldings) finalValue += h.shares * c[c.length-1];
+            let totalProfit = finalValue - capital;
+            
+            logMsg(`  -> 交易 ${trades} 次，純利 $${totalProfit.toFixed(0)}`);
+            
+            if (trades > 0 && totalProfit > 0 && totalProfit > maxProfit) {
+                maxProfit = totalProfit;
+                bestTarget = stock;
             }
         }
         
-        logMsg(`==================================================`);
+        if (bestTarget) {
+            ledger.bestTarget = bestTarget;
+            saveLedger(ledger);
+            logMsg(`[決策] 回測最佳標的為：${bestTarget}，預期獲利最高！`, "c-buy");
+            logMsg(`系統已鎖定目標。請執行第 3 步進行實盤掛單。`, "c-info");
+        } else {
+            ledger.bestTarget = null;
+            saveLedger(ledger);
+            logMsg(`[警告] 清單內所有標的回測皆為虧損，建議空手觀望。`, "c-sell");
+        }
         
-        btn.style.display = 'block'; btnStop.style.display = 'none'; pWrapper.style.display = 'none';
-        status.innerText = "IDLE";
-        IS_SCANNING = false;
+        btn.innerText = "📊 2. 執行回測 (驗證勝率)"; btn.disabled = false;
+    }
+
+    // ==========================================
+    // BUTTON 3: 網格掛單
+    // ==========================================
+    async function step3_ExecuteGrid() {
+        let ledger = getLedger();
+        let targetStock = ledger.holdings.length > 0 ? ledger.holdings[0].stock : ledger.bestTarget;
+        
+        if (!targetStock) return alert("目前無庫存，且無鎖定回測目標。請先完成步驟 2！");
+        
+        const btn = document.getElementById('btnGrid');
+        btn.disabled = true; btn.innerText = "⏳ 價格判斷中...";
+        logMsg("========== [STEP 3 啟動] ==========", "c-info");
+        
+        let data = await fetchStockData(targetStock, "6mo");
+        if(!data) { btn.innerText = "🛒 3. 網格掛單 (判斷與交易)"; btn.disabled = false; return; }
+
+        let today = new Date();
+        let isHoliday = (today.getDay() === 0 || today.getDay() === 6);
+        let c = data.closes, h = data.highs, l = data.lows;
+        let currentPrice = c[c.length-1];
+        
+        let trSum = 0; let idx = c.length - 1;
+        for(let j = idx-13; j <= idx; j++) trSum += Math.max(h[j]-l[j], Math.abs(h[j]-c[j-1]), Math.abs(l[j]-c[j-1]));
+        let atr = trSum / 14;
+
+        let holding = ledger.holdings[0];
+        logMsg(`標的: ${targetStock} | 市價: $${currentPrice.toFixed(2)} | ATR: $${atr.toFixed(2)}`);
+
+        if (isHoliday) {
+            logMsg(`[假日模式] 週末休市，提供下週一預先掛單建議：`, "c-warn");
+            if (holding) {
+                logMsg(`👉 停利掛單：【賣出】$${holding.target.toFixed(2)}`, "c-buy");
+                logMsg(`👉 停損防線：若跌破 $${(holding.buyPrice * (1-STOP_LOSS_PCT)).toFixed(2)} 手動停損`, "c-sell");
+            } else {
+                let buyPoint = currentPrice - atr;
+                let shares = Math.floor(ledger.pool / buyPoint);
+                if (shares >= 10) {
+                    logMsg(`👉 佈局掛單：【買進】${shares} 股 @ $${buyPoint.toFixed(2)}`, "c-buy");
+                } else {
+                    logMsg(`資金不足 (餘額 $${ledger.pool.toFixed(0)})，建議觀望。`);
+                }
+            }
+        } else {
+            let actionTaken = false;
+            let todayStr = today.toISOString().split('T')[0];
+
+            if (holding) {
+                if (currentPrice >= holding.target) {
+                    ledger.pool += currentPrice * holding.shares;
+                    ledger.logs.push({date: todayStr, stock: targetStock, action: 'SELL_PROFIT', shares: holding.shares, price: currentPrice.toFixed(2)});
+                    ledger.holdings = []; logMsg(`🚨 停利賣出 ${holding.shares} 股！`, 'c-buy'); actionTaken = true;
+                } else if (currentPrice <= holding.buyPrice * (1 - STOP_LOSS_PCT)) { 
+                    ledger.pool += currentPrice * holding.shares;
+                    ledger.logs.push({date: todayStr, stock: targetStock, action: 'SELL_LOSS', shares: holding.shares, price: currentPrice.toFixed(2)});
+                    ledger.holdings = []; logMsg(`🩸 跌破防線，停損賣出。`, 'c-sell'); actionTaken = true;
+                }
+            }
+
+            let isHolding = ledger.holdings.length > 0;
+            let lastBuyPrice = isHolding ? ledger.holdings[ledger.holdings.length-1].buyPrice : currentPrice + atr;
+            let buyPoint = lastBuyPrice - atr;
+
+            if (currentPrice <= buyPoint && !actionTaken) {
+                let shares = Math.floor(ledger.pool / currentPrice);
+                if (shares >= 10) {
+                    ledger.pool -= shares * currentPrice;
+                    let target = buyPoint + (atr * 1.5);
+                    ledger.holdings.push({stock: targetStock, shares: shares, buyPrice: currentPrice, target: target});
+                    ledger.logs.push({date: todayStr, stock: targetStock, action: 'BUY', shares: shares, price: currentPrice.toFixed(2)});
+                    logMsg(`🛒 買進 ${shares} 股 @ $${currentPrice.toFixed(2)}`, 'c-buy'); actionTaken = true;
+                } else if (ledger.pool > 0) { logMsg(`達買點 ($${buyPoint.toFixed(2)})，但餘額不足買 10 股。`); }
+            }
+            
+            if (!actionTaken && ledger.pool > 0) logMsg("今日未達買賣點，無交易動作。");
+            saveLedger(ledger);
+        }
+        btn.innerText = "🛒 3. 網格掛單 (判斷與交易)"; btn.disabled = false;
     }
 
     window.onload = () => { renderTags(); loadUI(); };
