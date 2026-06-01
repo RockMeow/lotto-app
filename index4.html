@@ -144,7 +144,7 @@
     <div class="card">
         <h2 class="card-title">SYSTEM TERMINAL 運算日誌</h2>
         <div class="terminal-box" id="sysLog">
-            <div class="log-row" style="color: var(--text-dim);">[系統就緒] 底部導航修復版已啟動。</div>
+            <div class="log-row" style="color: var(--text-dim);">[系統就緒]</div>
             <div class="log-row" style="color: var(--text-dim);">請點擊下方導航列執行任務。</div>
         </div>
     </div>
@@ -334,7 +334,7 @@
         const marketPool = await fetchEntireMarketList();
         let scanned = 0;
         
-        logMsg(`共取得 ${marketPool.length} 檔標的，開始無漏接掃描...`);
+        logMsg(`共取得 ${marketPool.length} 檔標的，開始掃描...`);
         
         for (let stock of marketPool) {
             scanned++;
@@ -352,7 +352,7 @@
             if (stats.cv > 0.01 && stats.cv < 0.15) { 
                 if (currentPrice <= stats.lower * 1.03) { 
                     candidates.push(stock);
-                    logMsg(`[命中] ${getStockName(stock)} 跌近地板價！`, "c-buy");
+                    logMsg(`[發現] ${getStockName(stock)} 跌近地板價！`, "c-buy");
                 }
             }
         }
