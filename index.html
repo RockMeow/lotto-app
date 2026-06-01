@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>魔法心算大冒險</title>
+    <title>魔法心算與國語大冒險</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         
@@ -73,7 +73,7 @@
         .mode-btn {
             background-color: #fff59d; border: none; border-bottom: 4px solid #fbc02d;
             border-radius: 15px; padding: 10px 8px; font-size: clamp(13px, 4vw, 15px); font-weight: bold;
-            color: #795548; cursor: pointer; transition: all 0.2s; flex: 1 1 30%; min-width: 90px;
+            color: #795548; cursor: pointer; transition: all 0.2s; flex: 1 1 20%; min-width: 90px;
             -webkit-tap-highlight-color: transparent;
         }
         .mode-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
@@ -121,6 +121,28 @@
         .multiply-groups { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 5px;}
         .plate { background-color: #ffffff; border: 3px solid #e0e0e0; border-radius: 50%; padding: 8px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; align-items: center; justify-items: center; min-width: 50px; min-height: 50px; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.05); }
         .apple { font-size: 16px; animation: popIn 0.3s forwards; }
+
+        /* 時鐘樣式 */
+        .clock-face {
+            width: 100px; height: 100px; border: 5px solid #795548; border-radius: 50%;
+            position: relative; background: #fffaf0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin: 10px;
+        }
+        .clock-center {
+            width: 10px; height: 10px; background: #d32f2f; border-radius: 50%;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;
+        }
+        .hand {
+            position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center;
+            border-radius: 4px;
+        }
+        .hour-hand { width: 6px; height: 28px; background: #333; margin-left: -3px; z-index: 8; }
+        .minute-hand { width: 4px; height: 40px; background: #1976d2; margin-left: -2px; z-index: 7; }
+        .clock-mark { position: absolute; font-size: 14px; font-weight: 900; color: #5d4037; }
+        .mark-12 { top: 2px; left: 50%; transform: translateX(-50%); }
+        .mark-3 { top: 50%; right: 4px; transform: translateY(-50%); }
+        .mark-6 { bottom: 2px; left: 50%; transform: translateX(-50%); }
+        .mark-9 { top: 50%; left: 4px; transform: translateY(-50%); }
 
         .options-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
         .option-btn {
@@ -236,7 +258,7 @@
 
     <div class="game-container" id="gameWindow">
         <div class="top-bar">
-            <h1>✨ 魔法心算 ✨</h1>
+            <h1>✨ 魔法心算與國語 ✨</h1>
             <div class="top-buttons">
                 <button class="stamp-btn" onclick="toggleStampCard()">💳 集點卡</button>
                 <button id="bgmBtn" class="bgm-toggle-btn" onclick="toggleBgm()">🔇 音樂</button>
@@ -256,6 +278,8 @@
                 <button class="mode-btn" onclick="setMode('doubles')">雙胞胎數</button>
                 <button class="mode-btn" onclick="setMode('family')">算式家族</button>
                 <button class="mode-btn" onclick="setMode('multiply')">乘法魔法</button>
+                <button class="mode-btn" onclick="setMode('clock')" style="background-color: #b2dfdb; border-color: #80cbc4; color: #00695c;">看時鐘</button>
+                <button class="mode-btn" onclick="setMode('chinese')" style="background-color: #c8e6c9; border-color: #a5d6a7; color: #1b5e20;">國語測驗</button>
                 <button class="mode-btn" onclick="setMode('exam')" style="background-color: #e1bee7; border-color: #ab47bc; color: #4a148c;">評量測驗</button>
             </div>
             
@@ -313,7 +337,7 @@
             osc.type = 'triangle';
             osc.frequency.value = melody[noteIndex];
             gain.gain.setValueAtTime(0, now);
-            // 音量提高到 0.08，更加大聲且清晰
+            // 音量維持 0.08
             gain.gain.linearRampToValueAtTime(0.08, now + 0.1); 
             gain.gain.linearRampToValueAtTime(0, now + 0.4);
             osc.connect(gain); gain.connect(audioCtx.destination);
@@ -407,10 +431,9 @@
         let currentQuestionIdx = 1;
         const totalQuestions = 5;
         let score = 0;
-        let correctAnswer = 0;
+        let correctAnswer = "";
+        let customOptions = [];
         let isWaitingForNext = false;
-        
-        // 嚴格模式給星系統
         let hasMistakeInCurrentRound = false; 
         
         const praiseMessages = [
@@ -421,7 +444,6 @@
             "有自己找答案的過程最棒了！"
         ];
         
-        // 評量測驗題庫 (模擬網路抓取)
         const assessmentBank = [
             { type: "text+", template: "小明有 {n1} 顆糖果，媽媽又給他 {n2} 顆，請問小明現在有幾顆糖果？", max1: 9, max2: 9 },
             { type: "text+", template: "樹上有 {n1} 隻小鳥，又飛來了 {n2} 隻，現在樹上總共有幾隻小鳥？", max1: 9, max2: 9 },
@@ -434,6 +456,19 @@
             { type: "img+", emoji: "🍎", max1: 5, max2: 5 },
             { type: "img+", emoji: "🐶", max1: 4, max2: 4 },
             { type: "img-", emoji: "🚗", max1: 10, max2: 8 }
+        ];
+
+        const chineseBank = [
+            { q: "「蘋果」的「蘋」注音是什麼？", options: ["ㄆㄧㄥˊ", "ㄆㄧㄣˊ", "ㄆㄧㄥ", "ㄆㄧㄣ"], correct: "ㄆㄧㄥˊ" },
+            { q: "找出相反詞：「大」的相反是什麼？", options: ["小", "多", "少", "天"], correct: "小" },
+            { q: "填空：天上一（　）小鳥飛過。", options: ["隻", "個", "條", "本"], correct: "隻" },
+            { q: "選出正確的字：我（　）歡吃草莓。", options: ["喜", "洗", "起", "氣"], correct: "喜" },
+            { q: "「下雨了」要撐什麼？", options: ["雨傘", "雨衣", "水壺", "外套"], correct: "雨傘" },
+            { q: "看拼音選字：「ㄕㄨㄟˇ　ㄍㄨㄛˇ」", options: ["水果", "水壺", "水牛", "下水"], correct: "水果" },
+            { q: "選出正確的字：早（　）好！", options: ["上", "下", "大", "小"], correct: "上" },
+            { q: "填空：桌上有一（　）書。", options: ["本", "隻", "個", "張"], correct: "本" },
+            { q: "選出正確的字：（　）公公出來了。", options: ["太", "大", "天", "木"], correct: "太" },
+            { q: "找出相反詞：「上」的相反是什麼？", options: ["下", "左", "右", "大"], correct: "下" }
         ];
 
         document.body.addEventListener('touchstart', initAudio, { once: true });
@@ -483,6 +518,22 @@
                     </div>
                     <div style="font-weight:bold; color:#3e2723; font-size:clamp(14px, 4vw, 18px);">3 盤 × 每盤 2 顆 = 6 顆</div>
                 `;
+            } else if (currentMode === 'clock') {
+                area.innerHTML = `
+                    <div class="tutorial-badge" style="background:#4caf50;">Lv.5 看時鐘</div>
+                    <div style="font-size:16px; color:#5d4037; margin-bottom:5px;">短針指著幾就是幾點！</div>
+                    <div style="font-weight:bold; color:#2e7d32; font-size:15px; display:inline-block; padding:5px 15px; border-radius:20px; background:#e8f5e9;">
+                        長針指著 12 是「點」，指著 6 是「點半」喔！
+                    </div>
+                `;
+            } else if (currentMode === 'chinese') {
+                area.innerHTML = `
+                    <div class="tutorial-badge" style="background:#4caf50;">Lv.6 國語小測驗</div>
+                    <div style="font-size:16px; color:#5d4037; margin-bottom:5px;">不僅數學棒，國文也要一級棒！</div>
+                    <div style="font-weight:bold; color:#2e7d32; font-size:15px; display:inline-block; padding:5px 15px; border-radius:20px; background:#e8f5e9;">
+                        仔細看題目，選出正確的字或注音喔！
+                    </div>
+                `;
             } else if (currentMode === 'exam') {
                 area.innerHTML = `
                     <div class="tutorial-badge" style="background:#8e24aa;">Lv.MAX 綜合評量測驗</div>
@@ -498,7 +549,7 @@
             currentQuestionIdx = 1; 
             score = 0; 
             isWaitingForNext = false;
-            hasMistakeInCurrentRound = false; // 重置答錯紀錄
+            hasMistakeInCurrentRound = false; 
             
             document.getElementById('quizView').style.display = 'block';
             document.getElementById('summaryView').style.display = 'none';
@@ -529,6 +580,7 @@
 
         function generateQuestion() {
             let qHtml = ""; let vHtml = "";
+            customOptions = []; // 清空自定義選項
 
             if (currentMode === 'bonds') {
                 let n1 = Math.floor(Math.random() * 9) + 1; correctAnswer = 10 - n1;
@@ -591,10 +643,37 @@
                     <div class="multiply-groups">${platesHtml}</div>
                 </div>`;
             }
-            else if (currentMode === 'exam') {
-                // 從模擬題庫中隨機挑選一題
-                let item = assessmentBank[Math.floor(Math.random() * assessmentBank.length)];
+            else if (currentMode === 'clock') {
+                let hour = Math.floor(Math.random() * 12) + 1;
+                let isHalf = Math.random() > 0.5;
+                correctAnswer = hour + (isHalf ? "點半" : "點");
                 
+                let hourAngle = (hour * 30) + (isHalf ? 15 : 0);
+                let minuteAngle = isHalf ? 180 : 0;
+                
+                qHtml = `<div style="font-size: clamp(24px, 6vw, 32px); line-height: 1.5; font-weight: bold; color: #37474f;">現在是幾點鐘？</div>`;
+                vHtml = `
+                    <div class="clock-face">
+                        <div class="clock-mark mark-12">12</div>
+                        <div class="clock-mark mark-3">3</div>
+                        <div class="clock-mark mark-6">6</div>
+                        <div class="clock-mark mark-9">9</div>
+                        <div class="clock-center"></div>
+                        <div class="hand hour-hand" style="transform: rotate(${hourAngle}deg)"></div>
+                        <div class="hand minute-hand" style="transform: rotate(${minuteAngle}deg)"></div>
+                    </div>
+                `;
+            }
+            else if (currentMode === 'chinese') {
+                let item = chineseBank[Math.floor(Math.random() * chineseBank.length)];
+                correctAnswer = item.correct;
+                customOptions = item.options;
+                
+                qHtml = `<div style="font-size: clamp(24px, 6vw, 32px); line-height: 1.5; text-align: left; font-weight: bold; color: #37474f;">${item.q}</div>`;
+                vHtml = `<div class="helper-text" style="text-align:center; color:#4caf50;">✨ 國語測驗，仔細讀題喔！</div>`;
+            }
+            else if (currentMode === 'exam') {
+                let item = assessmentBank[Math.floor(Math.random() * assessmentBank.length)];
                 if (item.type.includes("text")) {
                     let n1, n2;
                     if (item.type === "text-") {
@@ -615,28 +694,19 @@
                 } 
                 else if (item.type.includes("img")) {
                     if (item.type === "img+") {
-                        let n1 = Math.floor(Math.random() * item.max1) + 1; 
-                        let n2 = Math.floor(Math.random() * item.max2) + 1;
+                        let n1 = Math.floor(Math.random() * item.max1) + 1; let n2 = Math.floor(Math.random() * item.max2) + 1;
                         correctAnswer = n1 + n2;
                         let e1 = "", e2 = "";
                         for(let i=0; i<n1; i++) e1 += item.emoji;
                         for(let i=0; i<n2; i++) e2 += item.emoji;
-                        qHtml = `<div style="font-size: clamp(24px, 6vw, 32px); line-height: 1.5; text-align: left; font-weight: bold; color: #37474f;">
-                            看圖算算看：<br><span style="font-size: 40px; letter-spacing: 5px;">${e1} + ${e2}</span> = <span style="color:#ff9800">?</span>
-                        </div>`;
+                        qHtml = `<div style="font-size: clamp(24px, 6vw, 32px); line-height: 1.5; text-align: left; font-weight: bold; color: #37474f;">看圖算算看：<br><span style="font-size: 40px; letter-spacing: 5px;">${e1} + ${e2}</span> = <span style="color:#ff9800">?</span></div>`;
                     } else { // img-
-                        let n1 = Math.floor(Math.random() * (item.max1 - 5)) + 6; 
-                        let n2 = Math.floor(Math.random() * Math.min(n1 - 1, item.max2)) + 1; 
+                        let n1 = Math.floor(Math.random() * (item.max1 - 5)) + 6; let n2 = Math.floor(Math.random() * Math.min(n1 - 1, item.max2)) + 1; 
                         correctAnswer = n1 - n2;
                         let e1 = "", e2 = "";
                         for(let i=0; i<n1; i++) e1 += item.emoji;
                         for(let i=0; i<n2; i++) e2 += item.emoji;
-                        qHtml = `<div style="font-size: clamp(24px, 6vw, 32px); line-height: 1.5; text-align: left; font-weight: bold; color: #37474f;">
-                            看圖算算看：<br>
-                            <span style="font-size: 40px; letter-spacing: 5px; display:block;">${e1}</span>
-                            <span style="font-size: 30px; color: #ff5252;">- ${e2}</span>
-                            = <span style="color:#ff9800">?</span>
-                        </div>`;
+                        qHtml = `<div style="font-size: clamp(24px, 6vw, 32px); line-height: 1.5; text-align: left; font-weight: bold; color: #37474f;">看圖算算看：<br><span style="font-size: 40px; letter-spacing: 5px; display:block;">${e1}</span><span style="font-size: 30px; color: #ff5252;">- ${e2}</span>= <span style="color:#ff9800">?</span></div>`;
                     }
                 }
                 vHtml = `<div class="helper-text" style="text-align:center; color:#ab47bc;">✨ 評量測驗中！沒有動畫提示，全靠自己的力量喔！</div>`;
@@ -646,7 +716,16 @@
             document.getElementById('visualContainer').innerHTML = vHtml;
             
             const container = document.getElementById('optionsContainer'); container.innerHTML = '';
-            setTimeout(() => generateOptions(correctAnswer), 10);
+            
+            setTimeout(() => {
+                if (currentMode === 'clock') {
+                    generateClockOptions(correctAnswer);
+                } else if (currentMode === 'chinese') {
+                    generateCustomOptions(customOptions, correctAnswer);
+                } else {
+                    generateOptions(correctAnswer);
+                }
+            }, 10);
         }
 
         function generateOptions(correct) {
@@ -657,8 +736,33 @@
                 if (fakeAns >= 0 && !options.includes(fakeAns)) options.push(fakeAns);
             }
             options.sort(() => Math.random() - 0.5);
-            options.forEach(val => {
+            renderOptionButtons(options);
+        }
+
+        function generateClockOptions(correct) {
+            const container = document.getElementById('optionsContainer'); let options = [correct];
+            while(options.length < 4) {
+                let randHour = Math.floor(Math.random() * 12) + 1;
+                let randType = Math.random() > 0.5 ? "點" : "點半";
+                let fake = randHour + randType;
+                if(!options.includes(fake)) options.push(fake);
+            }
+            options.sort(() => Math.random() - 0.5);
+            renderOptionButtons(options);
+        }
+
+        function generateCustomOptions(opts, correct) {
+            let options = [...opts];
+            options.sort(() => Math.random() - 0.5);
+            renderOptionButtons(options);
+        }
+
+        function renderOptionButtons(optionsArray) {
+            const container = document.getElementById('optionsContainer');
+            optionsArray.forEach(val => {
                 const btn = document.createElement('button'); btn.className = 'option-btn'; btn.innerText = val;
+                // 若字數較長自動稍微縮小字體
+                if(val.toString().length >= 3) btn.style.fontSize = "clamp(20px, 6vw, 26px)";
                 btn.onclick = () => checkAnswer(val, btn); container.appendChild(btn);
             });
         }
