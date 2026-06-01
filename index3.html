@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統(拖尾)</title>
+    <title>三期牌分析系統 (拖尾)</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <style>
@@ -76,6 +76,26 @@
         .week-summary .pnl-positive { color: var(--success); }
         .week-summary .pnl-negative { color: var(--danger); }
         .pnl-row { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; color: #2d3436; font-weight: bold; }
+
+        /* Month Grouping */
+        .month-group { margin-bottom: 15px; }
+        .month-header {
+            background: #e0e7ff;
+            color: #1e3a8a;
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-weight: 900;
+            font-size: 1.05rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #c7d2fe;
+            user-select: none;
+        }
+        .month-header:active { background: #c7d2fe; }
+        .month-content { padding-top: 15px; }
     </style>
 </head>
 <body>
@@ -83,7 +103,7 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>三期牌分析系統(拖尾)</h1>
+            <h1>三期牌分析系統 (拖尾)</h1>
         </div>
     </div>
     
@@ -152,6 +172,16 @@
         return omit;
     }
 
+    // 取得月份字串 (2026-MM) 用於分組
+    function getMonthString(dateStr) {
+        let dateWithYear = dateStr.includes('2026') ? dateStr : `2026/${dateStr}`;
+        let normalized = dateWithYear.replace(/\//g, '-');
+        let d = new Date(normalized);
+        if(isNaN(d)) return "未知月份";
+        let pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+    }
+
     function getWeekRange(dateStr) {
         let dateWithYear = dateStr.includes('2026') ? dateStr : `2026/${dateStr}`;
         let normalized = dateWithYear.replace(/\//g, '-');
@@ -168,6 +198,19 @@
         let fmt = (dateObj) => `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}`;
         
         return `${fmt(mon)} ~ ${fmt(sun)}`;
+    }
+
+    // 月份折疊切換功能
+    function toggleMonth(id) {
+        let el = document.getElementById(id);
+        let icon = document.getElementById('icon-' + id);
+        if (el.style.display === 'none') {
+            el.style.display = 'block';
+            icon.innerText = '▼';
+        } else {
+            el.style.display = 'none';
+            icon.innerText = '▶';
+        }
     }
 
     function getIronBalls(tail, currentIndex) {
@@ -296,21 +339,17 @@
         for (let t = 0; t < 10; t++) {
             if (counts[t] >= 3) {
                 let r = currentRules.triple[t];
-                // 增加精準度條件：歷史至少觸發過 2 次
                 if(r && r.total >= 2) patterns.push({ type: `三尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score, total: r.total });
             } else if (counts[t] >= 2) {
                 let r = currentRules.double[t];
-                // 增加精準度條件：歷史至少觸發過 5 次
                 if(r && r.total >= 5) patterns.push({ type: `雙尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score, total: r.total });
             }
         }
         
-        // 渲染遺漏期文字
         patterns.forEach(p => {
             p.targetDisplay = p.target.map(n => `${fNum(n)}(${getOmit(n, currentIndex)}期未開)`);
         });
 
-        // 雙重權重排序：優先比勝率，勝率相同時比歷史樣本數量(total)
         return patterns.sort((a,b) => {
             if (b.score !== a.score) return b.score - a.score;
             return b.total - a.total;
@@ -388,7 +427,6 @@
                     let playIndex = i + j;
                     if (playIndex < parsedData.length) {
                         let numBets = p.target.length;
-                        // 第 j 期乘上 j 倍
                         let periodCostPerBall = baseCostPerBall * j;
                         let costAmount = numBets * periodCostPerBall;
                         let rebateAmount = costAmount * REBATE_RATE;
@@ -438,12 +476,45 @@
         let reversedData = dailyView.slice().reverse();
         let chunksHtml = [];
         let currentWeek = null;
+        let currentMonth = null;
+        let isFirstMonth = true;
         let weekStats = { cost: 0, win: 0, bets: 0, hits: 0 };
         let currentWeekDaysHtml = [];
 
         reversedData.forEach(d => {
             let week = getWeekRange(d.date);
+            let month = getMonthString(d.date);
             
+            // 處理月份切換
+            if (month !== currentMonth) {
+                if (currentWeek) {
+                    chunksHtml.push(renderWeekSummary(currentWeek, weekStats) + currentWeekDaysHtml.join(''));
+                    currentWeek = null;
+                    weekStats = { cost: 0, win: 0, bets: 0, hits: 0 };
+                    currentWeekDaysHtml = [];
+                }
+                if (currentMonth) {
+                    chunksHtml.push(`</div></div>`); // 關閉上一個月份的 div
+                }
+                
+                let displayStyle = isFirstMonth ? 'block' : 'none';
+                let icon = isFirstMonth ? '▼' : '▶';
+                let monthId = `month-${month}`;
+                
+                chunksHtml.push(`
+                <div class="month-group">
+                    <div class="month-header" onclick="toggleMonth('${monthId}')">
+                        <span>🗓️ ${month} 紀錄</span>
+                        <span id="icon-${monthId}">${icon}</span>
+                    </div>
+                    <div class="month-content" id="${monthId}" style="display: ${displayStyle};">
+                `);
+                
+                currentMonth = month;
+                isFirstMonth = false;
+            }
+
+            // 處理週次切換
             if (week !== currentWeek) {
                 if (currentWeek) {
                     chunksHtml.push(renderWeekSummary(currentWeek, weekStats) + currentWeekDaysHtml.join(''));
@@ -501,8 +572,12 @@
             </div>`);
         });
 
+        // 處理最後殘留的資料結尾
         if (currentWeek) {
             chunksHtml.push(renderWeekSummary(currentWeek, weekStats) + currentWeekDaysHtml.join(''));
+        }
+        if (currentMonth) {
+            chunksHtml.push(`</div></div>`); 
         }
         
         document.getElementById('resultList').innerHTML = chunksHtml.join('') || '<div style="text-align:center;padding:20px; color:#999;">尚無紀錄</div>';
@@ -512,7 +587,7 @@
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
             💡 <b>歷史結算 (動態滾動回測)：</b><br>
-            共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，命中率 <b>${hitRate}%</b><br>
+            共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b><br>
             <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #b3e5fc; font-size: 0.95rem;">
                 💰 <b>歷史總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
             </div>`;
