@@ -6,7 +6,7 @@
     <title>Quant App | 專業量化終端</title>
     <style>
         /* ==========================================
-           True Mobile APP UI (底層導航列設計)
+           True Mobile APP UI (修復底部導航列)
            ========================================== */
         :root {
             --bg-base: #0f172a;       
@@ -18,7 +18,7 @@
             --accent-green: #10b981;
             --accent-red: #ef4444;
             --border-color: #334155;
-            --nav-height: 70px;
+            --nav-height: 75px;
         }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -27,7 +27,8 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-base); color: var(--text-main);
             margin: 0; padding: 0; 
-            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+            min-height: 100vh;
+            padding-bottom: calc(var(--nav-height) + 20px); /* 留白給固定在底部的導航列 */
         }
         
         /* 頂部 Header (固定) */
@@ -35,15 +36,14 @@
             background-color: var(--bg-card); padding: 15px 20px; 
             border-bottom: 1px solid var(--border-color);
             display: flex; justify-content: space-between; align-items: center;
-            flex-shrink: 0;
+            position: sticky; top: 0; z-index: 100;
         }
         header h1 { margin: 0; font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
         
         /* 中間可滑動內容區 */
         .content-area {
-            flex: 1; overflow-y: auto; padding: 15px; 
+            padding: 15px; 
             display: flex; flex-direction: column; gap: 15px;
-            padding-bottom: 20px; /* 留白 */
         }
         
         /* 卡片共用樣式 */
@@ -94,14 +94,17 @@
         .btn-reset { background: transparent; border: 1px solid var(--accent-red); color: var(--accent-red); padding: 12px; width: 100%; border-radius: 8px; font-weight: 700; margin-top: 15px;}
 
         /* ==========================================
-           底部導航列 (Bottom Navigation Bar)
+           底部導航列 (強制固定於螢幕底端)
            ========================================== */
         .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
             background-color: var(--bg-card);
             border-top: 1px solid var(--border-color);
             display: flex; justify-content: space-around; align-items: center;
-            height: var(--nav-height); flex-shrink: 0;
+            height: var(--nav-height);
             padding-bottom: env(safe-area-inset-bottom); /* 適配 iPhone 底部安全區 */
+            z-index: 9999;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
         }
         .nav-item {
             flex: 1; height: 100%; display: flex; flex-direction: column; 
@@ -141,7 +144,7 @@
     <div class="card">
         <h2 class="card-title">SYSTEM TERMINAL 運算日誌</h2>
         <div class="terminal-box" id="sysLog">
-            <div class="log-row" style="color: var(--text-dim);">[系統就緒] 原生 APP 模式已啟動。</div>
+            <div class="log-row" style="color: var(--text-dim);">[系統就緒] 底部導航修復版已啟動。</div>
             <div class="log-row" style="color: var(--text-dim);">請點擊下方導航列執行任務。</div>
         </div>
     </div>
@@ -253,7 +256,7 @@
     }
 
     // ==========================================
-    // 網路 API 工具 (新增自動重試機制保證 100% 抓取)
+    // 網路 API 工具
     // ==========================================
     async function fetchEntireMarketList() {
         try {
@@ -278,7 +281,6 @@
         }
     }
 
-    // 【核心升級】加入 retry 機制，保證不漏接
     async function fetchStockData(stock, range="1y", retries=3) {
         const url = `https://query1.finance.yahoo.com/v8/finance/chart/${stock}.TW?interval=1d&range=${range}`;
         const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
@@ -299,7 +301,6 @@
             return { dates, closes, highs, lows };
         } catch (e) { 
             if (retries > 0) {
-                // 被阻擋時，冷卻 1 秒鐘後自動重新抓取
                 await sleep(1000); 
                 return await fetchStockData(stock, range, retries - 1);
             }
@@ -315,7 +316,6 @@
         return { ma20, std, lower: ma20 - (2 * std), cv: std / ma20 };
     }
 
-    // 控制導航列按鈕狀態
     function setNavState(disabled) {
         document.getElementById('btnScan').disabled = disabled;
         document.getElementById('btnTest').disabled = disabled;
@@ -334,13 +334,12 @@
         const marketPool = await fetchEntireMarketList();
         let scanned = 0;
         
-        logMsg(`共取得 ${marketPool.length} 檔標的，開始無漏接掃描 (約需數分鐘)...`);
+        logMsg(`共取得 ${marketPool.length} 檔標的，開始無漏接掃描...`);
         
         for (let stock of marketPool) {
             scanned++;
             if (scanned % 50 === 0) logMsg(`...已完成掃描 ${scanned}/${marketPool.length} 檔`);
             
-            // 延遲 150ms 配合自動重試機制，確保 100% 抓取率
             let data = await fetchStockData(stock, "6mo");
             await sleep(150); 
             
