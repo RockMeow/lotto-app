@@ -42,7 +42,7 @@
 
         h1 {
             color: #ff5252;
-            font-size: clamp(18px, 5vw, 24px); /* 響應式標題大小 */
+            font-size: clamp(18px, 5vw, 24px); 
             margin: 0;
             text-shadow: 2px 2px 0px #ffcdd2;
             animation: titleBounce 2s infinite alternate;
@@ -73,7 +73,7 @@
         .mode-btn {
             background-color: #fff59d; border: none; border-bottom: 4px solid #fbc02d;
             border-radius: 15px; padding: 10px 8px; font-size: clamp(13px, 4vw, 15px); font-weight: bold;
-            color: #795548; cursor: pointer; transition: all 0.2s; flex: 1 1 40%; min-width: 100px;
+            color: #795548; cursor: pointer; transition: all 0.2s; flex: 1 1 30%; min-width: 90px;
             -webkit-tap-highlight-color: transparent;
         }
         .mode-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
@@ -83,19 +83,11 @@
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* 教學區樣式更新：適應手機與平板 */
-        .tutorial-toggle-btn {
-            background: #81d4fa; color: #01579b; padding: 8px 18px; border-radius: 20px;
-            font-weight: bold; font-size: clamp(14px, 4vw, 16px); display: inline-block; margin-bottom: 15px;
-            cursor: pointer; box-shadow: 0 4px 0 #29b6f6; transition: all 0.1s; border: none;
-            -webkit-tap-highlight-color: transparent; width: 100%; max-width: 300px;
-        }
-        .tutorial-toggle-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #29b6f6; }
-        
+        /* 移除切換按鈕，讓教學區常駐顯示 */
         .tutorial-area {
             background: #fff9c4; border: 3px dashed #fbc02d; border-radius: 20px;
-            padding: 15px; margin-bottom: 15px; display: none; 
-            animation: slideDown 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            padding: 15px; margin-bottom: 15px; display: block; /* 改為常駐顯示 */
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: inset 0 0 10px rgba(0,0,0,0.05); text-align: center;
         }
         .tutorial-badge {
@@ -153,7 +145,6 @@
         .correct-bg { background-color: rgba(76, 175, 80, 0.85); backdrop-filter: blur(2px); }
         .wrong-bg { background-color: rgba(244, 67, 54, 0.85); backdrop-filter: blur(2px); }
 
-        /* 虛擬集點卡彈跳視窗樣式 */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center;
@@ -185,8 +176,6 @@
         .redeem-btn:active { transform: translateY(4px); border-bottom-width: 1px; }
         .redeem-btn:disabled { background: #bdbdbd; border-color: #9e9e9e; cursor: not-allowed; border-bottom-width: 5px; transform: none;}
 
-        /* 動畫集 */
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes slideRightMerge { 0% { transform: translateX(-20px); opacity:0;} 50% { transform: translateX(0); opacity:1;} 100% { transform: translateX(30px) scale(0.8); opacity:0;} }
         @keyframes slideLeftMerge { 0% { transform: translateX(20px); opacity:0;} 50% { transform: translateX(0); opacity:1;} 100% { transform: translateX(-30px) scale(0.8); opacity:0;} }
         @keyframes popResult { 0%, 80% { transform: scale(0); opacity:0;} 90% { transform: scale(1.2); opacity:1; } 100% { transform: scale(1); opacity:1;} }
@@ -240,8 +229,7 @@
             <button class="close-btn" onclick="toggleStampCard()">×</button>
             <h2 style="color: #f57f17; margin-top:0;">🏆 我的集點卡</h2>
             <p style="color: #795548; font-weight: bold; font-size: 14px;">集滿 10 顆星，可以跟爸爸媽媽換獎勵喔！</p>
-            <div class="stamp-grid" id="stampGrid">
-                </div>
+            <div class="stamp-grid" id="stampGrid"></div>
             <p style="font-size: 18px; font-weight: bold; color: #00838f;">總共收集了：<span id="modalTotalStars" style="color: #ff5252; font-size: 24px;">0</span> 顆星</p>
             <button class="redeem-btn" id="redeemBtn" onclick="redeemStars()">🎁 兌換禮物 (-10星)</button>
         </div>
@@ -269,9 +257,9 @@
                 <button class="mode-btn" onclick="setMode('doubles')">雙胞胎數</button>
                 <button class="mode-btn" onclick="setMode('family')">算式家族</button>
                 <button class="mode-btn" onclick="setMode('multiply')">乘法魔法</button>
+                <button class="mode-btn" onclick="setMode('exam')" style="background-color: #e1bee7; border-color: #ab47bc; color: #4a148c;">網路小測驗</button>
             </div>
             
-            <button class="tutorial-toggle-btn" onclick="toggleTutorial()">💡 點我看【動畫小教室】</button>
             <div class="tutorial-area" id="tutorialArea"></div>
 
             <div class="status-bar">
@@ -287,11 +275,8 @@
         <div id="summaryView">
             <h1 style="font-size: 32px; margin-bottom: 5px;">🎉 任務完成！ 🎉</h1>
             <div style="font-size: 70px; margin: 10px 0; animation: happyJump 1s infinite;">🏆🐶</div>
-            
             <p style="font-size: 22px; margin: 10px 0; font-weight:bold; color:#ff5252;" id="finalScoreText"></p>
-            
             <div class="praise-text" id="praiseText"></div>
-            
             <button class="restart-btn" onclick="resetGame()" style="position: relative; left: 50%; transform: translateX(-50%);">再來玩一次 🚀</button>
         </div>
     </div>
@@ -424,7 +409,6 @@
         let score = 0;
         let correctAnswer = 0;
         let isWaitingForNext = false;
-        let isTutorialOpen = false;
         
         const praiseMessages = [
             "我看見你剛剛很努力在思考，超棒的！",
@@ -437,13 +421,7 @@
         document.body.addEventListener('touchstart', initAudio, { once: true });
         document.body.addEventListener('click', initAudio, { once: true });
 
-        // --- 動畫教學區 (階梯式) ---
-        function toggleTutorial() {
-            playSound('click');
-            isTutorialOpen = !isTutorialOpen;
-            document.getElementById('tutorialArea').style.display = isTutorialOpen ? 'block' : 'none';
-        }
-
+        // --- 動畫教學區內容更新 (常駐顯示) ---
         function updateTutorialContent() {
             const area = document.getElementById('tutorialArea');
             if (currentMode === 'bonds') {
@@ -487,6 +465,14 @@
                     </div>
                     <div style="font-weight:bold; color:#3e2723; font-size:clamp(14px, 4vw, 18px);">3 盤 × 每盤 2 顆 = 6 顆</div>
                 `;
+            } else if (currentMode === 'exam') {
+                area.innerHTML = `
+                    <div class="tutorial-badge" style="background:#8e24aa;">Lv.MAX 網路綜合小測驗</div>
+                    <div style="font-size:16px; color:#5d4037; margin-bottom:5px;">🌐 正在連接網路題庫中...</div>
+                    <div style="font-weight:bold; color:#d81b60; font-size:15px; animation: pulseGlow 2s infinite; display:inline-block; padding:5px 15px; border-radius:20px; background:#fce4ec;">
+                        準備好接受混合題型的終極挑戰了嗎？
+                    </div>
+                `;
             }
         }
 
@@ -504,8 +490,6 @@
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
             
-            isTutorialOpen = false;
-            document.getElementById('tutorialArea').style.display = 'none';
             updateTutorialContent();
 
             const mascot = document.getElementById('mascot');
@@ -584,6 +568,28 @@
                     <div class="multiply-groups">${platesHtml}</div>
                 </div>`;
             }
+            else if (currentMode === 'exam') {
+                // 網路小測驗：隨機混和題型，並移除視覺提示
+                let opTypes = ['+', '-', '×'];
+                let type = opTypes[Math.floor(Math.random() * opTypes.length)];
+                if (type === '+') {
+                    let n1 = Math.floor(Math.random() * 10) + 1;
+                    let n2 = Math.floor(Math.random() * 10) + 1;
+                    correctAnswer = n1 + n2;
+                    qHtml = `<span>${n1}</span> <span>+</span> <span>${n2}</span> <span>=</span> <span style="color:#ff9800">?</span>`;
+                } else if (type === '-') {
+                    let n1 = Math.floor(Math.random() * 15) + 5; 
+                    let n2 = Math.floor(Math.random() * n1); 
+                    correctAnswer = n1 - n2;
+                    qHtml = `<span>${n1}</span> <span>-</span> <span>${n2}</span> <span>=</span> <span style="color:#ff9800">?</span>`;
+                } else {
+                    let n1 = Math.floor(Math.random() * 5) + 1;
+                    let n2 = Math.floor(Math.random() * 5) + 1;
+                    correctAnswer = n1 * n2;
+                    qHtml = `<span>${n1}</span> <span style="font-size:0.8em; color:#9e9e9e">×</span> <span>${n2}</span> <span>=</span> <span style="color:#ff9800">?</span>`;
+                }
+                vHtml = `<div class="helper-text" style="text-align:center; color:#ab47bc;">✨ 考試中！動動腦，算算看答案是多少？</div>`;
+            }
 
             document.getElementById('questionDisplay').innerHTML = qHtml;
             document.getElementById('visualContainer').innerHTML = vHtml;
@@ -597,7 +603,7 @@
             while (options.length < 4) {
                 let offset = (Math.floor(Math.random() * 3) + 1) * (Math.random() < 0.5 ? 1 : -1);
                 let fakeAns = correct + offset;
-                if (fakeAns > 0 && !options.includes(fakeAns)) options.push(fakeAns);
+                if (fakeAns >= 0 && !options.includes(fakeAns)) options.push(fakeAns);
             }
             options.sort(() => Math.random() - 0.5);
             options.forEach(val => {
@@ -654,7 +660,6 @@
                 let subMessage = "";
 
                 if (lastPlayedDate !== todayStr) {
-                    // 今天尚未獲得過星星
                     if (score > 0) {
                         totalStars += score;
                         localStorage.setItem('mathGameTotalStars', totalStars);
@@ -663,7 +668,6 @@
                     resultMessage = `這局獲得了 ${score} 顆星星！⭐`;
                     subMessage = praiseMessages[Math.floor(Math.random() * praiseMessages.length)];
                 } else {
-                    // 今天已經領過星星了
                     resultMessage = `練習完成！答對 ${score} 題！`;
                     subMessage = "💡 今天已經領過星星囉！這是純練習，明天再來賺星星！⭐";
                 }
