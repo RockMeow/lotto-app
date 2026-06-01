@@ -32,7 +32,6 @@
             position: relative;
         }
 
-        /* 修正排版：增加彈性換行，避免卡邊線 */
         .top-bar { 
             margin-bottom: 15px; 
             display: flex; 
@@ -297,7 +296,7 @@
         let audioInitialized = false;
         const melody = [261.63, 293.66, 329.63, 392.00, 440.00, 392.00, 329.63, 293.66];
 
-        // 使用者首次互動時啟動音樂 (突破瀏覽器防自動播放限制)
+        // 突破瀏覽器自動播放限制
         function handleFirstInteraction() {
             if (audioInitialized) return;
             audioInitialized = true;
@@ -377,90 +376,145 @@
             }
         }
 
-        // --- 擴充全科綜合題庫 ---
-        const banks = {
-            math: [
-                { q: "爸爸買了 45 顆糖，哥哥吃了 12 顆，還剩下幾顆？", options: ["33", "23", "57", "43"], ans: "33" },
-                { q: "80 和 60 哪一個數字比較大？", options: ["80", "60", "一樣大", "不知道"], ans: "80" },
-                { q: "長方形有幾個邊？", options: ["4個", "3個", "2個", "5個"], ans: "4個" },
-                { q: "正方形有幾個角？", options: ["4個", "3個", "5個", "6個"], ans: "4個" },
-                { q: "看圖算算看：🍎🍎🍎 + 🍎🍎 = ?", options: ["5", "4", "6", "3"], ans: "5" },
-                { q: "30 + 50 = ?", options: ["80", "70", "90", "60"], ans: "80" },
-                { q: "15 - 8 = ?", options: ["7", "6", "8", "9"], ans: "7" },
-                { q: "20 加上 30 是多少？", options: ["50", "40", "60", "10"], ans: "50" },
-                { q: "哪一個數字比 50 小？", options: ["49", "51", "60", "70"], ans: "49" },
-                { q: "姐姐有 10 元，買糖果花了 6 元，還剩下幾元？", options: ["4元", "3元", "5元", "16元"], ans: "4元" },
-                { q: "5個十和3個一合起來是多少？", options: ["53", "35", "50", "30"], ans: "53" },
-                { q: "昨天是星期二，今天是星期幾？", options: ["星期三", "星期一", "星期四", "星期日"], ans: "星期三" },
-                { q: "長針指著 12，短針指著 6，請問現在是幾點鐘？", options: ["6點", "12點", "6點半", "12點半"], ans: "6點" },
-                { q: "長針指著 6，短針指在 3 和 4 中間，是幾點？", options: ["3點半", "4點半", "3點", "6點半"], ans: "3點半" },
-                { q: "時鐘上長針指著 12，短針指著 9，是幾點？", options: ["9點", "12點", "3點", "9點半"], ans: "9點" }
-            ],
-            chinese: [
-                { q: "「ㄅ」的下一個注音是什麼？", options: ["ㄆ", "ㄇ", "ㄈ", "ㄉ"], ans: "ㄆ" },
-                { q: "「媽媽」的「媽」拼音是哪一個？", options: ["ㄇㄚ", "ㄅㄚ", "ㄈㄚ", "ㄉㄚ"], ans: "ㄇㄚ" },
-                { q: "「口」字總共有幾畫？", options: ["3畫", "4畫", "2畫", "5畫"], ans: "3畫" },
-                { q: "「水」字總共有幾畫？", options: ["4畫", "3畫", "5畫", "6畫"], ans: "4畫" },
-                { q: "哪一個字可以和「學」組成詞語？", options: ["校", "吃", "跑", "睡"], ans: "校" },
-                { q: "哪一個字可以和「老」組成詞語？", options: ["師", "跑", "跳", "吃"], ans: "師" },
-                { q: "看圖選出正確的拼音：🍎 (蘋果)", options: ["ㄆㄧㄥˊ ㄍㄨㄛˇ", "ㄒㄧㄤ ㄐㄧㄠ", "ㄅㄚ ㄌㄜˋ", "ㄐㄩˊ ㄗ˙"], ans: "ㄆㄧㄥˊ ㄍㄨㄛˇ" },
-                { q: "找出相反詞：「大」的相反是什麼？", options: ["小", "多", "少", "天"], ans: "小" },
-                { q: "找出相反詞：「長」的相反是什麼？", options: ["短", "高", "胖", "瘦"], ans: "短" },
-                { q: "填空：天上一（　）小鳥飛過。", options: ["隻", "個", "條", "本"], ans: "隻" },
-                { q: "填空：桌上放著一（　）書。", options: ["本", "張", "個", "隻"], ans: "本" },
-                { q: "選出正確的字：我（　）歡吃草莓。", options: ["喜", "洗", "起", "氣"], ans: "喜" },
-                { q: "選出正確的字：我（　）天要去上學。", options: ["明", "名", "鳴", "民"], ans: "明" },
-                { q: "「下雨了」要撐什麼？", options: ["雨傘", "雨衣", "水壺", "外套"], ans: "雨傘" },
-                { q: "「木」加上一筆會變成什麼字？", options: ["本", "水", "大", "天"], ans: "本" },
-                { q: "「大」加上一點會變成什麼字？", options: ["太", "天", "木", "小"], ans: "太" },
-                { q: "「狗」的注音是哪一個？", options: ["ㄍㄡˇ", "ㄍㄡ", "ㄎㄡˇ", "ㄎㄡ"], ans: "ㄍㄡˇ" }
-            ],
-            life: [
-                { q: "看到同學不小心跌倒受傷了，應該怎麼做？", options: ["告訴老師", "當作沒看到", "笑他", "跑走"], ans: "告訴老師" },
-                { q: "過馬路要走在哪裡最安全？", options: ["斑馬線", "快車道", "花圃裡", "隨便跑"], ans: "斑馬線" },
-                { q: "早上起床看到爸爸媽媽，要說什麼？", options: ["早安", "晚安", "對不起", "再見"], ans: "早安" },
-                { q: "哪一種動物會「汪汪」叫？", options: ["狗", "貓", "小鳥", "魚"], ans: "狗" },
-                { q: "哪一種動物會在水裡游？", options: ["魚", "貓", "兔子", "狗"], ans: "魚" },
-                { q: "畫畫的時候，如果想畫藍天，要用什麼顏色？", options: ["藍色", "紅色", "綠色", "黃色"], ans: "藍色" },
-                { q: "吃飯前一定要做什麼事情才衛生？", options: ["洗手", "睡覺", "看電視", "玩玩具"], ans: "洗手" },
-                { q: "晚上睡覺前，一定要記得做什麼事？", options: ["刷牙", "吃糖果", "看電視", "跑步"], ans: "刷牙" },
-                { q: "垃圾應該丟在哪裡？", options: ["垃圾桶", "馬路上", "抽屜裡", "草地上"], ans: "垃圾桶" },
-                { q: "借用別人的東西時，要說什麼？", options: ["請問可以借我嗎", "給我", "拿來", "不用說話"], ans: "請問可以借我嗎" },
-                { q: "下雨天出門，要準備什麼？", options: ["雨傘", "太陽眼鏡", "帽子", "水壺"], ans: "雨傘" },
-                { q: "坐在汽車上，一定要繫好什麼？", options: ["安全帶", "鞋帶", "皮帶", "領帶"], ans: "安全帶" },
-                { q: "過馬路時，看到什麼顏色的燈才可以走？", options: ["綠燈", "紅燈", "黃燈", "黑燈"], ans: "綠燈" },
-                { q: "聽到垃圾車的音樂，代表要做什麼了？", options: ["倒垃圾", "買冰淇淋", "去上學", "睡覺"], ans: "倒垃圾" }
-            ],
-            amis: [
-                { q: "馬蘭阿美語的「你好」怎麼說？", options: ["Nga'ay ho", "Aray", "Wacu", "Posi"], ans: "Nga'ay ho" },
-                { q: "馬蘭阿美語的「謝謝」怎麼說？", options: ["Aray", "Nga'ay ho", "Cecay", "Tosa"], ans: "Aray" },
-                { q: "馬蘭阿美語的「狗」怎麼說？", options: ["wacu", "posi", "fafoy", "ayam"], ans: "wacu" },
-                { q: "馬蘭阿美語的「貓」怎麼說？", options: ["posi", "wacu", "cecay", "aray"], ans: "posi" },
-                { q: "馬蘭阿美語的「豬」怎麼說？", options: ["fafoy", "wacu", "posi", "ayam"], ans: "fafoy" },
-                { q: "馬蘭阿美語的「鳥」怎麼說？", options: ["ayam", "fafoy", "posi", "wacu"], ans: "ayam" },
-                { q: "馬蘭阿美語的「眼睛」怎麼說？", options: ["mata", "wacu", "cecay", "aray"], ans: "mata" },
-                { q: "馬蘭阿美語的「數字一」怎麼說？", options: ["cecay", "tosa", "telu", "sepat"], ans: "cecay" },
-                { q: "馬蘭阿美語的「數字二」怎麼說？", options: ["tosa", "cecay", "telu", "sepat"], ans: "tosa" },
-                { q: "馬蘭阿美語的「數字三」怎麼說？", options: ["telu", "cecay", "tosa", "sepat"], ans: "telu" }
-            ],
-            english: [
-                { q: "「蘋果」的英文怎麼說？", options: ["Apple", "Banana", "Cat", "Dog"], ans: "Apple" },
-                { q: "「香蕉」的英文怎麼說？", options: ["Banana", "Apple", "Cat", "Dog"], ans: "Banana" },
-                { q: "「Red」代表什麼顏色？", options: ["紅色", "藍色", "黃色", "綠色"], ans: "紅色" },
-                { q: "「Blue」代表什麼顏色？", options: ["藍色", "紅色", "黃色", "綠色"], ans: "藍色" },
-                { q: "「Yellow」代表什麼顏色？", options: ["黃色", "紅色", "藍色", "綠色"], ans: "黃色" },
-                { q: "「小狗」的英文怎麼說？", options: ["Dog", "Cat", "Pig", "Bird"], ans: "Dog" },
-                { q: "「貓」的英文怎麼說？", options: ["Cat", "Dog", "Pig", "Bird"], ans: "Cat" },
-                { q: "「小鳥」的英文怎麼說？", options: ["Bird", "Dog", "Cat", "Pig"], ans: "Bird" },
-                { q: "遇到朋友要打招呼，可以說什麼？", options: ["Hello", "Goodbye", "Thank you", "Sorry"], ans: "Hello" },
-                { q: "別人幫助你時，你應該說什麼？", options: ["Thank you", "Hello", "Goodbye", "Sorry"], ans: "Thank you" },
-                { q: "英文字母 A 的下一個字母是什麼？", options: ["B", "C", "D", "E"], ans: "B" },
-                { q: "英文字母 C 的下一個字母是什麼？", options: ["D", "B", "E", "F"], ans: "D" },
-                { q: "「一」的英文數字是？", options: ["One", "Two", "Three", "Four"], ans: "One" },
-                { q: "「二」的英文數字是？", options: ["Two", "One", "Three", "Four"], ans: "Two" }
-            ]
-        };
+        // ==========================================
+        //  AI 動態題庫生成引擎引擎 (無限變化)
+        // ==========================================
+        
+        function rand(max) { return Math.floor(Math.random() * max); }
+        function getWrongOptions(correct, array, count=3) {
+            let opts = [correct];
+            while(opts.length < count + 1) {
+                let r = array[rand(array.length)];
+                if(!opts.includes(r)) opts.push(r);
+            }
+            return opts;
+        }
+        function getWrongNumbers(correct) {
+            let opts = [correct];
+            while(opts.length < 4) {
+                let offset = (rand(4) + 1) * (Math.random() > 0.5 ? 1 : -1);
+                let fake = parseInt(correct) + offset;
+                if (fake >= 0 && !opts.includes(fake.toString())) opts.push(fake.toString());
+            }
+            return opts;
+        }
 
+        // 1. 數學生成器
+        function generateMath() {
+            let type = rand(5); // 0:加法, 1:減法, 2:比較大小, 3:時鐘, 4:應用題
+            let q, ans, opts;
+            if (type === 0) {
+                let a = rand(50)+1, b = rand(49)+1; ans = (a+b).toString();
+                q = `${a} + ${b} = <span style="color:#ff9800">?</span>`;
+                opts = getWrongNumbers(ans);
+            } else if (type === 1) {
+                let a = rand(80)+20, b = rand(a-5)+1; ans = (a-b).toString();
+                q = `${a} - ${b} = <span style="color:#ff9800">?</span>`;
+                opts = getWrongNumbers(ans);
+            } else if (type === 2) {
+                let a = rand(90)+10, b = rand(90)+10;
+                while(a===b) b = rand(90)+10;
+                let isBigger = Math.random() > 0.5;
+                ans = isBigger ? Math.max(a,b).toString() : Math.min(a,b).toString();
+                q = `${a} 和 ${b}，哪一個數字比較<span style="color:#ff5252">${isBigger?'大':'小'}</span>？`;
+                opts = [a.toString(), b.toString(), "一樣大", "不知道"];
+            } else if (type === 3) {
+                let h = rand(12)+1; let isHalf = Math.random() > 0.5;
+                ans = h + (isHalf ? "點半" : "點");
+                q = `長針指著 ${isHalf?'6':'12'}，短針指著 ${isHalf? h+'和'+(h===12?1:h+1)+'中間' : h}，是幾點？`;
+                opts = getWrongOptions(ans, ["1點","2點","3點","4點","5點","6點","7點","8點","9點","10點","11點","12點","1點半","2點半","3點半","4點半","5點半","6點半","7點半","8點半","9點半","10點半","11點半","12點半"]);
+            } else {
+                let a = rand(15)+5, b = rand(10)+1;
+                let isAdd = Math.random() > 0.5;
+                ans = isAdd ? (a+b).toString() : (a-b).toString();
+                if(isAdd) {
+                    let temps = [`小明有 ${a} 顆蘋果，媽媽又給他 ${b} 顆，現在有幾顆？`, `停車場有 ${a} 輛車，又開進來 ${b} 輛，共有幾輛？`];
+                    q = temps[rand(temps.length)];
+                } else {
+                    let temps = [`樹上有 ${a} 隻小鳥，飛走了 ${b} 隻，還剩幾隻？`, `姐姐有 ${a} 元，買橡皮擦花了 ${b} 元，還剩幾元？`];
+                    q = temps[rand(temps.length)];
+                }
+                opts = getWrongNumbers(ans);
+            }
+            return {q, ans, options: opts.sort(()=>Math.random()-0.5)};
+        }
+
+        // 2. 國語生成器
+        const chAntonyms = [['大','小'],['多','少'],['高','矮'],['長','短'],['胖','瘦'],['黑','白'],['上','下'],['左','右'],['前','後'],['冷','熱'],['快','慢']];
+        const chClassifiers = [['狗','隻'],['鳥','隻'],['書','本'],['紙','張'],['傘','把'],['鞋','雙'],['車','輛'],['花','朵'],['樹','棵'],['蘋果','顆'],['筆','枝'],['衣服','件']];
+        const chPinyin = [['爸','ㄅㄚˋ'],['媽','ㄇㄚ'],['哥','ㄍㄜ'],['弟','ㄉㄧˋ'],['學','ㄒㄩㄝˊ'],['校','ㄒㄧㄠˋ'],['老','ㄌㄠˇ'],['師','ㄕ'],['好','ㄏㄠˇ'],['天','ㄊㄧㄢ'],['大','ㄉㄚˋ'],['水','ㄕㄨㄟˇ'],['火','ㄏㄨㄛˇ']];
+        
+        function generateChinese() {
+            let type = rand(3); let q, ans, opts;
+            if(type === 0) {
+                let pair = chAntonyms[rand(chAntonyms.length)];
+                let isReverse = Math.random() > 0.5;
+                ans = isReverse ? pair[0] : pair[1];
+                q = `「${isReverse ? pair[1] : pair[0]}」的相反詞是什麼？`;
+                opts = getWrongOptions(ans, chAntonyms.flat());
+            } else if (type === 1) {
+                let pair = chClassifiers[rand(chClassifiers.length)];
+                ans = pair[1]; q = `填空：一（　）${pair[0]}`;
+                opts = getWrongOptions(ans, chClassifiers.map(x=>x[1]));
+            } else {
+                let pair = chPinyin[rand(chPinyin.length)];
+                ans = pair[1]; q = `「${pair[0]}」的注音是什麼？`;
+                opts = getWrongOptions(ans, chPinyin.map(x=>x[1]));
+            }
+            return {q, ans, options: opts.sort(()=>Math.random()-0.5)};
+        }
+
+        // 3. 英語生成器
+        const engDict = [['蘋果','Apple'],['香蕉','Banana'],['狗','Dog'],['貓','Cat'],['鳥','Bird'],['魚','Fish'],['豬','Pig'],['紅色','Red'],['藍色','Blue'],['黃色','Yellow'],['綠色','Green'],['一','One'],['二','Two'],['三','Three'],['四','Four'],['五','Five'],['你好','Hello'],['再見','Goodbye'],['謝謝','Thank you']];
+        function generateEnglish() {
+            let pair = engDict[rand(engDict.length)];
+            let isEngToCh = Math.random() > 0.5;
+            let q = isEngToCh ? `「${pair[1]}」是什麼意思？` : `「${pair[0]}」的英文怎麼說？`;
+            let ans = isEngToCh ? pair[0] : pair[1];
+            let pool = engDict.map(x => isEngToCh ? x[0] : x[1]);
+            let opts = getWrongOptions(ans, pool).sort(()=>Math.random()-0.5);
+            return {q, ans, options: opts};
+        }
+
+        // 4. 本土語 (阿美語) 生成器
+        const amisDict = [['你好',"Nga'ay ho"],['謝謝','Aray'],['狗','wacu'],['貓','posi'],['豬','fafoy'],['鳥','ayam'],['眼睛','mata'],['一','cecay'],['二','tosa'],['三','telu'],['四','sepat'],['五','lima'],['太陽','cidal'],['水','nanum'],['爸爸','mama'],['媽媽','ina'],['小孩','wawa']];
+        function generateAmis() {
+            let pair = amisDict[rand(amisDict.length)];
+            let isAmisToCh = Math.random() > 0.5;
+            let q = isAmisToCh ? `阿美語「${pair[1]}」是什麼意思？` : `「${pair[0]}」的阿美語怎麼說？`;
+            let ans = isAmisToCh ? pair[0] : pair[1];
+            let pool = amisDict.map(x => isAmisToCh ? x[0] : x[1]);
+            let opts = getWrongOptions(ans, pool).sort(()=>Math.random()-0.5);
+            return {q, ans, options: opts};
+        }
+
+        // 5. 生活生成器 (靜態題庫擴充輪替)
+        const lifeBank = [
+            {q:"看到同學跌倒受傷了，該怎麼辦？", ans:"告訴老師", opts:["當作沒看到","笑他","跑走"]},
+            {q:"過馬路要走在哪裡最安全？", ans:"斑馬線", opts:["快車道","花圃裡","隨便跑"]},
+            {q:"早上起床看到家人，要說什麼？", ans:"早安", opts:["晚安","對不起","再見"]},
+            {q:"哪一種動物會「汪汪」叫？", ans:"狗", opts:["貓","小鳥","魚"]},
+            {q:"哪一種動物會在水裡游？", ans:"魚", opts:["貓","兔子","狗"]},
+            {q:"想畫藍天，要用什麼顏色？", ans:"藍色", opts:["紅色","綠色","黃色"]},
+            {q:"吃飯前一定要做什麼才衛生？", ans:"洗手", opts:["睡覺","看電視","玩玩具"]},
+            {q:"晚上睡覺前，要記得做什麼？", ans:"刷牙", opts:["吃糖果","看電視","跑步"]},
+            {q:"垃圾應該丟在哪裡？", ans:"垃圾桶", opts:["馬路上","抽屜裡","草地上"]},
+            {q:"借用別人的東西時，要說什麼？", ans:"請問可以借我嗎", opts:["給我","拿來","不用說話"]},
+            {q:"下雨天出門，要準備什麼？", ans:"雨傘", opts:["太陽眼鏡","帽子","水壺"]},
+            {q:"坐在汽車上，一定要繫好什麼？", ans:"安全帶", opts:["鞋帶","皮帶","領帶"]},
+            {q:"過馬路看到什麼顏色的燈才可以走？", ans:"綠燈", opts:["紅燈","黃燈","黑燈"]},
+            {q:"聽到垃圾車的音樂，代表要做什麼？", ans:"倒垃圾", opts:["買冰淇淋","去上學","睡覺"]},
+            {q:"圖書館裡面應該怎麼說話？", ans:"輕聲細語", opts:["大聲喊叫","唱歌","大哭"]},
+            {q:"打噴嚏的時候應該怎麼做？", ans:"摀住口鼻", opts:["對著別人打","大聲笑","不理它"]},
+            {q:"收到別人的禮物要說什麼？", ans:"謝謝", opts:["對不起","再見","你好"]}
+        ];
+        function generateLife() {
+            let item = lifeBank[rand(lifeBank.length)];
+            let opts = [item.ans, ...item.opts].sort(()=>Math.random()-0.5);
+            return {q: item.q, ans: item.ans, options: opts};
+        }
+
+        // --- 核心遊戲流程 ---
         let currentGlobalMode = 'practice'; // 'practice' 練習 or 'exam' 評量
         let currentSubject = '';
         let currentQuestionIdx = 1; const totalQuestions = 5;
@@ -490,35 +544,19 @@
                 tutArea.innerHTML = `
                     <div class="tutorial-badge" style="background:#e53935; animation: pulseGlow 2s infinite;">📝 評量測驗中</div>
                     <div style="font-size:16px; color:#5d4037; font-weight:bold;">
-                        隨機題庫抽取中！錯一題就沒有星星，請細心作答喔！
+                        網路題庫抽取中！錯一題就沒有星星，請細心作答喔！
                     </div>
                 `;
                 return;
             }
 
-            // 練習模式的學科引導
             let badgeColor = "", title = "", desc = "";
             switch(currentSubject) {
-                case 'math': 
-                    badgeColor = "#0288d1"; title = "🧮 數學小教室"; 
-                    desc = "學習 100 以內的加減法、比較大小、認圖形和看時鐘喔！"; 
-                    break;
-                case 'chinese': 
-                    badgeColor = "#388e3c"; title = "🖍️ 國語小教室"; 
-                    desc = "從 ㄅㄆㄇ 拼音開始，認識基本筆畫與簡單造詞！"; 
-                    break;
-                case 'life': 
-                    badgeColor = "#f57c00"; title = "🌱 生活小教室"; 
-                    desc = "觀察大自然、學習禮貌與安全，適應快樂的團體生活！"; 
-                    break;
-                case 'amis': 
-                    badgeColor = "#7b1fa2"; title = "⛰️ 本土語小教室"; 
-                    desc = "一起來學馬蘭阿美語的打招呼和生活單字吧！"; 
-                    break;
-                case 'english': 
-                    badgeColor = "#c2185b"; title = "🔤 英語小教室"; 
-                    desc = "開口說 Hello！認識生活中的基礎英文單字！"; 
-                    break;
+                case 'math': badgeColor = "#0288d1"; title = "🧮 數學小教室"; desc = "加減法、比較大小與看時鐘！"; break;
+                case 'chinese': badgeColor = "#388e3c"; title = "🖍️ 國語小教室"; desc = "注音、相反詞與量詞填空！"; break;
+                case 'life': badgeColor = "#f57c00"; title = "🌱 生活小教室"; desc = "學習禮貌與安全常規！"; break;
+                case 'amis': badgeColor = "#7b1fa2"; title = "⛰️ 本土語小教室"; desc = "來學阿美語的單字吧！"; break;
+                case 'english': badgeColor = "#c2185b"; title = "🔤 英語小教室"; desc = "認識生活中的基礎英文單字！"; break;
             }
             tutArea.innerHTML = `
                 <div class="tutorial-badge" style="background:${badgeColor};">${title}</div>
@@ -551,21 +589,20 @@
         }
 
         function generateQuestion() {
-            const bank = banks[currentSubject];
-            // 隨機選一題
-            const qData = bank[Math.floor(Math.random() * bank.length)];
+            let qData;
+            if(currentSubject === 'math') qData = generateMath();
+            else if(currentSubject === 'chinese') qData = generateChinese();
+            else if(currentSubject === 'english') qData = generateEnglish();
+            else if(currentSubject === 'amis') qData = generateAmis();
+            else qData = generateLife();
+
             correctAnswer = qData.ans;
-            
             document.getElementById('questionDisplay').innerHTML = qData.q;
             
             const container = document.getElementById('optionsContainer'); container.innerHTML = '';
-            let options = [...qData.options];
-            options.sort(() => Math.random() - 0.5);
-            
-            options.forEach(val => {
+            qData.options.forEach(val => {
                 const btn = document.createElement('button'); btn.className = 'option-btn'; btn.innerText = val;
-                // 若字數過長，縮小按鈕內字體
-                if(val.length >= 4) btn.style.fontSize = "clamp(18px, 5vw, 24px)";
+                if(val.length >= 4) btn.style.fontSize = "clamp(18px, 5vw, 24px)"; // 長文字縮小
                 btn.onclick = () => checkAnswer(val, btn); container.appendChild(btn);
             });
         }
@@ -638,7 +675,6 @@
                         subMessage = "💡 今天已經領過星星囉！這是純挑戰，明天再來賺星星！⭐";
                     }
                 } else {
-                    // 練習模式不給星星
                     resultMessage = `練習完成！`;
                     subMessage = "💡 練習模式很棒喔！如果準備好了，可以去首頁切換「評量測驗」挑戰拿星星！";
                 }
