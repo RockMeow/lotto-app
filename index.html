@@ -69,7 +69,6 @@
             animation: float 3s ease-in-out infinite; z-index: 5; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.15));
         }
 
-        /* 首頁選單樣式 */
         .home-menu { display: flex; flex-direction: column; gap: 15px; }
         .subject-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
         .subject-btn {
@@ -100,7 +99,6 @@
         }
         .mode-exam .mode-selector-bg { left: calc(50%); background: #ef5350; }
 
-        /* 教學區樣式 */
         .tutorial-area {
             background: #fff9c4; border: 3px dashed #fbc02d; border-radius: 20px;
             padding: 12px; margin-bottom: 15px; text-align: center;
@@ -258,15 +256,12 @@
 
         <div id="quizView">
             <div style="text-align: left;"><button class="btn-home" onclick="goHome()">🏠 回首頁</button></div>
-            
             <div class="tutorial-area" id="tutorialArea"></div>
-
             <div class="status-bar">
                 <div id="scoreText">本局答對: 0</div>
                 <div id="questionNumText">題數: 1/5</div>
             </div>
             <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
-            
             <div class="question-box" id="questionDisplay"></div>
             <div class="options-container" id="optionsContainer"></div>
         </div>
@@ -282,7 +277,7 @@
     </div>
 
     <script>
-        // 音效與背景音樂系統
+        // 音效與音樂
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx;
         function initAudio() {
@@ -290,17 +285,12 @@
             if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
-        let isBgmPlaying = true; // 預設開啟
-        let bgmInterval; 
-        let noteIndex = 0;
-        let audioInitialized = false;
+        let isBgmPlaying = true; let bgmInterval; let noteIndex = 0; let audioInitialized = false;
         const melody = [261.63, 293.66, 329.63, 392.00, 440.00, 392.00, 329.63, 293.66];
-
-        // 突破瀏覽器自動播放限制
+        
         function handleFirstInteraction() {
             if (audioInitialized) return;
-            audioInitialized = true;
-            initAudio();
+            audioInitialized = true; initAudio();
             if (isBgmPlaying) playNextBgmNote();
         }
         document.body.addEventListener('touchstart', handleFirstInteraction, { once: true });
@@ -308,15 +298,9 @@
 
         function toggleBgm() {
             if (!audioInitialized) { audioInitialized = true; initAudio(); }
-            isBgmPlaying = !isBgmPlaying;
-            const btn = document.getElementById('bgmBtn');
-            if (isBgmPlaying) { 
-                btn.innerText = "🎵 音樂"; btn.classList.add("playing"); 
-                clearTimeout(bgmInterval); playNextBgmNote(); 
-            } else { 
-                btn.innerText = "🔇 音樂"; btn.classList.remove("playing"); 
-                clearTimeout(bgmInterval); 
-            }
+            isBgmPlaying = !isBgmPlaying; const btn = document.getElementById('bgmBtn');
+            if (isBgmPlaying) { btn.innerText = "🎵 音樂"; btn.classList.add("playing"); clearTimeout(bgmInterval); playNextBgmNote(); } 
+            else { btn.innerText = "🔇 音樂"; btn.classList.remove("playing"); clearTimeout(bgmInterval); }
         }
 
         function playNextBgmNote() {
@@ -350,7 +334,7 @@
             }
         }
 
-        // --- 集點卡系統 ---
+        // 集點卡
         let totalStars = parseInt(localStorage.getItem('mathGameTotalStars')) || 0;
         function toggleStampCard() {
             playSound('click'); const modal = document.getElementById('stampModal');
@@ -377,9 +361,8 @@
         }
 
         // ==========================================
-        //  AI 動態題庫生成引擎引擎 (無限變化)
+        //  AI 動態題庫生成引擎 (上千種隨機變化)
         // ==========================================
-        
         function rand(max) { return Math.floor(Math.random() * max); }
         function getWrongOptions(correct, array, count=3) {
             let opts = [correct];
@@ -392,46 +375,43 @@
         function getWrongNumbers(correct) {
             let opts = [correct];
             while(opts.length < 4) {
-                let offset = (rand(4) + 1) * (Math.random() > 0.5 ? 1 : -1);
+                let offset = (rand(5) + 1) * (Math.random() > 0.5 ? 1 : -1);
                 let fake = parseInt(correct) + offset;
                 if (fake >= 0 && !opts.includes(fake.toString())) opts.push(fake.toString());
             }
             return opts;
         }
 
-        // 1. 數學生成器
         function generateMath() {
-            let type = rand(5); // 0:加法, 1:減法, 2:比較大小, 3:時鐘, 4:應用題
+            let type = rand(5); 
             let q, ans, opts;
-            if (type === 0) {
+            if (type === 0) { // 加法
                 let a = rand(50)+1, b = rand(49)+1; ans = (a+b).toString();
-                q = `${a} + ${b} = <span style="color:#ff9800">?</span>`;
+                q = `<span style="color:#1976d2">${a}</span> + <span style="color:#d32f2f">${b}</span> = <span style="color:#ff9800">?</span>`;
                 opts = getWrongNumbers(ans);
-            } else if (type === 1) {
+            } else if (type === 1) { // 減法
                 let a = rand(80)+20, b = rand(a-5)+1; ans = (a-b).toString();
-                q = `${a} - ${b} = <span style="color:#ff9800">?</span>`;
+                q = `<span style="color:#1976d2">${a}</span> - <span style="color:#d32f2f">${b}</span> = <span style="color:#ff9800">?</span>`;
                 opts = getWrongNumbers(ans);
-            } else if (type === 2) {
-                let a = rand(90)+10, b = rand(90)+10;
-                while(a===b) b = rand(90)+10;
+            } else if (type === 2) { // 比較大小
+                let a = rand(90)+10, b = rand(90)+10; while(a===b) b = rand(90)+10;
                 let isBigger = Math.random() > 0.5;
                 ans = isBigger ? Math.max(a,b).toString() : Math.min(a,b).toString();
-                q = `${a} 和 ${b}，哪一個數字比較<span style="color:#ff5252">${isBigger?'大':'小'}</span>？`;
-                opts = [a.toString(), b.toString(), "一樣大", "不知道"];
-            } else if (type === 3) {
+                q = `<span style="color:#1976d2">${a}</span> 和 <span style="color:#d32f2f">${b}</span><br>哪一個數字比較<span style="color:#ff5252; font-size:1.2em;">${isBigger?'大':'小'}</span>？`;
+                opts = [a.toString(), b.toString(), "一樣大", "無法比較"];
+            } else if (type === 3) { // 時鐘
                 let h = rand(12)+1; let isHalf = Math.random() > 0.5;
                 ans = h + (isHalf ? "點半" : "點");
-                q = `長針指著 ${isHalf?'6':'12'}，短針指著 ${isHalf? h+'和'+(h===12?1:h+1)+'中間' : h}，是幾點？`;
+                q = `長針指著 <span style="color:#ff5252">${isHalf?'6':'12'}</span><br>短針指著 <span style="color:#1976d2">${isHalf? h+'和'+(h===12?1:h+1)+'中間' : h}</span><br>是幾點？`;
                 opts = getWrongOptions(ans, ["1點","2點","3點","4點","5點","6點","7點","8點","9點","10點","11點","12點","1點半","2點半","3點半","4點半","5點半","6點半","7點半","8點半","9點半","10點半","11點半","12點半"]);
-            } else {
-                let a = rand(15)+5, b = rand(10)+1;
-                let isAdd = Math.random() > 0.5;
+            } else { // 應用題
+                let a = rand(15)+5, b = rand(10)+1; let isAdd = Math.random() > 0.5;
                 ans = isAdd ? (a+b).toString() : (a-b).toString();
                 if(isAdd) {
-                    let temps = [`小明有 ${a} 顆蘋果，媽媽又給他 ${b} 顆，現在有幾顆？`, `停車場有 ${a} 輛車，又開進來 ${b} 輛，共有幾輛？`];
+                    let temps = [`小明有 ${a} 顆蘋果，媽媽又給他 ${b} 顆，現在有幾顆？`, `停車場有 ${a} 輛車，又開進來 ${b} 輛，共有幾輛？`, `草地上有 ${a} 朵紅花，${b} 朵黃花，共有幾朵？`, `哥哥有 ${a} 張貼紙，弟弟有 ${b} 張，兩人共有幾張？`, `教室裡有 ${a} 個男生，${b} 個女生，共有幾個學生？`, `圖書館有 ${a} 本童話書，${b} 本繪本，共有幾本書？`];
                     q = temps[rand(temps.length)];
                 } else {
-                    let temps = [`樹上有 ${a} 隻小鳥，飛走了 ${b} 隻，還剩幾隻？`, `姐姐有 ${a} 元，買橡皮擦花了 ${b} 元，還剩幾元？`];
+                    let temps = [`樹上有 ${a} 隻小鳥，飛走了 ${b} 隻，還剩幾隻？`, `姐姐有 ${a} 元，買橡皮擦花了 ${b} 元，還剩幾元？`, `池塘裡有 ${a} 隻青蛙，跳走了 ${b} 隻，還剩幾隻？`, `一盒餅乾有 ${a} 片，妹妹吃了 ${b} 片，還剩幾片？`, `樹上有 ${a} 顆蘋果，掉下來 ${b} 顆，還剩幾顆？`, `公車上有 ${a} 個人，下車了 ${b} 個人，還剩幾個人？`];
                     q = temps[rand(temps.length)];
                 }
                 opts = getWrongNumbers(ans);
@@ -439,85 +419,57 @@
             return {q, ans, options: opts.sort(()=>Math.random()-0.5)};
         }
 
-        // 2. 國語生成器
-        const chAntonyms = [['大','小'],['多','少'],['高','矮'],['長','短'],['胖','瘦'],['黑','白'],['上','下'],['左','右'],['前','後'],['冷','熱'],['快','慢']];
-        const chClassifiers = [['狗','隻'],['鳥','隻'],['書','本'],['紙','張'],['傘','把'],['鞋','雙'],['車','輛'],['花','朵'],['樹','棵'],['蘋果','顆'],['筆','枝'],['衣服','件']];
-        const chPinyin = [['爸','ㄅㄚˋ'],['媽','ㄇㄚ'],['哥','ㄍㄜ'],['弟','ㄉㄧˋ'],['學','ㄒㄩㄝˊ'],['校','ㄒㄧㄠˋ'],['老','ㄌㄠˇ'],['師','ㄕ'],['好','ㄏㄠˇ'],['天','ㄊㄧㄢ'],['大','ㄉㄚˋ'],['水','ㄕㄨㄟˇ'],['火','ㄏㄨㄛˇ']];
-        
+        const chAntonyms = [['大','小'],['多','少'],['高','矮'],['長','短'],['胖','瘦'],['黑','白'],['上','下'],['左','右'],['前','後'],['冷','熱'],['快','慢'],['好','壞'],['新','舊'],['重','輕'],['粗','細'],['深','淺'],['遠','近'],['裡','外'],['早','晚'],['開','關'],['進','出'],['來','去'],['哭','笑'],['香','臭'],['明','暗'],['乾','濕'],['厚','薄'],['軟','硬'],['動','靜'],['起','伏'],['吞','吐'],['買','賣']];
+        const chClassifiers = [['狗','隻'],['鳥','隻'],['貓','隻'],['鞋','雙'],['筷子','雙'],['襪子','雙'],['書','本'],['筆記本','本'],['字典','本'],['紙','張'],['桌子','張'],['椅子','張'],['床','張'],['傘','把'],['刀','把'],['花','朵'],['雲','朵'],['車','輛'],['腳踏車','輛'],['樹','棵'],['草','棵'],['蘋果','顆'],['糖果','顆'],['球','顆'],['筆','枝'],['衣服','件'],['褲子','件'],['事情','件'],['人','個'],['杯子','個'],['水桶','個'],['魚','條'],['河','條'],['路','條'],['蛇','條'],['馬','匹'],['房子','棟']];
+        const chPinyin = [['爸','ㄅㄚˋ'],['媽','ㄇㄚ'],['哥','ㄍㄜ'],['弟','ㄉㄧˋ'],['姐','ㄐㄧㄝˇ'],['妹','ㄇㄟˋ'],['大','ㄉㄚˋ'],['小','ㄒㄧㄠˇ'],['多','ㄉㄨㄛ'],['少','ㄕㄠˇ'],['天','ㄊㄧㄢ'],['地','ㄉㄧˋ'],['人','ㄖㄣˊ'],['手','ㄕㄡˇ'],['足','ㄗㄨˊ'],['口','ㄎㄡˇ'],['耳','ㄦˇ'],['目','ㄇㄨˋ'],['頭','ㄊㄡˊ'],['山','ㄕㄢ'],['水','ㄕㄨㄟˇ'],['木','ㄇㄨˋ'],['花','ㄏㄨㄚ'],['鳥','ㄋㄧㄠˇ'],['車','ㄔㄜ'],['書','ㄕㄨ'],['跑','ㄆㄠˇ'],['跳','ㄊㄧㄠˋ'],['笑','ㄒㄧㄠˋ'],['哭','ㄎㄨ'],['早','ㄗㄠˇ'],['晚','ㄨㄢˇ'],['日','ㄖˋ'],['月','ㄩㄝˋ'],['明','ㄇㄧㄥˊ'],['白','ㄅㄞˊ'],['紅','ㄏㄨㄥˊ'],['黑','ㄏㄟ'],['黃','ㄏㄨㄤˊ'],['綠','ㄌㄩˋ'],['藍','ㄌㄢˊ']];
         function generateChinese() {
             let type = rand(3); let q, ans, opts;
             if(type === 0) {
-                let pair = chAntonyms[rand(chAntonyms.length)];
-                let isReverse = Math.random() > 0.5;
-                ans = isReverse ? pair[0] : pair[1];
-                q = `「${isReverse ? pair[1] : pair[0]}」的相反詞是什麼？`;
+                let pair = chAntonyms[rand(chAntonyms.length)]; let isRev = Math.random() > 0.5;
+                ans = isRev ? pair[0] : pair[1]; q = `「<span style="color:#e65100">${isRev ? pair[1] : pair[0]}</span>」的相反詞是什麼？`;
                 opts = getWrongOptions(ans, chAntonyms.flat());
             } else if (type === 1) {
                 let pair = chClassifiers[rand(chClassifiers.length)];
-                ans = pair[1]; q = `填空：一（　）${pair[0]}`;
+                ans = pair[1]; q = `填空：一（　）<span style="color:#0288d1">${pair[0]}</span>`;
                 opts = getWrongOptions(ans, chClassifiers.map(x=>x[1]));
             } else {
                 let pair = chPinyin[rand(chPinyin.length)];
-                ans = pair[1]; q = `「${pair[0]}」的注音是什麼？`;
+                ans = pair[1]; q = `「<span style="color:#d32f2f">${pair[0]}</span>」的注音是什麼？`;
                 opts = getWrongOptions(ans, chPinyin.map(x=>x[1]));
             }
             return {q, ans, options: opts.sort(()=>Math.random()-0.5)};
         }
 
-        // 3. 英語生成器
-        const engDict = [['蘋果','Apple'],['香蕉','Banana'],['狗','Dog'],['貓','Cat'],['鳥','Bird'],['魚','Fish'],['豬','Pig'],['紅色','Red'],['藍色','Blue'],['黃色','Yellow'],['綠色','Green'],['一','One'],['二','Two'],['三','Three'],['四','Four'],['五','Five'],['你好','Hello'],['再見','Goodbye'],['謝謝','Thank you']];
+        const engDict = [['蘋果','Apple'],['香蕉','Banana'],['狗','Dog'],['貓','Cat'],['鳥','Bird'],['魚','Fish'],['豬','Pig'],['牛','Cow'],['紅色','Red'],['藍色','Blue'],['黃色','Yellow'],['綠色','Green'],['黑色','Black'],['白色','White'],['一','One'],['二','Two'],['三','Three'],['四','Four'],['五','Five'],['六','Six'],['七','Seven'],['八','Eight'],['九','Nine'],['十','Ten'],['你好','Hello'],['再見','Goodbye'],['謝謝','Thank you'],['對不起','Sorry'],['爸爸','Father'],['媽媽','Mother'],['哥哥/弟弟','Brother'],['姐姐/妹妹','Sister'],['男孩','Boy'],['女孩','Girl'],['老師','Teacher'],['學生','Student'],['學校','School'],['書本','Book'],['筆','Pen'],['鉛筆','Pencil'],['桌子','Desk'],['椅子','Chair'],['太陽','Sun'],['月亮','Moon'],['星星','Star'],['樹','Tree'],['花','Flower'],['水','Water'],['火','Fire'],['眼睛','Eye'],['耳朵','Ear'],['鼻子','Nose'],['嘴巴','Mouth'],['手','Hand'],['腳','Foot'],['頭','Head'],['頭髮','Hair'],['臉','Face'],['腿','Leg'],['手臂','Arm']];
         function generateEnglish() {
-            let pair = engDict[rand(engDict.length)];
-            let isEngToCh = Math.random() > 0.5;
-            let q = isEngToCh ? `「${pair[1]}」是什麼意思？` : `「${pair[0]}」的英文怎麼說？`;
+            let pair = engDict[rand(engDict.length)]; let isEngToCh = Math.random() > 0.5;
+            let q = isEngToCh ? `「<span style="color:#1976d2">${pair[1]}</span>」是什麼意思？` : `「<span style="color:#d32f2f">${pair[0]}</span>」的英文怎麼說？`;
             let ans = isEngToCh ? pair[0] : pair[1];
-            let pool = engDict.map(x => isEngToCh ? x[0] : x[1]);
-            let opts = getWrongOptions(ans, pool).sort(()=>Math.random()-0.5);
+            let opts = getWrongOptions(ans, engDict.map(x => isEngToCh ? x[0] : x[1])).sort(()=>Math.random()-0.5);
             return {q, ans, options: opts};
         }
 
-        // 4. 本土語 (阿美語) 生成器
-        const amisDict = [['你好',"Nga'ay ho"],['謝謝','Aray'],['狗','wacu'],['貓','posi'],['豬','fafoy'],['鳥','ayam'],['眼睛','mata'],['一','cecay'],['二','tosa'],['三','telu'],['四','sepat'],['五','lima'],['太陽','cidal'],['水','nanum'],['爸爸','mama'],['媽媽','ina'],['小孩','wawa']];
+        const amisDict = [['你好',"Nga'ay ho"],['謝謝','Aray'],['狗','wacu'],['貓','posi'],['豬','fafoy'],['鳥','ayam'],['一','cecay'],['二','tosa'],['三','telu'],['四','sepat'],['五','lima'],['六','enem'],['七','pito'],['八','falu'],['九','siwa'],['十',"mo^tep"],['太陽','cidal'],['月亮','folad'],['星星',"fo'is"],['水','nanom'],['土地','sra'],['樹','kilang'],['葉子','papah'],['花','hana'],['山','lutuk'],['風','fali'],['天空','kakarayan'],['爸爸','mama'],['媽媽','ina'],['伯父','faki'],['阿姨','fayi'],['小孩','wawa'],['女生','fafahiyan'],['男生',"fa'inayan"],['眼睛','mata'],['頭','tangal'],['皮膚','fanges'],['手','kamay'],['腳',"wa'ay"]];
         function generateAmis() {
-            let pair = amisDict[rand(amisDict.length)];
-            let isAmisToCh = Math.random() > 0.5;
-            let q = isAmisToCh ? `阿美語「${pair[1]}」是什麼意思？` : `「${pair[0]}」的阿美語怎麼說？`;
+            let pair = amisDict[rand(amisDict.length)]; let isAmisToCh = Math.random() > 0.5;
+            let q = isAmisToCh ? `阿美語「<span style="color:#7b1fa2">${pair[1]}</span>」是什麼意思？` : `「<span style="color:#e65100">${pair[0]}</span>」的阿美語怎麼說？`;
             let ans = isAmisToCh ? pair[0] : pair[1];
-            let pool = amisDict.map(x => isAmisToCh ? x[0] : x[1]);
-            let opts = getWrongOptions(ans, pool).sort(()=>Math.random()-0.5);
+            let opts = getWrongOptions(ans, amisDict.map(x => isAmisToCh ? x[0] : x[1])).sort(()=>Math.random()-0.5);
             return {q, ans, options: opts};
         }
 
-        // 5. 生活生成器 (靜態題庫擴充輪替)
         const lifeBank = [
-            {q:"看到同學跌倒受傷了，該怎麼辦？", ans:"告訴老師", opts:["當作沒看到","笑他","跑走"]},
-            {q:"過馬路要走在哪裡最安全？", ans:"斑馬線", opts:["快車道","花圃裡","隨便跑"]},
-            {q:"早上起床看到家人，要說什麼？", ans:"早安", opts:["晚安","對不起","再見"]},
-            {q:"哪一種動物會「汪汪」叫？", ans:"狗", opts:["貓","小鳥","魚"]},
-            {q:"哪一種動物會在水裡游？", ans:"魚", opts:["貓","兔子","狗"]},
-            {q:"想畫藍天，要用什麼顏色？", ans:"藍色", opts:["紅色","綠色","黃色"]},
-            {q:"吃飯前一定要做什麼才衛生？", ans:"洗手", opts:["睡覺","看電視","玩玩具"]},
-            {q:"晚上睡覺前，要記得做什麼？", ans:"刷牙", opts:["吃糖果","看電視","跑步"]},
-            {q:"垃圾應該丟在哪裡？", ans:"垃圾桶", opts:["馬路上","抽屜裡","草地上"]},
-            {q:"借用別人的東西時，要說什麼？", ans:"請問可以借我嗎", opts:["給我","拿來","不用說話"]},
-            {q:"下雨天出門，要準備什麼？", ans:"雨傘", opts:["太陽眼鏡","帽子","水壺"]},
-            {q:"坐在汽車上，一定要繫好什麼？", ans:"安全帶", opts:["鞋帶","皮帶","領帶"]},
-            {q:"過馬路看到什麼顏色的燈才可以走？", ans:"綠燈", opts:["紅燈","黃燈","黑燈"]},
-            {q:"聽到垃圾車的音樂，代表要做什麼？", ans:"倒垃圾", opts:["買冰淇淋","去上學","睡覺"]},
-            {q:"圖書館裡面應該怎麼說話？", ans:"輕聲細語", opts:["大聲喊叫","唱歌","大哭"]},
-            {q:"打噴嚏的時候應該怎麼做？", ans:"摀住口鼻", opts:["對著別人打","大聲笑","不理它"]},
-            {q:"收到別人的禮物要說什麼？", ans:"謝謝", opts:["對不起","再見","你好"]}
+            {q:"吃東西前要做什麼？", ans:"洗手", opts:["睡覺","看電視","玩玩具"]}, {q:"看到長輩要說什麼？", ans:"您好", opts:["再見","對不起","沒關係"]}, {q:"過馬路要走在哪裡？", ans:"斑馬線", opts:["快車道","草地","水裡"]}, {q:"垃圾要丟在哪裡？", ans:"垃圾桶", opts:["馬路上","抽屜裡","草地上"]}, {q:"下雨天出門要帶什麼？", ans:"雨傘", opts:["太陽眼鏡","水壺","扇子"]}, {q:"圖書館裡應該怎麼說話？", ans:"輕聲細語", opts:["大聲喊叫","唱歌","大哭"]}, {q:"打噴嚏時應該怎麼做？", ans:"摀住口鼻", opts:["對著別人打","大聲笑","不理它"]}, {q:"收到別人的禮物要說？", ans:"謝謝", opts:["對不起","再見","你好"]}, {q:"做錯事要說什麼？", ans:"對不起", opts:["謝謝","再見","你好"]}, {q:"早上起床看到家人要說？", ans:"早安", opts:["晚安","再見","對不起"]}, {q:"晚上睡覺前要記得？", ans:"刷牙", opts:["吃糖果","看電視","跑步"]}, {q:"喝什麼對身體最健康？", ans:"白開水", opts:["可樂","果汁","汽水"]}, {q:"上課想發言要先做什麼？", ans:"舉手", opts:["大叫","站起來","敲桌子"]}, {q:"借東西要說什麼？", ans:"請問可以借我嗎", opts:["給我","拿來","不用說"]}, {q:"同學跌倒受傷了怎麼辦？", ans:"告訴老師", opts:["當作沒看到","笑他","跑走"]}, {q:"綠燈亮了代表可以？", ans:"通行", opts:["停止","倒退","睡覺"]}, {q:"紅燈亮了代表要？", ans:"停止", opts:["通行","快跑","跳舞"]}, {q:"坐汽車要繫好什麼？", ans:"安全帶", opts:["鞋帶","皮帶","領帶"]}, {q:"騎腳踏車要戴什麼？", ans:"安全帽", opts:["毛帽","鴨舌帽","睡帽"]}, {q:"哪種動物會汪汪叫？", ans:"狗", opts:["貓","鳥","魚"]}, {q:"哪種動物會喵喵叫？", ans:"貓", opts:["狗","豬","羊"]}, {q:"哪種動物會在水裡游？", ans:"魚", opts:["貓","兔子","狗"]}, {q:"哪種動物會在天上飛？", ans:"小鳥", opts:["小狗","小貓","小魚"]}, {q:"想畫藍天要用什麼顏色？", ans:"藍色", opts:["紅色","綠色","黃色"]}, {q:"想畫太陽要用什麼顏色？", ans:"紅色", opts:["藍色","綠色","黑色"]}, {q:"吃完飯要記得做什麼？", ans:"漱口", opts:["跑步","跳繩","大叫"]}, {q:"指甲太長要怎麼辦？", ans:"剪指甲", opts:["塗顏色","咬指甲","戴手套"]}, {q:"流汗了要用什麼擦？", ans:"毛巾", opts:["衣服","手掌","桌布"]}, {q:"想上廁所要跟老師說？", ans:"我要去上廁所", opts:["我要回家","我要吃飯","我要睡覺"]}, {q:"放學回家第一件事是？", ans:"洗手", opts:["看電視","打電動","吃餅乾"]}, {q:"玩完玩具要怎麼辦？", ans:"收好", opts:["丟著","藏起來","送人"]}, {q:"別人在講話時我們應該？", ans:"專心聽", opts:["插嘴","轉頭","唱歌"]}, {q:"過馬路時要先看哪裡？", ans:"左邊和右邊", opts:["看天空","看地上","閉眼睛"]}, {q:"發現火災要打什麼電話？", ans:"119", opts:["110","165","104"]}, {q:"遇到壞人要打什麼電話？", ans:"110", opts:["119","117","166"]}, {q:"在走廊上應該怎麼做？", ans:"慢慢走", opts:["快跑","滑行","跳遠"]}, {q:"上下樓梯要靠哪邊走？", ans:"右邊", opts:["左邊","中間","隨便走"]}, {q:"買東西要記得做什麼？", ans:"排隊", opts:["插隊","推擠","大叫"]}, {q:"吃東西要怎麼吃才安全？", ans:"細嚼慢嚥", opts:["狼吞虎嚥","邊跑邊吃","躺著吃"]}, {q:"天氣冷了要穿什麼？", ans:"外套", opts:["泳衣","短褲","短袖"]}, {q:"肚子痛要告訴誰？", ans:"老師或家人", opts:["路人","小狗","自己忍耐"]}, {q:"別人的東西可以隨便拿嗎？", ans:"不可以", opts:["可以","有時候可以","看心情"]}, {q:"找不到媽媽怎麼辦？", ans:"找警察或店員", opts:["自己亂跑","跟陌生人走","大哭大鬧"]}, {q:"過年時會收到什麼？", ans:"紅包", opts:["白包","黑包","黃包"]}, {q:"中秋節會吃什麼？", ans:"月餅", opts:["粽子","湯圓","水餃"]}, {q:"端午節會吃什麼？", ans:"粽子", opts:["月餅","湯圓","蛋糕"]}, {q:"冬至會吃什麼？", ans:"湯圓", opts:["粽子","月餅","餅乾"]}
         ];
         function generateLife() {
             let item = lifeBank[rand(lifeBank.length)];
-            let opts = [item.ans, ...item.opts].sort(()=>Math.random()-0.5);
+            let opts = getWrongOptions(item.ans, lifeBank.map(x=>x.ans)).concat(item.opts).slice(0,4).sort(()=>Math.random()-0.5);
+            if(!opts.includes(item.ans)) { opts.pop(); opts.push(item.ans); opts.sort(()=>Math.random()-0.5); }
             return {q: item.q, ans: item.ans, options: opts};
         }
 
         // --- 核心遊戲流程 ---
-        let currentGlobalMode = 'practice'; // 'practice' 練習 or 'exam' 評量
-        let currentSubject = '';
-        let currentQuestionIdx = 1; const totalQuestions = 5;
+        let currentGlobalMode = 'practice'; let currentSubject = ''; let currentQuestionIdx = 1; const totalQuestions = 5;
         let score = 0; let correctAnswer = ""; let hasMistakeInCurrentRound = false; let isWaitingForNext = false;
 
         function selectMode(mode) {
@@ -529,27 +481,16 @@
 
         function goHome() {
             playSound('click');
-            document.getElementById('homeView').style.display = 'block';
-            document.getElementById('quizView').style.display = 'none';
-            document.getElementById('summaryView').style.display = 'none';
-            document.getElementById('mascot').innerText = "🐶";
-            document.getElementById('mascot').style.animation = 'float 3s ease-in-out infinite';
+            document.getElementById('homeView').style.display = 'block'; document.getElementById('quizView').style.display = 'none'; document.getElementById('summaryView').style.display = 'none';
+            document.getElementById('mascot').innerText = "🐶"; document.getElementById('mascot').style.animation = 'float 3s ease-in-out infinite';
         }
 
         function updateTutorialArea() {
-            const tutArea = document.getElementById('tutorialArea');
-            tutArea.style.display = 'block';
-            
+            const tutArea = document.getElementById('tutorialArea'); tutArea.style.display = 'block';
             if(currentGlobalMode === 'exam') {
-                tutArea.innerHTML = `
-                    <div class="tutorial-badge" style="background:#e53935; animation: pulseGlow 2s infinite;">📝 評量測驗中</div>
-                    <div style="font-size:16px; color:#5d4037; font-weight:bold;">
-                        網路題庫抽取中！錯一題就沒有星星，請細心作答喔！
-                    </div>
-                `;
+                tutArea.innerHTML = `<div class="tutorial-badge" style="background:#e53935; animation: pulseGlow 2s infinite;">📝 評量測驗中</div><div style="font-size:16px; color:#5d4037; font-weight:bold;">網路題庫抽取中！錯一題就沒有星星，請細心作答喔！</div>`;
                 return;
             }
-
             let badgeColor = "", title = "", desc = "";
             switch(currentSubject) {
                 case 'math': badgeColor = "#0288d1"; title = "🧮 數學小教室"; desc = "加減法、比較大小與看時鐘！"; break;
@@ -558,27 +499,16 @@
                 case 'amis': badgeColor = "#7b1fa2"; title = "⛰️ 本土語小教室"; desc = "來學阿美語的單字吧！"; break;
                 case 'english': badgeColor = "#c2185b"; title = "🔤 英語小教室"; desc = "認識生活中的基礎英文單字！"; break;
             }
-            tutArea.innerHTML = `
-                <div class="tutorial-badge" style="background:${badgeColor};">${title}</div>
-                <div style="font-size:16px; color:#5d4037; font-weight:bold;">${desc}</div>
-                <div style="color:#00796b; font-size:14px; margin-top:5px;">💡 導師小提醒：慢慢想，答錯可以重選喔！</div>
-            `;
+            tutArea.innerHTML = `<div class="tutorial-badge" style="background:${badgeColor};">${title}</div><div style="font-size:16px; color:#5d4037; font-weight:bold;">${desc}</div><div style="color:#00796b; font-size:14px; margin-top:5px;">💡 導師小提醒：慢慢想，答錯可以重選喔！</div>`;
         }
 
         function startGame(subject) {
             playSound('click'); currentSubject = subject;
             currentQuestionIdx = 1; score = 0; isWaitingForNext = false; hasMistakeInCurrentRound = false;
-            
-            document.getElementById('homeView').style.display = 'none';
-            document.getElementById('summaryView').style.display = 'none';
-            document.getElementById('quizView').style.display = 'block';
-            
+            document.getElementById('homeView').style.display = 'none'; document.getElementById('summaryView').style.display = 'none'; document.getElementById('quizView').style.display = 'block';
             updateTutorialArea();
-
-            const mascot = document.getElementById('mascot');
-            mascot.innerText = "🐶✨"; mascot.style.animation = 'happyJump 0.5s ease';
+            const mascot = document.getElementById('mascot'); mascot.innerText = "🐶✨"; mascot.style.animation = 'happyJump 0.5s ease';
             setTimeout(() => { mascot.style.animation = 'float 3s ease-in-out infinite'; mascot.innerText = "🐶"; }, 500);
-            
             updateStatusBar(); generateQuestion();
         }
 
@@ -602,39 +532,29 @@
             const container = document.getElementById('optionsContainer'); container.innerHTML = '';
             qData.options.forEach(val => {
                 const btn = document.createElement('button'); btn.className = 'option-btn'; btn.innerText = val;
-                if(val.length >= 4) btn.style.fontSize = "clamp(18px, 5vw, 24px)"; // 長文字縮小
+                if(val.length >= 4) btn.style.fontSize = "clamp(18px, 5vw, 24px)";
                 btn.onclick = () => checkAnswer(val, btn); container.appendChild(btn);
             });
         }
 
         function checkAnswer(selected, btn) {
             if (isWaitingForNext) return;
-
             const overlay = document.getElementById('feedbackOverlay'); const emoji = document.getElementById('feedbackEmoji');
             const text = document.getElementById('feedbackText'); const windowEl = document.getElementById('gameWindow');
             const mascot = document.getElementById('mascot');
 
             if (selected === correctAnswer) {
-                isWaitingForNext = true;
-                playSound('correct'); score++;
+                isWaitingForNext = true; playSound('correct'); score++;
                 mascot.innerText = "🐶✨"; windowEl.style.animation = "happyJump 0.3s ease";
-                overlay.className = "feedback-overlay correct-bg";
-                emoji.innerText = ["🐰", "🐵", "🦁", "🐸"][Math.floor(Math.random()*4)]; text.innerText = "太棒了！";
+                overlay.className = "feedback-overlay correct-bg"; emoji.innerText = ["🐰", "🐵", "🦁", "🐸"][Math.floor(Math.random()*4)]; text.innerText = "太棒了！";
                 overlay.style.opacity = 1; emoji.style.transform = "scale(1)"; text.style.transform = "scale(1)";
-                
                 createConfetti(); setTimeout(() => { windowEl.style.animation = ""; nextQuestion(); }, 1500);
             } else {
                 playSound('wrong'); mascot.innerText = "🐶💦";
-                
-                if (currentGlobalMode === 'exam') {
-                    hasMistakeInCurrentRound = true; // 評量模式下標記錯誤
-                }
-
+                if (currentGlobalMode === 'exam') hasMistakeInCurrentRound = true;
                 overlay.className = "feedback-overlay wrong-bg"; emoji.innerText = "💪"; text.innerText = "再試一次喔！";
                 overlay.style.opacity = 1; emoji.style.transform = "scale(1)"; text.style.transform = "scale(1)";
-                
                 windowEl.classList.add('shake'); btn.style.borderColor = '#ffcdd2'; btn.style.backgroundColor = '#ffebee'; btn.style.color = '#e53935';
-                
                 isWaitingForNext = true;
                 setTimeout(() => {
                     overlay.style.opacity = 0; emoji.style.transform = "scale(0.5)"; text.style.transform = "scale(0.5)";
@@ -644,45 +564,32 @@
         }
 
         function nextQuestion() {
-            document.getElementById('feedbackOverlay').style.opacity = 0;
-            document.getElementById('feedbackEmoji').style.transform = "scale(0.5)";
-            document.getElementById('feedbackText').style.transform = "scale(0.5)";
-            document.getElementById('mascot').innerText = "🐶";
-
+            document.getElementById('feedbackOverlay').style.opacity = 0; document.getElementById('feedbackEmoji').style.transform = "scale(0.5)"; document.getElementById('feedbackText').style.transform = "scale(0.5)"; document.getElementById('mascot').innerText = "🐶";
             if (currentQuestionIdx < totalQuestions) {
                 currentQuestionIdx++; updateStatusBar(); isWaitingForNext = false; generateQuestion();
             } else {
                 playSound('win'); document.getElementById('progressBar').style.width = `100%`;
-                
-                const todayStr = new Date().toLocaleDateString();
-                const lastPlayedDate = localStorage.getItem('mathGameLastPlayedDate');
-                
+                const todayStr = new Date().toLocaleDateString(); const lastPlayedDate = localStorage.getItem('mathGameLastPlayedDate');
                 let resultMessage = ""; let subMessage = "";
 
                 if (currentGlobalMode === 'exam') {
                     if (lastPlayedDate !== todayStr) {
                         if (hasMistakeInCurrentRound) {
-                            resultMessage = `挑戰結束！`;
-                            subMessage = "💡 哎呀！因為評量中間有答錯，所以這次沒有獲得星星喔。再一次「全部一次答對」就能拿到每日星星！⭐";
+                            resultMessage = `挑戰結束！`; subMessage = "💡 哎呀！因為評量中間有答錯，所以這次沒有獲得星星喔。再一次「全部一次答對」就能拿到每日星星！⭐";
                         } else {
-                            totalStars += score; localStorage.setItem('mathGameTotalStars', totalStars);
-                            localStorage.setItem('mathGameLastPlayedDate', todayStr);
-                            resultMessage = `完美過關！獲得了 ${score} 顆星星！⭐`;
-                            subMessage = "我看見你剛剛很細心在作答，超棒的！";
+                            totalStars += score; localStorage.setItem('mathGameTotalStars', totalStars); localStorage.setItem('mathGameLastPlayedDate', todayStr);
+                            resultMessage = `完美過關！獲得了 ${score} 顆星星！⭐`; subMessage = "我看見你剛剛很細心在作答，超棒的！";
                         }
                     } else {
-                        resultMessage = `評量完成！答對 ${score} 題！`;
-                        subMessage = "💡 今天已經領過星星囉！這是純挑戰，明天再來賺星星！⭐";
+                        resultMessage = `評量完成！答對 ${score} 題！`; subMessage = "💡 今天已經領過星星囉！這是純挑戰，明天再來賺星星！⭐";
                     }
                 } else {
-                    resultMessage = `練習完成！`;
-                    subMessage = "💡 練習模式很棒喔！如果準備好了，可以去首頁切換「評量測驗」挑戰拿星星！";
+                    resultMessage = `練習完成！`; subMessage = "💡 練習模式很棒喔！如果準備好了，可以去首頁切換「評量測驗」挑戰拿星星！";
                 }
                 
                 setTimeout(() => {
                     document.getElementById('quizView').style.display = 'none'; document.getElementById('summaryView').style.display = 'block';
-                    document.getElementById('mascot').innerText = "🐶👑";
-                    document.getElementById('finalScoreText').innerText = resultMessage; document.getElementById('praiseText').innerText = subMessage;
+                    document.getElementById('mascot').innerText = "🐶👑"; document.getElementById('finalScoreText').innerText = resultMessage; document.getElementById('praiseText').innerText = subMessage;
                 }, 500);
             }
         }
