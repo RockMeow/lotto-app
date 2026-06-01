@@ -307,7 +307,7 @@
         
         // 渲染遺漏期文字
         patterns.forEach(p => {
-            p.targetDisplay = p.target.map(n => `${fNum(n)}(漏${getOmit(n, currentIndex)})`);
+            p.targetDisplay = p.target.map(n => `${fNum(n)}(${getOmit(n, currentIndex)}期未開)`);
         });
 
         // 雙重權重排序：優先比勝率，勝率相同時比歷史樣本數量(total)
@@ -510,7 +510,7 @@
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
             💡 <b>歷史結算 (動態滾動回測)：</b><br>
-            共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b><br>
+            共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，命中率 <b>${hitRate}%</b><br>
             <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #b3e5fc; font-size: 0.95rem;">
                 💰 <b>歷史總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
             </div>`;
