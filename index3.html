@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統 (拖尾)</title>
+    <title>三期牌分析系統(拖尾)</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <style>
@@ -355,7 +355,7 @@
         let userMultiplier = parseFloat(document.getElementById('betMultiplier').value);
         if (isNaN(userMultiplier) || userMultiplier <= 0) userMultiplier = 0.01;
         let ratio = userMultiplier / 0.01;
-        let currentCostPerBall = COST_PER_BALL * ratio;
+        let baseCostPerBall = COST_PER_BALL * ratio;
 
         for (let i = 0; i < parsedData.length; i++) {
             let currentRules = getRulesForDay(i);
@@ -388,7 +388,9 @@
                     let playIndex = i + j;
                     if (playIndex < parsedData.length) {
                         let numBets = p.target.length;
-                        let costAmount = numBets * currentCostPerBall;
+                        // 第 j 期乘上 j 倍
+                        let periodCostPerBall = baseCostPerBall * j;
+                        let costAmount = numBets * periodCostPerBall;
                         let rebateAmount = costAmount * REBATE_RATE;
                         
                         dailyView[playIndex].pnl.bets += numBets;
@@ -396,7 +398,7 @@
                         
                         if (hitInfo && playIndex === hitInfo.hitIndex) {
                             dailyView[playIndex].pnl.hits += hitInfo.n.length;
-                            dailyView[playIndex].pnl.win += (hitInfo.n.length * currentCostPerBall * WIN_MULTIPLIER);
+                            dailyView[playIndex].pnl.win += (hitInfo.n.length * periodCostPerBall * WIN_MULTIPLIER);
                         }
                     }
                 }
