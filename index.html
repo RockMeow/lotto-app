@@ -32,11 +32,14 @@
             position: relative;
         }
 
+        /* 修正排版：增加彈性換行，避免卡邊線 */
         .top-bar { 
             margin-bottom: 15px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         h1 {
@@ -48,7 +51,7 @@
             white-space: nowrap;
         }
 
-        .top-buttons { display: flex; gap: 8px; }
+        .top-buttons { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
         
         .bgm-toggle-btn, .stamp-btn {
             color: white; border: none; border-bottom: 3px solid;
@@ -225,7 +228,7 @@
             <h1>✨ 小一全科大冒險 ✨</h1>
             <div class="top-buttons">
                 <button class="stamp-btn" onclick="toggleStampCard()">💳 集點卡</button>
-                <button id="bgmBtn" class="bgm-toggle-btn" onclick="toggleBgm()">🔇 音樂</button>
+                <button id="bgmBtn" class="bgm-toggle-btn playing" onclick="toggleBgm()">🎵 音樂</button>
             </div>
         </div>
         <div class="mascot-container">
@@ -280,7 +283,7 @@
     </div>
 
     <script>
-        // 音效與背景音樂
+        // 音效與背景音樂系統
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx;
         function initAudio() {
@@ -288,14 +291,35 @@
             if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
-        let isBgmPlaying = false; let bgmInterval; let noteIndex = 0;
+        let isBgmPlaying = true; // 預設開啟
+        let bgmInterval; 
+        let noteIndex = 0;
+        let audioInitialized = false;
         const melody = [261.63, 293.66, 329.63, 392.00, 440.00, 392.00, 329.63, 293.66];
-        function toggleBgm() {
-            initAudio(); isBgmPlaying = !isBgmPlaying;
-            const btn = document.getElementById('bgmBtn');
-            if (isBgmPlaying) { btn.innerText = "🎵 音樂"; btn.classList.add("playing"); playNextBgmNote(); } 
-            else { btn.innerText = "🔇 音樂"; btn.classList.remove("playing"); clearTimeout(bgmInterval); }
+
+        // 使用者首次互動時啟動音樂 (突破瀏覽器防自動播放限制)
+        function handleFirstInteraction() {
+            if (audioInitialized) return;
+            audioInitialized = true;
+            initAudio();
+            if (isBgmPlaying) playNextBgmNote();
         }
+        document.body.addEventListener('touchstart', handleFirstInteraction, { once: true });
+        document.body.addEventListener('click', handleFirstInteraction, { once: true });
+
+        function toggleBgm() {
+            if (!audioInitialized) { audioInitialized = true; initAudio(); }
+            isBgmPlaying = !isBgmPlaying;
+            const btn = document.getElementById('bgmBtn');
+            if (isBgmPlaying) { 
+                btn.innerText = "🎵 音樂"; btn.classList.add("playing"); 
+                clearTimeout(bgmInterval); playNextBgmNote(); 
+            } else { 
+                btn.innerText = "🔇 音樂"; btn.classList.remove("playing"); 
+                clearTimeout(bgmInterval); 
+            }
+        }
+
         function playNextBgmNote() {
             if (!isBgmPlaying || !audioCtx) return;
             const now = audioCtx.currentTime; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
@@ -304,6 +328,7 @@
             osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.4);
             noteIndex = (noteIndex + 1) % melody.length; bgmInterval = setTimeout(playNextBgmNote, 500); 
         }
+
         function playSound(type) {
             if (!audioCtx) return;
             const now = audioCtx.currentTime; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
@@ -326,6 +351,7 @@
             }
         }
 
+        // --- 集點卡系統 ---
         let totalStars = parseInt(localStorage.getItem('mathGameTotalStars')) || 0;
         function toggleStampCard() {
             playSound('click'); const modal = document.getElementById('stampModal');
@@ -351,47 +377,87 @@
             }
         }
 
-        // --- 全科綜合題庫 (模擬網路評量題庫) ---
+        // --- 擴充全科綜合題庫 ---
         const banks = {
             math: [
                 { q: "爸爸買了 45 顆糖，哥哥吃了 12 顆，還剩下幾顆？", options: ["33", "23", "57", "43"], ans: "33" },
                 { q: "80 和 60 哪一個數字比較大？", options: ["80", "60", "一樣大", "不知道"], ans: "80" },
                 { q: "長方形有幾個邊？", options: ["4個", "3個", "2個", "5個"], ans: "4個" },
-                { q: "長針指著 12，短針指著 6，請問現在是幾點鐘？", options: ["6點", "12點", "6點半", "12點半"], ans: "6點" },
+                { q: "正方形有幾個角？", options: ["4個", "3個", "5個", "6個"], ans: "4個" },
                 { q: "看圖算算看：🍎🍎🍎 + 🍎🍎 = ?", options: ["5", "4", "6", "3"], ans: "5" },
                 { q: "30 + 50 = ?", options: ["80", "70", "90", "60"], ans: "80" },
-                { q: "長針指著 6，短針指在 3 和 4 中間，是幾點？", options: ["3點半", "4點半", "3點", "6點半"], ans: "3點半" }
+                { q: "15 - 8 = ?", options: ["7", "6", "8", "9"], ans: "7" },
+                { q: "20 加上 30 是多少？", options: ["50", "40", "60", "10"], ans: "50" },
+                { q: "哪一個數字比 50 小？", options: ["49", "51", "60", "70"], ans: "49" },
+                { q: "姐姐有 10 元，買糖果花了 6 元，還剩下幾元？", options: ["4元", "3元", "5元", "16元"], ans: "4元" },
+                { q: "5個十和3個一合起來是多少？", options: ["53", "35", "50", "30"], ans: "53" },
+                { q: "昨天是星期二，今天是星期幾？", options: ["星期三", "星期一", "星期四", "星期日"], ans: "星期三" },
+                { q: "長針指著 12，短針指著 6，請問現在是幾點鐘？", options: ["6點", "12點", "6點半", "12點半"], ans: "6點" },
+                { q: "長針指著 6，短針指在 3 和 4 中間，是幾點？", options: ["3點半", "4點半", "3點", "6點半"], ans: "3點半" },
+                { q: "時鐘上長針指著 12，短針指著 9，是幾點？", options: ["9點", "12點", "3點", "9點半"], ans: "9點" }
             ],
             chinese: [
                 { q: "「ㄅ」的下一個注音是什麼？", options: ["ㄆ", "ㄇ", "ㄈ", "ㄉ"], ans: "ㄆ" },
                 { q: "「媽媽」的「媽」拼音是哪一個？", options: ["ㄇㄚ", "ㄅㄚ", "ㄈㄚ", "ㄉㄚ"], ans: "ㄇㄚ" },
                 { q: "「口」字總共有幾畫？", options: ["3畫", "4畫", "2畫", "5畫"], ans: "3畫" },
+                { q: "「水」字總共有幾畫？", options: ["4畫", "3畫", "5畫", "6畫"], ans: "4畫" },
                 { q: "哪一個字可以和「學」組成詞語？", options: ["校", "吃", "跑", "睡"], ans: "校" },
+                { q: "哪一個字可以和「老」組成詞語？", options: ["師", "跑", "跳", "吃"], ans: "師" },
                 { q: "看圖選出正確的拼音：🍎 (蘋果)", options: ["ㄆㄧㄥˊ ㄍㄨㄛˇ", "ㄒㄧㄤ ㄐㄧㄠ", "ㄅㄚ ㄌㄜˋ", "ㄐㄩˊ ㄗ˙"], ans: "ㄆㄧㄥˊ ㄍㄨㄛˇ" },
                 { q: "找出相反詞：「大」的相反是什麼？", options: ["小", "多", "少", "天"], ans: "小" },
-                { q: "填空：天上一（　）小鳥飛過。", options: ["隻", "個", "條", "本"], ans: "隻" }
+                { q: "找出相反詞：「長」的相反是什麼？", options: ["短", "高", "胖", "瘦"], ans: "短" },
+                { q: "填空：天上一（　）小鳥飛過。", options: ["隻", "個", "條", "本"], ans: "隻" },
+                { q: "填空：桌上放著一（　）書。", options: ["本", "張", "個", "隻"], ans: "本" },
+                { q: "選出正確的字：我（　）歡吃草莓。", options: ["喜", "洗", "起", "氣"], ans: "喜" },
+                { q: "選出正確的字：我（　）天要去上學。", options: ["明", "名", "鳴", "民"], ans: "明" },
+                { q: "「下雨了」要撐什麼？", options: ["雨傘", "雨衣", "水壺", "外套"], ans: "雨傘" },
+                { q: "「木」加上一筆會變成什麼字？", options: ["本", "水", "大", "天"], ans: "本" },
+                { q: "「大」加上一點會變成什麼字？", options: ["太", "天", "木", "小"], ans: "太" },
+                { q: "「狗」的注音是哪一個？", options: ["ㄍㄡˇ", "ㄍㄡ", "ㄎㄡˇ", "ㄎㄡ"], ans: "ㄍㄡˇ" }
             ],
             life: [
                 { q: "看到同學不小心跌倒受傷了，應該怎麼做？", options: ["告訴老師", "當作沒看到", "笑他", "跑走"], ans: "告訴老師" },
                 { q: "過馬路要走在哪裡最安全？", options: ["斑馬線", "快車道", "花圃裡", "隨便跑"], ans: "斑馬線" },
                 { q: "早上起床看到爸爸媽媽，要說什麼？", options: ["早安", "晚安", "對不起", "再見"], ans: "早安" },
                 { q: "哪一種動物會「汪汪」叫？", options: ["狗", "貓", "小鳥", "魚"], ans: "狗" },
+                { q: "哪一種動物會在水裡游？", options: ["魚", "貓", "兔子", "狗"], ans: "魚" },
                 { q: "畫畫的時候，如果想畫藍天，要用什麼顏色？", options: ["藍色", "紅色", "綠色", "黃色"], ans: "藍色" },
-                { q: "吃飯前一定要做什麼事情才衛生？", options: ["洗手", "睡覺", "看電視", "玩玩具"], ans: "洗手" }
+                { q: "吃飯前一定要做什麼事情才衛生？", options: ["洗手", "睡覺", "看電視", "玩玩具"], ans: "洗手" },
+                { q: "晚上睡覺前，一定要記得做什麼事？", options: ["刷牙", "吃糖果", "看電視", "跑步"], ans: "刷牙" },
+                { q: "垃圾應該丟在哪裡？", options: ["垃圾桶", "馬路上", "抽屜裡", "草地上"], ans: "垃圾桶" },
+                { q: "借用別人的東西時，要說什麼？", options: ["請問可以借我嗎", "給我", "拿來", "不用說話"], ans: "請問可以借我嗎" },
+                { q: "下雨天出門，要準備什麼？", options: ["雨傘", "太陽眼鏡", "帽子", "水壺"], ans: "雨傘" },
+                { q: "坐在汽車上，一定要繫好什麼？", options: ["安全帶", "鞋帶", "皮帶", "領帶"], ans: "安全帶" },
+                { q: "過馬路時，看到什麼顏色的燈才可以走？", options: ["綠燈", "紅燈", "黃燈", "黑燈"], ans: "綠燈" },
+                { q: "聽到垃圾車的音樂，代表要做什麼了？", options: ["倒垃圾", "買冰淇淋", "去上學", "睡覺"], ans: "倒垃圾" }
             ],
             amis: [
                 { q: "馬蘭阿美語的「你好」怎麼說？", options: ["Nga'ay ho", "Aray", "Wacu", "Posi"], ans: "Nga'ay ho" },
                 { q: "馬蘭阿美語的「謝謝」怎麼說？", options: ["Aray", "Nga'ay ho", "Cecay", "Tosa"], ans: "Aray" },
                 { q: "馬蘭阿美語的「狗」怎麼說？", options: ["wacu", "posi", "fafoy", "ayam"], ans: "wacu" },
+                { q: "馬蘭阿美語的「貓」怎麼說？", options: ["posi", "wacu", "cecay", "aray"], ans: "posi" },
+                { q: "馬蘭阿美語的「豬」怎麼說？", options: ["fafoy", "wacu", "posi", "ayam"], ans: "fafoy" },
+                { q: "馬蘭阿美語的「鳥」怎麼說？", options: ["ayam", "fafoy", "posi", "wacu"], ans: "ayam" },
+                { q: "馬蘭阿美語的「眼睛」怎麼說？", options: ["mata", "wacu", "cecay", "aray"], ans: "mata" },
                 { q: "馬蘭阿美語的「數字一」怎麼說？", options: ["cecay", "tosa", "telu", "sepat"], ans: "cecay" },
-                { q: "馬蘭阿美語的「貓」怎麼說？", options: ["posi", "wacu", "cecay", "aray"], ans: "posi" }
+                { q: "馬蘭阿美語的「數字二」怎麼說？", options: ["tosa", "cecay", "telu", "sepat"], ans: "tosa" },
+                { q: "馬蘭阿美語的「數字三」怎麼說？", options: ["telu", "cecay", "tosa", "sepat"], ans: "telu" }
             ],
             english: [
                 { q: "「蘋果」的英文怎麼說？", options: ["Apple", "Banana", "Cat", "Dog"], ans: "Apple" },
+                { q: "「香蕉」的英文怎麼說？", options: ["Banana", "Apple", "Cat", "Dog"], ans: "Banana" },
                 { q: "「Red」代表什麼顏色？", options: ["紅色", "藍色", "黃色", "綠色"], ans: "紅色" },
+                { q: "「Blue」代表什麼顏色？", options: ["藍色", "紅色", "黃色", "綠色"], ans: "藍色" },
+                { q: "「Yellow」代表什麼顏色？", options: ["黃色", "紅色", "藍色", "綠色"], ans: "黃色" },
                 { q: "「小狗」的英文怎麼說？", options: ["Dog", "Cat", "Pig", "Bird"], ans: "Dog" },
+                { q: "「貓」的英文怎麼說？", options: ["Cat", "Dog", "Pig", "Bird"], ans: "Cat" },
+                { q: "「小鳥」的英文怎麼說？", options: ["Bird", "Dog", "Cat", "Pig"], ans: "Bird" },
                 { q: "遇到朋友要打招呼，可以說什麼？", options: ["Hello", "Goodbye", "Thank you", "Sorry"], ans: "Hello" },
-                { q: "英文字母 A 的下一個字母是什麼？", options: ["B", "C", "D", "E"], ans: "B" }
+                { q: "別人幫助你時，你應該說什麼？", options: ["Thank you", "Hello", "Goodbye", "Sorry"], ans: "Thank you" },
+                { q: "英文字母 A 的下一個字母是什麼？", options: ["B", "C", "D", "E"], ans: "B" },
+                { q: "英文字母 C 的下一個字母是什麼？", options: ["D", "B", "E", "F"], ans: "D" },
+                { q: "「一」的英文數字是？", options: ["One", "Two", "Three", "Four"], ans: "One" },
+                { q: "「二」的英文數字是？", options: ["Two", "One", "Three", "Four"], ans: "Two" }
             ]
         };
 
@@ -424,7 +490,7 @@
                 tutArea.innerHTML = `
                     <div class="tutorial-badge" style="background:#e53935; animation: pulseGlow 2s infinite;">📝 評量測驗中</div>
                     <div style="font-size:16px; color:#5d4037; font-weight:bold;">
-                        網路題庫抽取中！錯一題就沒有星星，請細心作答喔！
+                        隨機題庫抽取中！錯一題就沒有星星，請細心作答喔！
                     </div>
                 `;
                 return;
@@ -499,7 +565,7 @@
             options.forEach(val => {
                 const btn = document.createElement('button'); btn.className = 'option-btn'; btn.innerText = val;
                 // 若字數過長，縮小按鈕內字體
-                if(val.length > 4) btn.style.fontSize = "clamp(18px, 5vw, 24px)";
+                if(val.length >= 4) btn.style.fontSize = "clamp(18px, 5vw, 24px)";
                 btn.onclick = () => checkAnswer(val, btn); container.appendChild(btn);
             });
         }
@@ -572,6 +638,7 @@
                         subMessage = "💡 今天已經領過星星囉！這是純挑戰，明天再來賺星星！⭐";
                     }
                 } else {
+                    // 練習模式不給星星
                     resultMessage = `練習完成！`;
                     subMessage = "💡 練習模式很棒喔！如果準備好了，可以去首頁切換「評量測驗」挑戰拿星星！";
                 }
@@ -581,6 +648,18 @@
                     document.getElementById('mascot').innerText = "🐶👑";
                     document.getElementById('finalScoreText').innerText = resultMessage; document.getElementById('praiseText').innerText = subMessage;
                 }, 500);
+            }
+        }
+
+        function createConfetti() {
+            const windowEl = document.getElementById('gameWindow'); const colors = ['#ffeb3b', '#ff5252', '#69f0ae', '#40c4ff', '#e040fb'];
+            for (let i = 0; i < 35; i++) { 
+                const p = document.createElement('div'); p.className = 'confetti'; p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                if (Math.random() > 0.5) p.style.borderRadius = '50%';
+                const angle = Math.random() * Math.PI * 2; const distance = Math.random() * 120 + 40;
+                p.style.setProperty('--x', `${Math.cos(angle) * distance}px`); p.style.setProperty('--y', `${Math.sin(angle) * distance}px`);
+                p.style.left = `calc(50% + ${Math.random() * 20 - 10}px)`; p.style.top = `calc(50% + ${Math.random() * 20 - 10}px)`;
+                windowEl.appendChild(p); setTimeout(() => p.remove(), 1000);
             }
         }
     </script>
