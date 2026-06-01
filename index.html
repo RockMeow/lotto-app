@@ -256,7 +256,7 @@
                 <button class="mode-btn" onclick="setMode('doubles')">雙胞胎數</button>
                 <button class="mode-btn" onclick="setMode('family')">算式家族</button>
                 <button class="mode-btn" onclick="setMode('multiply')">乘法魔法</button>
-                <button class="mode-btn" onclick="setMode('exam')" style="background-color: #e1bee7; border-color: #ab47bc; color: #4a148c;">網路小測驗</button>
+                <button class="mode-btn" onclick="setMode('exam')" style="background-color: #e1bee7; border-color: #ab47bc; color: #4a148c;">評量測驗</button>
             </div>
             
             <div class="tutorial-area" id="tutorialArea"></div>
@@ -313,7 +313,7 @@
             osc.type = 'triangle';
             osc.frequency.value = melody[noteIndex];
             gain.gain.setValueAtTime(0, now);
-            // 音量已從 0.015 提高到 0.08，更加大聲且清晰
+            // 音量提高到 0.08，更加大聲且清晰
             gain.gain.linearRampToValueAtTime(0.08, now + 0.1); 
             gain.gain.linearRampToValueAtTime(0, now + 0.4);
             osc.connect(gain); gain.connect(audioCtx.destination);
@@ -421,6 +421,21 @@
             "有自己找答案的過程最棒了！"
         ];
         
+        // 評量測驗題庫 (模擬網路抓取)
+        const assessmentBank = [
+            { type: "text+", template: "小明有 {n1} 顆糖果，媽媽又給他 {n2} 顆，請問小明現在有幾顆糖果？", max1: 9, max2: 9 },
+            { type: "text+", template: "樹上有 {n1} 隻小鳥，又飛來了 {n2} 隻，現在樹上總共有幾隻小鳥？", max1: 9, max2: 9 },
+            { type: "text+", template: "哥哥買了 {n1} 本故事書，妹妹買了 {n2} 本，兩人一共買了幾本書？", max1: 9, max2: 9 },
+            { type: "text-", template: "花園裡有 {n1} 朵花，被摘走了 {n2} 朵，還剩下幾朵花？", max1: 15, max2: 9 },
+            { type: "text-", template: "冰箱裡有 {n1} 瓶牛奶，喝掉了 {n2} 瓶，還有幾瓶牛奶？", max1: 12, max2: 9 },
+            { type: "text-", template: "小華帶了 {n1} 元去買文具，花了 {n2} 元，請問小華還剩下多少元？", max1: 18, max2: 9 },
+            { type: "text*", template: "一盒布丁有 {n1} 個，媽媽買了 {n2} 盒，總共有幾個布丁？", max1: 4, max2: 4 },
+            { type: "text*", template: "一輛小汽車有 {n1} 個輪子，{n2} 輛小汽車共有幾個輪子？", max1: 4, max2: 4 },
+            { type: "img+", emoji: "🍎", max1: 5, max2: 5 },
+            { type: "img+", emoji: "🐶", max1: 4, max2: 4 },
+            { type: "img-", emoji: "🚗", max1: 10, max2: 8 }
+        ];
+
         document.body.addEventListener('touchstart', initAudio, { once: true });
         document.body.addEventListener('click', initAudio, { once: true });
 
@@ -470,8 +485,8 @@
                 `;
             } else if (currentMode === 'exam') {
                 area.innerHTML = `
-                    <div class="tutorial-badge" style="background:#8e24aa;">Lv.MAX 網路綜合小測驗</div>
-                    <div style="font-size:16px; color:#5d4037; margin-bottom:5px;">🌐 正在連接網路題庫中...</div>
+                    <div class="tutorial-badge" style="background:#8e24aa;">Lv.MAX 綜合評量測驗</div>
+                    <div style="font-size:16px; color:#5d4037; margin-bottom:5px;">🌐 正在從網路題庫抽取評量與考卷...</div>
                     <div style="font-weight:bold; color:#d81b60; font-size:15px; animation: pulseGlow 2s infinite; display:inline-block; padding:5px 15px; border-radius:20px; background:#fce4ec;">
                         準備好接受混合題型的終極挑戰了嗎？
                     </div>
@@ -577,42 +592,54 @@
                 </div>`;
             }
             else if (currentMode === 'exam') {
-                let opTypes = ['+', '-', '×'];
-                let type = opTypes[Math.floor(Math.random() * opTypes.length)];
-                let questionText = "";
+                // 從模擬題庫中隨機挑選一題
+                let item = assessmentBank[Math.floor(Math.random() * assessmentBank.length)];
                 
-                // 模擬網路題庫的應用題
-                if (type === '+') {
-                    let n1 = Math.floor(Math.random() * 10) + 1; let n2 = Math.floor(Math.random() * 10) + 1;
-                    correctAnswer = n1 + n2;
-                    const templates = [
-                        "小明有 {n1} 顆蘋果，小紅又給了他 {n2} 顆，請問小明現在有幾顆蘋果？",
-                        "樹上有 {n1} 隻小鳥，又飛來了 {n2} 隻，現在樹上總共有幾隻小鳥？",
-                        "哥哥買了 {n1} 本故事書，妹妹買了 {n2} 本，兩人一共買了幾本書？"
-                    ];
-                    questionText = templates[Math.floor(Math.random() * templates.length)].replace('{n1}', n1).replace('{n2}', n2);
-                } else if (type === '-') {
-                    let n1 = Math.floor(Math.random() * 15) + 5; let n2 = Math.floor(Math.random() * n1); 
-                    correctAnswer = n1 - n2;
-                    const templates = [
-                        "花園裡有 {n1} 朵花，被摘走了 {n2} 朵，還剩下幾朵花？",
-                        "冰箱裡有 {n1} 瓶牛奶，喝掉了 {n2} 瓶，還有幾瓶牛奶？",
-                        "小華帶了 {n1} 元去買文具，花了 {n2} 元，請問小華還剩下多少元？"
-                    ];
-                    questionText = templates[Math.floor(Math.random() * templates.length)].replace('{n1}', n1).replace('{n2}', n2);
-                } else {
-                    let n1 = Math.floor(Math.random() * 5) + 1; let n2 = Math.floor(Math.random() * 5) + 2;
-                    correctAnswer = n1 * n2;
-                    const templates = [
-                        "一盒布丁有 {n1} 個，媽媽買了 {n2} 盒，總共有幾個布丁？",
-                        "一輛小汽車有 {n1} 個輪子，{n2} 輛小汽車共有幾個輪子？",
-                        "一包餅乾賣 {n1} 元，小明買了 {n2} 包，總共要付多少元？"
-                    ];
-                    questionText = templates[Math.floor(Math.random() * templates.length)].replace('{n1}', n1).replace('{n2}', n2);
+                if (item.type.includes("text")) {
+                    let n1, n2;
+                    if (item.type === "text-") {
+                        n1 = Math.floor(Math.random() * (item.max1 - 5)) + 6; 
+                        n2 = Math.floor(Math.random() * Math.min(n1 - 1, item.max2)) + 1; 
+                        correctAnswer = n1 - n2;
+                    } else if (item.type === "text+") {
+                        n1 = Math.floor(Math.random() * item.max1) + 1; 
+                        n2 = Math.floor(Math.random() * item.max2) + 1;
+                        correctAnswer = n1 + n2;
+                    } else { // text*
+                        n1 = Math.floor(Math.random() * item.max1) + 1; 
+                        n2 = Math.floor(Math.random() * item.max2) + 2;
+                        correctAnswer = n1 * n2;
+                    }
+                    let questionText = item.template.replace('{n1}', n1).replace('{n2}', n2);
+                    qHtml = `<div style="font-size: clamp(24px, 6vw, 32px); line-height: 1.5; text-align: left; font-weight: bold; color: #37474f;">${questionText}</div>`;
+                } 
+                else if (item.type.includes("img")) {
+                    if (item.type === "img+") {
+                        let n1 = Math.floor(Math.random() * item.max1) + 1; 
+                        let n2 = Math.floor(Math.random() * item.max2) + 1;
+                        correctAnswer = n1 + n2;
+                        let e1 = "", e2 = "";
+                        for(let i=0; i<n1; i++) e1 += item.emoji;
+                        for(let i=0; i<n2; i++) e2 += item.emoji;
+                        qHtml = `<div style="font-size: clamp(24px, 6vw, 32px); line-height: 1.5; text-align: left; font-weight: bold; color: #37474f;">
+                            看圖算算看：<br><span style="font-size: 40px; letter-spacing: 5px;">${e1} + ${e2}</span> = <span style="color:#ff9800">?</span>
+                        </div>`;
+                    } else { // img-
+                        let n1 = Math.floor(Math.random() * (item.max1 - 5)) + 6; 
+                        let n2 = Math.floor(Math.random() * Math.min(n1 - 1, item.max2)) + 1; 
+                        correctAnswer = n1 - n2;
+                        let e1 = "", e2 = "";
+                        for(let i=0; i<n1; i++) e1 += item.emoji;
+                        for(let i=0; i<n2; i++) e2 += item.emoji;
+                        qHtml = `<div style="font-size: clamp(24px, 6vw, 32px); line-height: 1.5; text-align: left; font-weight: bold; color: #37474f;">
+                            看圖算算看：<br>
+                            <span style="font-size: 40px; letter-spacing: 5px; display:block;">${e1}</span>
+                            <span style="font-size: 30px; color: #ff5252;">- ${e2}</span>
+                            = <span style="color:#ff9800">?</span>
+                        </div>`;
+                    }
                 }
-                
-                qHtml = `<div style="font-size: clamp(24px, 6vw, 32px); line-height: 1.5; text-align: left; font-weight: bold; color: #37474f;">${questionText}</div>`;
-                vHtml = `<div class="helper-text" style="text-align:center; color:#ab47bc;">✨ 網路題庫測驗中！沒有圖形提示，全靠自己的力量喔！</div>`;
+                vHtml = `<div class="helper-text" style="text-align:center; color:#ab47bc;">✨ 評量測驗中！沒有動畫提示，全靠自己的力量喔！</div>`;
             }
 
             document.getElementById('questionDisplay').innerHTML = qHtml;
