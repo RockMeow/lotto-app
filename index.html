@@ -9,74 +9,92 @@
         
         body {
             font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #fff3e0;
+            background-color: #e0f7fa; /* 更活潑的天空藍背景 */
             margin: 0;
             padding: 15px;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            touch-action: manipulation; /* 改善移動端點擊延遲 */
+            touch-action: manipulation;
+            overflow-x: hidden;
         }
 
         .game-container {
             background-color: #ffffff;
-            border-radius: 25px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-radius: 30px;
+            box-shadow: 0 12px 30px rgba(0, 150, 136, 0.2);
             width: 100%;
             max-width: 600px;
             padding: 20px;
             text-align: center;
-            border: 5px solid #ffcc80;
+            border: 6px solid #4dd0e1;
             position: relative;
-            overflow: hidden;
         }
 
         .top-bar {
-            margin-bottom: 15px;
+            margin-bottom: 10px;
+            position: relative;
         }
 
         h1 {
-            color: #ff7043;
-            font-size: 26px;
+            color: #ff5252;
+            font-size: 28px;
             margin: 0;
-            text-shadow: 1px 1px 0px #ffe0b2;
+            text-shadow: 2px 2px 0px #ffcdd2;
             animation: titleBounce 2s infinite alternate;
         }
 
-        /* 模式選擇 (針對手機優化成 2x2 排列或自動換行) */
+        /* 魔法小夥伴 Mascot */
+        .mascot-container {
+            position: relative;
+            height: 70px;
+            margin-bottom: 5px;
+        }
+        .mascot {
+            font-size: 55px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: float 3s ease-in-out infinite;
+            z-index: 5;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.1));
+        }
+
+        /* 模式選擇 */
         .mode-selection {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             gap: 8px;
         }
         .mode-btn {
-            background-color: #ffe082;
+            background-color: #fff59d;
             border: none;
-            border-bottom: 4px solid #ffb300;
-            border-radius: 12px;
+            border-bottom: 4px solid #fbc02d;
+            border-radius: 15px;
             padding: 10px 8px;
             font-size: 15px;
             font-weight: bold;
-            color: #5d4037;
+            color: #795548;
             cursor: pointer;
             transition: all 0.2s;
-            flex: 1 1 40%; /* 手機上自動變成兩排 */
+            flex: 1 1 40%;
             min-width: 110px;
-            -webkit-tap-highlight-color: transparent; /* 取消手機點擊的藍色預設底色 */
+            -webkit-tap-highlight-color: transparent;
         }
-        /* 專為手機觸控設計的按下效果 */
         .mode-btn:active {
             transform: translateY(2px);
             border-bottom-width: 2px;
         }
         .mode-btn.active {
             background-color: #ff9800;
-            border-bottom-width: 0px;
+            border-bottom-color: #ef6c00;
             transform: translateY(4px);
+            border-bottom-width: 0px;
             color: white;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         /* 狀態列 */
@@ -85,35 +103,39 @@
             justify-content: space-between;
             font-size: 16px;
             font-weight: bold;
-            color: #29b6f6;
-            margin-bottom: 10px;
+            color: #00acc1;
+            margin-bottom: 8px;
             padding: 0 5px;
         }
         .progress-container {
-            background-color: #eeeeee;
+            background-color: #e0e0e0;
             border-radius: 10px;
-            height: 12px;
-            margin-bottom: 20px;
+            height: 14px;
+            margin-bottom: 15px;
+            overflow: hidden;
         }
         .progress-bar {
-            background: linear-gradient(90deg, #66bb6a, #43a047);
+            background: linear-gradient(90deg, #ffca28, #ff8f00);
             height: 100%;
             width: 0%;
             border-radius: 10px;
-            transition: width 0.4s ease;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         /* 題目區 */
         .question-box {
-            font-size: 48px;
-            font-weight: 800;
-            color: #37474f;
-            margin: 15px 0;
+            font-size: 52px;
+            font-weight: 900;
+            color: #424242;
+            margin: 10px 0;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
+            background: #f5f5f5;
+            border-radius: 20px;
+            padding: 10px;
         }
 
         /* 視覺輔助區 */
@@ -127,130 +149,92 @@
             font-size: 16px;
         }
 
-        /* 算式家族/好朋友專用視覺 */
-        .bond-diagram {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-weight: bold;
-            font-size: 22px;
-        }
-        .bond-top {
-            width: 60px; height: 60px;
-            border-radius: 50%;
-            background-color: #ce93d8;
-            color: white;
-            display: flex; justify-content: center; align-items: center;
-            margin-bottom: 20px;
-        }
+        .bond-diagram { display: flex; flex-direction: column; align-items: center; font-weight: bold; font-size: 22px; }
+        .bond-top { width: 60px; height: 60px; border-radius: 50%; background-color: #ba68c8; color: white; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; box-shadow: 0 4px 0 #8e24aa; }
         .bond-bottom { display: flex; gap: 30px; }
-        .bond-circle {
-            width: 50px; height: 50px;
-            border-radius: 50%;
-            background-color: #81d4fa;
-            color: #01579b;
-            display: flex; justify-content: center; align-items: center;
-            position: relative;
-        }
-        .bond-line {
-            position: absolute;
-            width: 3px; height: 35px;
-            background-color: #bdbdbd;
-            top: -28px;
-            z-index: -1;
-        }
+        .bond-circle { width: 50px; height: 50px; border-radius: 50%; background-color: #4fc3f7; color: white; display: flex; justify-content: center; align-items: center; position: relative; box-shadow: 0 4px 0 #0288d1; text-shadow: 1px 1px 0 rgba(0,0,0,0.2); }
+        .bond-line { position: absolute; width: 4px; height: 35px; background-color: #b0bec5; top: -28px; z-index: -1; }
         .bond-line.left { transform: rotate(25deg); left: 25px; }
         .bond-line.right { transform: rotate(-25deg); right: 25px; }
 
-        /* 乘法專用視覺 */
-        .multiply-groups { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px;}
-        .plate {
-            background-color: #f5f5f5;
-            border: 2px solid #e0e0e0;
-            border-radius: 50%;
-            padding: 8px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 4px;
-            align-items: center;
-            justify-items: center;
-            min-width: 50px; min-height: 50px;
-        }
-        .apple {
-            width: 12px; height: 12px;
-            background-color: #ef5350;
-            border-radius: 50%;
-            animation: popIn 0.3s forwards;
-        }
+        .multiply-groups { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 5px;}
+        .plate { background-color: #ffffff; border: 3px solid #e0e0e0; border-radius: 50%; padding: 8px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; align-items: center; justify-items: center; min-width: 50px; min-height: 50px; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.05); }
+        .apple { font-size: 16px; animation: popIn 0.3s forwards; }
 
-        /* 選項按鈕 (大尺寸方便手指點擊) */
+        /* 選項按鈕 (加入出場動畫) */
         .options-container {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
-            margin-top: 15px;
+            margin-top: 10px;
         }
         .option-btn {
             background-color: #ffffff;
-            border: 2px solid #cfd8dc;
-            border-bottom: 6px solid #cfd8dc;
-            border-radius: 18px;
+            border: 3px solid #b2ebf2;
+            border-bottom: 7px solid #80deea;
+            border-radius: 20px;
             padding: 15px 10px;
-            font-size: 32px;
-            font-weight: bold;
-            color: #37474f;
+            font-size: 36px;
+            font-weight: 900;
+            color: #00838f;
             cursor: pointer;
             transition: all 0.1s;
             -webkit-tap-highlight-color: transparent;
+            animation: slideUpPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
         }
+        .option-btn:nth-child(1) { animation-delay: 0.05s; }
+        .option-btn:nth-child(2) { animation-delay: 0.1s; }
+        .option-btn:nth-child(3) { animation-delay: 0.15s; }
+        .option-btn:nth-child(4) { animation-delay: 0.2s; }
+        
         .option-btn:active {
-            transform: translateY(4px);
+            transform: translateY(5px);
             border-bottom-width: 2px;
-            background-color: #eceff1;
+            background-color: #e0f7fa;
         }
 
         /* 回饋特效 */
         .feedback-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; justify-content: center; align-items: center;
-            z-index: 10; pointer-events: none; opacity: 0; transition: opacity 0.2s;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+            z-index: 20; pointer-events: none; opacity: 0; transition: opacity 0.2s;
+            border-radius: 25px;
         }
-        .feedback-content { font-size: 80px; transform: scale(0.5); transition: transform 0.3s; }
-        .correct-bg { background-color: rgba(102, 187, 106, 0.2); }
-        .wrong-bg { background-color: rgba(239, 83, 80, 0.2); }
+        .feedback-emoji { font-size: 100px; transform: scale(0.5); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); margin-bottom: -10px; }
+        .feedback-text { font-size: 28px; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); transform: scale(0.5); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .correct-bg { background-color: rgba(76, 175, 80, 0.85); backdrop-filter: blur(2px); }
+        .wrong-bg { background-color: rgba(244, 67, 54, 0.85); backdrop-filter: blur(2px); }
 
-        /* 動畫 */
+        /* 各式動畫 */
+        @keyframes float { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -10px); } }
         @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
-        @keyframes titleBounce { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
+        @keyframes slideUpPop { 0% { transform: translateY(30px) scale(0.8); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes titleBounce { 0% { transform: translateY(0) rotate(-1deg); } 100% { transform: translateY(-5px) rotate(1deg); } }
+        @keyframes happyJump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
         .shake { animation: shakeAnim 0.4s ease-in-out; }
-        @keyframes shakeAnim {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-10px); }
-            40%, 80% { transform: translateX(10px); }
-        }
+        @keyframes shakeAnim { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-15px) rotate(-2deg); } 40%, 80% { transform: translateX(15px) rotate(2deg); } }
+        
         .confetti {
-            position: absolute; width: 10px; height: 10px; border-radius: 50%;
+            position: absolute; width: 12px; height: 12px; border-radius: 4px;
             animation: particle 1s ease-out forwards;
+            z-index: 15;
         }
         @keyframes particle {
-            0% { transform: translate(0, 0) scale(1); opacity: 1; }
-            100% { transform: translate(var(--x), var(--y)) scale(0); opacity: 0; }
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--x), var(--y)) scale(0) rotate(360deg); opacity: 0; }
         }
 
         #summaryView { display: none; padding: 20px 0; }
         .restart-btn {
-            background-color: #4caf50; color: white; border: none; border-bottom: 5px solid #388e3c;
-            border-radius: 15px; padding: 15px 30px; font-size: 22px; font-weight: bold; cursor: pointer;
+            background-color: #66bb6a; color: white; border: none; border-bottom: 6px solid #43a047;
+            border-radius: 20px; padding: 15px 30px; font-size: 24px; font-weight: bold; cursor: pointer;
             margin-top: 15px; width: 100%; max-width: 250px;
             -webkit-tap-highlight-color: transparent;
+            animation: float 2s ease-in-out infinite;
         }
-        .restart-btn:active {
-            transform: translateY(3px); border-bottom-width: 2px;
-        }
+        .restart-btn:active { transform: translate(-50%, 4px) !important; border-bottom-width: 2px; }
         
-        .helper-text {
-            background: #fff3e0; padding: 12px; border-radius: 12px; border: 2px dashed #ffb300; font-size: 15px; color: #5d4037; line-height: 1.4;
-        }
+        .helper-text { background: #fff8e1; padding: 12px; border-radius: 15px; border: 3px dashed #ffca28; font-size: 16px; color: #5d4037; line-height: 1.4; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -261,86 +245,164 @@
             <h1>✨ 魔法心算大冒險 ✨</h1>
         </div>
 
+        <!-- 導師小狗 -->
+        <div class="mascot-container">
+            <div class="mascot" id="mascot">🐶</div>
+        </div>
+
         <div class="feedback-overlay" id="feedbackOverlay">
-            <div class="feedback-content" id="feedbackContent">🌟</div>
+            <div class="feedback-emoji" id="feedbackEmoji">🌟</div>
+            <div class="feedback-text" id="feedbackText">好棒！</div>
         </div>
 
         <div id="quizView">
             <div class="mode-selection">
-                <button class="mode-btn active" onclick="setMode('bonds')">找好朋友 (湊10)</button>
+                <button class="mode-btn active" onclick="setMode('bonds')">找好朋友</button>
                 <button class="mode-btn" onclick="setMode('doubles')">雙胞胎數</button>
                 <button class="mode-btn" onclick="setMode('family')">算式家族</button>
                 <button class="mode-btn" onclick="setMode('multiply')">乘法魔法</button>
             </div>
 
             <div class="status-bar">
-                <div id="scoreText">得分⭐: 0</div>
+                <div id="scoreText">得分 ⭐: 0</div>
                 <div id="questionNumText">題數: 1/5</div>
             </div>
             <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
 
-            <div class="question-box" id="questionDisplay">
-                </div>
+            <div class="question-box" id="questionDisplay"></div>
 
-            <div class="visual-container" id="visualContainer">
-                </div>
+            <div class="visual-container" id="visualContainer"></div>
 
             <div class="options-container" id="optionsContainer"></div>
         </div>
 
         <div id="summaryView">
             <h1 style="font-size: 36px;">🎉 挑戰成功！ 🎉</h1>
-            <p style="font-size: 20px; margin: 20px 0; font-weight:bold; color:#ff7043;" id="finalScoreText"></p>
-            <div style="font-size: 80px; margin-bottom: 20px;">🏆</div>
-            <button class="restart-btn" onclick="resetGame()">再玩一次 🚀</button>
+            <div style="font-size: 80px; margin: 10px 0; animation: happyJump 1s infinite;">🏆🐶</div>
+            <p style="font-size: 22px; margin: 20px 0; font-weight:bold; color:#ff5252;" id="finalScoreText"></p>
+            <button class="restart-btn" onclick="resetGame()" style="position: relative; left: 50%; transform: translateX(-50%);">再來玩一次 🚀</button>
         </div>
     </div>
 
     <script>
+        // --- 網頁音效產生器 (Web Audio API) ---
+        // 利用瀏覽器內建合成器，無須額外下載音檔
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } 
+            else if (type === 'correct') {
+                // 類似吃金幣的開心音效 (琶音)
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
+            } 
+            else if (type === 'wrong') {
+                // 溫柔的答錯提示音 (往下的音調)
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.linearRampToValueAtTime(200, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            }
+            else if (type === 'win') {
+                // 勝利慶祝音效
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(554.37, now + 0.15);
+                osc.frequency.setValueAtTime(659.25, now + 0.3);
+                osc.frequency.setValueAtTime(880, now + 0.45);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.8);
+                osc.start(now); osc.stop(now + 0.8);
+            }
+        }
+        // ----------------------------------------
+
         let currentMode = 'bonds'; 
         let currentQuestionIdx = 1;
         const totalQuestions = 5;
         let score = 0;
         let correctAnswer = 0;
         let isWaitingForNext = false;
+        
+        // 觸控任何地方即可初始化音效
+        document.body.addEventListener('touchstart', initAudio, { once: true });
+        document.body.addEventListener('click', initAudio, { once: true });
 
         function initGame() {
             currentQuestionIdx = 1; score = 0; isWaitingForNext = false;
             document.getElementById('quizView').style.display = 'block';
             document.getElementById('summaryView').style.display = 'none';
+            document.getElementById('mascot').innerText = "🐶";
             updateStatusBar();
             generateQuestion();
         }
 
         function setMode(mode) {
             if (isWaitingForNext) return;
+            playSound('click');
             currentMode = mode;
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
+            
+            // 小狗打招呼動畫
+            const mascot = document.getElementById('mascot');
+            mascot.innerText = "🐶✨";
+            mascot.style.animation = 'happyJump 0.5s ease';
+            setTimeout(() => { mascot.style.animation = 'float 3s ease-in-out infinite'; mascot.innerText = "🐶"; }, 500);
+            
             initGame();
         }
 
         function updateStatusBar() {
-            document.getElementById('scoreText').innerText = `得分⭐: ${score}`;
+            document.getElementById('scoreText').innerText = `得分 ⭐: ${score}`;
             document.getElementById('questionNumText').innerText = `題數: ${currentQuestionIdx}/${totalQuestions}`;
             document.getElementById('progressBar').style.width = `${((currentQuestionIdx - 1) / totalQuestions) * 100}%`;
         }
 
         function generateQuestion() {
-            let qHtml = "";
-            let vHtml = "";
+            let qHtml = ""; let vHtml = "";
 
             if (currentMode === 'bonds') {
                 let n1 = Math.floor(Math.random() * 9) + 1;
                 correctAnswer = 10 - n1;
                 qHtml = `<span>${n1}</span> <span>+</span> <span style="color:#ff9800">?</span> <span>=</span> <span>10</span>`;
-                
                 vHtml = `
                 <div class="bond-diagram">
                     <div class="bond-top">10</div>
                     <div class="bond-bottom">
                         <div class="bond-circle"><div class="bond-line left"></div>${n1}</div>
-                        <div class="bond-circle" style="background-color:#ffe082;"><div class="bond-line right"></div>?</div>
+                        <div class="bond-circle" style="background-color:#ffe082; color:#d84315;"><div class="bond-line right"></div>?</div>
                     </div>
                 </div>`;
             } 
@@ -349,45 +411,38 @@
                 let isNearDouble = Math.random() > 0.5;
                 let n2 = isNearDouble ? n1 + 1 : n1;
                 correctAnswer = n1 + n2;
-                
                 qHtml = `<span>${n1}</span> <span>+</span> <span>${n2}</span> <span>=</span> <span style="color:#ff9800">?</span>`;
-                
                 let helperText = isNearDouble ? `想一想：${n1} + ${n1} = ${n1*2}<br>再多 1 是多少呢？` : `💡 雙胞胎數字相加！`;
-                vHtml = `<div class="helper-text" style="color: #00796b; border-color:#80cbc4;">${helperText}</div>`;
+                vHtml = `<div class="helper-text">${helperText}</div>`;
             }
             else if (currentMode === 'family') {
                 let a = Math.floor(Math.random() * 7) + 2;
                 let b = Math.floor(Math.random() * 7) + 2;
                 let sum = a + b;
                 correctAnswer = a;
-                
                 qHtml = `<span>${sum}</span> <span>-</span> <span>${b}</span> <span>=</span> <span style="color:#ff9800">?</span>`;
                 vHtml = `
                 <div class="helper-text">
                     <strong>💡 因為我們知道：</strong><br>
-                    <span style="font-size:1.2em; color:#d84315;">${a} + ${b} = ${sum}</span><br>
+                    <span style="font-size:1.3em; color:#e65100;">${a} + ${b} = ${sum}</span><br>
                     所以它們是一家人！
                 </div>`;
             }
             else if (currentMode === 'multiply') {
-                let groupSize = Math.floor(Math.random() * 3) + 2; // 2~4個
-                let numGroups = Math.floor(Math.random() * 4) + 2; // 2~5盤
+                let groupSize = Math.floor(Math.random() * 3) + 2; // 2~4
+                let numGroups = Math.floor(Math.random() * 4) + 2; // 2~5
                 correctAnswer = groupSize * numGroups;
-                
-                qHtml = `<span>${groupSize}</span> <span style="font-size:0.8em">×</span> <span>${numGroups}</span> <span>=</span> <span style="color:#ff9800">?</span>`;
-                
+                qHtml = `<span>${groupSize}</span> <span style="font-size:0.8em; color:#9e9e9e">×</span> <span>${numGroups}</span> <span>=</span> <span style="color:#ff9800">?</span>`;
                 let platesHtml = '';
                 for(let i=0; i<numGroups; i++) {
                     let apples = '';
-                    for(let j=0; j<groupSize; j++) {
-                        apples += `<div class="apple" style="animation-delay:${(i*groupSize+j)*50}ms"></div>`;
-                    }
+                    for(let j=0; j<groupSize; j++) { apples += `<div class="apple" style="animation-delay:${(i*groupSize+j)*50}ms">🍎</div>`; }
                     platesHtml += `<div class="plate">${apples}</div>`;
                 }
                 vHtml = `
                 <div style="text-align:center;">
-                    <div style="margin-bottom:5px; font-size:14px; color:#5d4037;">
-                        💡 也就是 <b>${numGroups}</b> 盤蘋果，每盤 <b>${groupSize}</b> 顆
+                    <div style="margin-bottom:8px; font-size:15px; color:#5d4037; font-weight:bold;">
+                        💡 有 <b>${numGroups}</b> 盤蘋果，每盤 <b>${groupSize}</b> 顆
                     </div>
                     <div class="multiply-groups">${platesHtml}</div>
                 </div>`;
@@ -395,20 +450,20 @@
 
             document.getElementById('questionDisplay').innerHTML = qHtml;
             document.getElementById('visualContainer').innerHTML = vHtml;
-            generateOptions(correctAnswer);
+            
+            // 重新渲染選項，觸發動畫
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = ''; // 清空以重新觸發 CSS 動畫
+            setTimeout(() => generateOptions(correctAnswer), 10);
         }
 
         function generateOptions(correct) {
             const container = document.getElementById('optionsContainer');
-            container.innerHTML = '';
             let options = [correct];
-            
             while (options.length < 4) {
                 let offset = (Math.floor(Math.random() * 3) + 1) * (Math.random() < 0.5 ? 1 : -1);
                 let fakeAns = correct + offset;
-                if (fakeAns > 0 && !options.includes(fakeAns)) {
-                    options.push(fakeAns);
-                }
+                if (fakeAns > 0 && !options.includes(fakeAns)) options.push(fakeAns);
             }
             options.sort(() => Math.random() - 0.5);
 
@@ -426,38 +481,63 @@
             isWaitingForNext = true;
 
             const overlay = document.getElementById('feedbackOverlay');
-            const content = document.getElementById('feedbackContent');
+            const emoji = document.getElementById('feedbackEmoji');
+            const text = document.getElementById('feedbackText');
             const windowEl = document.getElementById('gameWindow');
+            const mascot = document.getElementById('mascot');
 
             if (selected === correctAnswer) {
+                playSound('correct');
                 score++;
+                mascot.innerText = "🐶✨"; // 小狗變開心
+                windowEl.style.animation = "happyJump 0.3s ease";
+                
                 overlay.className = "feedback-overlay correct-bg";
-                content.innerText = "⭕";
+                emoji.innerText = ["🐰", "🐵", "🦁", "🐸"][Math.floor(Math.random()*4)]; // 隨機動物慶祝
+                text.innerText = "太棒了！";
+                
                 overlay.style.opacity = 1;
-                content.style.transform = "scale(1)";
+                emoji.style.transform = "scale(1)";
+                text.style.transform = "scale(1)";
+                
                 createConfetti();
-                setTimeout(nextQuestion, 1500);
+                setTimeout(() => {
+                    windowEl.style.animation = "";
+                    nextQuestion();
+                }, 1500);
             } else {
+                playSound('wrong');
+                mascot.innerText = "🐶💦"; // 小狗流汗鼓勵
+                
                 overlay.className = "feedback-overlay wrong-bg";
-                content.innerText = "❌";
+                emoji.innerText = "💪";
+                text.innerText = "再試一次喔！";
+                
                 overlay.style.opacity = 1;
-                content.style.transform = "scale(1)";
+                emoji.style.transform = "scale(1)";
+                text.style.transform = "scale(1)";
+                
                 windowEl.classList.add('shake');
-                btn.style.borderColor = '#ff5252';
-                btn.style.color = '#ff5252';
+                btn.style.borderColor = '#ffcdd2';
+                btn.style.backgroundColor = '#ffebee';
+                btn.style.color = '#e53935';
 
                 setTimeout(() => {
                     overlay.style.opacity = 0;
-                    content.style.transform = "scale(0.5)";
+                    emoji.style.transform = "scale(0.5)";
+                    text.style.transform = "scale(0.5)";
                     windowEl.classList.remove('shake');
+                    mascot.innerText = "🐶";
                     isWaitingForNext = false;
-                }, 1000); // 縮短手機上的錯誤等待時間
+                }, 1200); 
             }
         }
 
         function nextQuestion() {
             document.getElementById('feedbackOverlay').style.opacity = 0;
-            document.getElementById('feedbackContent').style.transform = "scale(0.5)";
+            document.getElementById('feedbackEmoji').style.transform = "scale(0.5)";
+            document.getElementById('feedbackText').style.transform = "scale(0.5)";
+            document.getElementById('mascot').innerText = "🐶";
 
             if (currentQuestionIdx < totalQuestions) {
                 currentQuestionIdx++;
@@ -465,27 +545,35 @@
                 isWaitingForNext = false;
                 generateQuestion();
             } else {
+                playSound('win');
                 document.getElementById('progressBar').style.width = `100%`;
                 setTimeout(() => {
                     document.getElementById('quizView').style.display = 'none';
                     document.getElementById('summaryView').style.display = 'block';
-                    document.getElementById('finalScoreText').innerText = `你在 ${totalQuestions} 題中答對了，獲得了 ${score} 顆星星！`;
+                    document.getElementById('mascot').innerText = "🐶👑";
+                    document.getElementById('finalScoreText').innerText = `恭喜獲得了 ${score} 顆星星！⭐`;
                 }, 500);
             }
         }
 
-        function resetGame() { initGame(); }
+        function resetGame() { 
+            playSound('click');
+            initGame(); 
+        }
 
         function createConfetti() {
             const windowEl = document.getElementById('gameWindow');
-            const colors = ['#ffca28', '#ef5350', '#66bb6a', '#29b6f6', '#ab47bc'];
-            // 為了手機效能考量，粒子數量稍微減少
-            for (let i = 0; i < 30; i++) { 
+            const colors = ['#ffeb3b', '#ff5252', '#69f0ae', '#40c4ff', '#e040fb'];
+            for (let i = 0; i < 35; i++) { 
                 const p = document.createElement('div');
                 p.className = 'confetti';
                 p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                // 圓形或方形紙片
+                if (Math.random() > 0.5) p.style.borderRadius = '50%';
+                
                 const angle = Math.random() * Math.PI * 2;
-                const distance = Math.random() * 100 + 30;
+                const distance = Math.random() * 120 + 40;
                 p.style.setProperty('--x', `${Math.cos(angle) * distance}px`);
                 p.style.setProperty('--y', `${Math.sin(angle) * distance}px`);
                 p.style.left = `calc(50% + ${Math.random() * 20 - 10}px)`;
