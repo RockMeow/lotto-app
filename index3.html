@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統(拖尾) - 滾動回測版</title>
+    <title>三期牌分析系統 (拖尾)</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #2c3e50;
@@ -103,7 +104,7 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>三期牌分析系統(拖尾)</h1>
+            <h1>三期牌分析系統 (拖尾)</h1>
         </div>
     </div>
     
@@ -144,6 +145,11 @@
     <div class="section-title">🕒 目前追蹤中 (養三期)</div>
     <div id="predictionArea"></div>
     
+    <div class="section-title">📈 累積損益曲線</div>
+    <div class="selector-box" style="padding: 10px; margin-bottom: 20px;">
+        <canvas id="pnlChart" height="150"></canvas>
+    </div>
+
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
     <div class="section-title">📜 每日開獎與訊號紀錄</div>
@@ -153,6 +159,7 @@
 <script>
     let parsedData = [];
     let maxNum = 39;
+    let pnlChartInstance = null; // 存放圖表實例
 
     const COST_PER_BALL = 38;
     const REBATE_RATE = 0.2107;
@@ -160,6 +167,22 @@
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
+
+    // 載入設定記憶
+    function loadSettings() {
+        if (localStorage.getItem('csvSelect')) document.getElementById('csvSelect').value = localStorage.getItem('csvSelect');
+        if (localStorage.getItem('excludeZeroHead') !== null) document.getElementById('excludeZeroHead').checked = localStorage.getItem('excludeZeroHead') === 'true';
+        if (localStorage.getItem('ballCountSelect')) document.getElementById('ballCountSelect').value = localStorage.getItem('ballCountSelect');
+        if (localStorage.getItem('betMultiplier')) document.getElementById('betMultiplier').value = localStorage.getItem('betMultiplier');
+    }
+
+    // 儲存設定記憶
+    function saveSettings() {
+        localStorage.setItem('csvSelect', document.getElementById('csvSelect').value);
+        localStorage.setItem('excludeZeroHead', document.getElementById('excludeZeroHead').checked);
+        localStorage.setItem('ballCountSelect', document.getElementById('ballCountSelect').value);
+        localStorage.setItem('betMultiplier', document.getElementById('betMultiplier').value);
+    }
 
     function getOmit(num, currentIndex) {
         let omit = 0;
@@ -241,6 +264,7 @@
     }
 
     async function processData() {
+        saveSettings();
         const fileName = document.getElementById('csvSelect').value;
         const statusEl = document.getElementById('dataStatus');
         maxNum = (fileName.includes('649') || fileName.includes('Six')) ? 49 : 39;
@@ -380,6 +404,7 @@
     }
 
     function runAnalysis() {
+        saveSettings();
         let dailyView = parsedData.map(d => ({ 
             date: d.date, 
             nums: d.nums, 
@@ -461,6 +486,51 @@
             });
         }
 
+        // 渲染圖表
+        let chartLabels = [];
+        let chartData = [];
+        let cumulativePnL = 0;
+
+        dailyView.forEach(d => {
+            let net = d.pnl.win - d.pnl.cost;
+            cumulativePnL += net;
+            chartLabels.push(d.date);
+            chartData.push(cumulativePnL);
+        });
+
+        if (pnlChartInstance) {
+            pnlChartInstance.destroy();
+        }
+        const ctx = document.getElementById('pnlChart').getContext('2d');
+        pnlChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: '累積淨損益',
+                    data: chartData,
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                interaction: { intersect: false, mode: 'index' },
+                scales: {
+                    x: { display: false },
+                    y: { 
+                        display: true,
+                        grid: { color: '#eee' }
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
@@ -485,7 +555,6 @@
             let week = getWeekRange(d.date);
             let month = getMonthString(d.date);
             
-            // 處理月份切換
             if (month !== currentMonth) {
                 if (currentWeek) {
                     chunksHtml.push(renderWeekSummary(currentWeek, weekStats) + currentWeekDaysHtml.join(''));
@@ -494,7 +563,7 @@
                     currentWeekDaysHtml = [];
                 }
                 if (currentMonth) {
-                    chunksHtml.push(`</div></div>`); // 關閉上一個月份的 div
+                    chunksHtml.push(`</div></div>`); 
                 }
                 
                 let displayStyle = isFirstMonth ? 'block' : 'none';
@@ -514,7 +583,6 @@
                 isFirstMonth = false;
             }
 
-            // 處理週次切換
             if (week !== currentWeek) {
                 if (currentWeek) {
                     chunksHtml.push(renderWeekSummary(currentWeek, weekStats) + currentWeekDaysHtml.join(''));
@@ -572,7 +640,6 @@
             </div>`);
         });
 
-        // 處理最後殘留的資料結尾
         if (currentWeek) {
             chunksHtml.push(renderWeekSummary(currentWeek, weekStats) + currentWeekDaysHtml.join(''));
         }
@@ -587,13 +654,17 @@
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
             💡 <b>歷史結算 (動態滾動回測)：</b><br>
-            共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b><br>
+            共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，命中率 <b>${hitRate}%</b><br>
             <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #b3e5fc; font-size: 0.95rem;">
                 💰 <b>歷史總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
             </div>`;
     }
 
-    window.onload = processData;
+    // 初始化：載入設定後，再執行讀取資料
+    window.onload = () => {
+        loadSettings();
+        processData();
+    };
 </script>
 </body>
 </html>
