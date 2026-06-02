@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統(拖尾) - 量化優化版</title>
+    <title>三期牌分析系統(拖尾)</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -159,7 +159,7 @@
 <script>
     let parsedData = [];
     let maxNum = 39;
-    let pnlChartInstance = null;
+    let pnlChartInstance = null; // 存放圖表實例
 
     const COST_PER_BALL = 38;
     const REBATE_RATE = 0.2107;
@@ -195,6 +195,7 @@
         return omit;
     }
 
+    // 取得月份字串 (2026-MM) 用於分組
     function getMonthString(dateStr) {
         let dateWithYear = dateStr.includes('2026') ? dateStr : `2026/${dateStr}`;
         let normalized = dateWithYear.replace(/\//g, '-');
@@ -222,6 +223,7 @@
         return `${fmt(mon)} ~ ${fmt(sun)}`;
     }
 
+    // 月份折疊切換功能
     function toggleMonth(id) {
         let el = document.getElementById(id);
         let icon = document.getElementById('icon-' + id);
@@ -234,8 +236,7 @@
         }
     }
 
-    // ★ 優化：增加條件機率(triggerTail, triggerCount)、近期權重、防呆過濾
-    function getIronBalls(targetTail, currentIndex, triggerTail, triggerCount) {
+    function getIronBalls(tail, currentIndex) {
         let balls = [];
         let maxHeads = Math.floor(maxNum / 10);
         let excludeZero = document.getElementById('excludeZeroHead').checked;
@@ -243,51 +244,20 @@
         let selectedBallCount = parseInt(document.getElementById('ballCountSelect').value) || 2;
 
         for(let h = startH; h <= maxHeads; h++) {
-            let n = h * 10 + targetTail;
+            let n = h * 10 + tail;
             if(n > 0 && n <= maxNum) balls.push(n);
         }
 
         if (currentIndex !== undefined && balls.length > selectedBallCount) {
-            let scores = {};
-            balls.forEach(b => scores[b] = 0);
-            
-            // 1. 條件機率 & 2. 近期權重
+            let counts = {};
+            balls.forEach(b => counts[b] = 0);
             for(let k = 0; k <= currentIndex; k++) {
-                let tails = parsedData[k].nums.map(n => n % 10);
-                let tCount = tails.filter(t => t === triggerTail).length;
-                
-                // 如果歷史上這天符合觸發條件
-                if (tCount >= triggerCount) {
-                    for (let j = 1; j <= 3; j++) {
-                        if (k + j <= currentIndex) {
-                            parsedData[k + j].nums.forEach(n => {
-                                if (scores[n] !== undefined) {
-                                    let weight = 1;
-                                    // 近 30 期內觸發的版路，分數加倍 (近期活躍度)
-                                    if (currentIndex - (k + j) <= 30) weight += 2; 
-                                    scores[n] += weight;
-                                }
-                            });
-                        }
-                    }
-                }
+                parsedData[k].nums.forEach(n => {
+                    if (counts[n] !== undefined) counts[n]++;
+                });
             }
-
-            // 3. 極端遺漏值防呆過濾 (剔除遺漏 > 20 期的死號)
-            let validBalls = balls.filter(b => getOmit(b, currentIndex) <= 20);
-            
-            // 如果過濾後剩下的號碼數量比你要選的數量還少，就退回使用全部號碼
-            if (validBalls.length < selectedBallCount) {
-                validBalls = [...balls];
-            }
-
-            // 排序：先看條件分數，分數一樣時看誰遺漏期數小
-            validBalls.sort((a, b) => {
-                if (scores[b] !== scores[a]) return scores[b] - scores[a];
-                return getOmit(a, currentIndex) - getOmit(b, currentIndex);
-            });
-
-            balls = validBalls.slice(0, selectedBallCount);
+            balls.sort((a, b) => counts[b] - counts[a]);
+            balls = balls.slice(0, selectedBallCount);
             balls.sort((a, b) => a - b);
         }
         return balls;
@@ -393,28 +363,10 @@
         for (let t = 0; t < 10; t++) {
             if (counts[t] >= 3) {
                 let r = currentRules.triple[t];
-                if(r && r.total >= 2) {
-                    patterns.push({ 
-                        type: `三尾拖牌 (${t}尾)`, 
-                        targetTail: r.targetTail, 
-                        // ★ 傳入觸發尾數與觸發條件(3開)
-                        target: getIronBalls(r.targetTail, currentIndex, t, 3), 
-                        score: r.score, 
-                        total: r.total 
-                    });
-                }
+                if(r && r.total >= 2) patterns.push({ type: `三尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score, total: r.total });
             } else if (counts[t] >= 2) {
                 let r = currentRules.double[t];
-                if(r && r.total >= 5) {
-                    patterns.push({ 
-                        type: `雙尾拖牌 (${t}尾)`, 
-                        targetTail: r.targetTail, 
-                        // ★ 傳入觸發尾數與觸發條件(2開)
-                        target: getIronBalls(r.targetTail, currentIndex, t, 2), 
-                        score: r.score, 
-                        total: r.total 
-                    });
-                }
+                if(r && r.total >= 5) patterns.push({ type: `雙尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score, total: r.total });
             }
         }
         
@@ -534,6 +486,7 @@
             });
         }
 
+        // 渲染圖表
         let chartLabels = [];
         let chartData = [];
         let cumulativePnL = 0;
@@ -707,6 +660,7 @@
             </div>`;
     }
 
+    // 初始化：載入設定後，再執行讀取資料
     window.onload = () => {
         loadSettings();
         processData();
