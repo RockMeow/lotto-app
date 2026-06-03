@@ -6,7 +6,6 @@
     <title>三期牌分析系統(拖尾) - 穩定圖表版</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
-    <!-- 引入 Chart.js 圖表套件 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -169,6 +168,11 @@
     // 數學特徵陣列
     const FIBONACCI = [1, 2, 3, 5, 8, 13, 21, 34];
     const SQUARES = [1, 4, 9, 16, 25, 36];
+    
+    // 限定的天天樂高勝率數學觸發號碼
+    const ALLOWED_PRIME_TRIGGERS = [13, 17];
+    const ALLOWED_FIB_TRIGGERS = [8];
+    const ALLOWED_SQ_TRIGGERS = [9];
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
@@ -327,21 +331,19 @@
             mStats[i] = { total: 0, hits: new Array(maxNum + 1).fill(0) };
         }
         
-        // 初始化數學家族統計陣列
-        for (let i = 1; i <= maxNum; i++) {
-            if (isPrime(i)) {
-                pStats[i] = { total: 0, hits: {} };
-                for (let j = 1; j <= maxNum; j++) if (isPrime(j)) pStats[i].hits[j] = 0;
-            }
-            if (FIBONACCI.includes(i)) {
-                fStats[i] = { total: 0, hits: {} };
-                FIBONACCI.forEach(j => fStats[i].hits[j] = 0);
-            }
-            if (SQUARES.includes(i)) {
-                sStats[i] = { total: 0, hits: {} };
-                SQUARES.forEach(j => sStats[i].hits[j] = 0);
-            }
-        }
+        // 僅針對指定的高勝率號碼初始化數學統計陣列
+        ALLOWED_PRIME_TRIGGERS.forEach(i => {
+            pStats[i] = { total: 0, hits: {} };
+            for (let j = 1; j <= maxNum; j++) if (isPrime(j)) pStats[i].hits[j] = 0;
+        });
+        ALLOWED_FIB_TRIGGERS.forEach(i => {
+            fStats[i] = { total: 0, hits: {} };
+            FIBONACCI.forEach(j => fStats[i].hits[j] = 0);
+        });
+        ALLOWED_SQ_TRIGGERS.forEach(i => {
+            sStats[i] = { total: 0, hits: {} };
+            SQUARES.forEach(j => sStats[i].hits[j] = 0);
+        });
 
         let excludeZero = document.getElementById('excludeZeroHead').checked;
         const fileName = document.getElementById('csvSelect').value;
@@ -396,25 +398,25 @@
                 }
             });
 
-            // 3. 數學特徵拖牌 (天天樂限定)
+            // 3. 數學特徵拖牌 (天天樂限定，且只觸發指定號碼)
             if (isFan) {
                 nums.forEach(n => {
                     // 質數
-                    if (isPrime(n) && (!excludeZero || n >= 10)) {
+                    if (ALLOWED_PRIME_TRIGGERS.includes(n)) {
                         pStats[n].total++;
                         next3ValidNums.forEach(nt => {
                             if (isPrime(nt) && (!excludeZero || nt >= 10)) pStats[n].hits[nt]++;
                         });
                     }
                     // 費氏數列
-                    if (FIBONACCI.includes(n) && (!excludeZero || n >= 10)) {
+                    if (ALLOWED_FIB_TRIGGERS.includes(n)) {
                         fStats[n].total++;
                         next3ValidNums.forEach(nt => {
                             if (FIBONACCI.includes(nt) && (!excludeZero || nt >= 10)) fStats[n].hits[nt]++;
                         });
                     }
                     // 平方數
-                    if (SQUARES.includes(n) && (!excludeZero || n >= 10)) {
+                    if (ALLOWED_SQ_TRIGGERS.includes(n)) {
                         sStats[n].total++;
                         next3ValidNums.forEach(nt => {
                             if (SQUARES.includes(nt) && (!excludeZero || nt >= 10)) sStats[n].hits[nt]++;
@@ -449,7 +451,7 @@
             };
         });
 
-        // 結算數學拖牌規則 (天天樂限定)
+        // 結算數學拖牌規則
         if (isFan) {
             for (let p in pStats) localRules.prime[p] = { total: pStats[p].total, hits: pStats[p].hits };
             for (let f in fStats) localRules.fib[f] = { total: fStats[f].total, hits: fStats[f].hits };
@@ -502,7 +504,7 @@
         else if (fileName.includes('539')) allowedMultiples = [7, 8, 9];
         else if (fileName.includes('Ghana')) allowedMultiples = [6, 8, 13];
 
-        // 2. 倍數拖牌判斷 (限定彩種專屬號碼)
+        // 2. 倍數拖牌判斷
         nums.forEach(n => {
             if (allowedMultiples.includes(n)) {
                 let r = currentRules.multi[n];
@@ -533,8 +535,8 @@
         // 3. 數學特徵拖牌判斷 (天天樂限定)
         if (isFan) {
             nums.forEach(n => {
-                // 質數拖牌
-                if (isPrime(n) && (!excludeZero || n >= 10)) {
+                // 質數拖牌 (限定 13, 17)
+                if (ALLOWED_PRIME_TRIGGERS.includes(n)) {
                     let r = currentRules.prime[n];
                     if (r && r.total >= 5) {
                         let hitsArr = [];
@@ -558,8 +560,8 @@
                     }
                 }
                 
-                // 費氏拖牌
-                if (FIBONACCI.includes(n) && (!excludeZero || n >= 10)) {
+                // 費氏拖牌 (限定 08)
+                if (ALLOWED_FIB_TRIGGERS.includes(n)) {
                     let r = currentRules.fib[n];
                     if (r && r.total >= 5) {
                         let hitsArr = [];
@@ -583,8 +585,8 @@
                     }
                 }
                 
-                // 平方拖牌
-                if (SQUARES.includes(n) && (!excludeZero || n >= 10)) {
+                // 平方拖牌 (限定 09)
+                if (ALLOWED_SQ_TRIGGERS.includes(n)) {
                     let r = currentRules.sq[n];
                     if (r && r.total >= 5) {
                         let hitsArr = [];
@@ -773,10 +775,13 @@
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
+            let targetLabel = (t.type.includes('倍數') || t.type.includes('質數') || t.type.includes('費氏') || t.type.includes('平方')) 
+                              ? t.targetLabel 
+                              : `拖 ${t.targetTail} 尾`;
             return `
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 勝率</div>
-                <h3>${t.type} <span class="target-tail">${t.targetLabel}</span></h3>
+                <h3>${t.type} <span class="target-tail">${targetLabel}</span></h3>
                 <div class="pred-info">觸發日: ${t.date} | 養牌第 ${t.age} 期</div>
                 <span class="nums-highlight">${t.targetDisplay.join(', ')}</span>
             </div>`
@@ -844,24 +849,27 @@
                 eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無訊號</div>`;
             } else {
                 eventsHtml = d.events.map(e => {
+                    let targetLabel = (e.pattern.type.includes('倍數') || e.pattern.type.includes('質數') || e.pattern.type.includes('費氏') || e.pattern.type.includes('平方')) 
+                                      ? e.pattern.targetLabel 
+                                      : `拖 ${e.pattern.targetTail} 尾`;
                     if (e.type === 'trigger') {
                         return `
                         <div class="trigger-detail">
-                            <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">${e.pattern.targetLabel}</span></div>
+                            <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">${targetLabel}</span></div>
                             <div class="trigger-nums">預測號碼: ${e.pattern.targetDisplay.join(', ')}</div>
                             <div class="trigger-status">👉 開始養牌三期</div>
                         </div>`;
                     } else if (e.type === 'hit') {
                         return `
                         <div class="hit-detail">
-                            <div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">${e.pattern.targetLabel}</span></div>
+                            <div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">${targetLabel}</span></div>
                             <div class="hit-nums">命中號碼: ${e.hitNums.map(fNum).join(', ')}</div>
                             <div class="hit-status">🎯 觸發日: ${e.triggerDate} (於第 ${e.hitPeriod} 期獲利)</div>
                         </div>`;
                     } else if (e.type === 'miss') {
                         return `
                         <div class="miss-detail">
-                            <div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">${e.pattern.targetLabel}</span></div>
+                            <div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">${targetLabel}</span></div>
                             <div class="miss-nums">預測號碼: ${e.pattern.targetDisplay.join(', ')}</div>
                             <div class="miss-status">❌ 養牌三期未中 (觸發日: ${e.triggerDate})</div>
                         </div>`;
