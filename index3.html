@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統 (拖尾)</title>
+    <title>三期牌分析系統(拖尾) - 穩定圖表版</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -104,7 +104,7 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>三期牌分析系統 (拖尾)</h1>
+            <h1>三期牌分析系統(拖尾)</h1>
         </div>
     </div>
     
@@ -159,7 +159,7 @@
 <script>
     let parsedData = [];
     let maxNum = 39;
-    let pnlChartInstance = null; // 存放圖表實例
+    let pnlChartInstance = null;
 
     const COST_PER_BALL = 38;
     const REBATE_RATE = 0.2107;
@@ -168,7 +168,6 @@
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
-    // 載入設定記憶
     function loadSettings() {
         if (localStorage.getItem('csvSelect')) document.getElementById('csvSelect').value = localStorage.getItem('csvSelect');
         if (localStorage.getItem('excludeZeroHead') !== null) document.getElementById('excludeZeroHead').checked = localStorage.getItem('excludeZeroHead') === 'true';
@@ -176,7 +175,6 @@
         if (localStorage.getItem('betMultiplier')) document.getElementById('betMultiplier').value = localStorage.getItem('betMultiplier');
     }
 
-    // 儲存設定記憶
     function saveSettings() {
         localStorage.setItem('csvSelect', document.getElementById('csvSelect').value);
         localStorage.setItem('excludeZeroHead', document.getElementById('excludeZeroHead').checked);
@@ -195,7 +193,6 @@
         return omit;
     }
 
-    // 取得月份字串 (2026-MM) 用於分組
     function getMonthString(dateStr) {
         let dateWithYear = dateStr.includes('2026') ? dateStr : `2026/${dateStr}`;
         let normalized = dateWithYear.replace(/\//g, '-');
@@ -223,7 +220,6 @@
         return `${fmt(mon)} ~ ${fmt(sun)}`;
     }
 
-    // 月份折疊切換功能
     function toggleMonth(id) {
         let el = document.getElementById(id);
         let icon = document.getElementById('icon-' + id);
@@ -236,7 +232,7 @@
         }
     }
 
-    function getIronBalls(tail, currentIndex) {
+    function getIronBalls(targetTail, currentIndex) {
         let balls = [];
         let maxHeads = Math.floor(maxNum / 10);
         let excludeZero = document.getElementById('excludeZeroHead').checked;
@@ -244,18 +240,20 @@
         let selectedBallCount = parseInt(document.getElementById('ballCountSelect').value) || 2;
 
         for(let h = startH; h <= maxHeads; h++) {
-            let n = h * 10 + tail;
+            let n = h * 10 + targetTail;
             if(n > 0 && n <= maxNum) balls.push(n);
         }
 
         if (currentIndex !== undefined && balls.length > selectedBallCount) {
             let counts = {};
             balls.forEach(b => counts[b] = 0);
+            
             for(let k = 0; k <= currentIndex; k++) {
                 parsedData[k].nums.forEach(n => {
                     if (counts[n] !== undefined) counts[n]++;
                 });
             }
+            
             balls.sort((a, b) => counts[b] - counts[a]);
             balls = balls.slice(0, selectedBallCount);
             balls.sort((a, b) => a - b);
@@ -300,30 +298,40 @@
 
     function getRulesForDay(currentIndex) {
         let dStats = {}; let tStats = {};
+        let mStats = {}; // 存放倍數拖牌數據
+        
         for (let i = 0; i < 10; i++) {
             dStats[i] = { total: 0, hits: new Array(10).fill(0) };
             tStats[i] = { total: 0, hits: new Array(10).fill(0) };
+        }
+        // 初始化倍數統計陣列 (限制在 5 ~ maxNum/2)
+        for (let i = 5; i <= Math.floor(maxNum / 2); i++) {
+            mStats[i] = { total: 0, hits: new Array(maxNum + 1).fill(0) };
         }
 
         let excludeZero = document.getElementById('excludeZeroHead').checked;
 
         for (let k = 0; k <= currentIndex; k++) {
-            let tails = parsedData[k].nums.map(n => n % 10);
+            let nums = parsedData[k].nums;
+            let tails = nums.map(n => n % 10);
             let counts = new Array(10).fill(0);
             tails.forEach(t => counts[t]++);
 
             let next3ValidTails = new Set();
+            let next3ValidNums = new Set();
 
             for (let j = 1; j <= 3; j++) {
                 if (k + j <= currentIndex) { 
                     parsedData[k + j].nums.forEach(n => {
                         if (!excludeZero || n >= 10) {
                             next3ValidTails.add(n % 10); 
+                            next3ValidNums.add(n);
                         }
                     });
                 }
             }
 
+            // 尾數拖牌統計
             for (let t = 0; t < 10; t++) {
                 if (counts[t] >= 2) {
                     dStats[t].total++;
@@ -334,9 +342,25 @@
                     next3ValidTails.forEach(nt => tStats[t].hits[nt]++);
                 }
             }
+            
+            // 倍數拖牌統計
+            nums.forEach(n => {
+                if (n >= 5 && n <= Math.floor(maxNum / 2)) {
+                    if (!excludeZero || n >= 10) {
+                        mStats[n].total++;
+                        for (let m = n * 2; m <= maxNum; m += n) {
+                            if (next3ValidNums.has(m)) {
+                                mStats[n].hits[m]++;
+                            }
+                        }
+                    }
+                }
+            });
         }
 
-        let localRules = { double: {}, triple: {} };
+        let localRules = { double: {}, triple: {}, multi: {} };
+        
+        // 結算尾數拖牌規則
         for (let t = 0; t < 10; t++) {
             let bestDTail = -1, maxDHit = -1;
             for (let nt = 0; nt < 10; nt++) {
@@ -351,6 +375,16 @@
             localRules.triple[t] = { targetTail: bestTTail, score: tStats[t].total > 0 ? (maxTHit / tStats[t].total * 100) : 0, total: tStats[t].total };
         }
         
+        // 結算倍數拖牌規則
+        for (let n = 5; n <= Math.floor(maxNum / 2); n++) {
+            if (!excludeZero || n >= 10) {
+                localRules.multi[n] = {
+                    total: mStats[n].total,
+                    hits: mStats[n].hits
+                };
+            }
+        }
+        
         return localRules;
     }
 
@@ -359,16 +393,66 @@
         let tails = nums.map(n => n % 10);
         let counts = new Array(10).fill(0);
         tails.forEach(t => counts[t]++);
+        
+        let excludeZero = document.getElementById('excludeZeroHead').checked;
+        let selectedBallCount = parseInt(document.getElementById('ballCountSelect').value) || 2;
 
+        // 雙尾、三尾判斷
         for (let t = 0; t < 10; t++) {
             if (counts[t] >= 3) {
                 let r = currentRules.triple[t];
-                if(r && r.total >= 2) patterns.push({ type: `三尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score, total: r.total });
+                if(r && r.total >= 2) {
+                    patterns.push({ 
+                        type: `三尾拖牌 (${t}尾)`, 
+                        targetTail: r.targetTail, 
+                        target: getIronBalls(r.targetTail, currentIndex), 
+                        score: r.score, 
+                        total: r.total 
+                    });
+                }
             } else if (counts[t] >= 2) {
                 let r = currentRules.double[t];
-                if(r && r.total >= 5) patterns.push({ type: `雙尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score, total: r.total });
+                if(r && r.total >= 5) {
+                    patterns.push({ 
+                        type: `雙尾拖牌 (${t}尾)`, 
+                        targetTail: r.targetTail, 
+                        target: getIronBalls(r.targetTail, currentIndex), 
+                        score: r.score, 
+                        total: r.total 
+                    });
+                }
             }
         }
+        
+        // 倍數拖牌判斷
+        nums.forEach(n => {
+            if (n >= 5 && n <= Math.floor(maxNum / 2)) {
+                if (!excludeZero || n >= 10) {
+                    let r = currentRules.multi[n];
+                    if (r && r.total >= 5) {
+                        let multiples = [];
+                        for (let m = n * 2; m <= maxNum; m += n) {
+                            if (!excludeZero || m >= 10) {
+                                multiples.push({ val: m, h: r.hits[m] });
+                            }
+                        }
+                        if (multiples.length > 0) {
+                            multiples.sort((a, b) => b.h - a.h);
+                            let targets = multiples.slice(0, selectedBallCount).map(x => x.val).sort((a, b) => a - b);
+                            let bestScore = r.total > 0 ? (multiples[0].h / r.total * 100) : 0;
+                            
+                            patterns.push({
+                                type: `倍數拖牌 (${fNum(n)} 拖倍數)`,
+                                targetTail: `倍數群`, 
+                                target: targets,
+                                score: bestScore,
+                                total: r.total
+                            });
+                        }
+                    }
+                }
+            }
+        });
         
         patterns.forEach(p => {
             p.targetDisplay = p.target.map(n => `${fNum(n)}(${getOmit(n, currentIndex)}期未開)`);
@@ -486,7 +570,6 @@
             });
         }
 
-        // 渲染圖表
         let chartLabels = [];
         let chartData = [];
         let cumulativePnL = 0;
@@ -534,10 +617,11 @@
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
+            let targetLabel = t.type.includes('倍數') ? t.targetTail : `拖 ${t.targetTail} 尾`;
             return `
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 勝率</div>
-                <h3>${t.type} <span class="target-tail">拖 ${t.targetTail} 尾</span></h3>
+                <h3>${t.type} <span class="target-tail">${targetLabel}</span></h3>
                 <div class="pred-info">觸發日: ${t.date} | 養牌第 ${t.age} 期</div>
                 <span class="nums-highlight">${t.targetDisplay.join(', ')}</span>
             </div>`
@@ -605,24 +689,25 @@
                 eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無訊號</div>`;
             } else {
                 eventsHtml = d.events.map(e => {
+                    let targetLabel = e.pattern.type.includes('倍數') ? e.pattern.targetTail : `拖 ${e.pattern.targetTail} 尾`;
                     if (e.type === 'trigger') {
                         return `
                         <div class="trigger-detail">
-                            <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
+                            <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">${targetLabel}</span></div>
                             <div class="trigger-nums">預測號碼: ${e.pattern.targetDisplay.join(', ')}</div>
                             <div class="trigger-status">👉 開始養牌三期</div>
                         </div>`;
                     } else if (e.type === 'hit') {
                         return `
                         <div class="hit-detail">
-                            <div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
+                            <div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">${targetLabel}</span></div>
                             <div class="hit-nums">命中號碼: ${e.hitNums.map(fNum).join(', ')}</div>
                             <div class="hit-status">🎯 觸發日: ${e.triggerDate} (於第 ${e.hitPeriod} 期獲利)</div>
                         </div>`;
                     } else if (e.type === 'miss') {
                         return `
                         <div class="miss-detail">
-                            <div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
+                            <div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">${targetLabel}</span></div>
                             <div class="miss-nums">預測號碼: ${e.pattern.targetDisplay.join(', ')}</div>
                             <div class="miss-status">❌ 養牌三期未中 (觸發日: ${e.triggerDate})</div>
                         </div>`;
@@ -660,7 +745,6 @@
             </div>`;
     }
 
-    // 初始化：載入設定後，再執行讀取資料
     window.onload = () => {
         loadSettings();
         processData();
