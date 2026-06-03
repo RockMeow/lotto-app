@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統</title>
+    <title>三期牌分析系統(拖尾) - 穩定圖表版</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -104,7 +104,7 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>三期牌分析系統</h1>
+            <h1>三期牌分析系統(拖尾)</h1>
         </div>
     </div>
     
@@ -168,7 +168,6 @@
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
-    // 載入設定記憶
     function loadSettings() {
         if (localStorage.getItem('csvSelect')) document.getElementById('csvSelect').value = localStorage.getItem('csvSelect');
         if (localStorage.getItem('excludeZeroHead') !== null) document.getElementById('excludeZeroHead').checked = localStorage.getItem('excludeZeroHead') === 'true';
@@ -176,7 +175,6 @@
         if (localStorage.getItem('betMultiplier')) document.getElementById('betMultiplier').value = localStorage.getItem('betMultiplier');
     }
 
-    // 儲存設定記憶
     function saveSettings() {
         localStorage.setItem('csvSelect', document.getElementById('csvSelect').value);
         localStorage.setItem('excludeZeroHead', document.getElementById('excludeZeroHead').checked);
@@ -234,7 +232,6 @@
         }
     }
 
-    // 退回最穩定的「全域歷史開出次數」挑選邏輯
     function getIronBalls(targetTail, currentIndex) {
         let balls = [];
         let maxHeads = Math.floor(maxNum / 10);
@@ -251,17 +248,15 @@
             let counts = {};
             balls.forEach(b => counts[b] = 0);
             
-            // 統計從第 0 期到當前觸發期數，這些號碼總共出現過幾次
             for(let k = 0; k <= currentIndex; k++) {
                 parsedData[k].nums.forEach(n => {
                     if (counts[n] !== undefined) counts[n]++;
                 });
             }
             
-            // 依照開出次數由高到低排序，選出指定數量的最熱門號碼
             balls.sort((a, b) => counts[b] - counts[a]);
             balls = balls.slice(0, selectedBallCount);
-            balls.sort((a, b) => a - b); // 依數字小到大排列方便閱讀
+            balls.sort((a, b) => a - b);
         }
         return balls;
     }
@@ -303,20 +298,39 @@
 
     function getRulesForDay(currentIndex) {
         let dStats = {}; let tStats = {};
+        let dSeqStats = {}; let tSeqStats = {};
+        
         for (let i = 0; i < 10; i++) {
             dStats[i] = { total: 0, hits: new Array(10).fill(0) };
             tStats[i] = { total: 0, hits: new Array(10).fill(0) };
+        }
+        for (let i = 1; i <= maxNum; i++) {
+            dSeqStats[i] = { total: 0, hits: new Array(10).fill(0) };
+            tSeqStats[i] = { total: 0, hits: new Array(10).fill(0) };
         }
 
         let excludeZero = document.getElementById('excludeZeroHead').checked;
 
         for (let k = 0; k <= currentIndex; k++) {
-            let tails = parsedData[k].nums.map(n => n % 10);
+            let nums = parsedData[k].nums;
+            let tails = nums.map(n => n % 10);
             let counts = new Array(10).fill(0);
             tails.forEach(t => counts[t]++);
 
-            let next3ValidTails = new Set();
+            // 尋找二連號、三連號
+            let pairs = [];
+            let triplets = [];
+            for (let i = 0; i < nums.length; i++) {
+                let n = nums[i];
+                if (nums.includes(n + 1)) {
+                    pairs.push(n);
+                    if (nums.includes(n + 2)) {
+                        triplets.push(n);
+                    }
+                }
+            }
 
+            let next3ValidTails = new Set();
             for (let j = 1; j <= 3; j++) {
                 if (k + j <= currentIndex) { 
                     parsedData[k + j].nums.forEach(n => {
@@ -327,6 +341,7 @@
                 }
             }
 
+            // 同尾統計
             for (let t = 0; t < 10; t++) {
                 if (counts[t] >= 2) {
                     dStats[t].total++;
@@ -337,9 +352,21 @@
                     next3ValidTails.forEach(nt => tStats[t].hits[nt]++);
                 }
             }
+
+            // 連號統計
+            pairs.forEach(p => {
+                dSeqStats[p].total++;
+                next3ValidTails.forEach(nt => dSeqStats[p].hits[nt]++);
+            });
+            triplets.forEach(p => {
+                tSeqStats[p].total++;
+                next3ValidTails.forEach(nt => tSeqStats[p].hits[nt]++);
+            });
         }
 
-        let localRules = { double: {}, triple: {} };
+        let localRules = { double: {}, triple: {}, doubleSeq: {}, tripleSeq: {} };
+        
+        // 結算尾數最高機率
         for (let t = 0; t < 10; t++) {
             let bestDTail = -1, maxDHit = -1;
             for (let nt = 0; nt < 10; nt++) {
@@ -353,6 +380,21 @@
             }
             localRules.triple[t] = { targetTail: bestTTail, score: tStats[t].total > 0 ? (maxTHit / tStats[t].total * 100) : 0, total: tStats[t].total };
         }
+
+        // 結算連號最高機率
+        for (let n = 1; n <= maxNum; n++) {
+            let bestDSqTail = -1, maxDSqHit = -1;
+            for (let nt = 0; nt < 10; nt++) {
+                if (dSeqStats[n].hits[nt] > maxDSqHit) { maxDSqHit = dSeqStats[n].hits[nt]; bestDSqTail = nt; }
+            }
+            localRules.doubleSeq[n] = { targetTail: bestDSqTail, score: dSeqStats[n].total > 0 ? (maxDSqHit / dSeqStats[n].total * 100) : 0, total: dSeqStats[n].total };
+
+            let bestTSqTail = -1, maxTSqHit = -1;
+            for (let nt = 0; nt < 10; nt++) {
+                if (tSeqStats[n].hits[nt] > maxTSqHit) { maxTSqHit = tSeqStats[n].hits[nt]; bestTSqTail = nt; }
+            }
+            localRules.tripleSeq[n] = { targetTail: bestTSqTail, score: tSeqStats[n].total > 0 ? (maxTSqHit / tSeqStats[n].total * 100) : 0, total: tSeqStats[n].total };
+        }
         
         return localRules;
     }
@@ -363,10 +405,22 @@
         let counts = new Array(10).fill(0);
         tails.forEach(t => counts[t]++);
 
+        let pairs = [];
+        let triplets = [];
+        for (let i = 0; i < nums.length; i++) {
+            let n = nums[i];
+            if (nums.includes(n + 1)) {
+                pairs.push(n);
+                if (nums.includes(n + 2)) {
+                    triplets.push(n);
+                }
+            }
+        }
+
+        // 雙尾、三尾判斷
         for (let t = 0; t < 10; t++) {
             if (counts[t] >= 3) {
                 let r = currentRules.triple[t];
-                // 精準度條件：歷史至少觸發過 2 次
                 if(r && r.total >= 2) {
                     patterns.push({ 
                         type: `三尾拖牌 (${t}尾)`, 
@@ -378,7 +432,6 @@
                 }
             } else if (counts[t] >= 2) {
                 let r = currentRules.double[t];
-                // 精準度條件：歷史至少觸發過 5 次
                 if(r && r.total >= 5) {
                     patterns.push({ 
                         type: `雙尾拖牌 (${t}尾)`, 
@@ -390,6 +443,33 @@
                 }
             }
         }
+
+        // 連號判斷
+        pairs.forEach(n => {
+            let r = currentRules.doubleSeq[n];
+            if(r && r.total >= 5) {
+                patterns.push({ 
+                    type: `二連號 (${fNum(n)},${fNum(n+1)})`, 
+                    targetTail: r.targetTail, 
+                    target: getIronBalls(r.targetTail, currentIndex), 
+                    score: r.score, 
+                    total: r.total 
+                });
+            }
+        });
+
+        triplets.forEach(n => {
+            let r = currentRules.tripleSeq[n];
+            if(r && r.total >= 2) {
+                patterns.push({ 
+                    type: `三連號 (${fNum(n)},${fNum(n+1)},${fNum(n+2)})`, 
+                    targetTail: r.targetTail, 
+                    target: getIronBalls(r.targetTail, currentIndex), 
+                    score: r.score, 
+                    total: r.total 
+                });
+            }
+        });
         
         patterns.forEach(p => {
             p.targetDisplay = p.target.map(n => `${fNum(n)}(${getOmit(n, currentIndex)}期未開)`);
@@ -473,7 +553,7 @@
                     let playIndex = i + j;
                     if (playIndex < parsedData.length) {
                         let numBets = p.target.length;
-                        let periodCostPerBall = baseCostPerBall * j; // 第 j 期乘上 j 倍
+                        let periodCostPerBall = baseCostPerBall * j;
                         let costAmount = numBets * periodCostPerBall;
                         let rebateAmount = costAmount * REBATE_RATE;
                         
