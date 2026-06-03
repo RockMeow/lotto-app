@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統 (拖尾)</title>
+    <title>三期牌分析系統</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -104,7 +104,7 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>三期牌分析系統 (拖尾)</h1>
+            <h1>三期牌分析系統</h1>
         </div>
     </div>
     
@@ -159,7 +159,7 @@
 <script>
     let parsedData = [];
     let maxNum = 39;
-    let pnlChartInstance = null; // 存放圖表實例
+    let pnlChartInstance = null;
 
     const COST_PER_BALL = 38;
     const REBATE_RATE = 0.2107;
@@ -195,7 +195,6 @@
         return omit;
     }
 
-    // 取得月份字串 (2026-MM) 用於分組
     function getMonthString(dateStr) {
         let dateWithYear = dateStr.includes('2026') ? dateStr : `2026/${dateStr}`;
         let normalized = dateWithYear.replace(/\//g, '-');
@@ -223,7 +222,6 @@
         return `${fmt(mon)} ~ ${fmt(sun)}`;
     }
 
-    // 月份折疊切換功能
     function toggleMonth(id) {
         let el = document.getElementById(id);
         let icon = document.getElementById('icon-' + id);
@@ -236,7 +234,7 @@
         }
     }
 
-    function getIronBalls(tail, currentIndex) {
+    function getIronBalls(targetTail, currentIndex) {
         let balls = [];
         let maxHeads = Math.floor(maxNum / 10);
         let excludeZero = document.getElementById('excludeZeroHead').checked;
@@ -244,18 +242,20 @@
         let selectedBallCount = parseInt(document.getElementById('ballCountSelect').value) || 2;
 
         for(let h = startH; h <= maxHeads; h++) {
-            let n = h * 10 + tail;
+            let n = h * 10 + targetTail;
             if(n > 0 && n <= maxNum) balls.push(n);
         }
 
         if (currentIndex !== undefined && balls.length > selectedBallCount) {
             let counts = {};
             balls.forEach(b => counts[b] = 0);
+            
             for(let k = 0; k <= currentIndex; k++) {
                 parsedData[k].nums.forEach(n => {
                     if (counts[n] !== undefined) counts[n]++;
                 });
             }
+            
             balls.sort((a, b) => counts[b] - counts[a]);
             balls = balls.slice(0, selectedBallCount);
             balls.sort((a, b) => a - b);
@@ -300,17 +300,25 @@
 
     function getRulesForDay(currentIndex) {
         let dStats = {}; let tStats = {};
+        let dhStats = {}; let thStats = {};
         for (let i = 0; i < 10; i++) {
             dStats[i] = { total: 0, hits: new Array(10).fill(0) };
             tStats[i] = { total: 0, hits: new Array(10).fill(0) };
+        }
+        for (let i = 0; i < 5; i++) {
+            dhStats[i] = { total: 0, hits: new Array(10).fill(0) };
+            thStats[i] = { total: 0, hits: new Array(10).fill(0) };
         }
 
         let excludeZero = document.getElementById('excludeZeroHead').checked;
 
         for (let k = 0; k <= currentIndex; k++) {
             let tails = parsedData[k].nums.map(n => n % 10);
+            let heads = parsedData[k].nums.map(n => Math.floor(n / 10));
             let counts = new Array(10).fill(0);
+            let headCounts = new Array(5).fill(0);
             tails.forEach(t => counts[t]++);
+            heads.forEach(h => headCounts[h]++);
 
             let next3ValidTails = new Set();
 
@@ -324,6 +332,7 @@
                 }
             }
 
+            // 統計尾數拖牌
             for (let t = 0; t < 10; t++) {
                 if (counts[t] >= 2) {
                     dStats[t].total++;
@@ -334,9 +343,23 @@
                     next3ValidTails.forEach(nt => tStats[t].hits[nt]++);
                 }
             }
+            
+            // 統計頭數拖牌
+            for (let h = 0; h < 5; h++) {
+                if (excludeZero && h === 0) continue;
+                if (headCounts[h] >= 2) {
+                    dhStats[h].total++;
+                    next3ValidTails.forEach(nt => dhStats[h].hits[nt]++);
+                }
+                if (headCounts[h] >= 3) {
+                    thStats[h].total++;
+                    next3ValidTails.forEach(nt => thStats[h].hits[nt]++);
+                }
+            }
         }
 
-        let localRules = { double: {}, triple: {} };
+        let localRules = { double: {}, triple: {}, doubleHead: {}, tripleHead: {} };
+        // 結算尾數拖牌最高機率
         for (let t = 0; t < 10; t++) {
             let bestDTail = -1, maxDHit = -1;
             for (let nt = 0; nt < 10; nt++) {
@@ -351,22 +374,88 @@
             localRules.triple[t] = { targetTail: bestTTail, score: tStats[t].total > 0 ? (maxTHit / tStats[t].total * 100) : 0, total: tStats[t].total };
         }
         
+        // 結算頭數拖牌最高機率
+        for (let h = 0; h < 5; h++) {
+            let bestDHTail = -1, maxDHHit = -1;
+            for (let nt = 0; nt < 10; nt++) {
+                if (dhStats[h].hits[nt] > maxDHHit) { maxDHHit = dhStats[h].hits[nt]; bestDHTail = nt; }
+            }
+            localRules.doubleHead[h] = { targetTail: bestDHTail, score: dhStats[h].total > 0 ? (maxDHHit / dhStats[h].total * 100) : 0, total: dhStats[h].total };
+
+            let bestTHTail = -1, maxTHHit = -1;
+            for (let nt = 0; nt < 10; nt++) {
+                if (thStats[h].hits[nt] > maxTHHit) { maxTHHit = thStats[h].hits[nt]; bestTHTail = nt; }
+            }
+            localRules.tripleHead[h] = { targetTail: bestTHTail, score: thStats[h].total > 0 ? (maxTHHit / thStats[h].total * 100) : 0, total: thStats[h].total };
+        }
+        
         return localRules;
     }
 
     function getSmartPatterns(nums, currentRules, currentIndex) {
         let patterns = [];
         let tails = nums.map(n => n % 10);
+        let heads = nums.map(n => Math.floor(n / 10));
         let counts = new Array(10).fill(0);
+        let headCounts = new Array(5).fill(0);
         tails.forEach(t => counts[t]++);
+        heads.forEach(h => headCounts[h]++);
+        
+        let excludeZero = document.getElementById('excludeZeroHead').checked;
 
+        // 判斷尾數拖牌
         for (let t = 0; t < 10; t++) {
             if (counts[t] >= 3) {
                 let r = currentRules.triple[t];
-                if(r && r.total >= 2) patterns.push({ type: `三尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score, total: r.total });
+                if(r && r.total >= 2) {
+                    patterns.push({ 
+                        type: `三尾拖牌 (${t}尾)`, 
+                        targetTail: r.targetTail, 
+                        target: getIronBalls(r.targetTail, currentIndex), 
+                        score: r.score, 
+                        total: r.total 
+                    });
+                }
             } else if (counts[t] >= 2) {
                 let r = currentRules.double[t];
-                if(r && r.total >= 5) patterns.push({ type: `雙尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score, total: r.total });
+                if(r && r.total >= 5) {
+                    patterns.push({ 
+                        type: `雙尾拖牌 (${t}尾)`, 
+                        targetTail: r.targetTail, 
+                        target: getIronBalls(r.targetTail, currentIndex), 
+                        score: r.score, 
+                        total: r.total 
+                    });
+                }
+            }
+        }
+        
+        // 判斷頭數拖牌
+        for (let h = 0; h < 5; h++) {
+            if (excludeZero && h === 0) continue;
+            
+            if (headCounts[h] >= 3) {
+                let r = currentRules.tripleHead[h];
+                if(r && r.total >= 2) {
+                    patterns.push({ 
+                        type: `三頭拖牌 (${h}頭)`, 
+                        targetTail: r.targetTail, 
+                        target: getIronBalls(r.targetTail, currentIndex), 
+                        score: r.score, 
+                        total: r.total 
+                    });
+                }
+            } else if (headCounts[h] >= 2) {
+                let r = currentRules.doubleHead[h];
+                if(r && r.total >= 5) {
+                    patterns.push({ 
+                        type: `雙頭拖牌 (${h}頭)`, 
+                        targetTail: r.targetTail, 
+                        target: getIronBalls(r.targetTail, currentIndex), 
+                        score: r.score, 
+                        total: r.total 
+                    });
+                }
             }
         }
         
@@ -486,7 +575,6 @@
             });
         }
 
-        // 渲染圖表
         let chartLabels = [];
         let chartData = [];
         let cumulativePnL = 0;
@@ -654,13 +742,12 @@
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
             💡 <b>歷史結算 (動態滾動回測)：</b><br>
-            共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，命中率 <b>${hitRate}%</b><br>
+            共掃描 <b>${stats.total}</b> 組訊號，命中 <b>${stats.hit}</b> 組，精準率 <b>${hitRate}%</b><br>
             <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #b3e5fc; font-size: 0.95rem;">
                 💰 <b>歷史總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
             </div>`;
     }
 
-    // 初始化：載入設定後，再執行讀取資料
     window.onload = () => {
         loadSettings();
         processData();
