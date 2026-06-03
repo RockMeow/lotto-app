@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統</title>
+    <title>三期牌分析系統(拖尾) - 穩定圖表版</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -104,7 +104,7 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>三期牌分析系統</h1>
+            <h1>三期牌分析系統(拖尾)</h1>
         </div>
     </div>
     
@@ -234,6 +234,7 @@
         }
     }
 
+    // 退回最穩定的「全域歷史開出次數」挑選邏輯
     function getIronBalls(targetTail, currentIndex) {
         let balls = [];
         let maxHeads = Math.floor(maxNum / 10);
@@ -250,15 +251,17 @@
             let counts = {};
             balls.forEach(b => counts[b] = 0);
             
+            // 統計從第 0 期到當前觸發期數，這些號碼總共出現過幾次
             for(let k = 0; k <= currentIndex; k++) {
                 parsedData[k].nums.forEach(n => {
                     if (counts[n] !== undefined) counts[n]++;
                 });
             }
             
+            // 依照開出次數由高到低排序，選出指定數量的最熱門號碼
             balls.sort((a, b) => counts[b] - counts[a]);
             balls = balls.slice(0, selectedBallCount);
-            balls.sort((a, b) => a - b);
+            balls.sort((a, b) => a - b); // 依數字小到大排列方便閱讀
         }
         return balls;
     }
@@ -300,25 +303,17 @@
 
     function getRulesForDay(currentIndex) {
         let dStats = {}; let tStats = {};
-        let dhStats = {}; let thStats = {};
         for (let i = 0; i < 10; i++) {
             dStats[i] = { total: 0, hits: new Array(10).fill(0) };
             tStats[i] = { total: 0, hits: new Array(10).fill(0) };
-        }
-        for (let i = 0; i < 5; i++) {
-            dhStats[i] = { total: 0, hits: new Array(10).fill(0) };
-            thStats[i] = { total: 0, hits: new Array(10).fill(0) };
         }
 
         let excludeZero = document.getElementById('excludeZeroHead').checked;
 
         for (let k = 0; k <= currentIndex; k++) {
             let tails = parsedData[k].nums.map(n => n % 10);
-            let heads = parsedData[k].nums.map(n => Math.floor(n / 10));
             let counts = new Array(10).fill(0);
-            let headCounts = new Array(5).fill(0);
             tails.forEach(t => counts[t]++);
-            heads.forEach(h => headCounts[h]++);
 
             let next3ValidTails = new Set();
 
@@ -332,7 +327,6 @@
                 }
             }
 
-            // 統計尾數拖牌
             for (let t = 0; t < 10; t++) {
                 if (counts[t] >= 2) {
                     dStats[t].total++;
@@ -343,23 +337,9 @@
                     next3ValidTails.forEach(nt => tStats[t].hits[nt]++);
                 }
             }
-            
-            // 統計頭數拖牌
-            for (let h = 0; h < 5; h++) {
-                if (excludeZero && h === 0) continue;
-                if (headCounts[h] >= 2) {
-                    dhStats[h].total++;
-                    next3ValidTails.forEach(nt => dhStats[h].hits[nt]++);
-                }
-                if (headCounts[h] >= 3) {
-                    thStats[h].total++;
-                    next3ValidTails.forEach(nt => thStats[h].hits[nt]++);
-                }
-            }
         }
 
-        let localRules = { double: {}, triple: {}, doubleHead: {}, tripleHead: {} };
-        // 結算尾數拖牌最高機率
+        let localRules = { double: {}, triple: {} };
         for (let t = 0; t < 10; t++) {
             let bestDTail = -1, maxDHit = -1;
             for (let nt = 0; nt < 10; nt++) {
@@ -374,39 +354,19 @@
             localRules.triple[t] = { targetTail: bestTTail, score: tStats[t].total > 0 ? (maxTHit / tStats[t].total * 100) : 0, total: tStats[t].total };
         }
         
-        // 結算頭數拖牌最高機率
-        for (let h = 0; h < 5; h++) {
-            let bestDHTail = -1, maxDHHit = -1;
-            for (let nt = 0; nt < 10; nt++) {
-                if (dhStats[h].hits[nt] > maxDHHit) { maxDHHit = dhStats[h].hits[nt]; bestDHTail = nt; }
-            }
-            localRules.doubleHead[h] = { targetTail: bestDHTail, score: dhStats[h].total > 0 ? (maxDHHit / dhStats[h].total * 100) : 0, total: dhStats[h].total };
-
-            let bestTHTail = -1, maxTHHit = -1;
-            for (let nt = 0; nt < 10; nt++) {
-                if (thStats[h].hits[nt] > maxTHHit) { maxTHHit = thStats[h].hits[nt]; bestTHTail = nt; }
-            }
-            localRules.tripleHead[h] = { targetTail: bestTHTail, score: thStats[h].total > 0 ? (maxTHHit / thStats[h].total * 100) : 0, total: thStats[h].total };
-        }
-        
         return localRules;
     }
 
     function getSmartPatterns(nums, currentRules, currentIndex) {
         let patterns = [];
         let tails = nums.map(n => n % 10);
-        let heads = nums.map(n => Math.floor(n / 10));
         let counts = new Array(10).fill(0);
-        let headCounts = new Array(5).fill(0);
         tails.forEach(t => counts[t]++);
-        heads.forEach(h => headCounts[h]++);
-        
-        let excludeZero = document.getElementById('excludeZeroHead').checked;
 
-        // 判斷尾數拖牌
         for (let t = 0; t < 10; t++) {
             if (counts[t] >= 3) {
                 let r = currentRules.triple[t];
+                // 精準度條件：歷史至少觸發過 2 次
                 if(r && r.total >= 2) {
                     patterns.push({ 
                         type: `三尾拖牌 (${t}尾)`, 
@@ -418,38 +378,10 @@
                 }
             } else if (counts[t] >= 2) {
                 let r = currentRules.double[t];
+                // 精準度條件：歷史至少觸發過 5 次
                 if(r && r.total >= 5) {
                     patterns.push({ 
                         type: `雙尾拖牌 (${t}尾)`, 
-                        targetTail: r.targetTail, 
-                        target: getIronBalls(r.targetTail, currentIndex), 
-                        score: r.score, 
-                        total: r.total 
-                    });
-                }
-            }
-        }
-        
-        // 判斷頭數拖牌
-        for (let h = 0; h < 5; h++) {
-            if (excludeZero && h === 0) continue;
-            
-            if (headCounts[h] >= 3) {
-                let r = currentRules.tripleHead[h];
-                if(r && r.total >= 2) {
-                    patterns.push({ 
-                        type: `三頭拖牌 (${h}頭)`, 
-                        targetTail: r.targetTail, 
-                        target: getIronBalls(r.targetTail, currentIndex), 
-                        score: r.score, 
-                        total: r.total 
-                    });
-                }
-            } else if (headCounts[h] >= 2) {
-                let r = currentRules.doubleHead[h];
-                if(r && r.total >= 5) {
-                    patterns.push({ 
-                        type: `雙頭拖牌 (${h}頭)`, 
                         targetTail: r.targetTail, 
                         target: getIronBalls(r.targetTail, currentIndex), 
                         score: r.score, 
@@ -541,7 +473,7 @@
                     let playIndex = i + j;
                     if (playIndex < parsedData.length) {
                         let numBets = p.target.length;
-                        let periodCostPerBall = baseCostPerBall * j;
+                        let periodCostPerBall = baseCostPerBall * j; // 第 j 期乘上 j 倍
                         let costAmount = numBets * periodCostPerBall;
                         let rebateAmount = costAmount * REBATE_RATE;
                         
