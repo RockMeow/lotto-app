@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>三期牌分析系統(拖尾) - 穩定圖表版</title>
+    <title>三期牌分析系統(拖尾)</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -159,35 +159,16 @@
 <script>
     let parsedData = [];
     let maxNum = 39;
-    let pnlChartInstance = null;
+    let pnlChartInstance = null; // 存放圖表實例
 
     const COST_PER_BALL = 38;
     const REBATE_RATE = 0.2107;
     const WIN_MULTIPLIER = 5.5789;
 
-    // 數學特徵陣列
-    const FIBONACCI = [1, 2, 3, 5, 8, 13, 21, 34];
-    const SQUARES = [1, 4, 9, 16, 25, 36];
-    
-    // 限定的天天樂高勝率數學觸發號碼
-    const ALLOWED_PRIME_TRIGGERS = [13, 17];
-    const ALLOWED_FIB_TRIGGERS = [8];
-    const ALLOWED_SQ_TRIGGERS = [9];
-
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
-    // 質數判斷函數
-    function isPrime(num) {
-        if (num <= 1) return false;
-        if (num === 2) return true;
-        if (num % 2 === 0) return false;
-        for (let i = 3; i <= Math.sqrt(num); i += 2) {
-            if (num % i === 0) return false;
-        }
-        return true;
-    }
-
+    // 載入設定記憶
     function loadSettings() {
         if (localStorage.getItem('csvSelect')) document.getElementById('csvSelect').value = localStorage.getItem('csvSelect');
         if (localStorage.getItem('excludeZeroHead') !== null) document.getElementById('excludeZeroHead').checked = localStorage.getItem('excludeZeroHead') === 'true';
@@ -195,6 +176,7 @@
         if (localStorage.getItem('betMultiplier')) document.getElementById('betMultiplier').value = localStorage.getItem('betMultiplier');
     }
 
+    // 儲存設定記憶
     function saveSettings() {
         localStorage.setItem('csvSelect', document.getElementById('csvSelect').value);
         localStorage.setItem('excludeZeroHead', document.getElementById('excludeZeroHead').checked);
@@ -213,6 +195,7 @@
         return omit;
     }
 
+    // 取得月份字串 (2026-MM) 用於分組
     function getMonthString(dateStr) {
         let dateWithYear = dateStr.includes('2026') ? dateStr : `2026/${dateStr}`;
         let normalized = dateWithYear.replace(/\//g, '-');
@@ -240,6 +223,7 @@
         return `${fmt(mon)} ~ ${fmt(sun)}`;
     }
 
+    // 月份折疊切換功能
     function toggleMonth(id) {
         let el = document.getElementById(id);
         let icon = document.getElementById('icon-' + id);
@@ -252,7 +236,7 @@
         }
     }
 
-    function getIronBalls(targetTail, currentIndex) {
+    function getIronBalls(tail, currentIndex) {
         let balls = [];
         let maxHeads = Math.floor(maxNum / 10);
         let excludeZero = document.getElementById('excludeZeroHead').checked;
@@ -260,20 +244,18 @@
         let selectedBallCount = parseInt(document.getElementById('ballCountSelect').value) || 2;
 
         for(let h = startH; h <= maxHeads; h++) {
-            let n = h * 10 + targetTail;
+            let n = h * 10 + tail;
             if(n > 0 && n <= maxNum) balls.push(n);
         }
 
         if (currentIndex !== undefined && balls.length > selectedBallCount) {
             let counts = {};
             balls.forEach(b => counts[b] = 0);
-            
             for(let k = 0; k <= currentIndex; k++) {
                 parsedData[k].nums.forEach(n => {
                     if (counts[n] !== undefined) counts[n]++;
                 });
             }
-            
             balls.sort((a, b) => counts[b] - counts[a]);
             balls = balls.slice(0, selectedBallCount);
             balls.sort((a, b) => a - b);
@@ -318,50 +300,19 @@
 
     function getRulesForDay(currentIndex) {
         let dStats = {}; let tStats = {};
-        let mStats = {};
-        let pStats = {}; // 質數
-        let fStats = {}; // 費氏
-        let sStats = {}; // 平方數
-        
         for (let i = 0; i < 10; i++) {
             dStats[i] = { total: 0, hits: new Array(10).fill(0) };
             tStats[i] = { total: 0, hits: new Array(10).fill(0) };
         }
-        for (let i = 1; i <= Math.floor(maxNum / 2); i++) {
-            mStats[i] = { total: 0, hits: new Array(maxNum + 1).fill(0) };
-        }
-        
-        // 僅針對指定的高勝率號碼初始化數學統計陣列
-        ALLOWED_PRIME_TRIGGERS.forEach(i => {
-            pStats[i] = { total: 0, hits: {} };
-            for (let j = 1; j <= maxNum; j++) if (isPrime(j)) pStats[i].hits[j] = 0;
-        });
-        ALLOWED_FIB_TRIGGERS.forEach(i => {
-            fStats[i] = { total: 0, hits: {} };
-            FIBONACCI.forEach(j => fStats[i].hits[j] = 0);
-        });
-        ALLOWED_SQ_TRIGGERS.forEach(i => {
-            sStats[i] = { total: 0, hits: {} };
-            SQUARES.forEach(j => sStats[i].hits[j] = 0);
-        });
 
         let excludeZero = document.getElementById('excludeZeroHead').checked;
-        const fileName = document.getElementById('csvSelect').value;
-        const isFan = fileName.includes('Fan');
-        
-        let allowedMultiples = [];
-        if (isFan) allowedMultiples = [7];
-        else if (fileName.includes('539')) allowedMultiples = [7, 8, 9];
-        else if (fileName.includes('Ghana')) allowedMultiples = [6, 8, 13];
 
         for (let k = 0; k <= currentIndex; k++) {
-            let nums = parsedData[k].nums;
-            let tails = nums.map(n => n % 10);
+            let tails = parsedData[k].nums.map(n => n % 10);
             let counts = new Array(10).fill(0);
             tails.forEach(t => counts[t]++);
 
             let next3ValidTails = new Set();
-            let next3ValidNums = new Set();
 
             for (let j = 1; j <= 3; j++) {
                 if (k + j <= currentIndex) { 
@@ -369,12 +320,10 @@
                         if (!excludeZero || n >= 10) {
                             next3ValidTails.add(n % 10); 
                         }
-                        next3ValidNums.add(n); 
                     });
                 }
             }
 
-            // 1. 尾數拖牌統計
             for (let t = 0; t < 10; t++) {
                 if (counts[t] >= 2) {
                     dStats[t].total++;
@@ -385,50 +334,9 @@
                     next3ValidTails.forEach(nt => tStats[t].hits[nt]++);
                 }
             }
-            
-            // 2. 倍數拖牌統計 (限定彩種專屬號碼)
-            nums.forEach(n => {
-                if (allowedMultiples.includes(n)) {
-                    mStats[n].total++;
-                    for (let m = n * 2; m <= maxNum; m += n) {
-                        if (next3ValidNums.has(m)) {
-                            mStats[n].hits[m]++;
-                        }
-                    }
-                }
-            });
-
-            // 3. 數學特徵拖牌 (天天樂限定，且只觸發指定號碼)
-            if (isFan) {
-                nums.forEach(n => {
-                    // 質數
-                    if (ALLOWED_PRIME_TRIGGERS.includes(n)) {
-                        pStats[n].total++;
-                        next3ValidNums.forEach(nt => {
-                            if (isPrime(nt) && (!excludeZero || nt >= 10)) pStats[n].hits[nt]++;
-                        });
-                    }
-                    // 費氏數列
-                    if (ALLOWED_FIB_TRIGGERS.includes(n)) {
-                        fStats[n].total++;
-                        next3ValidNums.forEach(nt => {
-                            if (FIBONACCI.includes(nt) && (!excludeZero || nt >= 10)) fStats[n].hits[nt]++;
-                        });
-                    }
-                    // 平方數
-                    if (ALLOWED_SQ_TRIGGERS.includes(n)) {
-                        sStats[n].total++;
-                        next3ValidNums.forEach(nt => {
-                            if (SQUARES.includes(nt) && (!excludeZero || nt >= 10)) sStats[n].hits[nt]++;
-                        });
-                    }
-                });
-            }
         }
 
-        let localRules = { double: {}, triple: {}, multi: {}, prime: {}, fib: {}, sq: {} };
-        
-        // 結算尾數拖牌規則
+        let localRules = { double: {}, triple: {} };
         for (let t = 0; t < 10; t++) {
             let bestDTail = -1, maxDHit = -1;
             for (let nt = 0; nt < 10; nt++) {
@@ -443,21 +351,6 @@
             localRules.triple[t] = { targetTail: bestTTail, score: tStats[t].total > 0 ? (maxTHit / tStats[t].total * 100) : 0, total: tStats[t].total };
         }
         
-        // 結算倍數拖牌規則
-        allowedMultiples.forEach(n => {
-            localRules.multi[n] = {
-                total: mStats[n].total,
-                hits: mStats[n].hits
-            };
-        });
-
-        // 結算數學拖牌規則
-        if (isFan) {
-            for (let p in pStats) localRules.prime[p] = { total: pStats[p].total, hits: pStats[p].hits };
-            for (let f in fStats) localRules.fib[f] = { total: fStats[f].total, hits: fStats[f].hits };
-            for (let s in sStats) localRules.sq[s] = { total: sStats[s].total, hits: sStats[s].hits };
-        }
-        
         return localRules;
     }
 
@@ -466,150 +359,15 @@
         let tails = nums.map(n => n % 10);
         let counts = new Array(10).fill(0);
         tails.forEach(t => counts[t]++);
-        
-        let excludeZero = document.getElementById('excludeZeroHead').checked;
-        let selectedBallCount = parseInt(document.getElementById('ballCountSelect').value) || 2;
-        const fileName = document.getElementById('csvSelect').value;
-        const isFan = fileName.includes('Fan');
 
-        // 1. 雙尾、三尾判斷
         for (let t = 0; t < 10; t++) {
             if (counts[t] >= 3) {
                 let r = currentRules.triple[t];
-                if(r && r.total >= 2) {
-                    patterns.push({ 
-                        type: `三尾拖牌 (${t}尾)`, 
-                        targetLabel: `拖 ${r.targetTail} 尾`, 
-                        target: getIronBalls(r.targetTail, currentIndex), 
-                        score: r.score, 
-                        total: r.total 
-                    });
-                }
+                if(r && r.total >= 2) patterns.push({ type: `三尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score, total: r.total });
             } else if (counts[t] >= 2) {
                 let r = currentRules.double[t];
-                if(r && r.total >= 5) {
-                    patterns.push({ 
-                        type: `雙尾拖牌 (${t}尾)`, 
-                        targetLabel: `拖 ${r.targetTail} 尾`, 
-                        target: getIronBalls(r.targetTail, currentIndex), 
-                        score: r.score, 
-                        total: r.total 
-                    });
-                }
+                if(r && r.total >= 5) patterns.push({ type: `雙尾拖牌 (${t}尾)`, targetTail: r.targetTail, target: getIronBalls(r.targetTail, currentIndex), score: r.score, total: r.total });
             }
-        }
-        
-        let allowedMultiples = [];
-        if (isFan) allowedMultiples = [7];
-        else if (fileName.includes('539')) allowedMultiples = [7, 8, 9];
-        else if (fileName.includes('Ghana')) allowedMultiples = [6, 8, 13];
-
-        // 2. 倍數拖牌判斷
-        nums.forEach(n => {
-            if (allowedMultiples.includes(n)) {
-                let r = currentRules.multi[n];
-                if (r && r.total >= 5) {
-                    let multiples = [];
-                    for (let m = n * 2; m <= maxNum; m += n) {
-                        if (!excludeZero || m >= 10) {
-                            multiples.push({ val: m, h: r.hits[m] });
-                        }
-                    }
-                    if (multiples.length > 0) {
-                        multiples.sort((a, b) => b.h - a.h);
-                        let targets = multiples.slice(0, selectedBallCount).map(x => x.val).sort((a, b) => a - b);
-                        let bestScore = r.total > 0 ? (multiples[0].h / r.total * 100) : 0;
-                        
-                        patterns.push({
-                            type: `倍數拖牌 (${fNum(n)} 拖倍數)`,
-                            targetLabel: `倍數群`, 
-                            target: targets,
-                            score: bestScore,
-                            total: r.total
-                        });
-                    }
-                }
-            }
-        });
-
-        // 3. 數學特徵拖牌判斷 (天天樂限定)
-        if (isFan) {
-            nums.forEach(n => {
-                // 質數拖牌 (限定 13, 17)
-                if (ALLOWED_PRIME_TRIGGERS.includes(n)) {
-                    let r = currentRules.prime[n];
-                    if (r && r.total >= 5) {
-                        let hitsArr = [];
-                        for (let target in r.hits) {
-                            let tNum = parseInt(target);
-                            if (!excludeZero || tNum >= 10) hitsArr.push({ val: tNum, h: r.hits[target] });
-                        }
-                        if (hitsArr.length > 0) {
-                            hitsArr.sort((a, b) => b.h - a.h);
-                            let targets = hitsArr.slice(0, selectedBallCount).map(x => x.val).sort((a, b) => a - b);
-                            let bestScore = r.total > 0 ? (hitsArr[0].h / r.total * 100) : 0;
-                            
-                            patterns.push({
-                                type: `質數拖牌 (${fNum(n)} 拖質數)`,
-                                targetLabel: `質數群`,
-                                target: targets,
-                                score: bestScore,
-                                total: r.total
-                            });
-                        }
-                    }
-                }
-                
-                // 費氏拖牌 (限定 08)
-                if (ALLOWED_FIB_TRIGGERS.includes(n)) {
-                    let r = currentRules.fib[n];
-                    if (r && r.total >= 5) {
-                        let hitsArr = [];
-                        for (let target in r.hits) {
-                            let tNum = parseInt(target);
-                            if (!excludeZero || tNum >= 10) hitsArr.push({ val: tNum, h: r.hits[target] });
-                        }
-                        if (hitsArr.length > 0) {
-                            hitsArr.sort((a, b) => b.h - a.h);
-                            let targets = hitsArr.slice(0, selectedBallCount).map(x => x.val).sort((a, b) => a - b);
-                            let bestScore = r.total > 0 ? (hitsArr[0].h / r.total * 100) : 0;
-                            
-                            patterns.push({
-                                type: `費氏拖牌 (${fNum(n)} 拖費氏)`,
-                                targetLabel: `費氏群`,
-                                target: targets,
-                                score: bestScore,
-                                total: r.total
-                            });
-                        }
-                    }
-                }
-                
-                // 平方拖牌 (限定 09)
-                if (ALLOWED_SQ_TRIGGERS.includes(n)) {
-                    let r = currentRules.sq[n];
-                    if (r && r.total >= 5) {
-                        let hitsArr = [];
-                        for (let target in r.hits) {
-                            let tNum = parseInt(target);
-                            if (!excludeZero || tNum >= 10) hitsArr.push({ val: tNum, h: r.hits[target] });
-                        }
-                        if (hitsArr.length > 0) {
-                            hitsArr.sort((a, b) => b.h - a.h);
-                            let targets = hitsArr.slice(0, selectedBallCount).map(x => x.val).sort((a, b) => a - b);
-                            let bestScore = r.total > 0 ? (hitsArr[0].h / r.total * 100) : 0;
-                            
-                            patterns.push({
-                                type: `平方拖牌 (${fNum(n)} 拖平方)`,
-                                targetLabel: `平方群`,
-                                target: targets,
-                                score: bestScore,
-                                total: r.total
-                            });
-                        }
-                    }
-                }
-            });
         }
         
         patterns.forEach(p => {
@@ -728,6 +486,7 @@
             });
         }
 
+        // 渲染圖表
         let chartLabels = [];
         let chartData = [];
         let cumulativePnL = 0;
@@ -775,13 +534,10 @@
         tracking.reverse();
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
-            let targetLabel = (t.type.includes('倍數') || t.type.includes('質數') || t.type.includes('費氏') || t.type.includes('平方')) 
-                              ? t.targetLabel 
-                              : `拖 ${t.targetTail} 尾`;
             return `
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 勝率</div>
-                <h3>${t.type} <span class="target-tail">${targetLabel}</span></h3>
+                <h3>${t.type} <span class="target-tail">拖 ${t.targetTail} 尾</span></h3>
                 <div class="pred-info">觸發日: ${t.date} | 養牌第 ${t.age} 期</div>
                 <span class="nums-highlight">${t.targetDisplay.join(', ')}</span>
             </div>`
@@ -849,27 +605,24 @@
                 eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無訊號</div>`;
             } else {
                 eventsHtml = d.events.map(e => {
-                    let targetLabel = (e.pattern.type.includes('倍數') || e.pattern.type.includes('質數') || e.pattern.type.includes('費氏') || e.pattern.type.includes('平方')) 
-                                      ? e.pattern.targetLabel 
-                                      : `拖 ${e.pattern.targetTail} 尾`;
                     if (e.type === 'trigger') {
                         return `
                         <div class="trigger-detail">
-                            <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">${targetLabel}</span></div>
+                            <div class="trigger-type">🔔 新訊號觸發: ${e.pattern.type} <span class="target-tail" style="background:#3498db; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
                             <div class="trigger-nums">預測號碼: ${e.pattern.targetDisplay.join(', ')}</div>
                             <div class="trigger-status">👉 開始養牌三期</div>
                         </div>`;
                     } else if (e.type === 'hit') {
                         return `
                         <div class="hit-detail">
-                            <div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">${targetLabel}</span></div>
+                            <div class="hit-type">${e.pattern.type} <span class="target-tail" style="font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
                             <div class="hit-nums">命中號碼: ${e.hitNums.map(fNum).join(', ')}</div>
                             <div class="hit-status">🎯 觸發日: ${e.triggerDate} (於第 ${e.hitPeriod} 期獲利)</div>
                         </div>`;
                     } else if (e.type === 'miss') {
                         return `
                         <div class="miss-detail">
-                            <div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">${targetLabel}</span></div>
+                            <div class="hit-type" style="color:#636e72;">${e.pattern.type} <span class="target-tail" style="background:#b2bec3; font-size:0.75rem;">拖 ${e.pattern.targetTail}尾</span></div>
                             <div class="miss-nums">預測號碼: ${e.pattern.targetDisplay.join(', ')}</div>
                             <div class="miss-status">❌ 養牌三期未中 (觸發日: ${e.triggerDate})</div>
                         </div>`;
@@ -907,6 +660,7 @@
             </div>`;
     }
 
+    // 初始化：載入設定後，再執行讀取資料
     window.onload = () => {
         loadSettings();
         processData();
