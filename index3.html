@@ -298,18 +298,22 @@
 
     function getRulesForDay(currentIndex) {
         let dStats = {}; let tStats = {};
-        let mStats = {}; // 存放倍數拖牌數據
+        let mStats = {};
         
         for (let i = 0; i < 10; i++) {
             dStats[i] = { total: 0, hits: new Array(10).fill(0) };
             tStats[i] = { total: 0, hits: new Array(10).fill(0) };
         }
-        // 初始化倍數統計陣列 (限制在 5 ~ maxNum/2)
-        for (let i = 5; i <= Math.floor(maxNum / 2); i++) {
+        for (let i = 1; i <= Math.floor(maxNum / 2); i++) {
             mStats[i] = { total: 0, hits: new Array(maxNum + 1).fill(0) };
         }
 
         let excludeZero = document.getElementById('excludeZeroHead').checked;
+        const fileName = document.getElementById('csvSelect').value;
+        let allowedMultiples = [];
+        if (fileName.includes('Fan')) allowedMultiples = [7];
+        else if (fileName.includes('539')) allowedMultiples = [7, 8, 9];
+        else if (fileName.includes('Ghana')) allowedMultiples = [6, 8, 13];
 
         for (let k = 0; k <= currentIndex; k++) {
             let nums = parsedData[k].nums;
@@ -325,8 +329,8 @@
                     parsedData[k + j].nums.forEach(n => {
                         if (!excludeZero || n >= 10) {
                             next3ValidTails.add(n % 10); 
-                            next3ValidNums.add(n);
                         }
+                        next3ValidNums.add(n); 
                     });
                 }
             }
@@ -343,15 +347,13 @@
                 }
             }
             
-            // 倍數拖牌統計
+            // 倍數拖牌統計 (限定彩種專屬號碼)
             nums.forEach(n => {
-                if (n >= 5 && n <= Math.floor(maxNum / 2)) {
-                    if (!excludeZero || n >= 10) {
-                        mStats[n].total++;
-                        for (let m = n * 2; m <= maxNum; m += n) {
-                            if (next3ValidNums.has(m)) {
-                                mStats[n].hits[m]++;
-                            }
+                if (allowedMultiples.includes(n)) {
+                    mStats[n].total++;
+                    for (let m = n * 2; m <= maxNum; m += n) {
+                        if (next3ValidNums.has(m)) {
+                            mStats[n].hits[m]++;
                         }
                     }
                 }
@@ -376,14 +378,12 @@
         }
         
         // 結算倍數拖牌規則
-        for (let n = 5; n <= Math.floor(maxNum / 2); n++) {
-            if (!excludeZero || n >= 10) {
-                localRules.multi[n] = {
-                    total: mStats[n].total,
-                    hits: mStats[n].hits
-                };
-            }
-        }
+        allowedMultiples.forEach(n => {
+            localRules.multi[n] = {
+                total: mStats[n].total,
+                hits: mStats[n].hits
+            };
+        });
         
         return localRules;
     }
@@ -424,31 +424,35 @@
             }
         }
         
-        // 倍數拖牌判斷
+        const fileName = document.getElementById('csvSelect').value;
+        let allowedMultiples = [];
+        if (fileName.includes('Fan')) allowedMultiples = [7];
+        else if (fileName.includes('539')) allowedMultiples = [7, 8, 9];
+        else if (fileName.includes('Ghana')) allowedMultiples = [6, 8, 13];
+
+        // 倍數拖牌判斷 (限定彩種專屬號碼)
         nums.forEach(n => {
-            if (n >= 5 && n <= Math.floor(maxNum / 2)) {
-                if (!excludeZero || n >= 10) {
-                    let r = currentRules.multi[n];
-                    if (r && r.total >= 5) {
-                        let multiples = [];
-                        for (let m = n * 2; m <= maxNum; m += n) {
-                            if (!excludeZero || m >= 10) {
-                                multiples.push({ val: m, h: r.hits[m] });
-                            }
+            if (allowedMultiples.includes(n)) {
+                let r = currentRules.multi[n];
+                if (r && r.total >= 5) {
+                    let multiples = [];
+                    for (let m = n * 2; m <= maxNum; m += n) {
+                        if (!excludeZero || m >= 10) {
+                            multiples.push({ val: m, h: r.hits[m] });
                         }
-                        if (multiples.length > 0) {
-                            multiples.sort((a, b) => b.h - a.h);
-                            let targets = multiples.slice(0, selectedBallCount).map(x => x.val).sort((a, b) => a - b);
-                            let bestScore = r.total > 0 ? (multiples[0].h / r.total * 100) : 0;
-                            
-                            patterns.push({
-                                type: `倍數拖牌 (${fNum(n)} 拖倍數)`,
-                                targetTail: `倍數群`, 
-                                target: targets,
-                                score: bestScore,
-                                total: r.total
-                            });
-                        }
+                    }
+                    if (multiples.length > 0) {
+                        multiples.sort((a, b) => b.h - a.h);
+                        let targets = multiples.slice(0, selectedBallCount).map(x => x.val).sort((a, b) => a - b);
+                        let bestScore = r.total > 0 ? (multiples[0].h / r.total * 100) : 0;
+                        
+                        patterns.push({
+                            type: `倍數拖牌 (${fNum(n)} 拖倍數)`,
+                            targetTail: `倍數群`, 
+                            target: targets,
+                            score: bestScore,
+                            total: r.total
+                        });
                     }
                 }
             }
