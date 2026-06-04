@@ -105,6 +105,10 @@
                 <input type="checkbox" id="sortBalls" onchange="runAnalysis()" style="width: 18px; height: 18px; cursor: pointer;">
                 <span style="font-weight: bold; font-size: 0.95rem;">落球轉順球 (按號碼大小排序分析)</span>
             </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="playCombination" onchange="runAnalysis()" style="width: 18px; height: 18px; cursor: pointer;">
+                <span style="font-weight: bold; font-size: 0.95rem;">連碰玩法 (由柱碰切換為連碰)</span>
+            </label>
             <label style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-weight: bold; font-size: 0.95rem;">預測球數：</span>
                 <select id="ballCountSelect" onchange="runAnalysis()" style="width: 80px; padding: 4px 8px; border-radius: 6px; border: 1px solid #dfe6e9; font-size: 0.95rem; outline: none; margin-bottom: 0;">
@@ -160,6 +164,7 @@
         if (localStorage.getItem('csvSelect')) document.getElementById('csvSelect').value = localStorage.getItem('csvSelect');
         if (localStorage.getItem('onlyPerfectScore') !== null) document.getElementById('onlyPerfectScore').checked = localStorage.getItem('onlyPerfectScore') === 'true';
         if (localStorage.getItem('sortBalls') !== null) document.getElementById('sortBalls').checked = localStorage.getItem('sortBalls') === 'true';
+        if (localStorage.getItem('playCombination') !== null) document.getElementById('playCombination').checked = localStorage.getItem('playCombination') === 'true';
         if (localStorage.getItem('ballCountSelect')) document.getElementById('ballCountSelect').value = localStorage.getItem('ballCountSelect');
         if (localStorage.getItem('betMultiplier')) document.getElementById('betMultiplier').value = localStorage.getItem('betMultiplier');
     }
@@ -168,6 +173,7 @@
         localStorage.setItem('csvSelect', document.getElementById('csvSelect').value);
         localStorage.setItem('onlyPerfectScore', document.getElementById('onlyPerfectScore').checked);
         localStorage.setItem('sortBalls', document.getElementById('sortBalls').checked);
+        localStorage.setItem('playCombination', document.getElementById('playCombination').checked);
         localStorage.setItem('ballCountSelect', document.getElementById('ballCountSelect').value);
         localStorage.setItem('betMultiplier', document.getElementById('betMultiplier').value);
     }
@@ -247,7 +253,6 @@
                 if (parsedData[k].nums[pos] === triggerNum) {
                     let windowNums = new Set();
                     if (k + 1 <= currentIndex) {
-                        // 修正：歷史下期比對排除大樂透與六合彩的第七顆特別號
                         let historyNextNums = parsedData[k + 1].nums;
                         let historyCheckNums = (maxNum === 49 && historyNextNums.length >= 7) ? historyNextNums.slice(0, 6) : historyNextNums;
                         historyCheckNums.forEach(n => {
@@ -390,10 +395,11 @@
         saveSettings();
 
         let isSorted = document.getElementById('sortBalls').checked;
+        let isCombo = document.getElementById('playCombination').checked; // 已引入連碰控制項
+
         for (let d of parsedData) {
             if (isSorted) {
                 if (!d.originalNums) d.originalNums = [...d.nums];
-                // 修正：大樂透與六合彩轉順球時，第七顆特別號不參與排序
                 if (maxNum === 49 && d.nums.length >= 7) {
                     let mainNums = d.nums.slice(0, 6);
                     mainNums.sort((a, b) => a - b);
@@ -416,7 +422,6 @@
         let tracking = [];
         let stats = { total: 0, hit: 0 };
         let totalStats = { cost: 0, win: 0, bets: 0, hits: 0 };
-        // 已新增：歷史累計命中星等計數器
         let totalWinCount = { c2: 0, c3: 0, c4: 0 };
 
         let userMultiplier = parseFloat(document.getElementById('betMultiplier').value);
@@ -435,7 +440,19 @@
                 }
             });
 
-            let totalPairs = calcPillarCombinations(backtestPillars);
+            // 已修改：根據連碰或柱碰，精確切換下注組合本金的計算方式
+            let totalPairs;
+            if (isCombo) {
+                let totalUniqueCount = seenNumbers.size;
+                const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (n*(n-1)*(n-2)*(n-3))/24));
+                totalPairs = {
+                    c2: nCr(totalUniqueCount, 2),
+                    c3: nCr(totalUniqueCount, 3),
+                    c4: nCr(totalUniqueCount, 4)
+                };
+            } else {
+                totalPairs = calcPillarCombinations(backtestPillars);
+            }
 
             if (i === parsedData.length - 1) {
                 tracking = allPatterns;
@@ -444,11 +461,25 @@
             let playIndex = i + 1; 
             if (playIndex < parsedData.length && (totalPairs.c2 > 0 || totalPairs.c3 > 0 || totalPairs.c4 > 0)) {
                 let nextNums = parsedData[playIndex].nums;
-                
-                // 修正：命中比對切除大樂透與六合彩的第七顆特別號
                 let checkNums = (maxNum === 49 && nextNums.length >= 7) ? nextNums.slice(0, 6) : nextNums;
-                let pillarHits = backtestPillars.map(pillar => intersect(pillar, checkNums).length);
-                let winPairs = calcPillarCombinations(pillarHits.map(h => Array(h).fill(0)));
+                
+                // 已修改：根據連碰或柱碰，精確切換中獎連線對應的組合碰數計算
+                let winPairs;
+                if (isCombo) {
+                    let allFlattenedUnique = [];
+                    let s = new Set();
+                    backtestPillars.forEach(p => p.forEach(n => { if(!s.has(n)){ s.add(n); allFlattenedUnique.push(n); } }));
+                    let totalHits = intersect(allFlattenedUnique, checkNums).length;
+                    const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (n*(n-1)*(n-2)*(n-3))/24));
+                    winPairs = {
+                        c2: nCr(totalHits, 2),
+                        c3: nCr(totalHits, 3),
+                        c4: nCr(totalHits, 4)
+                    };
+                } else {
+                    let pillarHits = backtestPillars.map(pillar => intersect(pillar, checkNums).length);
+                    winPairs = calcPillarCombinations(pillarHits.map(h => Array(h).fill(0)));
+                }
 
                 let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S) * userMultiplier;
                 let netCost = rawCost * (1 - REBATE_RATE);
@@ -462,7 +493,6 @@
                     dailyView[playIndex].pnl.hits += (winPairs.c2 + winPairs.c3 + winPairs.c4);
                     dailyView[playIndex].pnl.win += winAmount;
                     
-                    // 累加歷史命中次數
                     totalWinCount.c2 += winPairs.c2;
                     totalWinCount.c3 += winPairs.c3;
                     totalWinCount.c4 += winPairs.c4;
@@ -572,7 +602,20 @@
             });
             pillarGridHtml += `</div>`;
 
-            let currentPairs = calcPillarCombinations(pillars.map(p => p.nums));
+            // 已修改：主 UI 推薦看板的配牌碰數同步支援連碰/柱碰切換
+            let currentPairs;
+            if (isCombo) {
+                let totalUniqueCount = seenNumbers.size;
+                const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (n*(n-1)*(n-2)*(n-3))/24));
+                currentPairs = {
+                    c2: nCr(totalUniqueCount, 2),
+                    c3: nCr(totalUniqueCount, 3),
+                    c4: nCr(totalUniqueCount, 4)
+                };
+            } else {
+                currentPairs = calcPillarCombinations(pillars.map(p => p.nums));
+            }
+
             pillarGridHtml += `
             <div style="font-size: 0.85rem; border-top: 1px dashed #eee; padding-top: 8px; display: flex; justify-content: space-between; font-weight: bold; color: #2d3436; flex-wrap: wrap; gap: 4px;">
                 <span>2星: <span style="color:var(--accent);">${currentPairs.c2}</span> 碰</span>
@@ -645,7 +688,6 @@
                         pillarDetailsHtml = `<div style="margin: 4px 0 6px 0; font-size: 0.82rem; color: #34495e; line-height: 1.6;"><b>下注號碼：</b>`;
                         e.pillars.forEach((p, pIdx) => {
                             let pStr = p.map(n => {
-                                // 修正：特別號排除在命中高亮比對之外
                                 let validCheckNums = (maxNum === 49 && e.nextNums.length >= 7) ? e.nextNums.slice(0, 6) : e.nextNums;
                                 if (validCheckNums && validCheckNums.includes(n)) {
                                     return `<span style="background-color: #27ae60; color: white; padding: 0px 4px; border-radius: 3px; font-weight: bold; margin: 0 1px; display: inline-block;">${fNum(n)}</span>`;
@@ -724,7 +766,6 @@
         let totalNet = totalStats.win - totalStats.cost;
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
-        // 已修改：面板渲染串接顯示「歷史共中幾次二、三、四星」的資訊
         document.getElementById('summaryArea').innerHTML = `
             💡 <b>二三四星立柱綜合・滾動回測總覽：</b><br>
             總計模擬交易 <b>${stats.total}</b> 期（每日智慧去重立柱），其中有 <b>${stats.hit}</b> 期成功擊中獲利組合，回測單期勝率 <b>${hitRate}%</b><br>
