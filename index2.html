@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>通用型大數據分析系統 (基礎樣板)</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #2d3436;
+        }
+
+        /* 基礎重置與排版 */
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, system-ui, sans-serif; background-color: var(--bg); color: var(--text); padding: 10px; line-height: 1.4; }
+        .container { max-width: 600px; margin: 0 auto; }
+
+        /* 頂部標題 */
+        .header { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header-top { display: flex; justify-content: center; align-items: center; margin-bottom: 0; }
+        h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
+
+        /* 控制面板區 */
+        .selector-box { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
+        select, input[type="number"] { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #dfe6e9; font-size: 1rem; background: #fff; margin-bottom: 8px; outline: none; }
+        select:focus, input[type="number"]:focus { border-color: var(--accent); }
+        .status-bar { font-size: 0.85rem; color: #636e72; display: flex; align-items: center; gap: 5px; }
+
+        /* 卡片與內容區塊 */
+        .section-title { font-size: 1rem; font-weight: bold; margin: 15px 0 10px 5px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        #predictionArea { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
+        .pred-card { background: var(--card); padding: 15px; border-radius: 12px; border-left: 6px solid var(--warning); box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
+        .pred-card h3 { font-size: 0.95rem; margin-bottom: 5px; color: var(--primary); font-weight: 800; }
+        
+        /* 歷史明細與樣式 */
+        .summary { background: #e1f5fe; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid #b3e5fc; }
+        .result-item { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #eee; }
+        .res-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; border-bottom: 1px dashed #eee; padding-bottom: 8px; }
+        .res-date { font-weight: bold; color: var(--primary); }
+        .res-actual { font-family: monospace; font-size: 1rem; color: #2d3436; font-weight: bold; }
+
+        /* 損益與折疊群組 */
+        .week-summary { background: #fffcf0; border: 1px solid #f1c40f; padding: 15px; border-radius: 12px; margin: 20px 0 15px 0; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(241,196,15,0.15); }
+        .pnl-row { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.85rem; color: #2d3436; font-weight: bold; }
+        .month-header { background: #e0e7ff; color: #1e3a8a; padding: 12px 15px; border-radius: 10px; font-weight: 900; font-size: 1.05rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #c7d2fe; user-select: none; }
+        .month-content { padding-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="header-top">
+            <h1>大數據分析系統 (基礎樣板)</h1>
+        </div>
+    </div>
+    
+    <div class="selector-box">
+        <select id="csvSelect" onchange="processData()">
+            <option value="data.csv">測試數據源</option>
+            </select>
+        <div class="status-bar">
+            <span>資料狀態:</span>
+            <span id="dataStatus" style="font-weight: bold;">讀取中...</span>
+        </div>
+
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #dfe6e9; display: flex; flex-direction: column; gap: 12px;">
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: bold; font-size: 0.95rem;">下注倍率：</span>
+                <input type="number" id="betMultiplier" value="0.01" step="0.01" min="0.01" onchange="runAnalysis()" style="width: 80px; padding: 4px 8px; border-radius: 6px; border: 1px solid #dfe6e9;">
+            </label>
+        </div>
+    </div>
+
+    <div class="section-title">🕒 最新預測指標</div>
+    <div id="predictionArea"></div>
+    
+    <div class="section-title">📈 累積損益曲線</div>
+    <div class="selector-box" style="padding: 10px; margin-bottom: 20px;">
+        <canvas id="pnlChart" height="150"></canvas>
+    </div>
+
+    <div id="summaryArea" class="summary" style="display:none;"></div>
+
+    <div class="section-title">📜 每日開獎與訊號紀錄</div>
+    <div id="resultList"></div>
+</div>
+
+<script>
+    /* =========================================================
+       模組 1：全域變數與底層設定
+       ========================================================= */
+    let parsedData = [];
+    let pnlChartInstance = null;
+    
+    // 預設財務參數
+    const COST_PER_BALL = 38;
+    const REBATE_RATE = 0.2107;
+    const WIN_MULTIPLIER = 5.5789;
+
+    /* =========================================================
+       模組 2：輔助工具函式 (Utils)
+       ========================================================= */
+    function fNum(n) { return String(n).padStart(2, '0'); }
+    function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
+    
+    function loadSettings() {
+        if (localStorage.getItem('csvSelect')) document.getElementById('csvSelect').value = localStorage.getItem('csvSelect');
+        if (localStorage.getItem('betMultiplier')) document.getElementById('betMultiplier').value = localStorage.getItem('betMultiplier');
+    }
+
+    function saveSettings() {
+        localStorage.setItem('csvSelect', document.getElementById('csvSelect').value);
+        localStorage.setItem('betMultiplier', document.getElementById('betMultiplier').value);
+    }
+
+    /* =========================================================
+       模組 3：資料載入與解析 (Data Fetching)
+       ========================================================= */
+    async function processData() {
+        saveSettings();
+        const fileName = document.getElementById('csvSelect').value;
+        const statusEl = document.getElementById('dataStatus');
+        
+        statusEl.innerText = "讀取中...";
+        try {
+            const res = await fetch(fileName);
+            if(!res.ok) throw new Error();
+            const text = await res.text();
+            
+            // CSV 解析邏輯
+            const lines = text.trim().split('\n');
+            parsedData = [];
+            for(let i = 1; i < lines.length; i++) {
+                let cols = lines[i].split(',').map(s => s.trim());
+                if(cols.length < 6 || isNaN(parseInt(cols[1]))) continue;
+                let nums = [];
+                for(let j = 1; j < cols.length; j++) {
+                    let n = parseInt(cols[j]);
+                    if(!isNaN(n)) nums.push(n);
+                }
+                parsedData.push({ date: cols[0], nums: nums });
+            }
+            
+            statusEl.innerText = `✅ 載入成功 (共 ${parsedData.length} 期)`;
+            runAnalysis();
+        } catch(e) { 
+            statusEl.innerText = "❌ 讀取失敗 (請確認 CSV 檔案路徑與伺服器環境)"; 
+        }
+    }
+
+    /* =========================================================
+       模組 4：核心策略運算 (Strategy & Logic) 
+       🔥 開發新版路時，請集中修改此區塊
+       ========================================================= */
+    function generatePatterns(currentIndex) {
+        // [範例回傳] 在此撰寫您的抓牌邏輯，回傳格式須包含：
+        // type: 版路名稱, target: 預測號碼陣列, score: 勝率/分數
+        return []; 
+    }
+
+    /* =========================================================
+       模組 5：引擎核心與畫面渲染 (Engine & UI Rendering)
+       ========================================================= */
+    function runAnalysis() {
+        saveSettings();
+        
+        // 1. 初始化回測容器
+        let dailyView = parsedData.map(d => ({ 
+            date: d.date, 
+            nums: d.nums, 
+            events: [], 
+            pnl: { cost: 0, win: 0, bets: 0, hits: 0 } 
+        }));
+        
+        // 2. 執行迴圈回測 (可依據您的策略抽換 hit 判斷邏輯)
+        for (let i = 0; i < parsedData.length; i++) {
+            let patterns = generatePatterns(i);
+            // 處理 patterns 與未來期數比對的邏輯...
+        }
+
+        // 3. 圖表更新邏輯
+        updateChart(dailyView);
+        
+        // 4. HTML DOM 渲染邏輯
+        // (省略細部渲染字串，沿用原有的 month/week 結算與 DOM 寫入)
+        document.getElementById('predictionArea').innerHTML = '<div style="padding:20px; text-align:center; background:var(--card); border-radius:12px;">準備載入策略...</div>';
+    }
+
+    function updateChart(dailyView) {
+        // Chart.js 渲染封裝
+        if (pnlChartInstance) pnlChartInstance.destroy();
+        const ctx = document.getElementById('pnlChart').getContext('2d');
+        pnlChartInstance = new Chart(ctx, { /* Chart Config */ });
+    }
+
+    // 啟動點
+    window.onload = () => {
+        loadSettings();
+        processData();
+    };
+</script>
+</body>
+</html>
