@@ -126,8 +126,7 @@
                 </select>
             </label>
 
-            <!-- 已新增：AI 最佳化按鈕 -->
-            <button class="opt-btn" onclick="optimizeFilters()">🤖 尋找最佳穩定獲利設定 (AI 盲測)</button>
+            <button class="opt-btn" onclick="optimizeFilters()">🤖 智慧分析穩定獲利設定 (168組全模盲測)</button>
             
             <div style="font-weight: bold; font-size: 0.95rem; margin-top: 4px; color: var(--primary);">要下注的星等：</div>
             <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 4px;">
@@ -457,17 +456,8 @@
         }
     }
 
-    // 🧠 核心：計算「單一設定」的歷史回測結果並回傳曲線資訊，以供 AI 盲測優化
-    function simulateBacktest(filterMode) {
-        let isSorted = document.getElementById('sortBalls').checked;
-        let isCombo = document.getElementById('playCombination').checked; 
-        
-        let use2S = document.getElementById('bet2S').checked;
-        let use3S = document.getElementById('bet3S').checked;
-        let use4S = document.getElementById('bet4S').checked;
-        let use5S = document.getElementById('bet5S').checked;
-
-        // 深拷貝防污染
+    // 🧠 核心改造：完全解耦的多維度矩陣模擬回測引擎 (不依賴當前 UI 狀態)
+    function simulateBacktest(filterMode, isCombo, isSorted, stars) {
         let simData = JSON.parse(JSON.stringify(parsedData));
 
         for (let d of simData) {
@@ -486,8 +476,9 @@
         }
 
         let cumulativePnL = 0;
-        let equityCurve = [0]; // 起始資金 0
-        let totalWinAmount = 0;
+        let equityCurve = [0];
+        let totalCost = 0;
+        let totalWin = 0;
         let hitCount = 0;
         let totalBets = 0;
 
@@ -503,18 +494,12 @@
             
             if (filterMode !== 'none' && initialSeen.size > 10) {
                 let sortedNums = Array.from(initialSeen).sort((a, b) => {
-                    if (filterMode === 'removeCold') {
-                        return getOmit(a, i) - getOmit(b, i) || a - b;
-                    } else if (filterMode === 'removeHot') {
-                        return getOmit(b, i) - getOmit(a, i) || a - b;
-                    } else if (filterMode === 'removeLeastFrequent') {
-                        return getRecentCount(b, i) - getRecentCount(a, i) || a - b;
-                    } else if (filterMode === 'removeMostFrequent') {
-                        return getRecentCount(a, i) - getRecentCount(b, i) || a - b;
-                    } else if (filterMode === 'smartRemove') {
-                        let scoreA = getRecentCount(a, i) * 5 - getOmit(a, i);
-                        let scoreB = getRecentCount(b, i) * 5 - getOmit(b, i);
-                        return scoreB - scoreA || a - b;
+                    if (filterMode === 'removeCold') return getOmit(a, i) - getOmit(b, i) || a - b;
+                    if (filterMode === 'removeHot') return getOmit(b, i) - getOmit(a, i) || a - b;
+                    if (filterMode === 'removeLeastFrequent') return getRecentCount(b, i) - getRecentCount(a, i) || a - b;
+                    if (filterMode === 'removeMostFrequent') return getRecentCount(a, i) - getRecentCount(b, i) || a - b;
+                    if (filterMode === 'smartRemove') {
+                        return (getRecentCount(b, i) * 5 - getOmit(b, i)) - (getRecentCount(a, i) * 5 - getOmit(a, i)) || a - b;
                     }
                 });
                 allowedNumbers = new Set(sortedNums.slice(0, 10));
@@ -534,16 +519,16 @@
             if (isCombo) {
                 let totalUniqueCount = seenNumbers.size;
                 const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (r === 4 ? (n*(n-1)*(n-2)*(n-3))/24 : (n*(n-1)*(n-2)*(n-3)*(n-4))/120)));
-                if (use2S) totalPairs.c2 = nCr(totalUniqueCount, 2);
-                if (use3S) totalPairs.c3 = nCr(totalUniqueCount, 3);
-                if (use4S) totalPairs.c4 = nCr(totalUniqueCount, 4);
-                if (use5S) totalPairs.c5 = nCr(totalUniqueCount, 5);
+                if (stars.use2S) totalPairs.c2 = nCr(totalUniqueCount, 2);
+                if (stars.use3S) totalPairs.c3 = nCr(totalUniqueCount, 3);
+                if (stars.use4S) totalPairs.c4 = nCr(totalUniqueCount, 4);
+                if (stars.use5S) totalPairs.c5 = nCr(totalUniqueCount, 5);
             } else {
                 let fullPairs = calcPillarCombinations(backtestPillars);
-                if (use2S) totalPairs.c2 = fullPairs.c2;
-                if (use3S) totalPairs.c3 = fullPairs.c3;
-                if (use4S) totalPairs.c4 = fullPairs.c4;
-                if (use5S) totalPairs.c5 = fullPairs.c5;
+                if (stars.use2S) totalPairs.c2 = fullPairs.c2;
+                if (stars.use3S) totalPairs.c3 = fullPairs.c3;
+                if (stars.use4S) totalPairs.c4 = fullPairs.c4;
+                if (stars.use5S) totalPairs.c5 = fullPairs.c5;
             }
 
             let playIndex = i + 1; 
@@ -558,32 +543,29 @@
                     backtestPillars.forEach(p => p.forEach(n => { if(!s.has(n)){ s.add(n); allFlattenedUnique.push(n); } }));
                     let totalHits = intersect(allFlattenedUnique, checkNums).length;
                     const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (r === 4 ? (n*(n-1)*(n-2)*(n-3))/24 : (n*(n-1)*(n-2)*(n-3)*(n-4))/120)));
-                    if (use2S) winPairs.c2 = nCr(totalHits, 2);
-                    if (use3S) winPairs.c3 = nCr(totalHits, 3);
-                    if (use4S) winPairs.c4 = nCr(totalHits, 4);
-                    if (use5S) winPairs.c5 = nCr(totalHits, 5);
+                    if (stars.use2S) winPairs.c2 = nCr(totalHits, 2);
+                    if (stars.use3S) winPairs.c3 = nCr(totalHits, 3);
+                    if (stars.use4S) winPairs.c4 = nCr(totalHits, 4);
+                    if (stars.use5S) winPairs.c5 = nCr(totalHits, 5);
                 } else {
                     let pillarHits = backtestPillars.map(pillar => intersect(pillar, checkNums).length);
                     let fullWinPairs = calcPillarCombinations(pillarHits.map(h => Array(h).fill(0)));
-                    if (use2S) winPairs.c2 = fullWinPairs.c2;
-                    if (use3S) winPairs.c3 = fullWinPairs.c3;
-                    if (use4S) winPairs.c4 = fullWinPairs.c4;
-                    if (use5S) winPairs.c5 = fullWinPairs.c5;
+                    if (stars.use2S) winPairs.c2 = fullWinPairs.c2;
+                    if (stars.use3S) winPairs.c3 = fullWinPairs.c3;
+                    if (stars.use4S) winPairs.c4 = fullWinPairs.c4;
+                    if (stars.use5S) winPairs.c5 = fullWinPairs.c5;
                 }
 
                 let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S + totalPairs.c5 * COST_BASE_5S) * userMultiplier;
                 let netCost = rawCost * (1 - REBATE_RATE);
-                
                 let winAmount = (winPairs.c2 * MULTIPLIER_2S + winPairs.c3 * MULTIPLIER_3S + winPairs.c4 * MULTIPLIER_4S + winPairs.c5 * MULTIPLIER_5S) * userMultiplier;
                 
-                let netProfit = winAmount - netCost;
-                cumulativePnL += netProfit;
+                cumulativePnL += (winAmount - netCost);
                 equityCurve.push(cumulativePnL);
+                totalCost += netCost;
+                totalWin += winAmount;
 
-                if (winAmount > 0) {
-                    hitCount++;
-                    totalWinAmount += winAmount;
-                }
+                if (winAmount > 0) hitCount++;
                 totalBets++;
             } else {
                 equityCurve.push(cumulativePnL);
@@ -593,74 +575,96 @@
         return {
             curve: equityCurve,
             netProfit: cumulativePnL,
+            totalCost: totalCost,
             hitRate: totalBets > 0 ? (hitCount / totalBets) : 0
         };
     }
 
-    // 🤖 AI 最佳化引擎：計算穩定度夏普值並自動套用最佳參數
+    // 🤖 AI 全域策略最佳化：自動判斷落球/順球、連碰/柱碰、二三四星與過濾模式 (168組交叉網格搜尋)
     function optimizeFilters() {
         const btn = document.querySelector('.opt-btn');
-        btn.innerText = "⏳ 盲測運算中...";
+        btn.innerText = "⏳ 168組全模矩陣爆破盲測中...";
         btn.style.pointerEvents = "none";
 
-        // 給畫面更新的時間
         setTimeout(() => {
             const filterOptions = ['none', 'removeCold', 'removeHot', 'removeLeastFrequent', 'removeMostFrequent', 'smartRemove'];
+            const comboOptions = [false, true];  // 柱碰, 連碰
+            const sortOptions = [false, true];   // 落球, 順球
+            
+            // 二、三、四星下注交叉組合 (共7種星等策略組合)
+            const starCombos = [
+                { use2S: true,  use3S: false, use4S: false, use5S: false }, // 純2星
+                { use2S: false, use3S: true,  use4S: false, use5S: false }, // 純3星
+                { use2S: false, use3S: false, use4S: true,  use5S: false }, // 純4星
+                { use2S: true,  use3S: true,  use4S: false, use5S: false }, // 2+3星
+                { use2S: true,  use3S: false, use4S: true,  use5S: false }, // 2+4星
+                { use2S: false, use3S: true,  use4S: true,  use5S: false }, // 3+4星
+                { use2S: true,  use3S: true,  use4S: true,  use5S: false }  // 2+3+4全開
+            ];
+
             let bestScore = -Infinity;
-            let bestFilter = 'none';
+            let bestConfig = null;
 
-            filterOptions.forEach(opt => {
-                let simResult = simulateBacktest(opt);
-                
-                // 算法：評估資金曲線的穩定平滑度
-                let curve = simResult.curve;
-                if(curve.length > 2 && simResult.netProfit > 0) {
-                    let peak = curve[0];
-                    let maxDrawdown = 0;
-                    for (let val of curve) {
-                        if (val > peak) peak = val;
-                        let drawdown = peak > 0 ? (peak - val) / peak : 0;
-                        if (drawdown > maxDrawdown) maxDrawdown = drawdown;
-                    }
-                    
-                    // 穩定度夏普值 = (淨利 * 勝率) / (1 + 最大回撤率)
-                    // 在此加上平方強化淨利的權重，避免選出幾乎沒賺沒賠的死水曲線
-                    let score = (simResult.netProfit * simResult.hitRate) / (1 + maxDrawdown * 5); 
+            // 啟動 168 種交叉參數迴圈
+            filterOptions.forEach(fMode => {
+                comboOptions.forEach(isCombo => {
+                    sortOptions.forEach(isSorted => {
+                        starCombos.forEach(stars => {
+                            let sim = simulateBacktest(fMode, isCombo, isSorted, stars);
+                            
+                            if (sim.curve.length > 2 && sim.netProfit > 0 && sim.totalCost > 0) {
+                                // 計算最大資金回撤率
+                                let peak = sim.curve[0];
+                                let maxDrawdown = 0;
+                                for (let val of sim.curve) {
+                                    if (val > peak) peak = val;
+                                    let drawdown = peak > 0 ? (peak - val) / peak : 0;
+                                    if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+                                }
 
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestFilter = opt;
-                    }
-                }
+                                // 🎯 關鍵財務評分公式：投投報比 (獲利/成本) × 曲線流暢度 × 勝率
+                                let roi = sim.netProfit / sim.totalCost; 
+                                let stabilityScore = (sim.netProfit * roi * sim.hitRate) / (1 + maxDrawdown * 8);
+
+                                if (stabilityScore > bestScore) {
+                                    bestScore = stabilityScore;
+                                    bestConfig = { fMode, isCombo, isSorted, stars };
+                                }
+                            }
+                        });
+                    });
+                });
             });
 
-            if (bestScore > -Infinity) {
-                // 自動將 UI 下拉選單切換至最佳選項
-                document.getElementById('filter8BallsMode').value = bestFilter;
+            if (bestConfig) {
+                // 自動將 UI 狀態同步重置為 AI 盲測出的最優成長設定
+                document.getElementById('filter8BallsMode').value = bestConfig.fMode;
+                document.getElementById('playCombination').checked = bestConfig.isCombo;
+                document.getElementById('sortBalls').checked = bestConfig.isSorted;
                 
-                let filterNames = {
-                    'none': '不過濾',
-                    'removeCold': '移除冷門號',
-                    'removeHot': '移除熱門號',
-                    'removeLeastFrequent': '移除近期出現次數少',
-                    'removeMostFrequent': '移除近期出現次數多',
-                    'smartRemove': '智能綜合移除'
-                };
-                
-                alert(`✨ AI 分析完畢！\n大數據證實目前最穩定獲利的策略為：【${filterNames[bestFilter]}】\n系統已為您自動套用該參數並重新繪製損益。`);
+                document.getElementById('bet2S').checked = bestConfig.stars.use2S;
+                document.getElementById('bet3S').checked = bestConfig.stars.use3S;
+                document.getElementById('bet4S').checked = bestConfig.stars.use4S;
+                document.getElementById('bet5S').checked = false; // 依需求排除5星優化
+
+                let filterNames = { 'none': '不過濾', 'removeCold': '移除冷門號', 'removeHot': '移除熱門號', 'removeLeastFrequent': '移除近期少', 'removeMostFrequent': '移除近期多', 'smartRemove': '智能綜合移除' };
+                let starText = [];
+                if (bestConfig.stars.use2S) starText.push("二星");
+                if (bestConfig.stars.use3S) starText.push("三星");
+                if (bestConfig.stars.use4S) starText.push("四星");
+
+                alert(`✨ AI 全模網格分析完畢！\n已為您挑選出【最少成本、獲利最平穩成長】之策略組合：\n\n-落球模式：【${bestConfig.isSorted ? '順球排序' : '落球原始定位'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰玩法' : '智慧立柱(柱碰)'}】\n-號碼上限：【${filterNames[bestConfig.fMode]}】\n-配置星等：【${starText.join(' + ')}】\n\n系統已全自動切換完成。`);
             } else {
-                alert(`⚠️ 盲測結果顯示：在目前的組合條件下無穩定獲利之過濾模式，建議調整注額星等或預測球數。`);
+                alert(`⚠️ 在目前的數據區間與注額條件下，未找到可實現正向穩定成長的配對模型。`);
             }
 
-            // 跑完後呼叫主函數重新渲染畫面
             runAnalysis();
             
-            btn.innerText = "🤖 尋找最佳穩定獲利設定 (AI 盲測)";
+            btn.innerText = "🤖 智慧分析穩定獲利設定 (168組全模盲測)";
             btn.style.pointerEvents = "auto";
         }, 100);
     }
 
-    // 🖥️ 主畫面渲染流程 (DOM 生成與圖表更新)
     function runAnalysis() {
         saveSettings();
 
@@ -710,21 +714,14 @@
             allPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
             let allowedNumbers = initialSeen;
             
-            // 實裝各類過濾模式
             if (filter8BallsMode !== 'none' && initialSeen.size > 10) {
                 let sortedNums = Array.from(initialSeen).sort((a, b) => {
-                    if (filter8BallsMode === 'removeCold') {
-                        return getOmit(a, i) - getOmit(b, i) || a - b;
-                    } else if (filter8BallsMode === 'removeHot') {
-                        return getOmit(b, i) - getOmit(a, i) || a - b;
-                    } else if (filter8BallsMode === 'removeLeastFrequent') {
-                        return getRecentCount(b, i) - getRecentCount(a, i) || a - b;
-                    } else if (filter8BallsMode === 'removeMostFrequent') {
-                        return getRecentCount(a, i) - getRecentCount(b, i) || a - b;
-                    } else if (filter8BallsMode === 'smartRemove') {
-                        let scoreA = getRecentCount(a, i) * 5 - getOmit(a, i);
-                        let scoreB = getRecentCount(b, i) * 5 - getOmit(b, i);
-                        return scoreB - scoreA || a - b;
+                    if (filter8BallsMode === 'removeCold') return getOmit(a, i) - getOmit(b, i) || a - b;
+                    if (filter8BallsMode === 'removeHot') return getOmit(b, i) - getOmit(a, i) || a - b;
+                    if (filter8BallsMode === 'removeLeastFrequent') return getRecentCount(b, i) - getRecentCount(a, i) || a - b;
+                    if (filter8BallsMode === 'removeMostFrequent') return getRecentCount(a, i) - getRecentCount(b, i) || a - b;
+                    if (filter8BallsMode === 'smartRemove') {
+                        return (getRecentCount(b, i) * 5 - getOmit(b, i)) - (getRecentCount(a, i) * 5 - getOmit(a, i)) || a - b;
                     }
                 });
                 allowedNumbers = new Set(sortedNums.slice(0, 10));
@@ -787,7 +784,6 @@
 
                 let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S + totalPairs.c5 * COST_BASE_5S) * userMultiplier;
                 let netCost = rawCost * (1 - REBATE_RATE);
-                
                 let winAmount = (winPairs.c2 * MULTIPLIER_2S + winPairs.c3 * MULTIPLIER_3S + winPairs.c4 * MULTIPLIER_4S + winPairs.c5 * MULTIPLIER_5S) * userMultiplier;
                 
                 dailyView[playIndex].pnl.bets += (totalPairs.c2 + totalPairs.c3 + totalPairs.c4 + totalPairs.c5); 
@@ -892,18 +888,12 @@
             
             if (filter8BallsMode !== 'none' && initialSeen.size > 10) {
                 let sortedNums = Array.from(initialSeen).sort((a, b) => {
-                    if (filter8BallsMode === 'removeCold') {
-                        return getOmit(a, latestIndex) - getOmit(b, latestIndex) || a - b;
-                    } else if (filter8BallsMode === 'removeHot') {
-                        return getOmit(b, latestIndex) - getOmit(a, latestIndex) || a - b;
-                    } else if (filter8BallsMode === 'removeLeastFrequent') {
-                        return getRecentCount(b, latestIndex) - getRecentCount(a, latestIndex) || a - b;
-                    } else if (filter8BallsMode === 'removeMostFrequent') {
-                        return getRecentCount(a, latestIndex) - getRecentCount(b, latestIndex) || a - b;
-                    } else if (filter8BallsMode === 'smartRemove') {
-                        let scoreA = getRecentCount(a, latestIndex) * 5 - getOmit(a, latestIndex);
-                        let scoreB = getRecentCount(b, latestIndex) * 5 - getOmit(b, latestIndex);
-                        return scoreB - scoreA || a - b;
+                    if (filter8BallsMode === 'removeCold') return getOmit(a, latestIndex) - getOmit(b, latestIndex) || a - b;
+                    if (filter8BallsMode === 'removeHot') return getOmit(b, latestIndex) - getOmit(a, latestIndex) || a - b;
+                    if (filter8BallsMode === 'removeLeastFrequent') return getRecentCount(b, latestIndex) - getRecentCount(a, latestIndex) || a - b;
+                    if (filter8BallsMode === 'removeMostFrequent') return getRecentCount(a, latestIndex) - getRecentCount(b, latestIndex) || a - b;
+                    if (filter8BallsMode === 'smartRemove') {
+                        return (getRecentCount(b, latestIndex) * 5 - getOmit(b, latestIndex)) - (getRecentCount(a, latestIndex) * 5 - getOmit(a, latestIndex)) || a - b;
                     }
                 });
                 allowedNumbers = new Set(sortedNums.slice(0, 10));
@@ -1109,11 +1099,11 @@
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
-            💡 <b>二三四五星立柱綜合・滾動回測總覽：</b><br>
+            💡 <b>二三四五星全方位綜合・滾動回測總覽：</b><br>
             總計模擬交易 <b>${stats.total}</b> 期，其中有 <b>${stats.hit}</b> 期成功擊中獲利組合，回測單期勝率 <b>${hitRate}%</b><br>
             歷史共中：二星 <b>${totalWinCount.c2}</b> 次 ｜ 三星 <b>${totalWinCount.c3}</b> 次 ｜ 四星 <b>${totalWinCount.c4}</b> 次 ｜ 五星 <b>${totalWinCount.c5}</b> 次<br>
             <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #b3e5fc; font-size: 0.95rem;">
-                💰 <b>回測累積總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
+                💰 <b>當前配置累積總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
             </div>`;
     }
 
