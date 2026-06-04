@@ -109,10 +109,15 @@
                 <input type="checkbox" id="playCombination" onchange="runAnalysis()" style="width: 18px; height: 18px; cursor: pointer;">
                 <span style="font-weight: bold; font-size: 0.95rem;">連碰玩法 (由柱碰切換為連碰)</span>
             </label>
-            <!-- 已新增：下注號碼上限8顆控制項 -->
-            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="limit8Balls" onchange="runAnalysis()" style="width: 18px; height: 18px; cursor: pointer;">
-                <span style="font-weight: bold; font-size: 0.95rem;">下注號碼上限 8 顆 (移除遺漏最久號碼)</span>
+            
+            <!-- 已變更：上限 8 顆的過濾選項（熱門/冷門號移除） -->
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: bold; font-size: 0.95rem;">號碼上限 8 顆：</span>
+                <select id="filter8BallsMode" onchange="runAnalysis()" style="width: auto; padding: 4px 8px; border-radius: 6px; border: 1px solid #dfe6e9; font-size: 0.95rem; outline: none; margin-bottom: 0;">
+                    <option value="none">不過濾 (保留全部)</option>
+                    <option value="removeCold">移除冷門號 (保留近期熱號)</option>
+                    <option value="removeHot">移除熱門號 (保留遺漏冷號)</option>
+                </select>
             </label>
             
             <div style="font-weight: bold; font-size: 0.95rem; margin-top: 4px; color: var(--primary);">要下注的星等：</div>
@@ -181,7 +186,7 @@
         if (localStorage.getItem('onlyPerfectScore') !== null) document.getElementById('onlyPerfectScore').checked = localStorage.getItem('onlyPerfectScore') === 'true';
         if (localStorage.getItem('sortBalls') !== null) document.getElementById('sortBalls').checked = localStorage.getItem('sortBalls') === 'true';
         if (localStorage.getItem('playCombination') !== null) document.getElementById('playCombination').checked = localStorage.getItem('playCombination') === 'true';
-        if (localStorage.getItem('limit8Balls') !== null) document.getElementById('limit8Balls').checked = localStorage.getItem('limit8Balls') === 'true';
+        if (localStorage.getItem('filter8BallsMode')) document.getElementById('filter8BallsMode').value = localStorage.getItem('filter8BallsMode');
         
         if (localStorage.getItem('bet2S') !== null) document.getElementById('bet2S').checked = localStorage.getItem('bet2S') === 'true';
         if (localStorage.getItem('bet3S') !== null) document.getElementById('bet3S').checked = localStorage.getItem('bet3S') === 'true';
@@ -197,7 +202,7 @@
         localStorage.setItem('onlyPerfectScore', document.getElementById('onlyPerfectScore').checked);
         localStorage.setItem('sortBalls', document.getElementById('sortBalls').checked);
         localStorage.setItem('playCombination', document.getElementById('playCombination').checked);
-        localStorage.setItem('limit8Balls', document.getElementById('limit8Balls').checked);
+        localStorage.setItem('filter8BallsMode', document.getElementById('filter8BallsMode').value);
         
         localStorage.setItem('bet2S', document.getElementById('bet2S').checked);
         localStorage.setItem('bet3S', document.getElementById('bet3S').checked);
@@ -437,7 +442,7 @@
 
         let isSorted = document.getElementById('sortBalls').checked;
         let isCombo = document.getElementById('playCombination').checked; 
-        let limit8Balls = document.getElementById('limit8Balls').checked; 
+        let filter8BallsMode = document.getElementById('filter8BallsMode').value; 
         
         let use2S = document.getElementById('bet2S').checked;
         let use3S = document.getElementById('bet3S').checked;
@@ -477,14 +482,17 @@
         for (let i = 0; i < parsedData.length; i++) {
             let allPatterns = getSmartPatterns(parsedData[i].nums, i);
             
-            // 已新增：8 顆上限與遺漏期數過濾邏輯
             let initialSeen = new Set();
             allPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
             let allowedNumbers = initialSeen;
             
-            if (limit8Balls && initialSeen.size > 8) {
+            if (filter8BallsMode !== 'none' && initialSeen.size > 8) {
                 let sortedNums = Array.from(initialSeen).sort((a, b) => {
-                    return getOmit(a, i) - getOmit(b, i) || a - b;
+                    if (filter8BallsMode === 'removeCold') {
+                        return getOmit(a, i) - getOmit(b, i) || a - b;
+                    } else {
+                        return getOmit(b, i) - getOmit(a, i) || a - b;
+                    }
                 });
                 allowedNumbers = new Set(sortedNums.slice(0, 8));
             }
@@ -645,14 +653,17 @@
         if (latestIndex >= 0) {
             let latestPatterns = getSmartPatterns(parsedData[latestIndex].nums, latestIndex);
             
-            // 已新增：同步套用 8 顆上限與遺漏期數過濾邏輯於立柱推薦看板
             let initialSeen = new Set();
             latestPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
             let allowedNumbers = initialSeen;
             
-            if (limit8Balls && initialSeen.size > 8) {
+            if (filter8BallsMode !== 'none' && initialSeen.size > 8) {
                 let sortedNums = Array.from(initialSeen).sort((a, b) => {
-                    return getOmit(a, latestIndex) - getOmit(b, latestIndex) || a - b;
+                    if (filter8BallsMode === 'removeCold') {
+                        return getOmit(a, latestIndex) - getOmit(b, latestIndex) || a - b;
+                    } else {
+                        return getOmit(b, latestIndex) - getOmit(a, latestIndex) || a - b;
+                    }
                 });
                 allowedNumbers = new Set(sortedNums.slice(0, 8));
             }
