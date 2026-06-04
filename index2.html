@@ -126,7 +126,8 @@
                 </select>
             </label>
 
-            <button class="opt-btn" onclick="optimizeFilters()">🤖 智慧分析穩定獲利設定 (168組全模盲測)</button>
+            <!-- 已更新：AI 最佳化按鈕，現在為 1344 組測試 -->
+            <button class="opt-btn" onclick="optimizeFilters()">🤖 智慧分析穩定獲利設定 (1344組全模盲測)</button>
             
             <div style="font-weight: bold; font-size: 0.95rem; margin-top: 4px; color: var(--primary);">要下注的星等：</div>
             <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 4px;">
@@ -294,10 +295,11 @@
         return result;
     }
 
-    function getSmartPatterns(nums, currentIndex) {
+    // 已修改：增加接收動態傳入的球數及完美選項
+    function getSmartPatterns(nums, currentIndex, optBallCount, optOnlyPerfect) {
         let patterns = [];
-        let selectedBallCount = parseInt(document.getElementById('ballCountSelect').value) || 3;
-        let onlyPerfect = document.getElementById('onlyPerfectScore').checked;
+        let selectedBallCount = optBallCount !== undefined ? optBallCount : (parseInt(document.getElementById('ballCountSelect').value) || 3);
+        let onlyPerfect = optOnlyPerfect !== undefined ? optOnlyPerfect : document.getElementById('onlyPerfectScore').checked;
 
         for (let pos = 0; pos < 5; pos++) {
             let triggerNum = nums[pos];
@@ -456,8 +458,8 @@
         }
     }
 
-    // 🧠 核心改造：完全解耦的多維度矩陣模擬回測引擎 (不依賴當前 UI 狀態)
-    function simulateBacktest(filterMode, isCombo, isSorted, stars) {
+    // 已修改：傳入球數及勝率選項，納入引擎動態運算
+    function simulateBacktest(filterMode, isCombo, isSorted, stars, ballCount, onlyPerfect) {
         let simData = JSON.parse(JSON.stringify(parsedData));
 
         for (let d of simData) {
@@ -486,7 +488,7 @@
         if (isNaN(userMultiplier) || userMultiplier <= 0) userMultiplier = 1;
 
         for (let i = 0; i < simData.length; i++) {
-            let allPatterns = getSmartPatterns(simData[i].nums, i);
+            let allPatterns = getSmartPatterns(simData[i].nums, i, ballCount, onlyPerfect);
             
             let initialSeen = new Set();
             allPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
@@ -580,87 +582,91 @@
         };
     }
 
-    // 🤖 AI 全域策略最佳化：自動判斷落球/順球、連碰/柱碰、二三四星與過濾模式 (168組交叉網格搜尋)
+    // 🤖 已擴充：包含球數與完美設定的 1344 種參數矩陣盲測
     function optimizeFilters() {
         const btn = document.querySelector('.opt-btn');
-        btn.innerText = "⏳ 168組全模矩陣爆破盲測中...";
+        btn.innerText = "⏳ 1344組全模矩陣爆破盲測中...";
         btn.style.pointerEvents = "none";
 
         setTimeout(() => {
             const filterOptions = ['none', 'removeCold', 'removeHot', 'removeLeastFrequent', 'removeMostFrequent', 'smartRemove'];
-            const comboOptions = [false, true];  // 柱碰, 連碰
-            const sortOptions = [false, true];   // 落球, 順球
+            const comboOptions = [false, true];  
+            const sortOptions = [false, true];   
+            const perfectOptions = [false, true];
+            const ballCounts = [1, 2, 3, 4];
             
-            // 二、三、四星下注交叉組合 (共7種星等策略組合)
             const starCombos = [
-                { use2S: true,  use3S: false, use4S: false, use5S: false }, // 純2星
-                { use2S: false, use3S: true,  use4S: false, use5S: false }, // 純3星
-                { use2S: false, use3S: false, use4S: true,  use5S: false }, // 純4星
-                { use2S: true,  use3S: true,  use4S: false, use5S: false }, // 2+3星
-                { use2S: true,  use3S: false, use4S: true,  use5S: false }, // 2+4星
-                { use2S: false, use3S: true,  use4S: true,  use5S: false }, // 3+4星
-                { use2S: true,  use3S: true,  use4S: true,  use5S: false }  // 2+3+4全開
+                { use2S: true,  use3S: false, use4S: false, use5S: false }, 
+                { use2S: false, use3S: true,  use4S: false, use5S: false }, 
+                { use2S: false, use3S: false, use4S: true,  use5S: false }, 
+                { use2S: true,  use3S: true,  use4S: false, use5S: false }, 
+                { use2S: true,  use3S: false, use4S: true,  use5S: false }, 
+                { use2S: false, use3S: true,  use4S: true,  use5S: false }, 
+                { use2S: true,  use3S: true,  use4S: true,  use5S: false }  
             ];
 
             let bestScore = -Infinity;
             let bestConfig = null;
 
-            // 啟動 168 種交叉參數迴圈
             filterOptions.forEach(fMode => {
                 comboOptions.forEach(isCombo => {
                     sortOptions.forEach(isSorted => {
-                        starCombos.forEach(stars => {
-                            let sim = simulateBacktest(fMode, isCombo, isSorted, stars);
-                            
-                            if (sim.curve.length > 2 && sim.netProfit > 0 && sim.totalCost > 0) {
-                                // 計算最大資金回撤率
-                                let peak = sim.curve[0];
-                                let maxDrawdown = 0;
-                                for (let val of sim.curve) {
-                                    if (val > peak) peak = val;
-                                    let drawdown = peak > 0 ? (peak - val) / peak : 0;
-                                    if (drawdown > maxDrawdown) maxDrawdown = drawdown;
-                                }
+                        perfectOptions.forEach(onlyPerfect => {
+                            ballCounts.forEach(ballCount => {
+                                starCombos.forEach(stars => {
+                                    let sim = simulateBacktest(fMode, isCombo, isSorted, stars, ballCount, onlyPerfect);
+                                    
+                                    if (sim.curve.length > 2 && sim.netProfit > 0 && sim.totalCost > 0) {
+                                        let peak = sim.curve[0];
+                                        let maxDrawdown = 0;
+                                        for (let val of sim.curve) {
+                                            if (val > peak) peak = val;
+                                            let drawdown = peak > 0 ? (peak - val) / peak : 0;
+                                            if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+                                        }
 
-                                // 🎯 關鍵財務評分公式：投投報比 (獲利/成本) × 曲線流暢度 × 勝率
-                                let roi = sim.netProfit / sim.totalCost; 
-                                let stabilityScore = (sim.netProfit * roi * sim.hitRate) / (1 + maxDrawdown * 8);
+                                        let roi = sim.netProfit / sim.totalCost; 
+                                        let stabilityScore = (sim.netProfit * roi * sim.hitRate) / (1 + maxDrawdown * 8);
 
-                                if (stabilityScore > bestScore) {
-                                    bestScore = stabilityScore;
-                                    bestConfig = { fMode, isCombo, isSorted, stars };
-                                }
-                            }
+                                        if (stabilityScore > bestScore) {
+                                            bestScore = stabilityScore;
+                                            bestConfig = { fMode, isCombo, isSorted, stars, ballCount, onlyPerfect };
+                                        }
+                                    }
+                                });
+                            });
                         });
                     });
                 });
             });
 
             if (bestConfig) {
-                // 自動將 UI 狀態同步重置為 AI 盲測出的最優成長設定
+                // 自動同步最新算出的完美參數
                 document.getElementById('filter8BallsMode').value = bestConfig.fMode;
                 document.getElementById('playCombination').checked = bestConfig.isCombo;
                 document.getElementById('sortBalls').checked = bestConfig.isSorted;
+                document.getElementById('onlyPerfectScore').checked = bestConfig.onlyPerfect;
+                document.getElementById('ballCountSelect').value = bestConfig.ballCount;
                 
                 document.getElementById('bet2S').checked = bestConfig.stars.use2S;
                 document.getElementById('bet3S').checked = bestConfig.stars.use3S;
                 document.getElementById('bet4S').checked = bestConfig.stars.use4S;
-                document.getElementById('bet5S').checked = false; // 依需求排除5星優化
+                document.getElementById('bet5S').checked = false; 
 
-                let filterNames = { 'none': '不過濾', 'removeCold': '移除冷門號', 'removeHot': '移除熱門號', 'removeLeastFrequent': '移除近期少', 'removeMostFrequent': '移除近期多', 'smartRemove': '智能綜合移除' };
+                let filterNames = { 'none': '不過濾', 'removeCold': '移除冷門號', 'removeHot': '移除熱門號', 'removeLeastFrequent': '移除近期出現次數少', 'removeMostFrequent': '移除近期出現次數多', 'smartRemove': '智能綜合移除' };
                 let starText = [];
                 if (bestConfig.stars.use2S) starText.push("二星");
                 if (bestConfig.stars.use3S) starText.push("三星");
                 if (bestConfig.stars.use4S) starText.push("四星");
 
-                alert(`✨ AI 全模網格分析完畢！\n已為您挑選出【最少成本、獲利最平穩成長】之策略組合：\n\n-落球模式：【${bestConfig.isSorted ? '順球排序' : '落球原始定位'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰玩法' : '智慧立柱(柱碰)'}】\n-號碼上限：【${filterNames[bestConfig.fMode]}】\n-配置星等：【${starText.join(' + ')}】\n\n系統已全自動切換完成。`);
+                alert(`✨ AI 矩陣 1344 組參數盲測完畢！\n大數據為您計算出【最平穩高獲利成長】的完美參數組合：\n\n-完美版路：【${bestConfig.onlyPerfect ? '開啟 (100%勝率)' : '關閉 (所有指標)'}】\n-預測球數：【${bestConfig.ballCount} 顆】\n-落球模式：【${bestConfig.isSorted ? '順球排序' : '原始定位'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰玩法' : '智慧立柱(柱碰)'}】\n-過濾模式：【${filterNames[bestConfig.fMode]}】\n-配置星等：【${starText.join(' + ')}】\n\n系統已全自動套用並為您重新繪製最新圖表！`);
             } else {
                 alert(`⚠️ 在目前的數據區間與注額條件下，未找到可實現正向穩定成長的配對模型。`);
             }
 
             runAnalysis();
             
-            btn.innerText = "🤖 智慧分析穩定獲利設定 (168組全模盲測)";
+            btn.innerText = "🤖 智慧分析穩定獲利設定 (1344組全模盲測)";
             btn.style.pointerEvents = "auto";
         }, 100);
     }
@@ -784,6 +790,7 @@
 
                 let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S + totalPairs.c5 * COST_BASE_5S) * userMultiplier;
                 let netCost = rawCost * (1 - REBATE_RATE);
+                
                 let winAmount = (winPairs.c2 * MULTIPLIER_2S + winPairs.c3 * MULTIPLIER_3S + winPairs.c4 * MULTIPLIER_4S + winPairs.c5 * MULTIPLIER_5S) * userMultiplier;
                 
                 dailyView[playIndex].pnl.bets += (totalPairs.c2 + totalPairs.c3 + totalPairs.c4 + totalPairs.c5); 
@@ -1099,11 +1106,11 @@
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
-            💡 <b>二三四五星全方位綜合・滾動回測總覽：</b><br>
+            💡 <b>二三四五星立柱綜合・滾動回測總覽：</b><br>
             總計模擬交易 <b>${stats.total}</b> 期，其中有 <b>${stats.hit}</b> 期成功擊中獲利組合，回測單期勝率 <b>${hitRate}%</b><br>
             歷史共中：二星 <b>${totalWinCount.c2}</b> 次 ｜ 三星 <b>${totalWinCount.c3}</b> 次 ｜ 四星 <b>${totalWinCount.c4}</b> 次 ｜ 五星 <b>${totalWinCount.c5}</b> 次<br>
             <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #b3e5fc; font-size: 0.95rem;">
-                💰 <b>當前配置累積總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
+                💰 <b>回測累積總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
             </div>`;
     }
 
