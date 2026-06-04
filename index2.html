@@ -110,9 +110,8 @@
                 <span style="font-weight: bold; font-size: 0.95rem;">連碰玩法 (由柱碰切換為連碰)</span>
             </label>
             
-            <!-- 已變更：上限 8 顆的過濾選項（熱門/冷門號移除） -->
             <label style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-weight: bold; font-size: 0.95rem;">號碼上限 8 顆：</span>
+                <span style="font-weight: bold; font-size: 0.95rem;">號碼上限 10 顆：</span>
                 <select id="filter8BallsMode" onchange="runAnalysis()" style="width: auto; padding: 4px 8px; border-radius: 6px; border: 1px solid #dfe6e9; font-size: 0.95rem; outline: none; margin-bottom: 0;">
                     <option value="none">不過濾 (保留全部)</option>
                     <option value="removeCold">移除冷門號 (保留近期熱號)</option>
@@ -486,7 +485,8 @@
             allPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
             let allowedNumbers = initialSeen;
             
-            if (filter8BallsMode !== 'none' && initialSeen.size > 8) {
+            // 已修改：上限 8 顆改為 10 顆過濾邏輯
+            if (filter8BallsMode !== 'none' && initialSeen.size > 10) {
                 let sortedNums = Array.from(initialSeen).sort((a, b) => {
                     if (filter8BallsMode === 'removeCold') {
                         return getOmit(a, i) - getOmit(b, i) || a - b;
@@ -494,7 +494,7 @@
                         return getOmit(b, i) - getOmit(a, i) || a - b;
                     }
                 });
-                allowedNumbers = new Set(sortedNums.slice(0, 8));
+                allowedNumbers = new Set(sortedNums.slice(0, 10));
             }
 
             let seenNumbers = new Set();
@@ -657,7 +657,8 @@
             latestPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
             let allowedNumbers = initialSeen;
             
-            if (filter8BallsMode !== 'none' && initialSeen.size > 8) {
+            // 已修改：上限 8 顆改為 10 顆過濾邏輯（推薦看板UI連動）
+            if (filter8BallsMode !== 'none' && initialSeen.size > 10) {
                 let sortedNums = Array.from(initialSeen).sort((a, b) => {
                     if (filter8BallsMode === 'removeCold') {
                         return getOmit(a, latestIndex) - getOmit(b, latestIndex) || a - b;
@@ -665,7 +666,7 @@
                         return getOmit(b, latestIndex) - getOmit(a, latestIndex) || a - b;
                     }
                 });
-                allowedNumbers = new Set(sortedNums.slice(0, 8));
+                allowedNumbers = new Set(sortedNums.slice(0, 10));
             }
 
             let seenNumbers = new Set();
