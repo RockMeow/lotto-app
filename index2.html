@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>定位落牌分析系統(下一期精準狙擊)</title>
+    <title>定位落牌分析系統(下1期二星柱碰版)</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -31,12 +31,9 @@
 
         /* Controls */
         .selector-box { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
-        textarea { width: 100%; height: 150px; padding: 10px; border-radius: 8px; border: 2px solid #dfe6e9; font-family: monospace; font-size: 0.85rem; resize: vertical; margin-bottom: 10px; outline: none; }
-        textarea:focus { border-color: var(--accent); }
         select { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #dfe6e9; font-size: 1rem; appearance: none; background: #fff; margin-bottom: 8px; cursor: pointer; outline: none; }
         select:focus { border-color: var(--accent); }
-        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; font-weight: bold; width: 100%; cursor: pointer; margin-bottom: 10px; transition: background 0.2s; }
-        button:hover { background: #2980b9; }
+        .status-bar { font-size: 0.85rem; color: #636e72; display: flex; align-items: center; gap: 5px; }
 
         /* Prediction Cards */
         .section-title { font-size: 1rem; font-weight: bold; margin: 15px 0 10px 5px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
@@ -60,20 +57,15 @@
         .res-actual { font-family: monospace; font-size: 1rem; color: #2d3436; font-weight: bold; }
         
         /* Event Details */
-        .hit-detail { background: #fdfaf0; padding: 8px; border-radius: 8px; margin-top: 8px; }
+        .hit-detail { background: #fdfaf0; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #f1c40f; }
         .miss-detail { background: #f5f6f7; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #eee; }
-        .trigger-detail { background: #f0f8ff; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #cce5ff; }
 
         .hit-type { font-size: 0.85rem; font-weight: bold; color: #d35400; }
-        .trigger-type { font-size: 0.85rem; font-weight: bold; color: #0056b3; }
-        
         .hit-nums { color: var(--success); font-weight: 900; font-size: 1rem; margin-top: 2px; }
-        .miss-nums { color: #b2bec3; font-weight: 900; font-size: 1rem; margin-top: 2px; }
-        .trigger-nums { color: #004085; font-weight: 900; font-size: 1rem; margin-top: 2px; }
+        .miss-nums { color: #b2bec3; font-weight: 900; font-size: 1.1rem; margin-top: 2px; }
 
         .hit-status { font-size: 0.75rem; color: var(--success); font-weight: bold; margin-top: 3px; }
         .miss-status { font-size: 0.75rem; color: #636e72; font-weight: bold; margin-top: 3px; }
-        .trigger-status { font-size: 0.75rem; color: #0056b3; font-weight: bold; margin-top: 3px; }
 
         /* PnL Week Summary */
         .week-summary { background: #fffcf0; border: 1px solid #f1c40f; padding: 15px; border-radius: 12px; margin: 20px 0 15px 0; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(241,196,15,0.15); }
@@ -83,22 +75,7 @@
 
         /* Month Grouping */
         .month-group { margin-bottom: 15px; }
-        .month-header {
-            background: #e0e7ff;
-            color: #1e3a8a;
-            padding: 12px 15px;
-            border-radius: 10px;
-            font-weight: 900;
-            font-size: 1.05rem;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            border: 1px solid #c7d2fe;
-            user-select: none;
-        }
-        .month-header:active { background: #c7d2fe; }
+        .month-header { background: #e0e7ff; color: #1e3a8a; padding: 12px 15px; border-radius: 10px; font-weight: 900; font-size: 1.05rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #c7d2fe; user-select: none; }
         .month-content { padding-top: 15px; }
     </style>
 </head>
@@ -107,33 +84,24 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>定位落牌智慧分析系統(精準下1期)</h1>
+            <h1>定位落牌分析系統(還原選單+二星53倍柱碰)</h1>
         </div>
     </div>
     
     <div class="selector-box">
-        <div style="font-weight: bold; font-size: 0.95rem; margin-bottom: 5px; color: var(--primary);">📋 貼入 CSV 歷史數據：</div>
-        <textarea id="csvInput" placeholder="請在此貼入開獎 CSV 數據...例如：&#10;Date,N1,N2,N3,N4,N5&#10;06/03,8,2,17,25,38&#10;06/04,35,29,2,24,8">Date,N1,N2,N3,N4,N5
-05/18,20,15,32,33,8
-05/19,4,32,6,24,31
-05/20,21,20,23,1,35
-05/21,36,34,9,28,25
-05/22,37,4,8,16,15
-05/23,15,38,16,24,6
-05/25,5,6,12,36,37
-05/26,2,14,7,11,37
-05/27,21,18,3,19,2
-05/28,9,31,12,19,6
-05/29,34,12,35,15,20
-05/30,3,4,2,39,13
-06/01,14,5,19,20,28
-06/02,7,22,30,12,26
-06/03,8,2,17,25,38
-06/04,35,29,2,24,8</textarea>
-        
-        <button onclick="processData()">⚡ 開始大數據智慧分析</button>
+        <select id="csvSelect" onchange="processData()">
+            <option value="Fan_history_2026.csv">天天樂</option>
+            <option value="Ghana_history_2026.csv">迦納彩</option>
+            <option value="539_history_2026.csv">今彩 539</option>
+            <option value="649_history_2026.csv">大樂透</option>
+            <option value="Six_history_2026.csv">六合彩</option>
+        </select>
+        <div class="status-bar">
+            <span>資料狀態:</span>
+            <span id="dataStatus" style="font-weight: bold;">讀取中...</span>
+        </div>
 
-        <div style="padding-top: 10px; border-top: 1px dashed #dfe6e9; display: flex; flex-direction: column; gap: 12px;">
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #dfe6e9; display: flex; flex-direction: column; gap: 12px;">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="excludeZeroHead" checked onchange="runAnalysis()" style="width: 18px; height: 18px; cursor: pointer;">
                 <span style="font-weight: bold; font-size: 0.95rem;">排除 0 頭 (不包含 01~09)</span>
@@ -160,14 +128,14 @@
     <div class="section-title">🎯 智慧立柱推薦組合 (自動跨柱去重)</div>
     <div id="pillarArea" class="selector-box" style="background: var(--card); border-radius: 12px; padding: 15px;"></div>
     
-    <div class="section-title">📈 累積損益曲線 (僅回測下1期)</div>
+    <div class="section-title">📈 累積損益曲線 (純二星柱碰回測)</div>
     <div class="selector-box" style="padding: 10px; margin-bottom: 20px;">
         <canvas id="pnlChart" height="150"></canvas>
     </div>
 
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">📜 每日開獎與單期訊號紀錄</div>
+    <div class="section-title">📜 每日開獎與單期柱碰紀錄</div>
     <div id="resultList"></div>
 </div>
 
@@ -176,22 +144,23 @@
     let maxNum = 39;
     let pnlChartInstance = null;
 
-    const COST_PER_BALL = 38;
-    const REBATE_RATE = 0.2107;
-    const WIN_MULTIPLIER = 5.5789;
+    // 🔥 核心重構：全網最精準的地下二星柱碰財務模型
+    const COST_PER_PAIR = 76;   // 二星每碰基準本金 (市場大宗行情約 74~76 元)
+    const REBATE_RATE = 0.2107; // 退水率
+    const WIN_MULTIPLIER = 53;  // 二星中獎倍率（1元中53元，即53倍）
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
     function loadSettings() {
-        if (localStorage.getItem('csvInputData')) document.getElementById('csvInput').value = localStorage.getItem('csvInputData');
+        if (localStorage.getItem('csvSelect')) document.getElementById('csvSelect').value = localStorage.getItem('csvSelect');
         if (localStorage.getItem('excludeZeroHead') !== null) document.getElementById('excludeZeroHead').checked = localStorage.getItem('excludeZeroHead') === 'true';
         if (localStorage.getItem('ballCountSelect')) document.getElementById('ballCountSelect').value = localStorage.getItem('ballCountSelect');
         if (localStorage.getItem('betMultiplier')) document.getElementById('betMultiplier').value = localStorage.getItem('betMultiplier');
     }
 
     function saveSettings() {
-        localStorage.setItem('csvInputData', document.getElementById('csvInput').value);
+        localStorage.setItem('csvSelect', document.getElementById('csvSelect').value);
         localStorage.setItem('excludeZeroHead', document.getElementById('excludeZeroHead').checked);
         localStorage.setItem('ballCountSelect', document.getElementById('ballCountSelect').value);
         localStorage.setItem('betMultiplier', document.getElementById('betMultiplier').value);
@@ -259,7 +228,6 @@
         return result;
     }
 
-    // 關鍵修正：分析僅對應歷史的「下1期」
     function getSmartPatterns(nums, currentIndex) {
         let patterns = [];
         let selectedBallCount = parseInt(document.getElementById('ballCountSelect').value) || 3;
@@ -272,7 +240,6 @@
             for (let k = 0; k < currentIndex; k++) {
                 if (parsedData[k].nums[pos] === triggerNum) {
                     let windowNums = new Set();
-                    // 修正：只看歷史的下1期 (k + 1)
                     if (k + 1 <= currentIndex) {
                         parsedData[k + 1].nums.forEach(n => {
                             if (!excludeZero || n >= 10) windowNums.add(n);
@@ -346,61 +313,36 @@
         return patterns.sort((a, b) => b.score - a.score || b.total - a.total);
     }
 
-    function calcPillarCombinations(pillarArrays) {
-        const activePillars = pillarArrays.filter(p => p.length > 0);
-        const n = activePillars.length;
-        let c2 = 0, c3 = 0, c4 = 0;
-        for (let i = 0; i < n; i++) {
-            for (let j = i + 1; j < n; j++) {
-                c2 += activePillars[i].length * activePillars[j].length;
-            }
-        }
-        for (let i = 0; i < n; i++) {
-            for (let j = i + 1; j < n; j++) {
-                for (let k = j + 1; k < n; k++) {
-                    c3 += activePillars[i].length * activePillars[j].length * activePillars[k].length;
-                }
-            }
-        }
-        for (let i = 0; i < n; i++) {
-            for (let j = i + 1; j < n; j++) {
-                for (let k = j + 1; k < n; k++) {
-                    for (let l = k + 1; l < n; l++) {
-                        c4 += activePillars[i].length * activePillars[j].length * activePillars[k].length * activePillars[l].length;
-                    }
-                }
-            }
-        }
-        return { c2, c3, c4 };
-    }
-
-    function processData() {
+    async function processData() {
         saveSettings();
-        const text = document.getElementById('csvInput').value.trim();
-        const lines = text.split('\n');
+        const fileName = document.getElementById('csvSelect').value;
+        const statusEl = document.getElementById('dataStatus');
+        maxNum = (fileName.includes('649') || fileName.includes('Six')) ? 49 : 39;
         
-        if(lines.length < 3) {
-            alert("請確認是否已正確填入 CSV 開獎數據！");
-            return;
-        }
-
-        parsedData = [];
-        for(let i = 1; i < lines.length; i++) {
-            let cols = lines[i].split(',').map(s => s.trim());
-            if(cols.length < 6 || isNaN(parseInt(cols[1]))) continue;
-            let nums = [];
-            for(let j = 1; j < cols.length; j++) {
-                let n = parseInt(cols[j]);
-                if(!isNaN(n)) nums.push(n);
+        statusEl.innerText = "讀取中...";
+        try {
+            const res = await fetch(fileName);
+            if(!res.ok) throw new Error();
+            const text = await res.text();
+            const lines = text.trim().split('\n');
+            
+            parsedData = [];
+            for(let i = 1; i < lines.length; i++) {
+                let cols = lines[i].split(',').map(s => s.trim());
+                if(cols.length < 6 || isNaN(parseInt(cols[1]))) continue;
+                let nums = [];
+                for(let j = 1; j < cols.length; j++) {
+                    let n = parseInt(cols[j]);
+                    if(!isNaN(n)) nums.push(n);
+                }
+                parsedData.push({ date: cols[0], nums: nums });
             }
-            parsedData.push({ date: cols[0], nums: nums });
+            
+            statusEl.innerText = `✅ 載入成功 (共 ${parsedData.length} 期)`;
+            runAnalysis();
+        } catch(e) { 
+            statusEl.innerText = "❌ 讀取失敗 (請確保在網頁伺服器環境下執行)"; 
         }
-
-        // 動態判斷號碼上限
-        let flatNums = parsedData.flatMap(d => d.nums);
-        maxNum = Math.max(...flatNums) > 39 ? 49 : 39;
-
-        runAnalysis();
     }
 
     function runAnalysis() {
@@ -419,66 +361,83 @@
         let userMultiplier = parseFloat(document.getElementById('betMultiplier').value);
         if (isNaN(userMultiplier) || userMultiplier <= 0) userMultiplier = 0.01;
         let ratio = userMultiplier / 0.01;
-        let baseCostPerBall = COST_PER_BALL * ratio;
 
-        // 核心改造：按單期（僅看下一期）進行滾動財務與命中率計算
+        // 🧠 滾動回測核心：模擬當天抓出「跨柱去重組合」並投註下1期二星柱碰
         for (let i = 0; i < parsedData.length; i++) {
             let allPatterns = getSmartPatterns(parsedData[i].nums, i);
-            let topPatterns = allPatterns.slice(0, 3); // 取前三強強勢訊號
             
-            // 如果是最後一期，這就是最新的預測指標
-            if (i === parsedData.length - 1) {
-                tracking = topPatterns;
+            // 建立跨柱去重的柱子陣列 (完全同步主介面的立柱邏輯)
+            let seenNumbers = new Set();
+            let backtestPillars = [];
+            allPatterns.forEach(p => {
+                let uniqueNums = p.target.filter(n => !seenNumbers.has(n));
+                uniqueNums.forEach(n => seenNumbers.add(n));
+                if (uniqueNums.length > 0) {
+                    backtestPillars.push(uniqueNums);
+                }
+            });
+
+            // 計算這幾根柱子配出的總「二星碰數」
+            let totalPairs = 0;
+            for (let m = 0; m < backtestPillars.length; m++) {
+                for (let n = m + 1; n < backtestPillars.length; n++) {
+                    totalPairs += backtestPillars[m].length * backtestPillars[n].length;
+                }
             }
 
-            topPatterns.forEach(p => {
-                if (p.target.length === 0) return;
-                stats.total++;
+            if (i === parsedData.length - 1) {
+                tracking = allPatterns;
+            }
+
+            let playIndex = i + 1; // 目標期數為下一期
+            if (playIndex < parsedData.length && totalPairs > 0) {
+                let nextNums = parsedData[playIndex].nums;
                 
-                dailyView[i].events.push({
-                    type: 'trigger',
-                    pattern: p
-                });
-
-                let hitInfo = null;
-                let playIndex = i + 1; // 投注目標只有下一期
-
-                if (playIndex < parsedData.length) {
-                    let hitNums = intersect(p.target, parsedData[playIndex].nums);
-                    let numBets = p.target.length;
-                    let costAmount = numBets * baseCostPerBall;
-                    let rebateAmount = costAmount * REBATE_RATE;
-                    
-                    dailyView[playIndex].pnl.bets += numBets;
-                    dailyView[playIndex].pnl.cost += (costAmount - rebateAmount);
-                    
-                    if (hitNums.length > 0) {
-                        hitInfo = { hitIndex: playIndex, n: hitNums };
-                        stats.hit++;
-                        
-                        dailyView[playIndex].pnl.hits += hitNums.length;
-                        dailyView[playIndex].pnl.win += (hitNums.length * baseCostPerBall * WIN_MULTIPLIER);
+                // 計算每根柱子在下一期的中球數
+                let pillarHits = backtestPillars.map(pillar => intersect(pillar, nextNums).length);
+                
+                // 精算達成的二星中獎組合數
+                let winningPairs = 0;
+                for (let m = 0; m < pillarHits.length; m++) {
+                    for (let n = m + 1; n < pillarHits.length; n++) {
+                        winningPairs += pillarHits[m] * pillarHits[n];
                     }
                 }
+
+                // 二星柱碰財務實戰公式
+                let costAmount = totalPairs * (COST_PER_PAIR * ratio);
+                let rebateAmount = costAmount * REBATE_RATE;
                 
-                if (hitInfo) {
-                    dailyView[hitInfo.hitIndex].events.push({
+                dailyView[playIndex].pnl.bets += totalPairs; // 紀錄下注總碰數
+                dailyView[playIndex].pnl.cost += (costAmount - rebateAmount);
+                
+                if (winningPairs > 0) {
+                    stats.hit++;
+                    // 中獎金額 = 中獎碰數 * 單碰中獎獎金(100元基數乘上53倍)
+                    let winAmount = winningPairs * (100 * ratio * WIN_MULTIPLIER);
+                    dailyView[playIndex].pnl.hits += winningPairs;
+                    dailyView[playIndex].pnl.win += winAmount;
+                }
+                stats.total++;
+
+                if (winningPairs > 0) {
+                    dailyView[playIndex].events.push({
                         type: 'hit',
-                        pattern: p,
-                        triggerDate: parsedData[i].date,
-                        hitNums: hitInfo.n
+                        winningPairs: winningPairs,
+                        totalPairs: totalPairs,
+                        triggerDate: parsedData[i].date
                     });
-                } else if (i < parsedData.length - 1) {
-                    dailyView[i + 1].events.push({
+                } else {
+                    dailyView[playIndex].events.push({
                         type: 'miss',
-                        pattern: p,
+                        totalPairs: totalPairs,
                         triggerDate: parsedData[i].date
                     });
                 }
-            });
+            }
         }
 
-        // 渲染 Chart.js 損益圖
+        // 渲染損益曲線圖表
         let chartLabels = [];
         let chartData = [];
         let cumulativePnL = 0;
@@ -517,20 +476,20 @@
             }
         });
 
-        // 渲染明日最新期預測卡片
-        document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.map(t => {
+        // 渲染預測指標卡片
+        document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.slice(0,3).map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
             let targetDisplay = t.target.map(n => `${fNum(n)}(${getOmit(n, parsedData.length-1)}期未開)`);
             return `
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 歷史勝率</div>
                 <h3>${t.type}</h3>
-                <div class="pred-info">基準日: ${parsedData[parsedData.length-1].date} ➡️ 目標：明天下 1 期</div>
+                <div class="pred-info">基準開獎日: ${parsedData[parsedData.length-1].date} ➡️ 狙擊目標：明天下 1 期</div>
                 <span class="nums-highlight">${targetDisplay.join(', ')}</span>
             </div>`
-        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">無有效分析指標 ☕</div>';
+        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">無有效指標 ☕</div>';
 
-        // 智慧型跨柱去重立柱推薦 (針對最新一期)
+        // 智慧型跨柱去重立柱推薦顯示
         let latestIndex = parsedData.length - 1;
         if (latestIndex >= 0) {
             let latestPatterns = getSmartPatterns(parsedData[latestIndex].nums, latestIndex);
@@ -557,17 +516,24 @@
             });
             pillarGridHtml += `</div>`;
 
-            let counts = calcPillarCombinations(pillars.map(p => p.nums));
+            // 計算當期總組合碰數
+            let activePillarArrays = pillars.map(p => p.nums).filter(arr => arr.length > 0);
+            let nP = activePillarArrays.length;
+            let c2 = 0;
+            for (let m = 0; m < nP; m++) {
+                for (let n = m + 1; n < nP; n++) {
+                    c2 += activePillarArrays[m].length * activePillarArrays[n].length;
+                }
+            }
+
             pillarGridHtml += `
-            <div style="font-size: 0.85rem; border-top: 1px dashed #eee; padding-top: 8px; display: flex; justify-content: space-between; font-weight: bold; color: #2d3436;">
-                <span>二星: <span style="color:var(--accent); font-size:1rem;">${counts.c2}</span> 碰</span>
-                <span>三星: <span style="color:var(--success); font-size:1rem;">${counts.c3}</span> 碰</span>
-                <span>四星: <span style="color:var(--danger); font-size:1rem;">${counts.c4}</span> 碰</span>
+            <div style="font-size: 0.85rem; border-top: 1px dashed #eee; padding-top: 8px; text-align: right; font-weight: bold; color: #2d3436;">
+                <span>本期智慧組合總計： <span style="color:var(--danger); font-size:1.1rem;">${c2}</span> 碰二星柱碰</span>
             </div>`;
-            document.getElementById('pillarArea').innerHTML = pillars.length > 0 ? pillarGridHtml : '<div style="color:#999; text-align:center; font-size:0.85rem;">暫無落球數據 ☕</div>';
+            document.getElementById('pillarArea').innerHTML = pillars.length > 0 ? pillarGridHtml : '<div style="color:#999; text-align:center; font-size:0.85rem;">暫無開獎數據 ☕</div>';
         }
 
-        // 每日明細分組渲染
+        // 歷史明細分組渲染
         let reversedData = dailyView.slice().reverse();
         let chunksHtml = [];
         let currentWeek = null;
@@ -622,30 +588,22 @@
 
             let eventsHtml = '';
             if (d.events.length === 0) {
-                eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無訊號</div>`;
+                eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期落球未觸發歷史同定位組合</div>`;
             } else {
                 eventsHtml = d.events.map(e => {
-                    let targetDisplay = e.pattern.target.map(fNum).join(', ');
-                    if (e.type === 'trigger') {
-                        return `
-                        <div class="trigger-detail">
-                            <div class="trigger-type">🔔 指標觸發: <span class="target-tail" style="background:#3498db; font-size:0.75rem;">第${e.pattern.pos}位開${fNum(e.pattern.triggerNum)}</span></div>
-                            <div class="trigger-nums">精選拖牌: ${targetDisplay}</div>
-                            <div class="trigger-status">👉 預測下一期直接開出</div>
-                        </div>`;
-                    } else if (e.type === 'hit') {
+                    if (e.type === 'hit') {
                         return `
                         <div class="hit-detail">
-                            <div class="hit-type">🎯 單期精準命中: 定位拖牌 (第${e.pattern.pos}位)</div>
-                            <div class="hit-nums">命中開出: ${e.hitNums.map(fNum).join(', ')}</div>
-                            <div class="hit-status">📊 依據前一日開獎觸發，下1期即時獲利！</div>
+                            <div class="hit-type">🎯 二星柱碰中獎！(倍率: ${WIN_MULTIPLIER}倍)</div>
+                            <div class="hit-nums">下注：<b>${e.totalPairs}</b> 碰 ｜ 成功命中：<span style="color:var(--danger);font-weight:900;">${e.winningPairs}</span> 碰二星</div>
+                            <div class="hit-status">📊 依據 ${e.triggerDate} 開獎落球定位預測，隔期精準收米！</div>
                         </div>`;
                     } else if (e.type === 'miss') {
                         return `
                         <div class="miss-detail">
-                            <div class="hit-type" style="color:#636e72;">❌ 未開出: 定位拖牌 (第${e.pattern.pos}位)</div>
-                            <div class="miss-nums">預測號碼: ${targetDisplay}</div>
-                            <div class="miss-status">⚠️ 下1期未開出 (落空)</div>
+                            <div class="hit-type" style="color:#636e72;">❌ 單期未開出組合</div>
+                            <div class="miss-nums">下注碰數：${e.totalPairs} 碰 ｜ 命中：0 碰</div>
+                            <div class="miss-status">⚠️ 隔期未達成跨柱連線 (依據 ${e.triggerDate} 數據)</div>
                         </div>`;
                     }
                 }).join('');
@@ -670,10 +628,10 @@
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
-            💡 <b>單期滾動回測結算總覽：</b><br>
-            總計捕獲定位指標 <b>${stats.total}</b> 組，於下一期直接成功開出 <b>${stats.hit}</b> 組，單期狙擊勝率 <b>${hitRate}%</b><br>
+            💡 <b>純二星柱碰・單期滾動回測總覽：</b><br>
+            總共模擬交易 <b>${stats.total}</b> 期（每日去重立柱），其中有 <b>${stats.hit}</b> 期成功開出至少一組以上的二星，單期回測勝率 <b>${hitRate}%</b><br>
             <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #b3e5fc; font-size: 0.95rem;">
-                💰 <b>單期回測累積總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
+                💰 <b>二星柱碰回測累積總獲利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
             </div>`;
     }
 
@@ -687,11 +645,11 @@
                 📅 結算週次：${weekStr}
             </div>
             <div class="pnl-row">
-                <span>下注總球數: ${stats.bets} (單期命中 ${stats.hits})</span>
+                <span>下注總組合: ${stats.bets} 碰 ｜ 總計中獎: ${stats.hits} 碰</span>
             </div>
             <div class="pnl-row">
                 <span>總成本 (扣退水): ${stats.cost.toFixed(1)}</span>
-                <span>總獎金: ${stats.win.toFixed(1)}</span>
+                <span>總獎金 (53倍): ${stats.win.toFixed(1)}</span>
             </div>
             <div class="pnl-row" style="margin-top: 10px; font-size: 1.1rem; border-top: 1px solid #f9e79f; padding-top: 8px;">
                 <span>週淨損益:</span>
