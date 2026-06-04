@@ -116,6 +116,9 @@
                     <option value="none">不過濾 (保留全部)</option>
                     <option value="removeCold">移除冷門號 (保留近期熱號)</option>
                     <option value="removeHot">移除熱門號 (保留遺漏冷號)</option>
+                    <option value="removeLeastFrequent">移除近期出現次數少之號碼</option>
+                    <option value="removeMostFrequent">移除近期出現次數多之號碼</option>
+                    <option value="smartRemove">智能移除超過號碼 (綜合指標篩選)</option>
                 </select>
             </label>
             
@@ -221,6 +224,18 @@
             omit++;
         }
         return omit;
+    }
+
+    // 已新增：計算近期（近 10 期）開出次數之判斷函數
+    function getRecentCount(num, currentIndex) {
+        let count = 0;
+        let start = Math.max(0, currentIndex - 9);
+        for (let k = currentIndex; k >= start; k--) {
+            if (parsedData[k].nums.includes(num)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     function getMonthString(dateStr) {
@@ -485,13 +500,21 @@
             allPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
             let allowedNumbers = initialSeen;
             
-            // 已修改：上限 8 顆改為 10 顆過濾邏輯
+            // 已修改：引入全新的「智能篩選」以及「出現次數多與少」判斷過濾核心
             if (filter8BallsMode !== 'none' && initialSeen.size > 10) {
                 let sortedNums = Array.from(initialSeen).sort((a, b) => {
                     if (filter8BallsMode === 'removeCold') {
                         return getOmit(a, i) - getOmit(b, i) || a - b;
-                    } else {
+                    } else if (filter8BallsMode === 'removeHot') {
                         return getOmit(b, i) - getOmit(a, i) || a - b;
+                    } else if (filter8BallsMode === 'removeLeastFrequent') {
+                        return getRecentCount(b, i) - getRecentCount(a, i) || a - b;
+                    } else if (filter8BallsMode === 'removeMostFrequent') {
+                        return getRecentCount(a, i) - getRecentCount(b, i) || a - b;
+                    } else if (filter8BallsMode === 'smartRemove') {
+                        let scoreA = getRecentCount(a, i) * 5 - getOmit(a, i);
+                        let scoreB = getRecentCount(b, i) * 5 - getOmit(b, i);
+                        return scoreB - scoreA || a - b;
                     }
                 });
                 allowedNumbers = new Set(sortedNums.slice(0, 10));
@@ -657,13 +680,21 @@
             latestPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
             let allowedNumbers = initialSeen;
             
-            // 已修改：上限 8 顆改為 10 顆過濾邏輯（推薦看板UI連動）
+            // 已修改：當期預測看板連動套用「智能過濾」以及「近期次數多、少」機制
             if (filter8BallsMode !== 'none' && initialSeen.size > 10) {
                 let sortedNums = Array.from(initialSeen).sort((a, b) => {
                     if (filter8BallsMode === 'removeCold') {
                         return getOmit(a, latestIndex) - getOmit(b, latestIndex) || a - b;
-                    } else {
+                    } else if (filter8BallsMode === 'removeHot') {
                         return getOmit(b, latestIndex) - getOmit(a, latestIndex) || a - b;
+                    } else if (filter8BallsMode === 'removeLeastFrequent') {
+                        return getRecentCount(b, latestIndex) - getRecentCount(a, latestIndex) || a - b;
+                    } else if (filter8BallsMode === 'removeMostFrequent') {
+                        return getRecentCount(a, latestIndex) - getRecentCount(b, latestIndex) || a - b;
+                    } else if (filter8BallsMode === 'smartRemove') {
+                        let scoreA = getRecentCount(a, latestIndex) * 5 - getOmit(a, latestIndex);
+                        let scoreB = getRecentCount(b, latestIndex) * 5 - getOmit(b, latestIndex);
+                        return scoreB - scoreA || a - b;
                     }
                 });
                 allowedNumbers = new Set(sortedNums.slice(0, 10));
