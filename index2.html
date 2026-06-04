@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>定位落牌智慧分析系統(二三四五星智慧立柱版)</title>
+    <title>定位落牌智慧分析系統(二三四星智慧立柱版)</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -79,7 +79,7 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>定位落牌智慧分析系統(二三四五星智慧立柱版)</h1>
+            <h1>定位落牌智慧分析系統(二三四星智慧立柱版)</h1>
         </div>
     </div>
     
@@ -128,14 +128,14 @@
     <div class="section-title">🎯 智慧立柱推薦組合 (自動跨柱去重)</div>
     <div id="pillarArea" class="selector-box" style="background: var(--card); border-radius: 12px; padding: 15px;"></div>
     
-    <div class="section-title">📈 累積損益曲線 (二三四五星全域綜合回測)</div>
+    <div class="section-title">📈 累積損益曲線 (二三四星全域綜合回測)</div>
     <div class="selector-box" style="padding: 10px; margin-bottom: 20px;">
         <canvas id="pnlChart" height="150"></canvas>
     </div>
 
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">📜 每日開獎與單期二三四五星紀錄</div>
+    <div class="section-title">📜 每日開獎與單期二三四星紀錄</div>
     <div id="resultList"></div>
 </div>
 
@@ -147,13 +147,11 @@
     const COST_BASE_2S = 0.76;  
     const COST_BASE_3S = 0.65;  
     const COST_BASE_4S = 0.55;  
-    const COST_BASE_5S = 0.45;  // 已新增：5星每碰折合本金
     const REBATE_RATE = 0.2107; 
 
     const MULTIPLIER_2S = 53;   
     const MULTIPLIER_3S = 570;  
     const MULTIPLIER_4S = 8000; 
-    const MULTIPLIER_5S = 30000; // 已新增：5星中獎倍率
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
@@ -324,11 +322,10 @@
         return patterns.sort((a, b) => b.score - a.score || b.total - a.total);
     }
 
-    // 已升級：加入 5 星柱碰組合計算
     function calcPillarCombinations(pillarArrays) {
         const activePillars = pillarArrays.filter(p => p.length > 0);
         const n = activePillars.length;
-        let c2 = 0, c3 = 0, c4 = 0, c5 = 0;
+        let c2 = 0, c3 = 0, c4 = 0;
         
         for (let i = 0; i < n; i++) {
             for (let j = i + 1; j < n; j++) {
@@ -351,18 +348,7 @@
                 }
             }
         }
-        for (let i = 0; i < n; i++) {
-            for (let j = i + 1; j < n; j++) {
-                for (let k = j + 1; k < n; k++) {
-                    for (let l = k + 1; l < n; l++) {
-                        for (let m = l + 1; m < n; m++) {
-                            c5 += activePillars[i].length * activePillars[j].length * activePillars[k].length * activePillars[l].length * activePillars[m].length;
-                        }
-                    }
-                }
-            }
-        }
-        return { c2, c3, c4, c5 };
+        return { c2, c3, c4 };
     }
 
     async function processData() {
@@ -400,7 +386,6 @@
     function runAnalysis() {
         saveSettings();
 
-        // 核心改造：支援落球與順球(由小到大排序)的即時切換
         let isSorted = document.getElementById('sortBalls').checked;
         for (let d of parsedData) {
             if (isSorted) {
@@ -445,24 +430,21 @@
             }
 
             let playIndex = i + 1; 
-            if (playIndex < parsedData.length && (totalPairs.c2 > 0 || totalPairs.c3 > 0 || totalPairs.c4 > 0 || totalPairs.c5 > 0)) {
+            if (playIndex < parsedData.length && (totalPairs.c2 > 0 || totalPairs.c3 > 0 || totalPairs.c4 > 0)) {
                 let nextNums = parsedData[playIndex].nums;
                 let pillarHits = backtestPillars.map(pillar => intersect(pillar, nextNums).length);
                 let winPairs = calcPillarCombinations(pillarHits.map(h => Array(h).fill(0)));
 
-                // 💸 成本精算公式：納入 5 星獨立計費本金
-                let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S + totalPairs.c5 * COST_BASE_5S) * userMultiplier;
+                let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S) * userMultiplier;
                 let netCost = rawCost * (1 - REBATE_RATE);
+                let winAmount = (winPairs.c2 * MULTIPLIER_2S + winPairs.c3 * MULTIPLIER_3S + winPairs.c4 * MULTIPLIER_4S) * userMultiplier;
                 
-                // 💰 派彩公式：納入 5 星 30000 倍獎金
-                let winAmount = (winPairs.c2 * MULTIPLIER_2S + winPairs.c3 * MULTIPLIER_3S + winPairs.c4 * MULTIPLIER_4S + winPairs.c5 * MULTIPLIER_5S) * userMultiplier;
-                
-                dailyView[playIndex].pnl.bets += (totalPairs.c2 + totalPairs.c3 + totalPairs.c4 + totalPairs.c5); 
+                dailyView[playIndex].pnl.bets += (totalPairs.c2 + totalPairs.c3 + totalPairs.c4); 
                 dailyView[playIndex].pnl.cost += netCost;
                 
                 if (winAmount > 0) {
                     stats.hit++;
-                    dailyView[playIndex].pnl.hits += (winPairs.c2 + winPairs.c3 + winPairs.c4 + winPairs.c5);
+                    dailyView[playIndex].pnl.hits += (winPairs.c2 + winPairs.c3 + winPairs.c4);
                     dailyView[playIndex].pnl.win += winAmount;
                 }
                 stats.total++;
@@ -568,11 +550,10 @@
 
             let currentPairs = calcPillarCombinations(pillars.map(p => p.nums));
             pillarGridHtml += `
-            <div style="font-size: 0.82rem; border-top: 1px dashed #eee; padding-top: 8px; display: flex; justify-content: space-between; font-weight: bold; color: #2d3436; flex-wrap: wrap; gap: 4px;">
+            <div style="font-size: 0.85rem; border-top: 1px dashed #eee; padding-top: 8px; display: flex; justify-content: space-between; font-weight: bold; color: #2d3436; flex-wrap: wrap; gap: 4px;">
                 <span>2星: <span style="color:var(--accent);">${currentPairs.c2}</span> 碰</span>
                 <span>3星: <span style="color:var(--success);">${currentPairs.c3}</span> 碰</span>
                 <span>4星: <span style="color:var(--danger);">${currentPairs.c4}</span> 碰</span>
-                <span>5星: <span style="color:#9b59b6;">${currentPairs.c5}</span> 碰</span>
             </div>`;
             document.getElementById('pillarArea').innerHTML = pillars.length > 0 ? pillarGridHtml : '<div style="color:#999; text-align:center; font-size:0.85rem;">暫無符合篩選之落球數據 ☕</div>';
         }
@@ -640,8 +621,8 @@
                         <div class="hit-detail">
                             <div class="hit-type">🎯 柱碰獲利中獎！</div>
                             <div class="hit-nums">
-                                <b>下注佈局：</b>2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰) 5星(${e.totalPairs.c5}碰)<br>
-                                <b>擊中碰數：</b><span style="color:var(--danger);font-weight:bold;">2星(${e.winPairs.c2}碰) 3星(${e.winPairs.c3}碰) 4星(${e.winPairs.c4}碰) 5星(${e.winPairs.c5}碰)</span><br>
+                                <b>下注佈局：</b>2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰)<br>
+                                <b>擊中碰數：</b><span style="color:var(--danger);font-weight:bold;">2星(${e.winPairs.c2}碰) 3星(${e.winPairs.c3}碰) 4星(${e.winPairs.c4}碰)</span><br>
                                 <span style="color:#2c3e50; font-size:0.9rem;">💰 <b>本期總成本(含退水)：</b>${e.netCost.toFixed(1)} 元 ｜ <b>中獎回報金額：</b><span style="color:var(--success);font-weight:bold;">${e.winAmount.toFixed(1)}</span> 元</span>
                             </div>
                             <div class="hit-status">📊 綜合 ${e.triggerDate} 的數據預測，隔期獲利。</div>
@@ -651,7 +632,7 @@
                         <div class="miss-detail">
                             <div class="hit-type" style="color:#636e72;">❌ 單期未達成柱碰連線</div>
                             <div class="miss-nums">
-                                <b>下注佈局：</b>2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰) 5星(${e.totalPairs.c5}碰) ｜ 命中：0 碰<br>
+                                <b>下注佈局：</b>2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰) ｜ 命中：0 碰<br>
                                 <span style="color:#7f8c8d; font-size:0.9rem;">💸 <b>本期總成本(含退水)：</b>${e.netCost.toFixed(1)} 元 ｜ <b>中獎回報金額：</b>0.0 元</span>
                             </div>
                             <div class="miss-status">⚠️ 隔期未跨柱配對成功 (源自 ${e.triggerDate} 數據)</div>
@@ -679,10 +660,10 @@
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
-            💡 <b>二三四五星立柱綜合・滾動回測總覽：</b><br>
+            💡 <b>二三四星立柱綜合・滾動回測總覽：</b><br>
             總計模擬交易 <b>${stats.total}</b> 期（每日智慧去重立柱），其中有 <b>${stats.hit}</b> 期成功擊中獲利組合，回測單期勝率 <b>${hitRate}%</b><br>
             <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #b3e5fc; font-size: 0.95rem;">
-                💰 <b>二三四五星回測累積總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
+                💰 <b>二三四星回測累積總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
             </div>`;
     }
 
