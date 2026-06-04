@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>定位落牌分析系統(下1期二星柱碰版)</title>
+    <title>定位落牌分析系統(二三四星全自動立柱版)</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -27,7 +27,7 @@
         /* Header Area */
         .header { background: var(--primary); color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .header-top { display: flex; justify-content: center; align-items: center; margin-bottom: 0; }
-        h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; }
+        h1 { font-size: 1.1rem; font-weight: 800; letter-spacing: 1px; }
 
         /* Controls */
         .selector-box { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
@@ -42,9 +42,7 @@
         .pred-card h3 { font-size: 0.95rem; margin-bottom: 5px; color: var(--primary); font-weight: 800; }
         .pred-info { font-size: 0.8rem; color: #636e72; margin-bottom: 8px; }
         .nums-highlight { font-size: 1.3rem; font-weight: 900; color: var(--accent); letter-spacing: 1px; display: block; margin-top: 5px; }
-        .target-tail { font-size: 0.85rem; color: #fff; background: var(--primary); padding: 2px 8px; border-radius: 12px; vertical-align: middle; margin-left: 5px; }
         .score-tag { position: absolute; top: 0; right: 0; background: #dfe6e9; color: #2d3436; padding: 4px 10px; border-bottom-left-radius: 10px; font-size: 0.75rem; font-weight: bold; }
-        .score-high { background: #ffeaa7; color: #d35400; }
         .score-perfect { background: var(--success); color: white; }
 
         /* Summary Area */
@@ -57,15 +55,12 @@
         .res-actual { font-family: monospace; font-size: 1rem; color: #2d3436; font-weight: bold; }
         
         /* Event Details */
-        .hit-detail { background: #fdfaf0; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #f1c40f; }
+        .hit-detail { background: #fdfaf0; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #27ae60; }
         .miss-detail { background: #f5f6f7; padding: 8px; border-radius: 8px; margin-top: 8px; border: 1px solid #eee; }
 
-        .hit-type { font-size: 0.85rem; font-weight: bold; color: #d35400; }
-        .hit-nums { color: var(--success); font-weight: 900; font-size: 1rem; margin-top: 2px; }
-        .miss-nums { color: #b2bec3; font-weight: 900; font-size: 1.1rem; margin-top: 2px; }
-
-        .hit-status { font-size: 0.75rem; color: var(--success); font-weight: bold; margin-top: 3px; }
-        .miss-status { font-size: 0.75rem; color: #636e72; font-weight: bold; margin-top: 3px; }
+        .hit-type { font-size: 0.85rem; font-weight: bold; color: #27ae60; }
+        .hit-nums { color: #2d3436; font-size: 0.85rem; margin-top: 4px; line-height: 1.5; }
+        .miss-nums { color: #636e72; font-size: 0.85rem; margin-top: 4px; }
 
         /* PnL Week Summary */
         .week-summary { background: #fffcf0; border: 1px solid #f1c40f; padding: 15px; border-radius: 12px; margin: 20px 0 15px 0; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(241,196,15,0.15); }
@@ -84,7 +79,7 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>定位落牌分析系統(還原選單+二星53倍柱碰)</h1>
+            <h1>定位落牌智慧分析系統(二三四星智慧立柱版)</h1>
         </div>
     </div>
     
@@ -116,8 +111,9 @@
                 </select>
             </label>
             <label style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-weight: bold; font-size: 0.95rem;">下注倍率：</span>
-                <input type="number" id="betMultiplier" value="0.01" step="0.01" min="0.01" onchange="runAnalysis()" style="width: 80px; padding: 4px 8px; border-radius: 6px; border: 1px solid #dfe6e9; font-size: 0.95rem; outline: none;">
+                <span style="font-weight: bold; font-size: 0.95rem;">每碰下注金額：</span>
+                <input type="number" id="betMultiplier" value="1" step="1" min="1" onchange="runAnalysis()" style="width: 80px; padding: 4px 8px; border-radius: 6px; border: 1px solid #dfe6e9; font-size: 0.95rem; outline: none;">
+                <span style="font-size: 0.9rem; color: #7f8c8d;">元</span>
             </label>
         </div>
     </div>
@@ -128,14 +124,14 @@
     <div class="section-title">🎯 智慧立柱推薦組合 (自動跨柱去重)</div>
     <div id="pillarArea" class="selector-box" style="background: var(--card); border-radius: 12px; padding: 15px;"></div>
     
-    <div class="section-title">📈 累積損益曲線 (純二星柱碰回測)</div>
+    <div class="section-title">📈 累積損益曲線 (二三四星全域綜合回測)</div>
     <div class="selector-box" style="padding: 10px; margin-bottom: 20px;">
         <canvas id="pnlChart" height="150"></canvas>
     </div>
 
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">📜 每日開獎與單期柱碰紀錄</div>
+    <div class="section-title">📜 每日開獎與單期二三四星紀錄</div>
     <div id="resultList"></div>
 </div>
 
@@ -144,10 +140,17 @@
     let maxNum = 39;
     let pnlChartInstance = null;
 
-    // 🔥 核心重構：全網最精準的地下二星柱碰財務模型
-    const COST_PER_PAIR = 76;   // 二星每碰基準本金 (市場大宗行情約 74~76 元)
+    // 🛠️ 修正精算模型：將下注基準對齊「1元」
+    // 以 100 元下注額本金折算為 1 元基準的單碰成本 (已導入二三四星各玩法成本落差)
+    const COST_BASE_2S = 0.76;  // 2星每碰折合本金
+    const COST_BASE_3S = 0.65;  // 3星每碰折合本金
+    const COST_BASE_4S = 0.55;  // 4星每碰折合本金
     const REBATE_RATE = 0.2107; // 退水率
-    const WIN_MULTIPLIER = 53;  // 二星中獎倍率（1元中53元，即53倍）
+
+    // 中獎倍率（基準1元）
+    const MULTIPLIER_2S = 53;   
+    const MULTIPLIER_3S = 570;  
+    const MULTIPLIER_4S = 8000; 
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
@@ -313,6 +316,39 @@
         return patterns.sort((a, b) => b.score - a.score || b.total - a.total);
     }
 
+    // 🧮 核心重構：精準計算立柱配牌的二星、三星、四星總碰數
+    function calcPillarCombinations(pillarArrays) {
+        const activePillars = pillarArrays.filter(p => p.length > 0);
+        const n = activePillars.length;
+        let c2 = 0, c3 = 0, c4 = 0;
+        
+        // 二星柱碰組合數
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                c2 += activePillars[i].length * activePillars[j].length;
+            }
+        }
+        // 三星柱碰組合數
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                for (let k = j + 1; k < n; k++) {
+                    c3 += activePillars[i].length * activePillars[j].length * activePillars[k].length;
+                }
+            }
+        }
+        // 四星柱碰組合數
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                for (let k = j + 1; k < n; k++) {
+                    for (let l = k + 1; l < n; l++) {
+                        c4 += activePillars[i].length * activePillars[j].length * activePillars[k].length * activePillars[l].length;
+                    }
+                }
+            }
+        }
+        return { c2, c3, c4 };
+    }
+
     async function processData() {
         saveSettings();
         const fileName = document.getElementById('csvSelect').value;
@@ -359,14 +395,13 @@
         let totalStats = { cost: 0, win: 0, bets: 0, hits: 0 };
 
         let userMultiplier = parseFloat(document.getElementById('betMultiplier').value);
-        if (isNaN(userMultiplier) || userMultiplier <= 0) userMultiplier = 0.01;
-        let ratio = userMultiplier / 0.01;
+        if (isNaN(userMultiplier) || userMultiplier <= 0) userMultiplier = 1;
 
-        // 🧠 滾動回測核心：模擬當天抓出「跨柱去重組合」並投註下1期二星柱碰
+        // 🧠 滾動歷史回測引擎 (全面導入二三四星獨立計費與派彩)
         for (let i = 0; i < parsedData.length; i++) {
             let allPatterns = getSmartPatterns(parsedData[i].nums, i);
             
-            // 建立跨柱去重的柱子陣列 (完全同步主介面的立柱邏輯)
+            // 全自動模擬跨柱去重立柱
             let seenNumbers = new Set();
             let backtestPillars = [];
             allPatterns.forEach(p => {
@@ -377,53 +412,44 @@
                 }
             });
 
-            // 計算這幾根柱子配出的總「二星碰數」
-            let totalPairs = 0;
-            for (let m = 0; m < backtestPillars.length; m++) {
-                for (let n = m + 1; n < backtestPillars.length; n++) {
-                    totalPairs += backtestPillars[m].length * backtestPillars[n].length;
-                }
-            }
+            // 當期立柱總下注組合碰數 (2星、3星、4星)
+            let totalPairs = calcPillarCombinations(backtestPillars);
 
             if (i === parsedData.length - 1) {
                 tracking = allPatterns;
             }
 
-            let playIndex = i + 1; // 目標期數為下一期
-            if (playIndex < parsedData.length && totalPairs > 0) {
+            let playIndex = i + 1; // 狙擊隔期下一期
+            if (playIndex < parsedData.length && (totalPairs.c2 > 0 || totalPairs.c3 > 0 || totalPairs.c4 > 0)) {
                 let nextNums = parsedData[playIndex].nums;
                 
-                // 計算每根柱子在下一期的中球數
+                // 計算各柱中獎球數
                 let pillarHits = backtestPillars.map(pillar => intersect(pillar, nextNums).length);
                 
-                // 精算達成的二星中獎組合數
-                let winningPairs = 0;
-                for (let m = 0; m < pillarHits.length; m++) {
-                    for (let n = m + 1; n < pillarHits.length; n++) {
-                        winningPairs += pillarHits[m] * pillarHits[n];
-                    }
-                }
+                // 計算各星級精準中獎碰數
+                let winPairs = calcPillarCombinations(pillarHits.map(h => Array(h).fill(0)));
 
-                // 二星柱碰財務實戰公式
-                let costAmount = totalPairs * (COST_PER_PAIR * ratio);
-                let rebateAmount = costAmount * REBATE_RATE;
+                // 💸 精準實戰成本公式 (各星級本金分開計算，再扣除退水)
+                let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S) * userMultiplier;
+                let netCost = rawCost * (1 - REBATE_RATE);
+
+                // 💰 智慧派彩公式 (2星53倍、3星570倍、4星8000倍)
+                let winAmount = (winPairs.c2 * MULTIPLIER_2S + winPairs.c3 * MULTIPLIER_3S + winPairs.c4 * MULTIPLIER_4S) * userMultiplier;
                 
-                dailyView[playIndex].pnl.bets += totalPairs; // 紀錄下注總碰數
-                dailyView[playIndex].pnl.cost += (costAmount - rebateAmount);
+                dailyView[playIndex].pnl.bets += (totalPairs.c2 + totalPairs.c3 + totalPairs.c4); 
+                dailyView[playIndex].pnl.cost += netCost;
                 
-                if (winningPairs > 0) {
+                if (winAmount > 0) {
                     stats.hit++;
-                    // 中獎金額 = 中獎碰數 * 單碰中獎獎金(100元基數乘上53倍)
-                    let winAmount = winningPairs * (100 * ratio * WIN_MULTIPLIER);
-                    dailyView[playIndex].pnl.hits += winningPairs;
+                    dailyView[playIndex].pnl.hits += (winPairs.c2 + winPairs.c3 + winPairs.c4);
                     dailyView[playIndex].pnl.win += winAmount;
                 }
                 stats.total++;
 
-                if (winningPairs > 0) {
+                if (winAmount > 0) {
                     dailyView[playIndex].events.push({
                         type: 'hit',
-                        winningPairs: winningPairs,
+                        winPairs: winPairs,
                         totalPairs: totalPairs,
                         triggerDate: parsedData[i].date
                     });
@@ -437,7 +463,7 @@
             }
         }
 
-        // 渲染損益曲線圖表
+        // 渲染損益 Chart
         let chartLabels = [];
         let chartData = [];
         let cumulativePnL = 0;
@@ -476,7 +502,7 @@
             }
         });
 
-        // 渲染預測指標卡片
+        // 渲染預測卡片
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.slice(0,3).map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
             let targetDisplay = t.target.map(n => `${fNum(n)}(${getOmit(n, parsedData.length-1)}期未開)`);
@@ -484,12 +510,12 @@
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 歷史勝率</div>
                 <h3>${t.type}</h3>
-                <div class="pred-info">基準開獎日: ${parsedData[parsedData.length-1].date} ➡️ 狙擊目標：明天下 1 期</div>
+                <div class="pred-info">基準開獎日: ${parsedData[parsedData.length-1].date} ➡️ 目標：下1期開獎</div>
                 <span class="nums-highlight">${targetDisplay.join(', ')}</span>
             </div>`
         }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">無有效指標 ☕</div>';
 
-        // 智慧型跨柱去重立柱推薦顯示
+        // 智慧型跨柱去重立柱推薦顯示 (主UI畫面)
         let latestIndex = parsedData.length - 1;
         if (latestIndex >= 0) {
             let latestPatterns = getSmartPatterns(parsedData[latestIndex].nums, latestIndex);
@@ -516,24 +542,17 @@
             });
             pillarGridHtml += `</div>`;
 
-            // 計算當期總組合碰數
-            let activePillarArrays = pillars.map(p => p.nums).filter(arr => arr.length > 0);
-            let nP = activePillarArrays.length;
-            let c2 = 0;
-            for (let m = 0; m < nP; m++) {
-                for (let n = m + 1; n < nP; n++) {
-                    c2 += activePillarArrays[m].length * activePillarArrays[n].length;
-                }
-            }
-
+            let currentPairs = calcPillarCombinations(pillars.map(p => p.nums));
             pillarGridHtml += `
-            <div style="font-size: 0.85rem; border-top: 1px dashed #eee; padding-top: 8px; text-align: right; font-weight: bold; color: #2d3436;">
-                <span>本期智慧組合總計： <span style="color:var(--danger); font-size:1.1rem;">${c2}</span> 碰二星柱碰</span>
+            <div style="font-size: 0.85rem; border-top: 1px dashed #eee; padding-top: 8px; display: flex; justify-content: space-between; font-weight: bold; color: #2d3436;">
+                <span>2星: <span style="color:var(--accent);">${currentPairs.c2}</span> 碰</span>
+                <span>3星: <span style="color:var(--success);">${currentPairs.c3}</span> 碰</span>
+                <span>4星: <span style="color:var(--danger);">${currentPairs.c4}</span> 碰</span>
             </div>`;
             document.getElementById('pillarArea').innerHTML = pillars.length > 0 ? pillarGridHtml : '<div style="color:#999; text-align:center; font-size:0.85rem;">暫無開獎數據 ☕</div>';
         }
 
-        // 歷史明細分組渲染
+        // 歷史明細列表渲染
         let reversedData = dailyView.slice().reverse();
         let chunksHtml = [];
         let currentWeek = null;
@@ -594,16 +613,19 @@
                     if (e.type === 'hit') {
                         return `
                         <div class="hit-detail">
-                            <div class="hit-type">🎯 二星柱碰中獎！(倍率: ${WIN_MULTIPLIER}倍)</div>
-                            <div class="hit-nums">下注：<b>${e.totalPairs}</b> 碰 ｜ 成功命中：<span style="color:var(--danger);font-weight:900;">${e.winningPairs}</span> 碰二星</div>
-                            <div class="hit-status">📊 依據 ${e.triggerDate} 開獎落球定位預測，隔期精準收米！</div>
+                            <div class="hit-type">🎯 二三四星立柱全彩中獎！</div>
+                            <div class="hit-nums">
+                                <b>下注碰數：</b>2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰)<br>
+                                <b>精準命中：</b><span style="color:var(--danger);font-weight:bold;">2星(${e.winPairs.c2}碰) 3星(${e.winPairs.c3}碰) 4星(${e.winPairs.c4}碰)</span>
+                            </div>
+                            <div class="hit-status">📊 依據 ${e.triggerDate} 開獎落球定位預測，隔期收米！</div>
                         </div>`;
                     } else if (e.type === 'miss') {
                         return `
                         <div class="miss-detail">
-                            <div class="hit-type" style="color:#636e72;">❌ 單期未開出組合</div>
-                            <div class="miss-nums">下注碰數：${e.totalPairs} 碰 ｜ 命中：0 碰</div>
-                            <div class="miss-status">⚠️ 隔期未達成跨柱連線 (依據 ${e.triggerDate} 數據)</div>
+                            <div class="hit-type" style="color:#636e72;">❌ 單期未達成跨柱連線</div>
+                            <div class="miss-nums">下注：2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰) ｜ 命中：0 碰</div>
+                            <div class="miss-status">⚠️ 隔期未達成中獎連線 (依據 ${e.triggerDate} 數據)</div>
                         </div>`;
                     }
                 }).join('');
@@ -628,10 +650,10 @@
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
-            💡 <b>純二星柱碰・單期滾動回測總覽：</b><br>
-            總共模擬交易 <b>${stats.total}</b> 期（每日去重立柱），其中有 <b>${stats.hit}</b> 期成功開出至少一組以上的二星，單期回測勝率 <b>${hitRate}%</b><br>
+            💡 <b>二三四星立柱綜合・滾動回測總覽：</b><br>
+            總計模擬交易 <b>${stats.total}</b> 期（每日智慧去重立柱），其中有 <b>${stats.hit}</b> 期成功擊中獲利組合，回測單期勝率 <b>${hitRate}%</b><br>
             <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #b3e5fc; font-size: 0.95rem;">
-                💰 <b>二星柱碰回測累積總獲利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
+                💰 <b>二三四星回測累積總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
             </div>`;
     }
 
@@ -645,11 +667,11 @@
                 📅 結算週次：${weekStr}
             </div>
             <div class="pnl-row">
-                <span>下注總組合: ${stats.bets} 碰 ｜ 總計中獎: ${stats.hits} 碰</span>
+                <span>下注總配牌: ${stats.bets} 碰 ｜ 總計中獎: ${stats.hits} 碰</span>
             </div>
             <div class="pnl-row">
                 <span>總成本 (扣退水): ${stats.cost.toFixed(1)}</span>
-                <span>總獎金 (53倍): ${stats.win.toFixed(1)}</span>
+                <span>總派彩獎金: ${stats.win.toFixed(1)}</span>
             </div>
             <div class="pnl-row" style="margin-top: 10px; font-size: 1.1rem; border-top: 1px solid #f9e79f; padding-top: 8px;">
                 <span>週淨損益:</span>
