@@ -449,6 +449,7 @@
                 }
                 stats.total++;
 
+                // 已修改：將當期立柱號碼與開獎號碼複本存入 event 中，用於高亮與號碼明細
                 if (winAmount > 0) {
                     dailyView[playIndex].events.push({
                         type: 'hit',
@@ -456,14 +457,18 @@
                         totalPairs: totalPairs,
                         triggerDate: parsedData[i].date,
                         netCost: netCost,
-                        winAmount: winAmount
+                        winAmount: winAmount,
+                        pillars: backtestPillars.map(p => [...p]),
+                        nextNums: [...nextNums]
                     });
                 } else {
                     dailyView[playIndex].events.push({
                         type: 'miss',
                         totalPairs: totalPairs,
                         triggerDate: parsedData[i].date,
-                        netCost: netCost
+                        netCost: netCost,
+                        pillars: backtestPillars.map(p => [...p]),
+                        nextNums: [...nextNums]
                     });
                 }
             }
@@ -616,23 +621,39 @@
                 eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無觸發訊號</div>`;
             } else {
                 eventsHtml = d.events.map(e => {
-                    // 已優化：新增命中二、三、四星時的動態顏色卡片區別邏輯
+                    // 已修改：建立柱碰下注號碼的渲染，並高亮命中號碼的 HTML 區塊
+                    let pillarDetailsHtml = "";
+                    if (e.pillars && e.pillars.length > 0) {
+                        pillarDetailsHtml = `<div style="margin: 4px 0 6px 0; font-size: 0.82rem; color: #34495e; line-height: 1.6;"><b>下注號碼：</b>`;
+                        e.pillars.forEach((p, pIdx) => {
+                            let pStr = p.map(n => {
+                                if (e.nextNums && e.nextNums.includes(n)) {
+                                    // 命中：白字綠底加粗顯示
+                                    return `<span style="background-color: #27ae60; color: white; padding: 0px 4px; border-radius: 3px; font-weight: bold; margin: 0 1px; display: inline-block;">${fNum(n)}</span>`;
+                                } else {
+                                    return fNum(n);
+                                }
+                            }).join(', ');
+                            pillarDetailsHtml += `<span style="background: #f1f2f6; padding: 1px 6px; border-radius: 4px; margin-right: 4px; display: inline-block;">柱${pIdx+1}: ${pStr}</span>`;
+                        });
+                        pillarDetailsHtml += `</div>`;
+                    }
+
                     if (e.type === 'hit') {
                         let cardStyle = "";
                         let typeColor = "#27ae60";
                         let hitTitle = "🎯 柱碰獲利中獎！";
                         
-                        // 根據最高命中星等指定不同的主題色
                         if (e.winPairs.c4 > 0) {
-                            cardStyle = "border-color: #9b59b6; background-color: #f5eef8;"; // 四星：貴族紫
+                            cardStyle = "border-color: #9b59b6; background-color: #f5eef8;"; 
                             typeColor = "#9b59b6";
                             hitTitle = "🔮 恭喜擊中【四星】大獎特獎！";
                         } else if (e.winPairs.c3 > 0) {
-                            cardStyle = "border-color: #e67e22; background-color: #fdf5e6;"; // 三星：活力橘
+                            cardStyle = "border-color: #e67e22; background-color: #fdf5e6;"; 
                             typeColor = "#e67e22";
                             hitTitle = "🎉 恭喜擊中【三星】獲利獎項！";
                         } else if (e.winPairs.c2 > 0) {
-                            cardStyle = "border-color: #3498db; background-color: #f4fafd;"; // 二星：智慧藍
+                            cardStyle = "border-color: #3498db; background-color: #f4fafd;"; 
                             typeColor = "#3498db";
                             hitTitle = "🎯 精準擊中【二星】連線！";
                         }
@@ -642,6 +663,7 @@
                             <div class="hit-type" style="color: ${typeColor};">${hitTitle}</div>
                             <div class="hit-nums">
                                 <b>下注佈局：</b>2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰)<br>
+                                ${pillarDetailsHtml}
                                 <b>擊中碰數：</b>
                                 <span style="color:#3498db; font-weight:bold;">2星(${e.winPairs.c2}碰)</span> 
                                 <span style="color:#e67e22; font-weight:bold;">3星(${e.winPairs.c3}碰)</span> 
@@ -656,6 +678,7 @@
                             <div class="hit-type" style="color:#636e72;">❌ 單期未達成柱碰連線</div>
                             <div class="miss-nums">
                                 <b>下注佈局：</b>2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰) ｜ 命中：0 碰<br>
+                                ${pillarDetailsHtml}
                                 <span style="color:#7f8c8d; font-size:0.9rem;">💸 <b>本期總成本(含退水)：</b>${e.netCost.toFixed(1)} 元 ｜ <b>中獎回報金額：</b>0.0 元</span>
                             </div>
                             <div class="miss-status">⚠️ 隔期未跨柱配對成功 (源自 ${e.triggerDate} 數據)</div>
