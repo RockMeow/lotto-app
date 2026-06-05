@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>定位落牌智慧分析系統(二三四五星智慧立柱版)</title>
+    <title>定位拖牌智慧分析系統 (智慧立柱版)</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -83,7 +83,7 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>定位落牌智慧分析系統(二三四五星智慧立柱版)</h1>
+            <h1>定位拖牌智慧分析系統 (智慧立柱版)</h1>
         </div>
     </div>
     
@@ -96,7 +96,7 @@
             <option value="Six_history_2026.csv">六合彩</option>
         </select>
         <div class="status-bar">
-            <span>資料狀態:</span>
+            <span>狀態:</span>
             <span id="dataStatus" style="font-weight: bold;">讀取中...</span>
         </div>
 
@@ -107,11 +107,11 @@
             </label>
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="sortBalls" onchange="runAnalysis()" style="width: 18px; height: 18px; cursor: pointer;">
-                <span style="font-weight: bold; font-size: 0.95rem;">落球轉順球 (按號碼大小排序分析)</span>
+                <span style="font-weight: bold; font-size: 0.95rem;">落球轉順球</span>
             </label>
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                 <input type="checkbox" id="playCombination" onchange="runAnalysis()" style="width: 18px; height: 18px; cursor: pointer;">
-                <span style="font-weight: bold; font-size: 0.95rem;">連碰玩法 (由柱碰切換為連碰)</span>
+                <span style="font-weight: bold; font-size: 0.95rem;">柱碰轉連碰</span>
             </label>
             
             <label style="display: flex; align-items: center; gap: 8px;">
@@ -126,9 +126,9 @@
                 </select>
             </label>
 
-            <button class="opt-btn" onclick="optimizeFilters()">🤖 智慧分析穩定獲利設定 (1344組全模盲測)</button>
+            <button class="opt-btn" onclick="optimizeFilters()">智慧分析穩定獲利設定</button>
             
-            <div style="font-weight: bold; font-size: 0.95rem; margin-top: 4px; color: var(--primary);">要下注的星等：</div>
+            <div style="font-weight: bold; font-size: 0.95rem; margin-top: 4px; color: var(--primary);">要下注幾星：</div>
             <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 4px;">
                 <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;"><input type="checkbox" id="bet2S" checked onchange="runAnalysis()"> 二星</label>
                 <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;"><input type="checkbox" id="bet3S" checked onchange="runAnalysis()"> 三星</label>
@@ -153,20 +153,20 @@
         </div>
     </div>
 
-    <div class="section-title">🔮 明日最新開獎預測 (下1期指標)</div>
+    <div class="section-title">明日最新開獎預測</div>
     <div id="predictionArea"></div>
 
-    <div class="section-title">🎯 智慧立柱推薦組合 (自動跨柱去重)</div>
+    <div class="section-title">智慧立柱推薦組合</div>
     <div id="pillarArea" class="selector-box" style="background: var(--card); border-radius: 12px; padding: 15px;"></div>
     
-    <div class="section-title">📈 累積損益曲線 (二三四五星全域綜合回測)</div>
+    <div class="section-title">累積損益曲線</div>
     <div class="selector-box" style="padding: 10px; margin-bottom: 20px;">
         <canvas id="pnlChart" height="150"></canvas>
     </div>
 
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">📜 每日開獎與單期二三四五星紀錄</div>
+    <div class="section-title">每日開獎與單期二三四五星紀錄</div>
     <div id="resultList"></div>
 </div>
 
@@ -449,7 +449,7 @@
                 parsedData.push({ date: cols[0], nums: nums });
             }
             
-            statusEl.innerText = `✅ 載入成功 (共 ${parsedData.length} 期)`;
+            statusEl.innerText = `載入成功 (共 ${parsedData.length} 期)`;
             runAnalysis();
         } catch(e) { 
             statusEl.innerText = "❌ 讀取失敗 (請確保在網頁伺服器環境下執行)"; 
@@ -459,7 +459,7 @@
     // 🚀 極速 AI 矩陣盲測引擎 (包含 1344 種參數交叉快取優化)
     function optimizeFilters() {
         const btn = document.querySelector('.opt-btn');
-        btn.innerText = "⏳ 極速引擎盲測運算中...";
+        btn.innerText = "運算中...";
         btn.style.pointerEvents = "none";
 
         setTimeout(() => {
@@ -649,14 +649,14 @@
                 if (bestConfig.stars.use3S) starText.push("三星");
                 if (bestConfig.stars.use4S) starText.push("四星");
 
-                alert(`✨ AI 矩陣 1344 組參數盲測完畢！\n大數據為您計算出【最平穩高獲利成長】的完美參數組合：\n\n-完美版路：【${bestConfig.onlyPerfect ? '開啟 (100%勝率)' : '關閉 (所有指標)'}】\n-預測球數：【${bestConfig.ballCount} 顆】\n-落球模式：【${bestConfig.isSorted ? '順球排序' : '原始定位'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰玩法' : '智慧立柱(柱碰)'}】\n-過濾模式：【${filterNames[bestConfig.fMode]}】\n-配置星等：【${starText.join(' + ')}】\n\n系統已全自動套用並為您重新繪製最新圖表！`);
+                alert(`參數演算完畢！\n大數據為您計算出【最平穩高獲利成長】的完美參數組合：\n\n-完美版路：【${bestConfig.onlyPerfect ? '開啟 (100%勝率)' : '關閉 (所有指標)'}】\n-預測球數：【${bestConfig.ballCount} 顆】\n-落球模式：【${bestConfig.isSorted ? '順球排序' : '原始定位'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰玩法' : '智慧立柱(柱碰)'}】\n-過濾模式：【${filterNames[bestConfig.fMode]}】\n-配置星等：【${starText.join(' + ')}】\n\n系統已全自動套用並為您重新繪製最新圖表！`);
             } else {
-                alert(`⚠️ 在目前的數據區間與注額條件下，未找到可實現正向穩定成長的配對模型。`);
+                alert(`在目前的數據區間與注額條件下，未找到可實現正向穩定成長的配對模型。`);
             }
 
             runAnalysis();
             
-            btn.innerText = "🤖 智慧分析穩定獲利設定 (1344組全模盲測)";
+            btn.innerText = "智慧分析穩定獲利設定";
             btn.style.pointerEvents = "auto";
         }, 100);
     }
@@ -867,10 +867,10 @@
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 歷史勝率</div>
                 <h3>${t.type}</h3>
-                <div class="pred-info">基準開獎日: ${parsedData[parsedData.length-1].date} ➡️ 目標：下1期開獎</div>
+                <div class="pred-info">開獎日: ${parsedData[parsedData.length-1].date} 目標：下期開獎</div>
                 <span class="nums-highlight">${targetDisplay.join(', ')}</span>
             </div>`
-        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">無符合篩選條件之指標 ☕</div>';
+        }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">無符合篩選條件之指標</div>';
 
         let latestIndex = parsedData.length - 1;
         if (latestIndex >= 0) {
@@ -1000,7 +1000,7 @@
 
             let eventsHtml = '';
             if (d.events.length === 0) {
-                eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">☕ 本期無觸發訊號</div>`;
+                eventsHtml = `<div style="padding: 8px; color: #b2bec3; font-size: 0.85rem; text-align: center;">本期無觸發訊號</div>`;
             } else {
                 eventsHtml = d.events.map(e => {
                     let pillarDetailsHtml = "";
@@ -1023,24 +1023,24 @@
                     if (e.type === 'hit') {
                         let cardStyle = "";
                         let typeColor = "#27ae60";
-                        let hitTitle = "🎯 組合獲利中獎！";
+                        let hitTitle = "組合獲利中獎！";
                         
                         if (e.winPairs.c5 > 0) {
                             cardStyle = "border-color: #e91e63; background-color: #fce4ec;"; 
                             typeColor = "#e91e63";
-                            hitTitle = "🔮 恭喜擊中【五星】神級終極大獎！";
+                            hitTitle = "恭喜命中【五星】！";
                         } else if (e.winPairs.c4 > 0) {
                             cardStyle = "border-color: #9b59b6; background-color: #f5eef8;"; 
                             typeColor = "#9b59b6";
-                            hitTitle = "🔮 恭喜擊中【四星】大獎特獎！";
+                            hitTitle = "恭喜命中【四星】！";
                         } else if (e.winPairs.c3 > 0) {
                             cardStyle = "border-color: #e67e22; background-color: #fdf5e6;"; 
                             typeColor = "#e67e22";
-                            hitTitle = "🎉 恭喜擊中【三星】獲利獎項！";
+                            hitTitle = "恭喜命中【三星】！";
                         } else if (e.winPairs.c2 > 0) {
                             cardStyle = "border-color: #3498db; background-color: #f4fafd;"; 
                             typeColor = "#3498db";
-                            hitTitle = "🎯 精準擊中【二星】連線！";
+                            hitTitle = "恭喜命中【二星】！";
                         }
 
                         return `
@@ -1054,9 +1054,9 @@
                                 <span style="color:#e67e22; font-weight:bold;">3星(${e.winPairs.c3}碰)</span> 
                                 <span style="color:#9b59b6; font-weight:bold;">4星(${e.winPairs.c4}碰)</span>
                                 <span style="color:#e91e63; font-weight:bold;">5星(${e.winPairs.c5}碰)</span><br>
-                                <span style="color:#2c3e50; font-size:0.9rem;">💰 <b>本期總成本(含退水)：</b>${e.netCost.toFixed(1)} 元 ｜ <b>中獎回報金額：</b><span style="color:var(--success);font-weight:bold;">${e.winAmount.toFixed(1)}</span> 元</span>
+                                <span style="color:#2c3e50; font-size:0.9rem;"><b>本期總成本(含退水)：</b>${e.netCost.toFixed(1)} 元 ｜ <b>中獎回報金額：</b><span style="color:var(--success);font-weight:bold;">${e.winAmount.toFixed(1)}</span> 元</span>
                             </div>
-                            <div class="hit-status">📊 綜合 ${e.triggerDate} 的數據預測，隔期獲利。</div>
+                            <div class="hit-status">綜合 ${e.triggerDate} 的數據預測，隔期獲利。</div>
                         </div>`;
                     } else if (e.type === 'miss') {
                         return `
@@ -1067,7 +1067,7 @@
                                 ${pillarDetailsHtml}
                                 <span style="color:#7f8c8d; font-size:0.9rem;">💸 <b>本期總成本(含退水)：</b>${e.netCost.toFixed(1)} 元 ｜ <b>中獎回報金額：</b>0.0 元</span>
                             </div>
-                            <div class="miss-status">⚠️ 隔期未配對成功 (源自 ${e.triggerDate} 數據)</div>
+                            <div class="miss-status">隔期未配對成功 (源自 ${e.triggerDate} 數據)</div>
                         </div>`;
                     }
                 }).join('');
@@ -1092,11 +1092,11 @@
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
-            💡 <b>二三四五星全方位綜合・滾動回測總覽：</b><br>
+            <b>二三四五星全方位綜合・滾動回測總覽：</b><br>
             總計模擬交易 <b>${stats.total}</b> 期，其中有 <b>${stats.hit}</b> 期成功擊中獲利組合，回測單期勝率 <b>${hitRate}%</b><br>
             歷史共中：二星 <b>${totalWinCount.c2}</b> 次 ｜ 三星 <b>${totalWinCount.c3}</b> 次 ｜ 四星 <b>${totalWinCount.c4}</b> 次 ｜ 五星 <b>${totalWinCount.c5}</b> 次<br>
             <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #b3e5fc; font-size: 0.95rem;">
-                💰 <b>當前配置累積總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
+                <b>當前配置累積總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
             </div>`;
     }
 
@@ -1107,7 +1107,7 @@
         return `
         <div class="week-summary">
             <div style="color: var(--primary); margin-bottom: 8px; border-bottom: 1px dashed #f1c40f; padding-bottom: 5px; font-weight: 900; font-size: 0.95rem;">
-                📅 結算週次：${weekStr}
+                結算週次：${weekStr}
             </div>
             <div class="pnl-row">
                 <span>下注總配牌: ${stats.bets} 碰 ｜ 總計中獎: ${stats.hits} 碰</span>
