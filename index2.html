@@ -173,6 +173,10 @@
 
             <button class="opt-btn" onclick="optimizeFilters()">智慧分析穩定獲利設定</button>
             
+            <label class="config-row" style="cursor: pointer; margin-bottom: 2px;">
+                <input type="checkbox" id="lockStarsForAI" onchange="runAnalysis()">
+                <span style="font-weight: 600; font-size: 0.9rem;">智慧分析僅針對已勾選的星等進行優化</span>
+            </label>
             <div style="font-weight: 600; font-size: 0.9rem; color: var(--primary-light); margin-top: 4px; margin-bottom: 4px;">下注星等配置：</div>
             <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; font-size: 0.9rem;">
                 <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" id="bet2S" checked onchange="runAnalysis()"> 二星</label>
@@ -241,6 +245,7 @@
         if (localStorage.getItem('playCombination') !== null) document.getElementById('playCombination').checked = localStorage.getItem('playCombination') === 'true';
         if (localStorage.getItem('filter8BallsMode')) document.getElementById('filter8BallsMode').value = localStorage.getItem('filter8BallsMode');
         if (localStorage.getItem('maxAllowedBalls')) document.getElementById('maxAllowedBalls').value = localStorage.getItem('maxAllowedBalls');
+        if (localStorage.getItem('lockStarsForAI') !== null) document.getElementById('lockStarsForAI').checked = localStorage.getItem('lockStarsForAI') === 'true';
         
         if (localStorage.getItem('bet2S') !== null) document.getElementById('bet2S').checked = localStorage.getItem('bet2S') === 'true';
         if (localStorage.getItem('bet3S') !== null) document.getElementById('bet3S').checked = localStorage.getItem('bet3S') === 'true';
@@ -258,6 +263,7 @@
         localStorage.setItem('playCombination', document.getElementById('playCombination').checked);
         localStorage.setItem('filter8BallsMode', document.getElementById('filter8BallsMode').value);
         localStorage.setItem('maxAllowedBalls', document.getElementById('maxAllowedBalls').value);
+        localStorage.setItem('lockStarsForAI', document.getElementById('lockStarsForAI').checked);
         
         localStorage.setItem('bet2S', document.getElementById('bet2S').checked);
         localStorage.setItem('bet3S', document.getElementById('bet3S').checked);
@@ -516,15 +522,25 @@
             const ballCounts = [1, 2, 3, 4];
             const allowedMaxBallsList = [4, 5, 6, 7, 8, 9, 10, 11, 12];
             
-            const starCombos = [
-                { use2S: true,  use3S: false, use4S: false, use5S: false }, 
-                { use2S: false, use3S: true,  use4S: false, use5S: false }, 
-                { use2S: false, use3S: false, use4S: true,  use5S: false }, 
-                { use2S: true,  use3S: true,  use4S: false, use5S: false }, 
-                { use2S: true,  use3S: false, use4S: true,  use5S: false }, 
-                { use2S: false, use3S: true,  use4S: true,  use5S: false }, 
-                { use2S: true,  use3S: true,  use4S: true,  use5S: false }  
-            ];
+            let starCombos = [];
+            if (document.getElementById('lockStarsForAI').checked) {
+                starCombos = [{
+                    use2S: document.getElementById('bet2S').checked,
+                    use3S: document.getElementById('bet3S').checked,
+                    use4S: document.getElementById('bet4S').checked,
+                    use5S: document.getElementById('bet5S').checked
+                }];
+            } else {
+                starCombos = [
+                    { use2S: true,  use3S: false, use4S: false, use5S: false }, 
+                    { use2S: false, use3S: true,  use4S: false, use5S: false }, 
+                    { use2S: false, use3S: false, use4S: true,  use5S: false }, 
+                    { use2S: true,  use3S: true,  use4S: false, use5S: false }, 
+                    { use2S: true,  use3S: false, use4S: true,  use5S: false }, 
+                    { use2S: false, use3S: true,  use4S: true,  use5S: false }, 
+                    { use2S: true,  use3S: true,  use4S: true,  use5S: false }  
+                ];
+            }
 
             let bestScore = -Infinity;
             let bestConfig = null;
@@ -688,13 +704,14 @@
                 document.getElementById('bet2S').checked = bestConfig.stars.use2S;
                 document.getElementById('bet3S').checked = bestConfig.stars.use3S;
                 document.getElementById('bet4S').checked = bestConfig.stars.use4S;
-                document.getElementById('bet5S').checked = false; 
+                document.getElementById('bet5S').checked = bestConfig.stars.use5S; 
 
                 let filterNames = { 'none': '不過濾', 'removeCold': '移除冷門號', 'removeHot': '移除熱門號', 'removeLeastFrequent': '移除近期出現次數少', 'removeMostFrequent': '移除近期出現次數多', 'smartRemove': '智能綜合移除' };
                 let starText = [];
                 if (bestConfig.stars.use2S) starText.push("二星");
                 if (bestConfig.stars.use3S) starText.push("三星");
                 if (bestConfig.stars.use4S) starText.push("四星");
+                if (bestConfig.stars.use5S) starText.push("五星");
 
                 alert(`分析結果：\n已計算出最平穩高獲利成長的完美參數組合：\n\n-完美版路：【${bestConfig.onlyPerfect ? '開啟 (100%勝率)' : '關閉 (所有指標)'}】\n-預測球數：【${bestConfig.ballCount} 顆】\n-號碼上限：【${bestConfig.maxLimit} 顆】\n-落球模式：【${bestConfig.isSorted ? '順球排序' : '原始定位'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰玩法' : '智慧立柱(柱碰)'}】\n-過濾模式：【${filterNames[bestConfig.fMode]}】\n-配置星等：【${starText.join(' + ')}】\n\n系統已全自動套用並為您重新繪製圖表。`);
             } else {
