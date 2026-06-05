@@ -154,13 +154,13 @@
         </div>
     </div>
 
-    <div class="section-title">明日最新開獎預測 (下1期指標)</div>
+    <div class="section-title">明日最新開獎預測</div>
     <div id="predictionArea"></div>
 
-    <div class="section-title">智慧立柱推薦組合 (自動跨柱去重)</div>
+    <div class="section-title">智慧立柱推薦組合</div>
     <div id="pillarArea" class="selector-box" style="background: var(--card); border-radius: 12px; padding: 15px;"></div>
     
-    <div class="section-title">累積損益曲線 (二三四五星全域綜合回測)</div>
+    <div class="section-title">累積損益曲線</div>
     <div class="selector-box" style="padding: 10px; margin-bottom: 20px;">
         <canvas id="pnlChart" height="150"></canvas>
     </div>
@@ -585,7 +585,7 @@
     // 🤖 已擴充：包含球數與完美設定的 1344 種參數矩陣盲測
     function optimizeFilters() {
         const btn = document.querySelector('.opt-btn');
-        btn.innerText = "⏳ 全模矩陣盲測中...";
+        btn.innerText = "全模矩陣盲測中...";
         btn.style.pointerEvents = "none";
 
         setTimeout(() => {
@@ -659,14 +659,14 @@
                 if (bestConfig.stars.use3S) starText.push("三星");
                 if (bestConfig.stars.use4S) starText.push("四星");
 
-                alert(`✨ AI 矩陣 1344 組參數盲測完畢！\n大數據為您計算出【最平穩高獲利成長】的完美參數組合：\n\n-完美版路：【${bestConfig.onlyPerfect ? '開啟 (100%勝率)' : '關閉 (所有指標)'}】\n-預測球數：【${bestConfig.ballCount} 顆】\n-落球模式：【${bestConfig.isSorted ? '順球排序' : '原始定位'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰玩法' : '智慧立柱(柱碰)'}】\n-過濾模式：【${filterNames[bestConfig.fMode]}】\n-配置星等：【${starText.join(' + ')}】\n\n系統已全自動套用並為您重新繪製最新圖表！`);
+                alert(`AI 矩陣參數盲測完畢！\n大數據為您計算出【最平穩高獲利成長】的完美參數組合：\n\n-完美版路：【${bestConfig.onlyPerfect ? '開啟 (100%勝率)' : '關閉 (所有指標)'}】\n-預測球數：【${bestConfig.ballCount} 顆】\n-落球模式：【${bestConfig.isSorted ? '順球排序' : '原始定位'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰玩法' : '智慧立柱(柱碰)'}】\n-過濾模式：【${filterNames[bestConfig.fMode]}】\n-配置星等：【${starText.join(' + ')}】\n\n系統已全自動套用並為您重新繪製最新圖表！`);
             } else {
-                alert(`⚠️ 在目前的數據區間與注額條件下，未找到可實現正向穩定成長的配對模型。`);
+                alert(`在目前的數據區間與注額條件下，未找到可實現正向穩定成長的配對模型。`);
             }
 
             runAnalysis();
             
-            btn.innerText = "🤖 智慧分析穩定獲利設定 (1344組全模盲測)";
+            btn.innerText = "智慧分析穩定獲利設定";
             btn.style.pointerEvents = "auto";
         }, 100);
     }
