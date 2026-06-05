@@ -162,7 +162,7 @@
     <div class="header">
         <div class="header-top">
             <h1>定位拖牌智慧分析系統 (智慧立柱版)</h1>
-            <button class="theme-toggle" onclick="toggleTheme()">切換主題</button>
+            <button class="theme-toggle" onclick="toggleTheme()">切換</button>
         </div>
     </div>
     
@@ -251,7 +251,7 @@
         </div>
     </div>
 
-    <div class="section-title">明日最新開獎預測</div>
+    <div class="section-title">最新開獎預測</div>
     <div id="predictionArea"></div>
 
     <div class="section-title">智慧立柱推薦組合</div>
@@ -1005,7 +1005,7 @@
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 歷史勝率</div>
                 <h3>${t.type}</h3>
-                <div class="pred-info">基準開獎日: ${parsedData[parsedData.length-1].date} | 目標：下期開獎</div>
+                <div class="pred-info">開獎日: ${parsedData[parsedData.length-1].date} | 目標：下期開獎</div>
                 <span class="nums-highlight">${targetDisplay.join(', ')}</span>
             </div>`
         }).join('') : '<div style="padding:20px; color:var(--text-muted); text-align:center; background: var(--card); border-radius: 12px;">無符合篩選條件之指標</div>';
@@ -1166,46 +1166,46 @@
                         if (e.winPairs.c5 > 0) {
                             cardClass = "hit-card-bg-5"; 
                             typeColor = "var(--pink)";
-                            hitTitle = "恭喜命中【五星】大獎！";
+                            hitTitle = "【五星】";
                         } else if (e.winPairs.c4 > 0) {
                             cardClass = "hit-card-bg-4"; 
                             typeColor = "var(--purple)";
-                            hitTitle = "恭喜命中【四星】大獎！";
+                            hitTitle = "【四星】";
                         } else if (e.winPairs.c3 > 0) {
                             cardClass = "hit-card-bg-3"; 
                             typeColor = "var(--warning)";
-                            hitTitle = "恭喜命中【三星】！";
+                            hitTitle = "【三星】";
                         } else if (e.winPairs.c2 > 0) {
                             cardClass = "hit-card-bg-2"; 
                             typeColor = "var(--accent)";
-                            hitTitle = "恭喜命中【二星】！";
+                            hitTitle = "【二星】";
                         }
 
                         return `
                         <div class="hit-detail hit-card-bg ${cardClass}">
                             <div class="hit-type" style="color: ${typeColor};">${hitTitle}</div>
                             <div class="hit-nums">
-                                <b>佈局：</b>2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰) 5星(${e.totalPairs.c5}碰)<br>
+                                <b>碰數：</b>2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰) 5星(${e.totalPairs.c5}碰)<br>
                                 ${pillarDetailsHtml}
-                                <b>擊中碰數：</b>
+                                <b>命中碰數：</b>
                                 <span style="color:var(--accent); font-weight:700;">2星(${e.winPairs.c2})</span> 
                                 <span style="color:var(--success); font-weight:700;">3星(${e.winPairs.c3})</span> 
                                 <span style="color:var(--warning); font-weight:700;">4星(${e.winPairs.c4})</span>
                                 <span style="color:var(--purple); font-weight:700;">5星(${e.winPairs.c5})</span><br>
                                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                                    <span style="color:var(--text-main); font-size:0.9rem;"><b>總成本：</b>${e.netCost.toFixed(1)} 元 ｜ <b>中獎回報：</b><span style="color:var(--success);font-weight:700;">${e.winAmount.toFixed(1)}</span> 元</span>
+                                    <span style="color:var(--text-main); font-size:0.9rem;"><b>總成本：</b>${e.netCost.toFixed(1)} 元 ｜ <b>中獎獎金：</b><span style="color:var(--success);font-weight:700;">${e.winAmount.toFixed(1)}</span> 元</span>
                                 </div>
                             </div>
                         </div>`;
                     } else if (e.type === 'miss') {
                         return `
                         <div class="miss-detail">
-                            <div class="hit-type" style="color:var(--text-muted);">單期未達成連線</div>
+                            <div class="hit-type" style="color:var(--text-muted);">本期未命中</div>
                             <div class="miss-nums">
-                                <b>佈局：</b>2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰) 5星(${e.totalPairs.c5}碰)<br>
+                                <b>碰數：</b>2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰) 5星(${e.totalPairs.c5}碰)<br>
                                 ${pillarDetailsHtml}
                                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                                    <span style="color:var(--text-muted); font-size:0.9rem;"><b>總成本：</b>${e.netCost.toFixed(1)} 元 ｜ <b>中獎回報：</b>0.0 元</span>
+                                    <span style="color:var(--text-muted); font-size:0.9rem;"><b>總成本：</b>${e.netCost.toFixed(1)} 元 ｜ <b>中獎獎金：</b>0.0 元</span>
                                 </div>
                             </div>
                         </div>`;
