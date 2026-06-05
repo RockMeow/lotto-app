@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>定位落牌智慧分析系統(二三四五星智慧立柱版)</title>
-    <link rel="manifest" href="manifest3.json">
+    <title>定位拖牌智慧分析系統(智慧立柱版)</title>
+    <link rel="manifest" href="manifest2.json">
     <meta name="theme-color" content="#3b82f6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -83,7 +83,7 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>定位落牌智慧分析系統(二三四五星智慧立柱版)</h1>
+            <h1>定位拖牌智慧分析系統(智慧立柱版)</h1>
         </div>
     </div>
     
@@ -96,7 +96,7 @@
             <option value="Six_history_2026.csv">六合彩</option>
         </select>
         <div class="status-bar">
-            <span>資料狀態:</span>
+            <span>狀態:</span>
             <span id="dataStatus" style="font-weight: bold;">讀取中...</span>
         </div>
 
@@ -127,7 +127,7 @@
             </label>
 
             <!-- 已更新：AI 最佳化按鈕，現在為 1344 組測試 -->
-            <button class="opt-btn" onclick="optimizeFilters()">🤖 智慧分析穩定獲利設定 (1344組全模盲測)</button>
+            <button class="opt-btn" onclick="optimizeFilters()">智慧分析穩定獲利設定</button>
             
             <div style="font-weight: bold; font-size: 0.95rem; margin-top: 4px; color: var(--primary);">要下注的星等：</div>
             <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 4px;">
@@ -154,20 +154,20 @@
         </div>
     </div>
 
-    <div class="section-title">🔮 明日最新開獎預測 (下1期指標)</div>
+    <div class="section-title">明日最新開獎預測 (下1期指標)</div>
     <div id="predictionArea"></div>
 
-    <div class="section-title">🎯 智慧立柱推薦組合 (自動跨柱去重)</div>
+    <div class="section-title">智慧立柱推薦組合 (自動跨柱去重)</div>
     <div id="pillarArea" class="selector-box" style="background: var(--card); border-radius: 12px; padding: 15px;"></div>
     
-    <div class="section-title">📈 累積損益曲線 (二三四五星全域綜合回測)</div>
+    <div class="section-title">累積損益曲線 (二三四五星全域綜合回測)</div>
     <div class="selector-box" style="padding: 10px; margin-bottom: 20px;">
         <canvas id="pnlChart" height="150"></canvas>
     </div>
 
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">📜 每日開獎與單期二三四五星紀錄</div>
+    <div class="section-title">每日開獎與單期二三四五星紀錄</div>
     <div id="resultList"></div>
 </div>
 
