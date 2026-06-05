@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>定位拖牌智慧分析系統(智慧立柱版)</title>
-    <link rel="manifest" href="manifest2.json">
+    <title>定位落牌智慧分析系統(二三四五星智慧立柱版)</title>
+    <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#3b82f6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -83,7 +83,7 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>定位拖牌智慧分析系統(智慧立柱版)</h1>
+            <h1>定位落牌智慧分析系統(二三四五星智慧立柱版)</h1>
         </div>
     </div>
     
@@ -96,7 +96,7 @@
             <option value="Six_history_2026.csv">六合彩</option>
         </select>
         <div class="status-bar">
-            <span>狀態:</span>
+            <span>資料狀態:</span>
             <span id="dataStatus" style="font-weight: bold;">讀取中...</span>
         </div>
 
@@ -126,8 +126,7 @@
                 </select>
             </label>
 
-            <!-- 已更新：AI 最佳化按鈕，現在為 1344 組測試 -->
-            <button class="opt-btn" onclick="optimizeFilters()">智慧分析穩定獲利設定</button>
+            <button class="opt-btn" onclick="optimizeFilters()">🤖 智慧分析穩定獲利設定 (1344組全模盲測)</button>
             
             <div style="font-weight: bold; font-size: 0.95rem; margin-top: 4px; color: var(--primary);">要下注的星等：</div>
             <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 4px;">
@@ -154,20 +153,20 @@
         </div>
     </div>
 
-    <div class="section-title">明日最新開獎預測</div>
+    <div class="section-title">🔮 明日最新開獎預測 (下1期指標)</div>
     <div id="predictionArea"></div>
 
-    <div class="section-title">智慧立柱推薦組合</div>
+    <div class="section-title">🎯 智慧立柱推薦組合 (自動跨柱去重)</div>
     <div id="pillarArea" class="selector-box" style="background: var(--card); border-radius: 12px; padding: 15px;"></div>
     
-    <div class="section-title">累積損益曲線</div>
+    <div class="section-title">📈 累積損益曲線 (二三四五星全域綜合回測)</div>
     <div class="selector-box" style="padding: 10px; margin-bottom: 20px;">
         <canvas id="pnlChart" height="150"></canvas>
     </div>
 
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">每日開獎與單期二三四五星紀錄</div>
+    <div class="section-title">📜 每日開獎與單期二三四五星紀錄</div>
     <div id="resultList"></div>
 </div>
 
@@ -295,7 +294,6 @@
         return result;
     }
 
-    // 已修改：增加接收動態傳入的球數及完美選項
     function getSmartPatterns(nums, currentIndex, optBallCount, optOnlyPerfect) {
         let patterns = [];
         let selectedBallCount = optBallCount !== undefined ? optBallCount : (parseInt(document.getElementById('ballCountSelect').value) || 3);
@@ -458,134 +456,10 @@
         }
     }
 
-    // 已修改：傳入球數及勝率選項，納入引擎動態運算
-    function simulateBacktest(filterMode, isCombo, isSorted, stars, ballCount, onlyPerfect) {
-        let simData = JSON.parse(JSON.stringify(parsedData));
-
-        for (let d of simData) {
-            if (isSorted) {
-                if (!d.originalNums) d.originalNums = [...d.nums];
-                if (maxNum === 49 && d.nums.length >= 7) {
-                    let mainNums = d.nums.slice(0, 6);
-                    mainNums.sort((a, b) => a - b);
-                    d.nums = mainNums.concat(d.nums.slice(6));
-                } else {
-                    d.nums.sort((a, b) => a - b);
-                }
-            } else {
-                if (d.originalNums) d.nums = [...d.originalNums];
-            }
-        }
-
-        let cumulativePnL = 0;
-        let equityCurve = [0];
-        let totalCost = 0;
-        let totalWin = 0;
-        let hitCount = 0;
-        let totalBets = 0;
-
-        let userMultiplier = parseFloat(document.getElementById('betMultiplier').value);
-        if (isNaN(userMultiplier) || userMultiplier <= 0) userMultiplier = 1;
-
-        for (let i = 0; i < simData.length; i++) {
-            let allPatterns = getSmartPatterns(simData[i].nums, i, ballCount, onlyPerfect);
-            
-            let initialSeen = new Set();
-            allPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
-            let allowedNumbers = initialSeen;
-            
-            if (filterMode !== 'none' && initialSeen.size > 10) {
-                let sortedNums = Array.from(initialSeen).sort((a, b) => {
-                    if (filterMode === 'removeCold') return getOmit(a, i) - getOmit(b, i) || a - b;
-                    if (filterMode === 'removeHot') return getOmit(b, i) - getOmit(a, i) || a - b;
-                    if (filterMode === 'removeLeastFrequent') return getRecentCount(b, i) - getRecentCount(a, i) || a - b;
-                    if (filterMode === 'removeMostFrequent') return getRecentCount(a, i) - getRecentCount(b, i) || a - b;
-                    if (filterMode === 'smartRemove') {
-                        return (getRecentCount(b, i) * 5 - getOmit(b, i)) - (getRecentCount(a, i) * 5 - getOmit(a, i)) || a - b;
-                    }
-                });
-                allowedNumbers = new Set(sortedNums.slice(0, 10));
-            }
-
-            let seenNumbers = new Set();
-            let backtestPillars = [];
-            allPatterns.forEach(p => {
-                let uniqueNums = p.target.filter(n => !seenNumbers.has(n) && allowedNumbers.has(n));
-                uniqueNums.forEach(n => seenNumbers.add(n));
-                if (uniqueNums.length > 0) {
-                    backtestPillars.push(uniqueNums);
-                }
-            });
-
-            let totalPairs = { c2: 0, c3: 0, c4: 0, c5: 0 };
-            if (isCombo) {
-                let totalUniqueCount = seenNumbers.size;
-                const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (r === 4 ? (n*(n-1)*(n-2)*(n-3))/24 : (n*(n-1)*(n-2)*(n-3)*(n-4))/120)));
-                if (stars.use2S) totalPairs.c2 = nCr(totalUniqueCount, 2);
-                if (stars.use3S) totalPairs.c3 = nCr(totalUniqueCount, 3);
-                if (stars.use4S) totalPairs.c4 = nCr(totalUniqueCount, 4);
-                if (stars.use5S) totalPairs.c5 = nCr(totalUniqueCount, 5);
-            } else {
-                let fullPairs = calcPillarCombinations(backtestPillars);
-                if (stars.use2S) totalPairs.c2 = fullPairs.c2;
-                if (stars.use3S) totalPairs.c3 = fullPairs.c3;
-                if (stars.use4S) totalPairs.c4 = fullPairs.c4;
-                if (stars.use5S) totalPairs.c5 = fullPairs.c5;
-            }
-
-            let playIndex = i + 1; 
-            if (playIndex < simData.length && (totalPairs.c2 > 0 || totalPairs.c3 > 0 || totalPairs.c4 > 0 || totalPairs.c5 > 0)) {
-                let nextNums = simData[playIndex].nums;
-                let checkNums = (maxNum === 49 && nextNums.length >= 7) ? nextNums.slice(0, 6) : nextNums;
-                
-                let winPairs = { c2: 0, c3: 0, c4: 0, c5: 0 };
-                if (isCombo) {
-                    let allFlattenedUnique = [];
-                    let s = new Set();
-                    backtestPillars.forEach(p => p.forEach(n => { if(!s.has(n)){ s.add(n); allFlattenedUnique.push(n); } }));
-                    let totalHits = intersect(allFlattenedUnique, checkNums).length;
-                    const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (r === 4 ? (n*(n-1)*(n-2)*(n-3))/24 : (n*(n-1)*(n-2)*(n-3)*(n-4))/120)));
-                    if (stars.use2S) winPairs.c2 = nCr(totalHits, 2);
-                    if (stars.use3S) winPairs.c3 = nCr(totalHits, 3);
-                    if (stars.use4S) winPairs.c4 = nCr(totalHits, 4);
-                    if (stars.use5S) winPairs.c5 = nCr(totalHits, 5);
-                } else {
-                    let pillarHits = backtestPillars.map(pillar => intersect(pillar, checkNums).length);
-                    let fullWinPairs = calcPillarCombinations(pillarHits.map(h => Array(h).fill(0)));
-                    if (stars.use2S) winPairs.c2 = fullWinPairs.c2;
-                    if (stars.use3S) winPairs.c3 = fullWinPairs.c3;
-                    if (stars.use4S) winPairs.c4 = fullWinPairs.c4;
-                    if (stars.use5S) winPairs.c5 = fullWinPairs.c5;
-                }
-
-                let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S + totalPairs.c5 * COST_BASE_5S) * userMultiplier;
-                let netCost = rawCost * (1 - REBATE_RATE);
-                let winAmount = (winPairs.c2 * MULTIPLIER_2S + winPairs.c3 * MULTIPLIER_3S + winPairs.c4 * MULTIPLIER_4S + winPairs.c5 * MULTIPLIER_5S) * userMultiplier;
-                
-                cumulativePnL += (winAmount - netCost);
-                equityCurve.push(cumulativePnL);
-                totalCost += netCost;
-                totalWin += winAmount;
-
-                if (winAmount > 0) hitCount++;
-                totalBets++;
-            } else {
-                equityCurve.push(cumulativePnL);
-            }
-        }
-        
-        return {
-            curve: equityCurve,
-            netProfit: cumulativePnL,
-            totalCost: totalCost,
-            hitRate: totalBets > 0 ? (hitCount / totalBets) : 0
-        };
-    }
-
-    // 🤖 已擴充：包含球數與完美設定的 1344 種參數矩陣盲測
+    // 🚀 極速 AI 矩陣盲測引擎 (包含 1344 種參數交叉快取優化)
     function optimizeFilters() {
         const btn = document.querySelector('.opt-btn');
-        btn.innerText = "全模矩陣盲測中...";
+        btn.innerText = "⏳ 極速引擎盲測運算中...";
         btn.style.pointerEvents = "none";
 
         setTimeout(() => {
@@ -608,31 +482,145 @@
             let bestScore = -Infinity;
             let bestConfig = null;
 
-            filterOptions.forEach(fMode => {
-                comboOptions.forEach(isCombo => {
-                    sortOptions.forEach(isSorted => {
-                        perfectOptions.forEach(onlyPerfect => {
-                            ballCounts.forEach(ballCount => {
+            let userMultiplier = parseFloat(document.getElementById('betMultiplier').value);
+            if (isNaN(userMultiplier) || userMultiplier <= 0) userMultiplier = 1;
+
+            // 深拷貝防汙染
+            let originalParsedData = JSON.parse(JSON.stringify(parsedData));
+
+            sortOptions.forEach(isSorted => {
+                for (let d of parsedData) {
+                    if (isSorted) {
+                        if (!d.originalNums) d.originalNums = [...d.nums];
+                        if (maxNum === 49 && d.nums.length >= 7) {
+                            let mainNums = d.nums.slice(0, 6);
+                            mainNums.sort((a, b) => a - b);
+                            d.nums = mainNums.concat(d.nums.slice(6));
+                        } else {
+                            d.nums.sort((a, b) => a - b);
+                        }
+                    } else {
+                        if (d.originalNums) d.nums = [...d.originalNums];
+                    }
+                }
+
+                perfectOptions.forEach(onlyPerfect => {
+                    ballCounts.forEach(ballCount => {
+                        // 在此層級快取所有基底版路 (16次執行，省下1328次的重複耗時運算)
+                        let patternsCache = [];
+                        for (let i = 0; i < parsedData.length; i++) {
+                            patternsCache[i] = getSmartPatterns(parsedData[i].nums, i, ballCount, onlyPerfect);
+                        }
+
+                        filterOptions.forEach(fMode => {
+                            comboOptions.forEach(isCombo => {
                                 starCombos.forEach(stars => {
-                                    let sim = simulateBacktest(fMode, isCombo, isSorted, stars, ballCount, onlyPerfect);
                                     
-                                    if (sim.curve.length > 2 && sim.netProfit > 0 && sim.totalCost > 0) {
-                                        let peak = sim.curve[0];
-                                        let maxDrawdown = 0;
-                                        for (let val of sim.curve) {
-                                            if (val > peak) peak = val;
-                                            let drawdown = peak > 0 ? (peak - val) / peak : 0;
-                                            if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+                                    let cumulativePnL = 0;
+                                    let maxDrawdown = 0;
+                                    let peak = 0;
+                                    let totalCost = 0;
+                                    let hitCount = 0;
+                                    let totalBets = 0;
+
+                                    for (let i = 0; i < parsedData.length; i++) {
+                                        let allPatterns = patternsCache[i];
+                                        
+                                        let initialSeen = new Set();
+                                        allPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
+                                        let allowedNumbers = initialSeen;
+                                        
+                                        if (fMode !== 'none' && initialSeen.size > 10) {
+                                            let sortedNums = Array.from(initialSeen).sort((a, b) => {
+                                                if (fMode === 'removeCold') return getOmit(a, i) - getOmit(b, i) || a - b;
+                                                if (fMode === 'removeHot') return getOmit(b, i) - getOmit(a, i) || a - b;
+                                                if (fMode === 'removeLeastFrequent') return getRecentCount(b, i) - getRecentCount(a, i) || a - b;
+                                                if (fMode === 'removeMostFrequent') return getRecentCount(a, i) - getRecentCount(b, i) || a - b;
+                                                if (fMode === 'smartRemove') {
+                                                    return (getRecentCount(b, i) * 5 - getOmit(b, i)) - (getRecentCount(a, i) * 5 - getOmit(a, i)) || a - b;
+                                                }
+                                            });
+                                            allowedNumbers = new Set(sortedNums.slice(0, 10));
                                         }
 
-                                        let roi = sim.netProfit / sim.totalCost; 
-                                        let stabilityScore = (sim.netProfit * roi * sim.hitRate) / (1 + maxDrawdown * 8);
+                                        let seenNumbers = new Set();
+                                        let backtestPillars = [];
+                                        allPatterns.forEach(p => {
+                                            let uniqueNums = p.target.filter(n => !seenNumbers.has(n) && allowedNumbers.has(n));
+                                            uniqueNums.forEach(n => seenNumbers.add(n));
+                                            if (uniqueNums.length > 0) {
+                                                backtestPillars.push(uniqueNums);
+                                            }
+                                        });
+
+                                        let totalPairs = { c2: 0, c3: 0, c4: 0, c5: 0 };
+                                        if (isCombo) {
+                                            let totalUniqueCount = seenNumbers.size;
+                                            const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (r === 4 ? (n*(n-1)*(n-2)*(n-3))/24 : (n*(n-1)*(n-2)*(n-3)*(n-4))/120)));
+                                            if (stars.use2S) totalPairs.c2 = nCr(totalUniqueCount, 2);
+                                            if (stars.use3S) totalPairs.c3 = nCr(totalUniqueCount, 3);
+                                            if (stars.use4S) totalPairs.c4 = nCr(totalUniqueCount, 4);
+                                            if (stars.use5S) totalPairs.c5 = nCr(totalUniqueCount, 5);
+                                        } else {
+                                            let fullPairs = calcPillarCombinations(backtestPillars);
+                                            if (stars.use2S) totalPairs.c2 = fullPairs.c2;
+                                            if (stars.use3S) totalPairs.c3 = fullPairs.c3;
+                                            if (stars.use4S) totalPairs.c4 = fullPairs.c4;
+                                            if (stars.use5S) totalPairs.c5 = fullPairs.c5;
+                                        }
+
+                                        let playIndex = i + 1; 
+                                        if (playIndex < parsedData.length && (totalPairs.c2 > 0 || totalPairs.c3 > 0 || totalPairs.c4 > 0 || totalPairs.c5 > 0)) {
+                                            let nextNums = parsedData[playIndex].nums;
+                                            let checkNums = (maxNum === 49 && nextNums.length >= 7) ? nextNums.slice(0, 6) : nextNums;
+                                            
+                                            let winPairs = { c2: 0, c3: 0, c4: 0, c5: 0 };
+                                            if (isCombo) {
+                                                let allFlattenedUnique = [];
+                                                let s = new Set();
+                                                backtestPillars.forEach(p => p.forEach(n => { if(!s.has(n)){ s.add(n); allFlattenedUnique.push(n); } }));
+                                                let totalHits = intersect(allFlattenedUnique, checkNums).length;
+                                                const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (r === 4 ? (n*(n-1)*(n-2)*(n-3))/24 : (n*(n-1)*(n-2)*(n-3)*(n-4))/120)));
+                                                if (stars.use2S) winPairs.c2 = nCr(totalHits, 2);
+                                                if (stars.use3S) winPairs.c3 = nCr(totalHits, 3);
+                                                if (stars.use4S) winPairs.c4 = nCr(totalHits, 4);
+                                                if (stars.use5S) winPairs.c5 = nCr(totalHits, 5);
+                                            } else {
+                                                let pillarHits = backtestPillars.map(pillar => intersect(pillar, checkNums).length);
+                                                let fullWinPairs = calcPillarCombinations(pillarHits.map(h => Array(h).fill(0)));
+                                                if (stars.use2S) winPairs.c2 = fullWinPairs.c2;
+                                                if (stars.use3S) winPairs.c3 = fullWinPairs.c3;
+                                                if (stars.use4S) winPairs.c4 = fullWinPairs.c4;
+                                                if (stars.use5S) winPairs.c5 = fullWinPairs.c5;
+                                            }
+
+                                            let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S + totalPairs.c5 * COST_BASE_5S) * userMultiplier;
+                                            let netCost = rawCost * (1 - REBATE_RATE);
+                                            let winAmount = (winPairs.c2 * MULTIPLIER_2S + winPairs.c3 * MULTIPLIER_3S + winPairs.c4 * MULTIPLIER_4S + winPairs.c5 * MULTIPLIER_5S) * userMultiplier;
+                                            
+                                            cumulativePnL += (winAmount - netCost);
+                                            
+                                            if (cumulativePnL > peak) peak = cumulativePnL;
+                                            let drawdown = peak > 0 ? (peak - cumulativePnL) / peak : 0;
+                                            if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+
+                                            totalCost += netCost;
+                                            if (winAmount > 0) hitCount++;
+                                            totalBets++;
+                                        }
+                                    }
+                                    
+                                    if (totalBets > 0 && cumulativePnL > 0 && totalCost > 0) {
+                                        let hitRate = hitCount / totalBets;
+                                        let roi = cumulativePnL / totalCost; 
+                                        let stabilityScore = (cumulativePnL * roi * hitRate) / (1 + maxDrawdown * 8);
 
                                         if (stabilityScore > bestScore) {
                                             bestScore = stabilityScore;
                                             bestConfig = { fMode, isCombo, isSorted, stars, ballCount, onlyPerfect };
                                         }
                                     }
+
                                 });
                             });
                         });
@@ -640,8 +628,10 @@
                 });
             });
 
+            // 還原原始數據並套用最佳設定
+            parsedData = originalParsedData;
+
             if (bestConfig) {
-                // 自動同步最新算出的完美參數
                 document.getElementById('filter8BallsMode').value = bestConfig.fMode;
                 document.getElementById('playCombination').checked = bestConfig.isCombo;
                 document.getElementById('sortBalls').checked = bestConfig.isSorted;
@@ -659,14 +649,14 @@
                 if (bestConfig.stars.use3S) starText.push("三星");
                 if (bestConfig.stars.use4S) starText.push("四星");
 
-                alert(`AI 矩陣參數盲測完畢！\n大數據為您計算出【最平穩高獲利成長】的完美參數組合：\n\n-完美版路：【${bestConfig.onlyPerfect ? '開啟 (100%勝率)' : '關閉 (所有指標)'}】\n-預測球數：【${bestConfig.ballCount} 顆】\n-落球模式：【${bestConfig.isSorted ? '順球排序' : '原始定位'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰玩法' : '智慧立柱(柱碰)'}】\n-過濾模式：【${filterNames[bestConfig.fMode]}】\n-配置星等：【${starText.join(' + ')}】\n\n系統已全自動套用並為您重新繪製最新圖表！`);
+                alert(`✨ AI 矩陣 1344 組參數盲測完畢！\n大數據為您計算出【最平穩高獲利成長】的完美參數組合：\n\n-完美版路：【${bestConfig.onlyPerfect ? '開啟 (100%勝率)' : '關閉 (所有指標)'}】\n-預測球數：【${bestConfig.ballCount} 顆】\n-落球模式：【${bestConfig.isSorted ? '順球排序' : '原始定位'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰玩法' : '智慧立柱(柱碰)'}】\n-過濾模式：【${filterNames[bestConfig.fMode]}】\n-配置星等：【${starText.join(' + ')}】\n\n系統已全自動套用並為您重新繪製最新圖表！`);
             } else {
-                alert(`在目前的數據區間與注額條件下，未找到可實現正向穩定成長的配對模型。`);
+                alert(`⚠️ 在目前的數據區間與注額條件下，未找到可實現正向穩定成長的配對模型。`);
             }
 
             runAnalysis();
             
-            btn.innerText = "智慧分析穩定獲利設定";
+            btn.innerText = "🤖 智慧分析穩定獲利設定 (1344組全模盲測)";
             btn.style.pointerEvents = "auto";
         }, 100);
     }
@@ -832,7 +822,6 @@
             }
         }
 
-        // 損益圖
         let chartLabels = [];
         let chartData = [];
         let cumulativePnL = 0;
@@ -871,7 +860,6 @@
             }
         });
 
-        // 預測卡片
         document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.slice(0,3).map(t => {
             let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
             let targetDisplay = t.target.map(n => `${fNum(n)}(${getOmit(n, parsedData.length-1)}期未開)`);
@@ -884,7 +872,6 @@
             </div>`
         }).join('') : '<div style="padding:20px; color:#999; text-align:center; background: var(--card); border-radius: 12px;">無符合篩選條件之指標 ☕</div>';
 
-        // 智慧立柱推薦
         let latestIndex = parsedData.length - 1;
         if (latestIndex >= 0) {
             let latestPatterns = getSmartPatterns(parsedData[latestIndex].nums, latestIndex);
@@ -959,7 +946,6 @@
             document.getElementById('pillarArea').innerHTML = pillars.length > 0 ? pillarGridHtml : '<div style="color:#999; text-align:center; font-size:0.85rem;">暫無符合篩選之落球數據 ☕</div>';
         }
 
-        // 歷史列表分組與渲染
         let reversedData = dailyView.slice().reverse();
         let chunksHtml = [];
         let currentWeek = null;
@@ -1106,11 +1092,11 @@
         let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
-            💡 <b>二三四五星立柱綜合・滾動回測總覽：</b><br>
+            💡 <b>二三四五星全方位綜合・滾動回測總覽：</b><br>
             總計模擬交易 <b>${stats.total}</b> 期，其中有 <b>${stats.hit}</b> 期成功擊中獲利組合，回測單期勝率 <b>${hitRate}%</b><br>
             歷史共中：二星 <b>${totalWinCount.c2}</b> 次 ｜ 三星 <b>${totalWinCount.c3}</b> 次 ｜ 四星 <b>${totalWinCount.c4}</b> 次 ｜ 五星 <b>${totalWinCount.c5}</b> 次<br>
             <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #b3e5fc; font-size: 0.95rem;">
-                💰 <b>回測累積總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
+                💰 <b>當前配置累積總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b>
             </div>`;
     }
 
