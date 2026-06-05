@@ -54,8 +54,8 @@
         .status-bar { font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; padding-bottom: 15px; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
 
         /* Optimize Button */
-        .opt-btn { background: linear-gradient(135deg, #8e44ad, #9b59b6); color: white; border: none; padding: 14px; border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 600; width: 100%; cursor: pointer; margin-top: 5px; margin-bottom: 8px; transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; letter-spacing: 0.5px; }
-        .opt-btn:hover { box-shadow: var(--shadow-md); filter: brightness(1.05); }
+        .opt-btn { background: var(--accent); color: white; border: none; padding: 14px; border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 600; width: 100%; cursor: pointer; margin-top: 5px; margin-bottom: 8px; transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; letter-spacing: 0.5px; }
+        .opt-btn:hover { background: var(--accent-hover); box-shadow: var(--shadow-md); }
         .opt-btn:active { transform: translateY(1px); }
 
         /* Prediction Cards */
@@ -489,6 +489,7 @@
         }
     }
 
+    // 🧠 核心：引入「資金回撤」與「投報比」的加權穩定度評分演算法
     function optimizeFilters() {
         const btn = document.querySelector('.opt-btn');
         btn.innerText = "運算中...";
@@ -640,6 +641,7 @@
                                         }
                                     }
                                     
+                                    // 最佳化穩定度評分：加入 ROI (投資報酬率) 與 Drawdown (資金最大回撤) 的懲罰加權
                                     if (totalBets > 0 && cumulativePnL > 0 && totalCost > 0) {
                                         let hitRate = hitCount / totalBets;
                                         let roi = cumulativePnL / totalCost; 
@@ -678,7 +680,7 @@
                 if (bestConfig.stars.use3S) starText.push("三星");
                 if (bestConfig.stars.use4S) starText.push("四星");
 
-                alert(`分析結果：\n已計算出最平穩高獲利成長的完美參數組合：\n\n-完美版路：【${bestConfig.onlyPerfect ? '開啟 (100%勝率)' : '關閉 (所有指標)'}】\n-預測球數：【${bestConfig.ballCount} 顆】\n-落球模式：【${bestConfig.isSorted ? '順球排序' : '原始定位'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰玩法' : '智慧立柱(柱碰)'}】\n-過濾模式：【${filterNames[bestConfig.fMode]}】\n-配置星等：【${starText.join(' + ')}】\n\n系統已全自動套用並為您重新繪製圖表。`);
+                alert(`分析結果：\n已計算出最少成本、最平穩成長的完美參數組合：\n\n-完美版路：【${bestConfig.onlyPerfect ? '開啟 (100%勝率)' : '關閉 (所有指標)'}】\n-預測球數：【${bestConfig.ballCount} 顆】\n-落球模式：【${bestConfig.isSorted ? '順球排序' : '原始定位'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰玩法' : '智慧立柱(柱碰)'}】\n-過濾模式：【${filterNames[bestConfig.fMode]}】\n-配置星等：【${starText.join(' + ')}】\n\n系統已全自動套用並為您重新繪製圖表。`);
             } else {
                 alert(`注意：在目前的數據區間與注額條件下，未找到可實現正向穩定成長的配對模型。`);
             }
@@ -1155,7 +1157,6 @@
         </div>`;
     }
 
-    // 🤖 AI 大數據特選號碼分析演算
     function runAISpecialAnalysis() {
         if (!parsedData || parsedData.length === 0) {
             alert("請先載入歷史數據");
