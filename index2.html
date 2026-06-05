@@ -54,8 +54,8 @@
         .status-bar { font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; padding-bottom: 15px; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
 
         /* Optimize Button */
-        .opt-btn { background: var(--accent); color: white; border: none; padding: 14px; border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 600; width: 100%; cursor: pointer; margin-top: 5px; margin-bottom: 15px; transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; letter-spacing: 0.5px; }
-        .opt-btn:hover { background: var(--accent-hover); box-shadow: var(--shadow-md); }
+        .opt-btn { background: linear-gradient(135deg, #8e44ad, #9b59b6); color: white; border: none; padding: 14px; border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 600; width: 100%; cursor: pointer; margin-top: 5px; margin-bottom: 8px; transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; letter-spacing: 0.5px; }
+        .opt-btn:hover { box-shadow: var(--shadow-md); filter: brightness(1.05); }
         .opt-btn:active { transform: translateY(1px); }
 
         /* Prediction Cards */
@@ -137,11 +137,11 @@
             </label>
             <label class="config-row" style="cursor: pointer;">
                 <input type="checkbox" id="sortBalls" onchange="runAnalysis()">
-                <span style="font-weight: 600; font-size: 0.9rem;">落球轉順球</span>
+                <span style="font-weight: 600; font-size: 0.9rem;">落球轉順球 (按號碼大小排序分析)</span>
             </label>
             <label class="config-row" style="cursor: pointer;">
                 <input type="checkbox" id="playCombination" onchange="runAnalysis()">
-                <span style="font-weight: 600; font-size: 0.9rem;">柱碰轉連碰</span>
+                <span style="font-weight: 600; font-size: 0.9rem;">連碰玩法 (由柱碰切換為連碰)</span>
             </label>
             
             <div class="config-row" style="margin-top: 6px;">
@@ -157,6 +157,7 @@
             </div>
 
             <button class="opt-btn" onclick="optimizeFilters()">智慧分析穩定獲利設定</button>
+            <button id="aiSpecialBtn" class="opt-btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); margin-top: 0; margin-bottom: 12px;" onclick="runAISpecialAnalysis()">AI 大數據特選號碼演算</button>
             
             <div style="font-weight: 600; font-size: 0.9rem; color: var(--primary-light); margin-top: 4px; margin-bottom: 4px;">下注星等配置：</div>
             <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; font-size: 0.9rem;">
@@ -182,6 +183,8 @@
             </div>
         </div>
     </div>
+
+    <div id="aiSpecialArea" style="display:none;"></div>
 
     <div class="section-title">明日最新開獎預測</div>
     <div id="predictionArea"></div>
@@ -1150,6 +1153,108 @@
                 <span class="${netClass}">${netSign}${net.toFixed(1)}</span>
             </div>
         </div>`;
+    }
+
+    // 🤖 AI 大數據特選號碼分析演算
+    function runAISpecialAnalysis() {
+        if (!parsedData || parsedData.length === 0) {
+            alert("請先載入歷史數據");
+            return;
+        }
+        
+        const btn = document.getElementById('aiSpecialBtn');
+        if (btn) btn.innerText = "演算中...";
+
+        setTimeout(() => {
+            let freqMap = {};
+            let omitMap = {};
+            let recentFreqMap = {};
+            let totalDraws = parsedData.length;
+            let recentDraws = Math.min(20, totalDraws);
+
+            let actualMaxNum = 0;
+            parsedData.forEach(d => {
+                let checkNums = (maxNum === 49 && d.nums.length >= 7) ? d.nums.slice(0, 6) : d.nums;
+                checkNums.forEach(n => {
+                    if (n > actualMaxNum) actualMaxNum = n;
+                });
+            });
+            let searchMax = (maxNum === 49 && actualMaxNum > 39) ? 49 : 39;
+
+            for (let i = 1; i <= searchMax; i++) {
+                freqMap[i] = 0;
+                omitMap[i] = getOmit(i, totalDraws - 1);
+                recentFreqMap[i] = 0;
+            }
+
+            parsedData.forEach((d, idx) => {
+                let checkNums = (maxNum === 49 && d.nums.length >= 7) ? d.nums.slice(0, 6) : d.nums;
+                checkNums.forEach(n => {
+                    if (n >= 1 && n <= searchMax) {
+                        freqMap[n]++;
+                        if (idx >= totalDraws - recentDraws) {
+                            recentFreqMap[n]++;
+                        }
+                    }
+                });
+            });
+
+            let numsArray = [];
+            for (let i = 1; i <= searchMax; i++) {
+                numsArray.push({
+                    num: i,
+                    freq: freqMap[i],
+                    omit: omitMap[i],
+                    recentFreq: recentFreqMap[i]
+                });
+            }
+
+            let hotNums = [...numsArray].sort((a, b) => b.freq - a.freq).slice(0, 5);
+            let coldNums = [...numsArray].sort((a, b) => b.omit - a.omit).slice(0, 5);
+            let recentHotNums = [...numsArray].sort((a, b) => b.recentFreq - a.recentFreq).slice(0, 5);
+            
+            let avgFreq = numsArray.reduce((acc, curr) => acc + curr.freq, 0) / searchMax;
+            let goldenNums = [...numsArray]
+                .filter(n => n.freq >= avgFreq)
+                .sort((a, b) => b.omit - a.omit)
+                .slice(0, 5);
+
+            let renderNum = (nObj) => `<span class="pillar-tag" style="font-weight:700; color:var(--accent);">${fNum(nObj.num)}</span><span style="font-size:0.75rem; color:var(--text-muted);">(${nObj.omit}期未開)</span>`;
+
+            let html = `
+                <div class="summary" style="margin-bottom: 24px; border-color: var(--accent); background: #f8fafc; box-shadow: var(--shadow-sm);">
+                    <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 12px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px;">AI 大數據特選號碼深度解析</div>
+                    
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-weight: 700; font-size: 0.9rem; color: var(--danger); margin-bottom: 4px;">歷史超熱號 (歷史總開出次數最高)：</div>
+                        <div>${hotNums.map(renderNum).join(' ')}</div>
+                    </div>
+                    
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-weight: 700; font-size: 0.9rem; color: var(--accent); margin-bottom: 4px;">近期爆發號 (近 20 期開出頻率極高)：</div>
+                        <div>${recentHotNums.map(renderNum).join(' ')}</div>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-weight: 700; font-size: 0.9rem; color: var(--warning); margin-bottom: 4px;">黃金反彈號 (歷史常態開出但近期大漏)：</div>
+                        <div>${goldenNums.map(renderNum).join(' ')}</div>
+                    </div>
+
+                    <div style="margin-bottom: 4px;">
+                        <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 4px;">極度冰冷號 (目前遺漏期數最長)：</div>
+                        <div>${coldNums.map(renderNum).join(' ')}</div>
+                    </div>
+                </div>
+            `;
+            
+            let container = document.getElementById('aiSpecialArea');
+            container.innerHTML = html;
+            container.style.display = 'block';
+
+            if (btn) btn.innerText = "AI 大數據特選號碼演算";
+            
+            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
     }
 
     window.onload = () => {
