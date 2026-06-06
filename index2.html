@@ -66,7 +66,7 @@
 <div class="container">
     <div class="header">
         <h1>智慧全車版路系統</h1>
-        <div class="subtitle">專攻全車下注策略｜動態智能捕捉短期連準規律</div>
+        <div class="subtitle">專攻全車下注策略｜動態智能捕捉「追兩期」連準規律</div>
         <button class="theme-toggle" onclick="toggleTheme()">切換主題</button>
     </div>
     
@@ -81,7 +81,7 @@
                 <span class="config-label">預測核心：</span>
                 <select id="algoMode" onchange="runAnalysis()" style="margin-bottom: 0; flex: 1;">
                     <option value="custom">特定版路 (一第3球+2, 日第1球+0, 三第5球-4 ➔ 下四五)</option>
-                    <option value="auto">全自動搜尋 (±4範圍，每日智能尋找連準最強 3 顆)</option>
+                    <option value="auto">全自動搜尋 (±4範圍，智能尋找「追兩期」最強 3 顆)</option>
                 </select>
             </div>
 
@@ -175,7 +175,6 @@
             
             let targets = [...new Set([t1, t2, t3])].sort((a,b)=>a-b);
             
-            // 若不足3顆自動補齊
             let allValid = Array.from({length: maxNum}, (_, i) => i+1).filter(n => !targets.includes(n));
             while(targets.length < 3 && allValid.length > 0) {
                 targets.push(allValid.shift());
@@ -186,54 +185,73 @@
         return null;
     }
 
-    // 模式 B：全自動版路目標搜尋 (±4範圍，連準中優先)
+    // 模式 B：全自動版路目標搜尋 (±4範圍，追兩期連準)
     function getAutoTargetsFromData(dataArray, upToIndex) {
-        let currentDay = dataArray[upToIndex].day;
         let rules = [];
         
         for(let d=0; d<7; d++) {
+            let last_d_idx = dataArray[upToIndex].lastDayIndices[d];
+            if (last_d_idx === -1) continue;
+            
+            let distance = upToIndex - last_d_idx;
+            if (distance !== 1 && distance !== 2) continue; // 只追兩期
+
             for(let p=0; p<5; p++) {
                 for(let offset=-4; offset<=4; offset++) {
+                    let tNum = wrapNum(dataArray[last_d_idx].nums[p] + offset, maxNum);
+                    
+                    // 實戰邏輯：如果距離是第2天，且第1天已經命中，就自動放棄不追了
+                    if (distance === 2) {
+                        let check1 = (maxNum === 49 && dataArray[last_d_idx+1].nums.length >= 7) ? dataArray[last_d_idx+1].nums.slice(0,6) : dataArray[last_d_idx+1].nums;
+                        if (check1.includes(tNum)) continue; 
+                    }
+
                     let hits=0, trials=0, streak=0, maxStreak=0;
-                    for(let k=1; k < upToIndex; k++) {
-                        if (dataArray[k].day === currentDay) {
-                            let s_idx = dataArray[k].lastDayIndices[d];
-                            if (s_idx !== -1) {
-                                let tNum = wrapNum(dataArray[s_idx].nums[p] + offset, maxNum);
-                                let checkNums = (maxNum === 49 && dataArray[k].nums.length >= 7) ? dataArray[k].nums.slice(0,6) : dataArray[k].nums;
-                                if (checkNums.includes(tNum)) {
-                                    hits++; streak++;
-                                    if(streak > maxStreak) maxStreak = streak;
-                                } else {
-                                    streak = 0;
-                                }
-                                trials++;
+                    
+                    // 回測這個規律過去的「追兩期」表現
+                    for(let k=0; k < last_d_idx; k++) {
+                        if (dataArray[k].day === d) {
+                            let pastTNum = wrapNum(dataArray[k].nums[p] + offset, maxNum);
+                            let isHit = false;
+                            
+                            if (k + 1 < upToIndex) {
+                                let c1 = (maxNum === 49 && dataArray[k+1].nums.length >= 7) ? dataArray[k+1].nums.slice(0,6) : dataArray[k+1].nums;
+                                if (c1.includes(pastTNum)) isHit = true;
                             }
+                            if (!isHit && k + 2 < upToIndex) {
+                                let c2 = (maxNum === 49 && dataArray[k+2].nums.length >= 7) ? dataArray[k+2].nums.slice(0,6) : dataArray[k+2].nums;
+                                if (c2.includes(pastTNum)) isHit = true;
+                            }
+                            
+                            if (isHit) {
+                                hits++; streak++;
+                                if(streak > maxStreak) maxStreak = streak;
+                            } else {
+                                streak = 0;
+                            }
+                            trials++;
                         }
                     }
+                    
+                    // 必須經過一定歷史驗證
                     if (trials > 5 && hits/trials > 0) {
-                        rules.push({d, p, offset, hitRate: hits/trials, maxStreak, hits});
+                        rules.push({d, p, offset, hitRate: hits/trials, maxStreak, hits, tNum, triggerDraw: dataArray[last_d_idx], distance});
                     }
                 }
             }
         }
         
-        // 核心排序：連準數最優先，接著看命中率
+        // 核心排序：連準數最優先
         rules.sort((a,b) => b.maxStreak - a.maxStreak || b.hitRate - a.hitRate);
         
         let targets = [];
         let chosenRules = [];
-        let s_idx_current = dataArray[upToIndex].lastDayIndices;
         
         for(let r of rules) {
             if (targets.length >= 3) break;
-            let s_idx = s_idx_current[r.d];
-            if (s_idx !== -1) {
-                let tNum = wrapNum(dataArray[s_idx].nums[r.p] + r.offset, maxNum);
-                if (!targets.includes(tNum)) {
-                    targets.push(tNum);
-                    chosenRules.push({ rule: r, tNum: tNum, triggerDraw: dataArray[s_idx] });
-                }
+            if (!targets.includes(r.tNum)) {
+                targets.push(r.tNum);
+                chosenRules.push({ rule: r, tNum: r.tNum, triggerDraw: r.triggerDraw });
             }
         }
         
@@ -354,7 +372,7 @@
             
             processedData.pop(); 
 
-            if (latestCondition) {
+            if (latestCondition && (!latestCondition.isCustom ? latestCondition.chosenRules.length > 0 : true)) {
                 let targetDisplay = latestCondition.targets.map(fNum).join(' , ');
                 let nextPlayText = algoMode === 'custom' ? "預測下期 (週四或週五) 準備下注" : `下期 (週${DAY_NAMES[nextDay]}) 全車推薦目標`;
                 
@@ -367,7 +385,8 @@
                 } else {
                     sourceHtml = latestCondition.chosenRules.map(r => {
                         let sign = r.rule.offset >= 0 ? '+' : '';
-                        return `週${DAY_NAMES[r.rule.d]} (${r.triggerDraw.date}) 第${r.rule.p+1}球: ${fNum(r.triggerDraw.nums[r.rule.p])} ➔ <span style="color:var(--accent);">${sign}${r.rule.offset} = ${fNum(r.tNum)}</span> <span style="font-size:0.75rem; color:var(--text-muted);">(歷史最高連準: ${r.rule.maxStreak} 期)</span>`;
+                        let dayCount = r.rule.distance === 1 ? "第 1 天追牌" : "第 2 天追牌";
+                        return `週${DAY_NAMES[r.rule.d]} (${r.triggerDraw.date}) 第${r.rule.p+1}球: ${fNum(r.triggerDraw.nums[r.rule.p])} ➔ <span style="color:var(--accent);">${sign}${r.rule.offset} = ${fNum(r.tNum)}</span> <span style="font-size:0.75rem; color:var(--text-muted);">(歷史最高連準: ${r.rule.maxStreak} 期 | ${dayCount})</span>`;
                     }).join('<br>');
                 }
 
@@ -381,7 +400,7 @@
                     <span class="nums-highlight">${targetDisplay}</span>
                 </div>`;
             } else {
-                let msg = algoMode === 'custom' ? "下期並非週四或週五，目前無需下注。" : "歷史資料不足以形成完整版路條件";
+                let msg = algoMode === 'custom' ? "下期並非週四或週五，目前無需下注。" : "歷史資料不足或版路已中斷，目前空手觀望。";
                 document.getElementById('predictionArea').innerHTML = `<div style="padding:20px; color:var(--text-muted); text-align:center; background: var(--card); border-radius: 12px;">${msg}</div>`;
             }
         }
@@ -402,7 +421,8 @@
             } else {
                 let rulesText = s.chosenRules.map(r => {
                     let sign = r.rule.offset >= 0 ? '+' : '';
-                    return `<div class="source-row"><span>週${DAY_NAMES[r.rule.d]} (${r.triggerDraw.date}) 第${r.rule.p+1}球: <span class="source-hl">${fNum(r.triggerDraw.nums[r.rule.p])}</span></span> <span>${sign}${r.rule.offset} = <b>${fNum(r.tNum)}</b></span></div>`;
+                    let dayCount = r.rule.distance === 1 ? "第 1 天追牌" : "第 2 天追牌";
+                    return `<div class="source-row"><span>週${DAY_NAMES[r.rule.d]} (${r.triggerDraw.date}) 第${r.rule.p+1}球: <span class="source-hl">${fNum(r.triggerDraw.nums[r.rule.p])}</span></span> <span>${sign}${r.rule.offset} = <b>${fNum(r.tNum)}</b> <span style="color:var(--text-muted); font-size:0.75rem;">(${dayCount})</span></span></div>`;
                 }).join('');
                 sourceBoxHtml = `<div class="source-box">${rulesText}</div>`;
             }
