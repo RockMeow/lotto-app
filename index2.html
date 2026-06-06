@@ -182,15 +182,7 @@
                 <span class="config-label">預測核心：</span>
                 <select id="algoMode" onchange="runAnalysis()" style="margin-bottom: 0; flex: 1;">
                     <option value="pattern">版路規律 (定位拖牌)</option>
-                    <option value="math">數學公式 (8合1綜合矩陣)</option>
-                    <option value="math_diff">數學公式 (動能差值投影)</option>
-                    <option value="math_mirror">數學公式 (鏡像反轉投影)</option>
-                    <option value="math_golden">數學公式 (黃金比例投影)</option>
-                    <option value="math_sine">數學公式 (週期正弦波動)</option>
-                    <option value="math_cross">數學公式 (跨位元交集)</option>
-                    <option value="math_root">數學公式 (數字根動能)</option>
-                    <option value="math_sma">數學公式 (移動均值回歸)</option>
-                    <option value="math_chaos">數學公式 (混沌乘數)</option>
+                    <option value="auto_weekday">跨週規律 (自動搜尋版路)</option>
                 </select>
             </div>
 
@@ -542,82 +534,117 @@
         return patterns.sort((a, b) => b.score - a.score || b.total - a.total);
     }
 
-    function getMathPatterns(data, currentIndex, optBallCount, algoMode) {
-        let patterns = [];
+    // 全新的自動跨週版路搜尋演算法
+    function getAutoWeekdayPattern(data, currentIndex, optBallCount, optOnlyPerfect) {
         let selectedBallCount = optBallCount !== undefined ? optBallCount : (parseInt(document.getElementById('ballCountSelect').value) || 3);
-        let mode = algoMode || document.getElementById('algoMode').value;
-        
-        let currentNums = data[currentIndex].nums;
-        let prevNums = currentIndex > 0 ? data[currentIndex - 1].nums : currentNums;
-        
-        let recent5 = [];
-        for(let i=0; i<5; i++) {
-            if(currentIndex - i >= 0) recent5.push(data[currentIndex - i].nums);
-        }
+        let onlyPerfect = optOnlyPerfect !== undefined ? optOnlyPerfect : document.getElementById('onlyPerfectScore').checked;
 
-        for (let pos = 0; pos < 5; pos++) {
-            let curr = currentNums[pos];
-            let prev = prevNums[pos];
+        // 計算每一期是星期幾
+        let days = data.map(d => {
+            let dStr = d.date.includes('/') && d.date.split('/').length === 2 ? `2026/${d.date}` : d.date;
+            return new Date(dStr.replace(/\//g, '-')).getDay();
+        });
 
-            let candidates = new Set();
-            
-            if (mode === 'math' || mode === 'math_diff') candidates.add(wrapNum(curr + (curr - prev), maxNum));
-            if (mode === 'math' || mode === 'math_mirror') candidates.add(wrapNum(maxNum - curr + 1, maxNum));
-            if (mode === 'math' || mode === 'math_golden') {
-                candidates.add(wrapNum(curr * 1.618, maxNum));
-                candidates.add(wrapNum(curr * 0.618, maxNum));
-            }
-            if (mode === 'math' || mode === 'math_sine') {
-                let wave = Math.round(Math.sin(currentIndex) * 10);
-                candidates.add(wrapNum(curr + wave, maxNum));
-            }
-            if (mode === 'math' || mode === 'math_cross') {
-                let crossAvg = Math.round((currentNums[0] + currentNums[currentNums.length - 1]) / 2);
-                candidates.add(wrapNum(curr + crossAvg, maxNum));
-            }
-            if (mode === 'math' || mode === 'math_root') {
-                let digitSum = Math.floor(curr / 10) + (curr % 10);
-                candidates.add(wrapNum(curr + digitSum, maxNum));
-            }
-            if (mode === 'math' || mode === 'math_sma') {
-                if (recent5.length > 0) {
-                    let sum = 0;
-                    recent5.forEach(draw => sum += draw[pos]);
-                    candidates.add(wrapNum(Math.round(sum / recent5.length), maxNum));
+        let bestRules = [];
+        
+        // 遍歷所有可能的：星期(0-6)、位置(0-4)、加減跨距(0-38)
+        for(let d = 0; d < 7; d++) {
+            for(let p = 0; p < 5; p++) {
+                for(let offset = 0; offset < maxNum; offset++) {
+                    let hits = 0;
+                    let trials = 0;
+                    let lastD_idx = -1;
+                    
+                    // 利用歷史回測計算這組跨週規律的準確度
+                    for(let k = 0; k <= currentIndex; k++) {
+                        if (lastD_idx !== -1) {
+                            let targetNum = data[lastD_idx].nums[p] + offset;
+                            if (targetNum > maxNum) targetNum -= maxNum;
+                            if (targetNum === 0) targetNum = maxNum;
+                            
+                            let kNextNums = data[k].nums;
+                            let kCheckNums = (maxNum === 49 && kNextNums.length >= 7) ? kNextNums.slice(0, 6) : kNextNums;
+                            
+                            if (kCheckNums.includes(targetNum)) {
+                                hits++;
+                            }
+                            trials++;
+                        }
+                        if (days[k] === d) {
+                            lastD_idx = k;
+                        }
+                    }
+                    
+                    if (trials > 0) {
+                        let hitRate = hits / trials;
+                        if (onlyPerfect && hitRate < 1) continue;
+                        if (hitRate > 0) {
+                            bestRules.push({ d, p, offset, hitRate, hits, trials });
+                        }
+                    }
                 }
             }
-            if (mode === 'math' || mode === 'math_chaos') {
-                candidates.add(wrapNum((curr * prev), maxNum));
-            }
-            
-            let offset = 1;
-            while(candidates.size < selectedBallCount) {
-                candidates.add(wrapNum(curr + offset, maxNum));
-                offset++;
-            }
-
-            let bestComb = Array.from(candidates).slice(0, selectedBallCount).sort((a, b) => a - b);
-            
-            let typeName = "綜合數學矩陣";
-            if (mode === 'math_diff') typeName = "動能差值";
-            if (mode === 'math_mirror') typeName = "鏡像反轉";
-            if (mode === 'math_golden') typeName = "黃金比例";
-            if (mode === 'math_sine') typeName = "正弦波動";
-            if (mode === 'math_cross') typeName = "跨位元交集";
-            if (mode === 'math_root') typeName = "數字根";
-            if (mode === 'math_sma') typeName = "均值回歸";
-            if (mode === 'math_chaos') typeName = "混沌乘數";
-
-            patterns.push({
-                pos: pos + 1,
-                type: `數學公式 (${typeName})`,
-                triggerNum: curr,
-                target: bestComb,
-                score: 100, 
-                total: 999 
-            });
         }
-        return patterns;
+
+        // 依照命中率與命中次數排序，選出最穩定擬合的跨週規律
+        bestRules.sort((a, b) => b.hitRate - a.hitRate || b.hits - a.hits);
+
+        let resultPatterns = [];
+        let currentLastD = [-1, -1, -1, -1, -1, -1, -1];
+        for(let k = 0; k <= currentIndex; k++) {
+            currentLastD[days[k]] = k;
+        }
+
+        let targetComb = [];
+        let ruleIdx = 0;
+        let dayNames = ['日','一','二','三','四','五','六'];
+
+        while(targetComb.length < selectedBallCount && ruleIdx < bestRules.length) {
+            let rule = bestRules[ruleIdx];
+            let triggerIdx = currentLastD[rule.d];
+            
+            if (triggerIdx !== -1) {
+                let triggerDraw = data[triggerIdx];
+                let tNum = triggerDraw.nums[rule.p] + rule.offset;
+                if (tNum > maxNum) tNum -= maxNum;
+                if (tNum === 0) tNum = maxNum;
+
+                if (!targetComb.includes(tNum)) {
+                    targetComb.push(tNum);
+                    resultPatterns.push({
+                        pos: `週${dayNames[rule.d]}第${rule.p+1}球`,
+                        type: `跨週規律 (週${dayNames[rule.d]}第${rule.p+1}球+${rule.offset})`,
+                        triggerNum: `${fNum(triggerDraw.nums[rule.p])}`,
+                        target: [tNum],
+                        score: rule.hitRate * 100,
+                        total: rule.trials
+                    });
+                }
+            }
+            ruleIdx++;
+        }
+
+        // 如果可用的有效跨週球數不足，自動填補數字
+        if (targetComb.length < selectedBallCount) {
+             let allValidNums = [];
+             for (let n = 1; n <= maxNum; n++) {
+                 if (!targetComb.includes(n)) allValidNums.push(n);
+             }
+             while (targetComb.length < selectedBallCount && allValidNums.length > 0) {
+                 let fill = allValidNums.shift();
+                 targetComb.push(fill);
+                 resultPatterns.push({
+                     pos: `補球`,
+                     type: `自動補滿球數`,
+                     triggerNum: `-`,
+                     target: [fill],
+                     score: 0,
+                     total: 0
+                 });
+             }
+        }
+
+        return resultPatterns;
     }
 
     function calcPillarCombinations(pillarArrays) {
@@ -698,7 +725,7 @@
         btn.style.pointerEvents = "none";
 
         setTimeout(() => {
-            const algoOptions = ['pattern', 'math', 'math_diff', 'math_mirror', 'math_golden', 'math_sine', 'math_cross', 'math_root', 'math_sma', 'math_chaos'];
+            const algoOptions = ['pattern', 'auto_weekday'];
             const filterOptions = ['none', 'removeCold', 'removeHot', 'removeLeastFrequent', 'removeMostFrequent', 'smartRemove'];
             const comboOptions = [false, true];  
             const sortOptions = [false, true];   
@@ -750,18 +777,10 @@
 
                 perfectOptions.forEach(onlyPerfect => {
                     ballCounts.forEach(ballCount => {
-                        let patternsCache = { 'pattern': [], 'math': [], 'math_diff': [], 'math_mirror': [], 'math_golden': [], 'math_sine': [], 'math_cross': [], 'math_root': [], 'math_sma': [], 'math_chaos': [] };
+                        let patternsCache = { 'pattern': [], 'auto_weekday': [] };
                         for (let i = 0; i < parsedData.length; i++) {
                             patternsCache['pattern'][i] = getSmartPatterns(parsedData[i].nums, i, ballCount, onlyPerfect);
-                            patternsCache['math'][i] = getMathPatterns(parsedData, i, ballCount, 'math');
-                            patternsCache['math_diff'][i] = getMathPatterns(parsedData, i, ballCount, 'math_diff');
-                            patternsCache['math_mirror'][i] = getMathPatterns(parsedData, i, ballCount, 'math_mirror');
-                            patternsCache['math_golden'][i] = getMathPatterns(parsedData, i, ballCount, 'math_golden');
-                            patternsCache['math_sine'][i] = getMathPatterns(parsedData, i, ballCount, 'math_sine');
-                            patternsCache['math_cross'][i] = getMathPatterns(parsedData, i, ballCount, 'math_cross');
-                            patternsCache['math_root'][i] = getMathPatterns(parsedData, i, ballCount, 'math_root');
-                            patternsCache['math_sma'][i] = getMathPatterns(parsedData, i, ballCount, 'math_sma');
-                            patternsCache['math_chaos'][i] = getMathPatterns(parsedData, i, ballCount, 'math_chaos');
+                            patternsCache['auto_weekday'][i] = getAutoWeekdayPattern(parsedData, i, ballCount, onlyPerfect);
                         }
 
                         algoOptions.forEach(algo => {
@@ -962,15 +981,7 @@
 
                 let algoNames = { 
                     'pattern': '版路規律 (定位拖牌)', 
-                    'math': '數學公式 (8合1綜合矩陣)',
-                    'math_diff': '數學公式 (動能差值)',
-                    'math_mirror': '數學公式 (鏡像反轉)',
-                    'math_golden': '數學公式 (黃金比例)',
-                    'math_sine': '數學公式 (週期波動)',
-                    'math_cross': '數學公式 (跨位元交集)',
-                    'math_root': '數學公式 (數字根動能)',
-                    'math_sma': '數學公式 (均值回歸)',
-                    'math_chaos': '數學公式 (混沌乘數)'
+                    'auto_weekday': '跨週規律 (自動搜尋版路)'
                 };
                 let filterNames = { 'none': '不過濾', 'removeCold': '移除冷門號', 'removeHot': '移除熱門號', 'removeLeastFrequent': '移除近期出現次數少', 'removeMostFrequent': '移除近期出現次數多', 'smartRemove': '智能移除' };
                 let starText = [];
@@ -1038,7 +1049,7 @@
         let totalWinCount = { c2: 0, c3: 0, c4: 0, c5: 0 };
 
         for (let i = 0; i < parsedData.length; i++) {
-            let allPatterns = algoMode.startsWith('math') ? getMathPatterns(parsedData, i, undefined, algoMode) : getSmartPatterns(parsedData[i].nums, i);
+            let allPatterns = algoMode === 'auto_weekday' ? getAutoWeekdayPattern(parsedData, i) : getSmartPatterns(parsedData[i].nums, i);
             
             let initialSeen = new Set();
             allPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
@@ -1204,14 +1215,14 @@
             <div class="pred-card">
                 <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 歷史勝率</div>
                 <h3>${t.type}</h3>
-                <div class="pred-info">開獎日: ${parsedData[parsedData.length-1].date} | 目標：下期開獎</div>
+                <div class="pred-info">開獎日: ${parsedData[parsedData.length-1].date} | 指標: ${t.triggerNum}</div>
                 <span class="nums-highlight">${targetDisplay.join(', ')}</span>
             </div>`
         }).join('') : '<div style="padding:20px; color:var(--text-muted); text-align:center; background: var(--card); border-radius: 12px;">無符合篩選條件之指標</div>';
 
         let latestIndex = parsedData.length - 1;
         if (latestIndex >= 0) {
-            let latestPatterns = algoMode.startsWith('math') ? getMathPatterns(parsedData, latestIndex, undefined, algoMode) : getSmartPatterns(parsedData[latestIndex].nums, latestIndex);
+            let latestPatterns = algoMode === 'auto_weekday' ? getAutoWeekdayPattern(parsedData, latestIndex) : getSmartPatterns(parsedData[latestIndex].nums, latestIndex);
             
             let initialSeen = new Set();
             latestPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
@@ -1237,7 +1248,7 @@
                 let uniqueNums = lp.target.filter(n => !seenNumbers.has(n) && allowedNumbers.has(n));
                 uniqueNums.forEach(n => seenNumbers.add(n));
                 if (uniqueNums.length > 0) {
-                    pillars.push({ title: `第${lp.pos}位: ${lp.triggerNum}`, nums: uniqueNums });
+                    pillars.push({ title: `位置: ${lp.pos}`, nums: uniqueNums });
                 }
             });
 
