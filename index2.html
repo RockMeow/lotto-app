@@ -159,7 +159,7 @@
 <div class="container">
     <div class="header">
         <div class="header-top">
-            <h1>定位拖牌智慧分析系統 (智慧立柱版)</h1>
+            <h1>定位拖牌智慧分析系統</h1>
             <button class="theme-toggle" onclick="toggleTheme()">切換主題</button>
         </div>
     </div>
@@ -181,7 +181,7 @@
             <div class="config-row">
                 <span class="config-label">預測核心：</span>
                 <select id="algoMode" onchange="runAnalysis()" style="margin-bottom: 0; flex: 1;">
-                    <option value="pattern">大數據歷史軌跡 (拖牌規律)</option>
+                    <option value="pattern">拖牌規律</option>
                     <option value="math">數學公式 (8合1綜合矩陣)</option>
                     <option value="math_diff">數學公式 (動能差值投影)</option>
                     <option value="math_mirror">數學公式 (鏡像反轉投影)</option>
@@ -200,11 +200,11 @@
             </label>
             <label class="config-row" style="cursor: pointer;">
                 <input type="checkbox" id="sortBalls" onchange="runAnalysis()">
-                <span style="font-weight: 600; font-size: 0.9rem;">落球轉順球 (按號碼大小排序分析)</span>
+                <span style="font-weight: 600; font-size: 0.9rem;">落球轉順球</span>
             </label>
             <label class="config-row" style="cursor: pointer;">
                 <input type="checkbox" id="playCombination" onchange="runAnalysis()">
-                <span style="font-weight: 600; font-size: 0.9rem;">連碰玩法 (由柱碰切換為連碰)</span>
+                <span style="font-weight: 600; font-size: 0.9rem;">柱碰轉連碰</span>
             </label>
             
             <div class="config-row" style="margin-top: 6px;">
@@ -215,7 +215,7 @@
                     <option value="removeHot">移除熱門號 (保留遺漏冷號)</option>
                     <option value="removeLeastFrequent">移除近期出現次數少之號碼</option>
                     <option value="removeMostFrequent">移除近期出現次數多之號碼</option>
-                    <option value="smartRemove">智能移除超過號碼 (綜合指標篩選)</option>
+                    <option value="smartRemove">智能移除超過號碼</option>
                 </select>
             </div>
 
