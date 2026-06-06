@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>專屬跨週版路分析系統</title>
+    <title>智慧全車版路分析系統</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#1e293b">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -16,7 +16,6 @@
             --success: #16a34a;
             --success-light: #f0fdf4;
             --warning: #ea580c;
-            --warning-light: #fff7ed;
             --danger: #dc2626;
             --danger-light: #fef2f2;
             --purple: #9333ea;
@@ -42,7 +41,6 @@
             --success: #16a34a;
             --success-light: #f0fdf4;
             --warning: #ea580c;
-            --warning-light: #fff7ed;
             --danger: #dc2626;
             --danger-light: #fef2f2;
             --purple: #9333ea;
@@ -115,8 +113,8 @@
 
 <div class="container">
     <div class="header">
-        <h1>專屬版路追蹤系統</h1>
-        <div class="subtitle">追蹤條件：週一第3球+2、週日第1球+0、週三第5球-4<br>下注目標：週四、週五</div>
+        <h1>智慧全車版路系統</h1>
+        <div class="subtitle">專攻全車下注策略｜動態智能捕捉短期規律</div>
         <button class="theme-toggle" onclick="toggleTheme()">切換主題</button>
     </div>
     
@@ -134,24 +132,32 @@
         </div>
 
         <div style="padding-top: 5px; display: flex; flex-direction: column; gap: 4px;">
+            <div class="config-row">
+                <span class="config-label">預測核心：</span>
+                <select id="algoMode" onchange="runAnalysis()" style="margin-bottom: 0; flex: 1;">
+                    <option value="custom">特定版路 (一第3球+2, 日第1球+0, 三第5球-4 ➔ 下四五)</option>
+                    <option value="auto">全自動搜尋 (每天智能尋找最強 3 顆號碼)</option>
+                </select>
+            </div>
+
             <label class="config-row" style="cursor: pointer; margin-bottom: 15px;">
                 <input type="checkbox" id="sortBalls" checked onchange="runAnalysis()">
                 <span style="font-weight: 600; font-size: 0.9rem;">使用順球排序 (依據號碼大小排列後取位置)</span>
             </label>
 
             <div class="config-row" style="flex-wrap: wrap; align-items: flex-start;">
-                <span class="config-label" style="padding-top: 8px;">下注倍率：</span>
+                <span class="config-label" style="padding-top: 8px;">全車賠率設定：</span>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1;">
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">二星 <input type="number" id="mult2S" value="1" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">三星 <input type="number" id="mult3S" value="1" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">單車成本 <input type="number" id="costPerCar" value="74" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">單車獎金 <input type="number" id="prizePerCar" value="550" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
                 </div>
             </div>
 
-            <button class="run-btn" onclick="runAnalysis()">執行專屬版路回測</button>
+            <button class="run-btn" onclick="runAnalysis()">執行全車版路回測</button>
         </div>
     </div>
 
-    <div class="section-title">下期預測目標 (週四 / 週五)</div>
+    <div class="section-title">下期預測目標 (全車 3 顆)</div>
     <div id="predictionArea"></div>
     
     <div class="section-title">累積損益曲線</div>
@@ -161,7 +167,7 @@
 
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">專屬版路觸發紀錄</div>
+    <div class="section-title">全車下注紀錄</div>
     <div id="resultList"></div>
 </div>
 
@@ -170,24 +176,10 @@
     let maxNum = 39;
     let pnlChartInstance = null;
 
-    const COST_BASE_2S = 1;  
-    const COST_BASE_3S = 1;  
-    const REBATE_RATE = 0.2;
-
-    const MULTIPLIER_2S = 53;   
-    const MULTIPLIER_3S = 570;  
-
     const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
-
-    function calculateCombination(n, r) {
-        if (n < r) return 0;
-        if (r === 2) return (n * (n - 1)) / 2;
-        if (r === 3) return (n * (n - 1) * (n - 2)) / 6;
-        return 0;
-    }
 
     function toggleTheme() {
         const body = document.body;
@@ -210,16 +202,18 @@
         document.body.setAttribute('data-theme', savedTheme);
 
         if (localStorage.getItem('csvSelect')) document.getElementById('csvSelect').value = localStorage.getItem('csvSelect');
+        if (localStorage.getItem('algoMode')) document.getElementById('algoMode').value = localStorage.getItem('algoMode');
         if (localStorage.getItem('sortBalls') !== null) document.getElementById('sortBalls').checked = localStorage.getItem('sortBalls') === 'true';
-        if (localStorage.getItem('mult2S')) document.getElementById('mult2S').value = localStorage.getItem('mult2S');
-        if (localStorage.getItem('mult3S')) document.getElementById('mult3S').value = localStorage.getItem('mult3S');
+        if (localStorage.getItem('costPerCar')) document.getElementById('costPerCar').value = localStorage.getItem('costPerCar');
+        if (localStorage.getItem('prizePerCar')) document.getElementById('prizePerCar').value = localStorage.getItem('prizePerCar');
     }
 
     function saveSettings() {
         localStorage.setItem('csvSelect', document.getElementById('csvSelect').value);
+        localStorage.setItem('algoMode', document.getElementById('algoMode').value);
         localStorage.setItem('sortBalls', document.getElementById('sortBalls').checked);
-        localStorage.setItem('mult2S', document.getElementById('mult2S').value);
-        localStorage.setItem('mult3S', document.getElementById('mult3S').value);
+        localStorage.setItem('costPerCar', document.getElementById('costPerCar').value);
+        localStorage.setItem('prizePerCar', document.getElementById('prizePerCar').value);
     }
 
     function wrapNum(n, max) {
@@ -266,7 +260,8 @@
         }
     }
 
-    function getTargetsFromData(dataArray, upToIndex) {
+    // 模式 A：取得自訂版路目標
+    function getCustomTargetsFromData(dataArray, upToIndex) {
         let lastMon = null, lastSun = null, lastWed = null;
         for (let k = upToIndex; k >= Math.max(0, upToIndex - 15); k--) {
             if (dataArray[k].day === 1 && !lastMon) lastMon = dataArray[k];
@@ -279,20 +274,103 @@
             let t2 = wrapNum(lastSun.nums[0] + 0, maxNum); // 星期日第1球+0
             let t3 = wrapNum(lastWed.nums[4] - 4, maxNum); // 星期三第5球-4
             
-            // 由於可能算到重複的數字，使用 Set 排除並從小到大排序
+            // 使用 Set 排除重複，若不足 3 顆會自動遞補補齊
             let targets = [...new Set([t1, t2, t3])].sort((a,b)=>a-b);
-            return { targets, lastMon, lastSun, lastWed };
+            
+            // 如果遇到同樣數字，遞補數字以湊滿 3 顆車
+            let allValid = Array.from({length: maxNum}, (_, i) => i+1).filter(n => !targets.includes(n));
+            while(targets.length < 3 && allValid.length > 0) {
+                targets.push(allValid.shift());
+            }
+
+            return { 
+                targets: targets.sort((a,b)=>a-b), 
+                isCustom: true,
+                lastMon, lastSun, lastWed 
+            };
         }
         return null;
     }
 
+    // 模式 B：全自動版路目標搜尋 (動態尋找3顆高勝率全車)
+    function getAutoTargetsFromData(dataArray, upToIndex) {
+        let currentDay = dataArray[upToIndex].day;
+        let rules = [];
+        
+        // 動態計算每一天的前置關聯
+        for(let d=0; d<7; d++) {
+            for(let p=0; p<5; p++) {
+                for(let offset=0; offset<maxNum; offset++) {
+                    let hits = 0, trials = 0;
+                    // 回測這個規律在歷史上的勝率
+                    for(let k=1; k < upToIndex; k++) {
+                        if (dataArray[k].day === currentDay) {
+                            let s_idx = dataArray[k].lastDayIndices[d];
+                            if (s_idx !== -1) {
+                                let tNum = wrapNum(dataArray[s_idx].nums[p] + offset, maxNum);
+                                let checkNums = (maxNum === 49 && dataArray[k].nums.length >= 7) ? dataArray[k].nums.slice(0,6) : dataArray[k].nums;
+                                if (checkNums.includes(tNum)) hits++;
+                                trials++;
+                            }
+                        }
+                    }
+                    if (trials > 0) {
+                        let hitRate = hits/trials;
+                        if (hitRate > 0) rules.push({d, p, offset, hitRate, hits, trials});
+                    }
+                }
+            }
+        }
+        
+        // 依照勝率與命中次數排序
+        rules.sort((a,b) => b.hitRate - a.hitRate || b.hits - a.hits);
+        
+        let targets = [];
+        let chosenRules = [];
+        let s_idx_current = dataArray[upToIndex].lastDayIndices;
+        
+        // 挑選最強的 3 顆不重複號碼
+        for(let r of rules) {
+            if (targets.length >= 3) break;
+            let s_idx = s_idx_current[r.d];
+            if (s_idx !== -1) {
+                let tNum = wrapNum(dataArray[s_idx].nums[r.p] + r.offset, maxNum);
+                if (!targets.includes(tNum)) {
+                    targets.push(tNum);
+                    chosenRules.push({
+                        rule: r,
+                        tNum: tNum,
+                        triggerDraw: dataArray[s_idx]
+                    });
+                }
+            }
+        }
+        
+        // 如果不足 3 顆自動補齊
+        let allValid = Array.from({length: maxNum}, (_, i) => i+1).filter(n => !targets.includes(n));
+        while(targets.length < 3 && allValid.length > 0) {
+            targets.push(allValid.shift());
+        }
+        
+        targets.sort((a,b)=>a-b);
+
+        return {
+            targets: targets,
+            isCustom: false,
+            chosenRules: chosenRules
+        };
+    }
+
     function runAnalysis() {
         saveSettings();
+        let algoMode = document.getElementById('algoMode').value;
         let isSorted = document.getElementById('sortBalls').checked;
-        let mult2S = parseFloat(document.getElementById('mult2S').value) || 1;
-        let mult3S = parseFloat(document.getElementById('mult3S').value) || 1;
+        let costPerCar = parseFloat(document.getElementById('costPerCar').value) || 74;
+        let prizePerCar = parseFloat(document.getElementById('prizePerCar').value) || 550;
 
-        let processedData = parsedData.map(d => {
+        // 預處理資料：排序與日期快取
+        let lastDay = [-1, -1, -1, -1, -1, -1, -1];
+        let processedData = parsedData.map((d, index) => {
             let nums = [...d.originalNums];
             if (isSorted) {
                 if (maxNum === 49 && nums.length >= 7) {
@@ -302,11 +380,13 @@
                     nums.sort((a, b) => a - b);
                 }
             }
-            return { date: d.date, nums: nums, day: getDayOfWeek(d.date) };
+            let day = getDayOfWeek(d.date);
+            let dObj = { date: d.date, nums: nums, day: day, lastDayIndices: [...lastDay] };
+            lastDay[day] = index;
+            return dObj;
         });
 
         let stats = { bets: 0, hits: 0, cost: 0, win: 0 };
-        let hitCounts = { c2: 0, c3: 0 };
         let dailyView = [];
         let chartLabels = [];
         let chartData = [];
@@ -314,57 +394,52 @@
 
         for (let i = 0; i < processedData.length; i++) {
             let currentDraw = processedData[i];
+            let condition = null;
 
-            // 規則要求：下注星期四(4)、星期五(5)
-            if (currentDraw.day === 4 || currentDraw.day === 5) {
-                // 尋找 i 之前的最後一個日、一、三
-                let condition = getTargetsFromData(processedData, i - 1);
-                
-                if (condition && condition.targets.length >= 2) {
-                    let targets = condition.targets;
-                    let checkNums = (maxNum === 49 && currentDraw.nums.length >= 7) ? currentDraw.nums.slice(0, 6) : currentDraw.nums;
-                    
-                    let hitNums = intersect(targets, checkNums);
-                    let hitCount = hitNums.length;
-
-                    let totalC2 = calculateCombination(targets.length, 2);
-                    let totalC3 = calculateCombination(targets.length, 3);
-
-                    let winC2 = calculateCombination(hitCount, 2);
-                    let winC3 = calculateCombination(hitCount, 3);
-
-                    let rawCost = totalC2 * COST_BASE_2S * mult2S + totalC3 * COST_BASE_3S * mult3S;
-                    let netCost = rawCost * (1 - REBATE_RATE);
-                    let winAmount = winC2 * MULTIPLIER_2S * mult2S + winC3 * MULTIPLIER_3S * mult3S;
-
-                    stats.bets += (totalC2 + totalC3);
-                    stats.cost += netCost;
-                    
-                    if (winAmount > 0) {
-                        stats.win += winAmount;
-                        stats.hits += (winC2 + winC3);
-                        hitCounts.c2 += winC2;
-                        hitCounts.c3 += winC3;
-                    }
-
-                    cumulativePnL += (winAmount - netCost);
-
-                    chartLabels.push(currentDraw.date);
-                    chartData.push(cumulativePnL);
-
-                    dailyView.push({
-                        date: currentDraw.date,
-                        day: currentDraw.day,
-                        nums: currentDraw.nums,
-                        targets: targets,
-                        hitNums: hitNums,
-                        source: condition,
-                        c2: totalC2, c3: totalC3,
-                        w2: winC2, w3: winC3,
-                        netCost: netCost, winAmount: winAmount,
-                        isHit: winAmount > 0
-                    });
+            // 決定是否下注與取得目標
+            if (algoMode === 'custom') {
+                if (currentDraw.day === 4 || currentDraw.day === 5) {
+                    condition = getCustomTargetsFromData(processedData, i - 1);
                 }
+            } else {
+                // 自動模式天天都可下注
+                condition = getAutoTargetsFromData(processedData, i);
+            }
+            
+            if (condition && condition.targets.length > 0) {
+                let targets = condition.targets; // 固定 3 顆
+                let checkNums = (maxNum === 49 && currentDraw.nums.length >= 7) ? currentDraw.nums.slice(0, 6) : currentDraw.nums;
+                
+                let hitNums = intersect(targets, checkNums);
+                let hitCount = hitNums.length; // 中幾台車
+
+                let netCost = targets.length * costPerCar;
+                let winAmount = hitCount * prizePerCar;
+
+                stats.bets += targets.length;
+                stats.cost += netCost;
+                
+                if (winAmount > 0) {
+                    stats.win += winAmount;
+                    stats.hits += hitCount;
+                }
+
+                cumulativePnL += (winAmount - netCost);
+
+                chartLabels.push(currentDraw.date);
+                chartData.push(cumulativePnL);
+
+                dailyView.push({
+                    date: currentDraw.date,
+                    day: currentDraw.day,
+                    nums: currentDraw.nums,
+                    targets: targets,
+                    hitNums: hitNums,
+                    source: condition,
+                    netCost: netCost, 
+                    winAmount: winAmount,
+                    isHit: winAmount > 0
+                });
             }
         }
 
@@ -379,12 +454,12 @@
             data: {
                 labels: chartLabels,
                 datasets: [{
-                    label: '累積淨損益',
+                    label: '累積全車淨利',
                     data: chartData,
                     borderColor: '#9333ea',
                     backgroundColor: 'rgba(147, 51, 234, 0.1)',
                     borderWidth: 2,
-                    pointRadius: 2,
+                    pointRadius: 0,
                     pointHoverRadius: 5,
                     fill: true,
                     tension: 0.2
@@ -401,38 +476,85 @@
             }
         });
 
-        // Render Prediction (針對全資料最新的一期算未來目標)
+        // Render Prediction (針對未來的最新一期)
         if (processedData.length > 0) {
-            let latestCondition = getTargetsFromData(processedData, processedData.length - 1);
+            // 建構虛擬的下一期資料狀態以供搜尋
+            let nextIndex = processedData.length;
+            let lastD = processedData[nextIndex-1];
+            let nextDay = (lastD.day + 1) % 7;
+            
+            let tempLastIndices = [...lastD.lastDayIndices];
+            tempLastIndices[lastD.day] = nextIndex - 1;
+            
+            let virtualNextDraw = { day: nextDay, lastDayIndices: tempLastIndices };
+            processedData.push(virtualNextDraw); 
+
+            let latestCondition = null;
+            if (algoMode === 'custom') {
+                if (nextDay === 4 || nextDay === 5) {
+                    latestCondition = getCustomTargetsFromData(processedData, nextIndex - 1);
+                }
+            } else {
+                latestCondition = getAutoTargetsFromData(processedData, nextIndex);
+            }
+            
+            processedData.pop(); // 移除虛擬資料
+
             if (latestCondition) {
-                let s = latestCondition;
-                let targetDisplay = s.targets.map(fNum).join(' , ');
-                let nextPlayText = "下次開獎為週四或週五時即可下注";
+                let targetDisplay = latestCondition.targets.map(fNum).join(' , ');
+                let nextPlayText = algoMode === 'custom' ? "預測下期 (週四或週五) 準備下注" : `下期 (週${DAY_NAMES[nextDay]}) 全車推薦目標`;
+                
+                let sourceHtml = "";
+                if (latestCondition.isCustom) {
+                    let s = latestCondition;
+                    sourceHtml = `
+                    週一 (${s.lastMon.date}) 第3球為 ${fNum(s.lastMon.nums[2])} ➔ <span style="color:var(--accent);">+2 = ${fNum(wrapNum(s.lastMon.nums[2]+2, maxNum))}</span><br>
+                    週日 (${s.lastSun.date}) 第1球為 ${fNum(s.lastSun.nums[0])} ➔ <span style="color:var(--accent);">+0 = ${fNum(wrapNum(s.lastSun.nums[0]+0, maxNum))}</span><br>
+                    週三 (${s.lastWed.date}) 第5球為 ${fNum(s.lastWed.nums[4])} ➔ <span style="color:var(--accent);">-4 = ${fNum(wrapNum(s.lastWed.nums[4]-4, maxNum))}</span>`;
+                } else {
+                    sourceHtml = latestCondition.chosenRules.map(r => 
+                        `週${DAY_NAMES[r.rule.d]} (${r.triggerDraw.date}) 第${r.rule.p+1}球: ${fNum(r.triggerDraw.nums[r.rule.p])} ➔ <span style="color:var(--accent);">+${r.rule.offset} = ${fNum(r.tNum)}</span> <span style="font-size:0.75rem; color:var(--text-muted);">(歷史勝率 ${(r.rule.hitRate*100).toFixed(0)}%)</span>`
+                    ).join('<br>');
+                }
 
                 document.getElementById('predictionArea').innerHTML = `
                 <div class="pred-card">
                     <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">觸發版路來源：</div>
                     <div style="font-size: 0.8rem; line-height: 1.6; color: var(--text-main); margin-bottom: 12px; background: var(--bg); padding: 10px; border-radius: 6px; border: 1px dashed var(--border);">
-                        週一 (${s.lastMon.date}) 第3球為 ${fNum(s.lastMon.nums[2])} ➔ <span style="color:var(--accent);">+2 = ${fNum(wrapNum(s.lastMon.nums[2]+2, maxNum))}</span><br>
-                        週日 (${s.lastSun.date}) 第1球為 ${fNum(s.lastSun.nums[0])} ➔ <span style="color:var(--accent);">+0 = ${fNum(wrapNum(s.lastSun.nums[0]+0, maxNum))}</span><br>
-                        週三 (${s.lastWed.date}) 第5球為 ${fNum(s.lastWed.nums[4])} ➔ <span style="color:var(--accent);">-4 = ${fNum(wrapNum(s.lastWed.nums[4]-4, maxNum))}</span>
+                        ${sourceHtml}
                     </div>
                     <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">${nextPlayText}</div>
                     <span class="nums-highlight">${targetDisplay}</span>
                 </div>`;
             } else {
-                document.getElementById('predictionArea').innerHTML = `<div style="padding:20px; color:var(--text-muted); text-align:center; background: var(--card); border-radius: 12px;">歷史資料不足以形成完整版路條件</div>`;
+                let msg = algoMode === 'custom' ? "下期並非週四或週五，目前無需下注。" : "歷史資料不足以形成完整版路條件";
+                document.getElementById('predictionArea').innerHTML = `<div style="padding:20px; color:var(--text-muted); text-align:center; background: var(--card); border-radius: 12px;">${msg}</div>`;
             }
         }
 
         // Render List
         let listHtml = dailyView.slice().reverse().map(d => {
-            let dayClass = d.day === 4 || d.day === 5 ? 'day-target' : '';
+            let dayClass = (algoMode === 'custom' && (d.day === 4 || d.day === 5)) || algoMode === 'auto' ? 'day-target' : '';
             let s = d.source;
             let actualNumsHtml = d.nums.map(n => {
                 if (d.hitNums.includes(n)) return `<span class="hit-badge">${fNum(n)}</span>`;
                 return `<span style="padding: 0 2px;">${fNum(n)}</span>`;
             }).join(' ');
+
+            let sourceBoxHtml = '';
+            if (s.isCustom) {
+                sourceBoxHtml = `
+                <div class="source-box">
+                    <div class="source-row"><span>週一 (${s.lastMon.date}) 第3球: <span class="source-hl">${fNum(s.lastMon.nums[2])}</span></span> <span>+2 = <b>${fNum(wrapNum(s.lastMon.nums[2]+2, maxNum))}</b></span></div>
+                    <div class="source-row"><span>週日 (${s.lastSun.date}) 第1球: <span class="source-hl">${fNum(s.lastSun.nums[0])}</span></span> <span>+0 = <b>${fNum(wrapNum(s.lastSun.nums[0]+0, maxNum))}</b></span></div>
+                    <div class="source-row"><span>週三 (${s.lastWed.date}) 第5球: <span class="source-hl">${fNum(s.lastWed.nums[4])}</span></span> <span>-4 = <b>${fNum(wrapNum(s.lastWed.nums[4]-4, maxNum))}</b></span></div>
+                </div>`;
+            } else {
+                let rulesText = s.chosenRules.map(r => 
+                    `<div class="source-row"><span>週${DAY_NAMES[r.rule.d]} (${r.triggerDraw.date}) 第${r.rule.p+1}球: <span class="source-hl">${fNum(r.triggerDraw.nums[r.rule.p])}</span></span> <span>+${r.rule.offset} = <b>${fNum(r.tNum)}</b></span></div>`
+                ).join('');
+                sourceBoxHtml = `<div class="source-box">${rulesText}</div>`;
+            }
 
             let detailBox = '';
             if (d.isHit) {
@@ -441,8 +563,8 @@
                     <div class="hit-type" style="color: var(--success);">版路成功命中！</div>
                     <div style="font-size: 0.85rem; color: var(--text-main); line-height: 1.6;">
                         <b>下注球號：</b> ${d.targets.map(fNum).join(', ')}<br>
-                        <b>總下注數：</b> 2星(${d.c2}碰) 3星(${d.c3}碰)<br>
-                        <b>命中碰數：</b> <span style="color:var(--accent); font-weight:700;">2星(${d.w2})</span> <span style="color:var(--success); font-weight:700;">3星(${d.w3})</span><br>
+                        <b>總買車數：</b> 3 車<br>
+                        <b>實際命中：</b> <span style="color:var(--success); font-weight:700;">${d.hitNums.length} 車</span><br>
                         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--success);">
                             <span><b>總成本：</b>${d.netCost.toFixed(1)} 元 ｜ <b>中獎獎金：</b><span style="color:var(--success);font-weight:700;">${d.winAmount.toFixed(1)}</span> 元</span>
                         </div>
@@ -454,7 +576,7 @@
                     <div class="hit-type" style="color: var(--text-muted);">當期未命中</div>
                     <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
                         <b>下注球號：</b> ${d.targets.map(fNum).join(', ')}<br>
-                        <b>總下注數：</b> 2星(${d.c2}碰) 3星(${d.c3}碰)<br>
+                        <b>總買車數：</b> 3 車<br>
                         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
                             <span><b>總成本：</b>${d.netCost.toFixed(1)} 元 ｜ <b>中獎獎金：</b>0.0 元</span>
                         </div>
@@ -471,11 +593,7 @@
                     </div>
                     <div class="res-actual">${actualNumsHtml}</div>
                 </div>
-                <div class="source-box">
-                    <div class="source-row"><span>週一 (${s.lastMon.date}) 第3球: <span class="source-hl">${fNum(s.lastMon.nums[2])}</span></span> <span>+2 = <b>${fNum(wrapNum(s.lastMon.nums[2]+2, maxNum))}</b></span></div>
-                    <div class="source-row"><span>週日 (${s.lastSun.date}) 第1球: <span class="source-hl">${fNum(s.lastSun.nums[0])}</span></span> <span>+0 = <b>${fNum(wrapNum(s.lastSun.nums[0]+0, maxNum))}</b></span></div>
-                    <div class="source-row"><span>週三 (${s.lastWed.date}) 第5球: <span class="source-hl">${fNum(s.lastWed.nums[4])}</span></span> <span>-4 = <b>${fNum(wrapNum(s.lastWed.nums[4]-4, maxNum))}</b></span></div>
-                </div>
+                ${sourceBoxHtml}
                 ${detailBox}
             </div>`;
         }).join('');
@@ -490,9 +608,9 @@
 
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
-            <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; color: var(--text-main);">專屬版路回測總覽</div>
+            <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; color: var(--text-main);">全車版路回測總覽</div>
             <span style="color: var(--text-main);">總計出手下注 <b>${totalPlays}</b> 期，其中獲利 <b>${winPlays}</b> 期 (期數勝率 <b>${winRate}%</b>)<br>
-            總計命中：二星 <b>${hitCounts.c2}</b> 碰 ｜ 三星 <b>${hitCounts.c3}</b> 碰<br>
+            總計共買：<b>${stats.bets}</b> 車 ｜ 實際命中：<b>${stats.hits}</b> 車<br>
             累積總成本：${stats.cost.toFixed(1)} 元 ｜ 累積總派彩：${stats.win.toFixed(1)} 元</span>
             <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 1.1rem;">
                 <span style="color: var(--text-main);"><b>總淨利結算：<span style="color: ${net >= 0 ? 'var(--success)' : 'var(--danger)'}">${net >= 0 ? '+' : ''}${net.toFixed(1)}</span></b></span>
