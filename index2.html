@@ -81,7 +81,7 @@
                 <span class="config-label">預測核心：</span>
                 <select id="algoMode" onchange="runAnalysis()" style="margin-bottom: 0; flex: 1;">
                     <option value="custom">特定版路 (一第3球+2, 日第1球+0, 三第5球-4 ➔ 下四五)</option>
-                    <option value="auto">全自動搜尋 (±10範圍，每日智能尋找連準最強 3 顆)</option>
+                    <option value="auto">全自動搜尋 (±4範圍，每日智能尋找連準最強 3 顆)</option>
                 </select>
             </div>
 
@@ -186,14 +186,14 @@
         return null;
     }
 
-    // 模式 B：全自動版路目標搜尋 (±10範圍，連準中優先)
+    // 模式 B：全自動版路目標搜尋 (±4範圍，連準中優先)
     function getAutoTargetsFromData(dataArray, upToIndex) {
         let currentDay = dataArray[upToIndex].day;
         let rules = [];
         
         for(let d=0; d<7; d++) {
             for(let p=0; p<5; p++) {
-                for(let offset=-10; offset<=10; offset++) {
+                for(let offset=-4; offset<=4; offset++) {
                     let hits=0, trials=0, streak=0, maxStreak=0;
                     for(let k=1; k < upToIndex; k++) {
                         if (dataArray[k].day === currentDay) {
