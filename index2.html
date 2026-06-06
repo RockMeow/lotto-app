@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>專業量化報表引擎</title>
+    <title>專業量化報表與回測引擎</title>
     <meta name="theme-color" content="#1e293b">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #1e293b; --primary-light: #334155; --accent: #2563eb;
@@ -31,8 +32,10 @@
         .theme-toggle { position: absolute; right: 15px; top: 20px; background: transparent; border: 1px solid var(--border); color: white; padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.8rem; }
 
         .box { background: var(--card); padding: 20px; border-radius: var(--radius-md); margin-bottom: 20px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        select { width: 100%; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text-main); margin-bottom: 15px; font-size: 1rem; outline: none; }
+        select, input[type=number] { width: 100%; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text-main); margin-bottom: 15px; font-size: 1rem; outline: none; }
         
+        .config-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+
         /* Sliders */
         .slider-group { margin-bottom: 15px; }
         .slider-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; font-weight: 600; }
@@ -44,10 +47,14 @@
         .run-btn { background: var(--success); color: white; border: none; padding: 15px; border-radius: var(--radius-sm); font-size: 1.05rem; font-weight: 700; width: 100%; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: transform 0.1s; }
         .run-btn:active { transform: translateY(2px); }
 
-        .section-title { font-size: 1.1rem; font-weight: 700; margin: 25px 0 10px 0; border-left: 4px solid var(--purple); padding-left: 10px; }
+        .section-title { font-size: 1.1rem; font-weight: 700; margin: 25px 0 10px 0; border-left: 4px solid var(--purple); padding-left: 10px; display: flex; justify-content: space-between; align-items: baseline; }
         
         .report-area { background: #000; padding: 20px; border-radius: var(--radius-md); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 1.05rem; color: #a855f7; border: 1px solid var(--border); line-height: 1.8; white-space: pre-wrap; word-wrap: break-word; overflow-x: auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         [data-theme="light"] .report-area { background: #fdf4ff; color: #7e22ce; border-color: #e879f9; }
+
+        .stat-badge { font-size: 0.85rem; font-weight: normal; color: var(--text-muted); }
+        .profit-pos { color: var(--success); font-weight: bold; }
+        .profit-neg { color: var(--danger); font-weight: bold; }
 
         .debug-list { font-size: 0.8rem; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
         .debug-item { background: var(--bg); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); }
@@ -57,8 +64,8 @@
 
 <div class="container">
     <div class="header">
-        <h1>專業預測引擎控制台</h1>
-        <div class="subtitle">自定義統計權重・自動生成分析報表</div>
+        <h1>量化報表與回測引擎</h1>
+        <div class="subtitle">自定義統計權重・即時圖表回測・自動生成分析報表</div>
         <button class="theme-toggle" onclick="toggleTheme()">切換主題</button>
     </div>
 
@@ -68,8 +75,19 @@
             <option value="Fan_history_2026.csv">天天樂</option>
         </select>
 
+        <div class="config-row">
+            <div>
+                <div style="font-size:0.85rem; margin-bottom:4px;">單車成本</div>
+                <input type="number" id="costPerCar" value="74" step="1" min="1">
+            </div>
+            <div>
+                <div style="font-size:0.85rem; margin-bottom:4px;">單車獎金</div>
+                <input type="number" id="prizePerCar" value="550" step="1" min="1">
+            </div>
+        </div>
+
         <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
-            滑動下方控制桿，調整各項統計指標的得分比重。系統將自動計算 1~39 號的最終得分並產出報告。
+            滑動下方控制桿調整得分比重。系統將以後台權重計算前 3 名作為「全車標的」進行回測。
         </div>
 
         <div class="slider-group">
@@ -92,10 +110,18 @@
             <input type="range" id="wTrail" min="0" max="5" step="0.1" value="1.5" oninput="updateVal('wTrail', 'valTrail')">
         </div>
 
-        <button class="run-btn" onclick="generateReport()">⚡ 產出專業預測報表</button>
+        <button class="run-btn" onclick="executeSystem()">⚡ 產出報表與執行回測</button>
     </div>
 
-    <div class="section-title">系統運算結果報告</div>
+    <div class="section-title">
+        <span>全車回測累積損益</span>
+        <span id="backtestSummary" class="stat-badge">請點擊執行回測...</span>
+    </div>
+    <div class="box" style="padding: 10px;">
+        <canvas id="pnlChart" height="160"></canvas>
+    </div>
+
+    <div class="section-title">今日最新預測報表</div>
     <div id="reportContainer" class="report-area">等待系統執行運算...</div>
     
     <div class="section-title" style="font-size: 0.9rem;">後台權重積分即時監控 (前 15 名)</div>
@@ -105,10 +131,17 @@
 <script>
     let parsedData = [];
     let maxNum = 39;
+    let pnlChartInstance = null;
 
     function toggleTheme() {
         const body = document.body;
-        body.setAttribute('data-theme', body.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+        const newTheme = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+        body.setAttribute('data-theme', newTheme);
+        if(pnlChartInstance) {
+            const gridColor = newTheme === 'dark' ? '#334155' : '#e2e8f0';
+            pnlChartInstance.options.scales.y.grid.color = gridColor;
+            pnlChartInstance.update();
+        }
     }
 
     function updateVal(sliderId, textId) {
@@ -126,21 +159,21 @@
                 let cols = line.split(',');
                 return { date: cols[0], nums: cols.slice(1).map(Number) };
             });
-            document.getElementById('reportContainer').innerText = "資料載入完成，請點擊「產出專業預測報表」。";
+            document.getElementById('reportContainer').innerText = "資料載入完成，請點擊「產出報表與執行回測」。";
         } catch(e) {
             document.getElementById('reportContainer').innerText = "讀取 CSV 失敗，請確認檔案位置。";
         }
     }
 
-    // 核心引擎：計算 39 個號碼的分數
-    function calculateScores() {
+    // 核心引擎：計算 39 個號碼的分數 (加入 upToIndex 以防止未來函數)
+    function calculateScores(upToIndex) {
         let wShort = parseFloat(document.getElementById('wShort').value);
         let wLong = parseFloat(document.getElementById('wLong').value);
         let wOmit = parseFloat(document.getElementById('wOmit').value);
         let wTrail = parseFloat(document.getElementById('wTrail').value);
 
         let scores = [];
-        let totalDraws = parsedData.length;
+        let totalDraws = upToIndex;
         if (totalDraws === 0) return [];
 
         let lastDrawNums = parsedData[totalDraws - 1].nums;
@@ -149,7 +182,6 @@
             let shortHits = 0, longHits = 0, omit = 0;
             let foundOmit = false;
 
-            // 計算動能、均值與遺漏值
             for (let i = totalDraws - 1; i >= 0; i--) {
                 let isHit = parsedData[i].nums.includes(n);
                 if (!foundOmit) {
@@ -161,12 +193,10 @@
                 if (dist < 30 && isHit) longHits++;
             }
 
-            // 計算拖牌連動率 (上期開出的號碼，歷史上帶出 n 的機率)
             let trailHits = 0, trailTrials = 0;
             for (let i = 0; i < totalDraws - 1; i++) {
                 let currentDraw = parsedData[i].nums;
                 let nextDraw = parsedData[i+1].nums;
-                // 如果歷史某期包含了上一期開出的任何號碼
                 if (currentDraw.some(num => lastDrawNums.includes(num))) {
                     trailTrials++;
                     if (nextDraw.includes(n)) trailHits++;
@@ -174,39 +204,113 @@
             }
             let trailRate = trailTrials > 0 ? (trailHits / trailTrials) : 0;
 
-            // 基礎歸一化處理 (避免某個變數無限放大)
             let sScore = shortHits / 10; 
             let lScore = longHits / 30;
-            let oScore = omit / 20; if (oScore > 1) oScore = 1; // 遺漏超過 20 期以滿分算
+            let oScore = omit / 20; if (oScore > 1) oScore = 1; 
             
-            // 總分計算 = 基礎分數 * 使用者定義權重
             let finalScore = (sScore * wShort) + (lScore * wLong) + (oScore * wOmit) + (trailRate * wTrail);
-            
             scores.push({ num: n, score: finalScore });
         }
 
-        // 依據分數由高到低排序
         return scores.sort((a, b) => b.score - a.score);
     }
 
-    function generateReport() {
+    function executeSystem() {
         if (parsedData.length === 0) return alert("請先載入資料！");
         
-        const rankedList = calculateScores();
+        // 1. 執行歷史回測
+        runBacktest();
+
+        // 2. 產出未來一期的預測報表
+        generateReport();
+    }
+
+    function runBacktest() {
+        let costPerCar = parseFloat(document.getElementById('costPerCar').value) || 74;
+        let prizePerCar = parseFloat(document.getElementById('prizePerCar').value) || 550;
+        let betCars = 3; // 預設購買前 3 名作為全車標的
+
+        let chartLabels = [];
+        let chartData = [];
+        let cumulativePnL = 0;
+        let hitDraws = 0;
+        let totalSimDraws = 0;
+
+        // 從第 30 期開始回測，確保有足夠的前置數據
+        for (let i = 30; i < parsedData.length; i++) {
+            // 只使用第 i 期之前的資料進行計算
+            let rankedList = calculateScores(i);
+            let targets = rankedList.slice(0, betCars).map(item => item.num);
+
+            let actualNums = parsedData[i].nums;
+            let checkNums = (maxNum === 49 && actualNums.length >= 7) ? actualNums.slice(0, 6) : actualNums;
+            
+            let hitCount = targets.filter(t => checkNums.includes(t)).length;
+
+            let netCost = betCars * costPerCar;
+            let winAmount = hitCount * prizePerCar;
+            
+            cumulativePnL += (winAmount - netCost);
+
+            chartLabels.push(parsedData[i].date);
+            chartData.push(cumulativePnL);
+
+            if (hitCount > 0) hitDraws++;
+            totalSimDraws++;
+        }
+
+        // 更新圖表
+        if (pnlChartInstance) pnlChartInstance.destroy();
+        const ctx = document.getElementById('pnlChart').getContext('2d');
+        const gridColor = document.body.getAttribute('data-theme') === 'dark' ? '#334155' : '#e2e8f0';
+
+        pnlChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: '累積淨損益',
+                    data: chartData,
+                    borderColor: '#9333ea',
+                    backgroundColor: 'rgba(147, 51, 234, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    fill: true,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                scales: {
+                    x: { display: true, grid: { display: false } },
+                    y: { display: true, grid: { color: gridColor } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // 更新回測摘要
+        let winRate = totalSimDraws > 0 ? ((hitDraws / totalSimDraws) * 100).toFixed(1) : 0;
+        let pnlClass = cumulativePnL >= 0 ? 'profit-pos' : 'profit-neg';
+        let pnlSign = cumulativePnL >= 0 ? '+' : '';
+        document.getElementById('backtestSummary').innerHTML = `回測 ${totalSimDraws} 期 | 命中率: ${winRate}% | 總損益: <span class="${pnlClass}">${pnlSign}${cumulativePnL.toFixed(0)}</span>`;
+    }
+
+    function generateReport() {
+        // 使用全部歷史資料來預測「最新一期」
+        const rankedList = calculateScores(parsedData.length);
         if (rankedList.length === 0) return;
 
-        // 取得前 15 名的號碼，格式化為字串陣列
         const top = rankedList.map(item => fNum(item.num));
 
-        // 組裝格式化報表
-        let nextDate = "最新一期";
-        let report = `今彩539（${nextDate}）更新使用\n`;
+        let report = `今彩539（最新預測）更新使用\n`;
         report += `最具参考價值近期高機率：\n\n`;
         
-        // 獨支 (取第1、第2名)
         report += `壹、獨支 :\n〔${top[0]}〕〔${top[1]}〕\n\n`;
 
-        // 二中一 (特高 & 次高)
         report += `貳、二中一 或獨碰二中二：\n`;
         report += `（特高）：\n`;
         report += `〔${top[0]} ${top[2]}〕高\n`;
@@ -220,7 +324,6 @@
         report += `〔${top[8]} ${top[9]}〕\n`;
         report += `〔${top[3]} ${top[5]}〕\n\n`;
 
-        // 三中三 (特高)
         report += `参、（特高三中三、二、一機率）:\n`;
         let t1 = [top[0], top[2], top[4]].sort((a,b)=>a-b);
         let t2 = [top[1], top[3], top[5]].sort((a,b)=>a-b);
@@ -234,7 +337,6 @@
         report += `〔${t4.join(' ')}〕\n`;
         report += `〔${t5.join(' ')}〕\n\n`;
 
-        // 三中三 (次高)
         report += `肆、（次高三中三、二、一機率）：\n`;
         let s1 = [top[4], top[6], top[10]].sort((a,b)=>a-b);
         let s2 = [top[5], top[7], top[11]].sort((a,b)=>a-b);
@@ -248,15 +350,13 @@
         report += `〔${s4.join(' ')}〕\n`;
         report += `〔${s5.join(' ')}〕\n\n`;
 
-        report += `所有資訊都是每天滾動式提供，號碼組合均是可追蹤式，獨支或（二中一）5期內，可能開出85%以上，三中一六期內成功率90%以上，長期穩定機率。\n`;
-        report += `所提供給您預測數據参考，是最佳参考值，請自行規劃下注，這無法百分之百一定開出，請自行小心規劃謹慎使用。`;
+        report += `所有資訊都是每天滾動式提供，號碼組合均是可追蹤式。\n`;
+        report += `所提供給您預測數據参考，請自行規劃下注謹慎使用。`;
 
-        // 輸出至畫面
         document.getElementById('reportContainer').innerText = report;
 
-        // 輸出 Debug 積分監控面板 (前 15 名)
         let debugHtml = rankedList.slice(0, 15).map((item, idx) => 
-            `<div class="debug-item"><b>${fNum(item.num)}</b> <span style="color:var(--accent);">(${item.score.toFixed(3)})</span></div>`
+            `<div class="debug-item"><b>${fNum(item.num)}</b> <span style="color:var(--accent);">(${item.score.toFixed(2)})</span></div>`
         ).join('');
         document.getElementById('debugArea').innerHTML = debugHtml;
     }
