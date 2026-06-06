@@ -838,7 +838,7 @@
                                                     }
 
                                                     let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S + totalPairs.c5 * COST_BASE_5S) * userMultiplier;
-                                                    let netCost = rawCost;
+                                                    let netCost = rawCost * (1 - REBATE_RATE);
                                                     let winAmount = (winPairs.c2 * MULTIPLIER_2S + winPairs.c3 * MULTIPLIER_3S + winPairs.c4 * MULTIPLIER_4S + winPairs.c5 * MULTIPLIER_5S) * userMultiplier;
                                                     
                                                     cumulativePnL += (winAmount - netCost);
