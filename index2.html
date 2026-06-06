@@ -377,7 +377,7 @@
     function wrapNum(n, max) {
         let v = Math.round(n) % max;
         if (v <= 0) v += max;
-        return v;
+        return v || 1; 
     }
 
     function getMonthString(dateStr) {
@@ -431,7 +431,6 @@
         return result;
     }
 
-    // 原始拖牌規律函數
     function getSmartPatterns(nums, currentIndex, optBallCount, optOnlyPerfect) {
         let patterns = [];
         let selectedBallCount = optBallCount !== undefined ? optBallCount : (parseInt(document.getElementById('ballCountSelect').value) || 3);
@@ -522,13 +521,17 @@
         return patterns.sort((a, b) => b.score - a.score || b.total - a.total);
     }
 
-    // 已新增：數學公式預測核心函數
     function getMathPatterns(data, currentIndex, optBallCount) {
         let patterns = [];
         let selectedBallCount = optBallCount !== undefined ? optBallCount : (parseInt(document.getElementById('ballCountSelect').value) || 3);
         
         let currentNums = data[currentIndex].nums;
         let prevNums = currentIndex > 0 ? data[currentIndex - 1].nums : currentNums;
+        
+        let recent5 = [];
+        for(let i=0; i<5; i++) {
+            if(currentIndex - i >= 0) recent5.push(data[currentIndex - i].nums);
+        }
 
         for (let pos = 0; pos < 5; pos++) {
             let curr = currentNums[pos];
@@ -536,12 +539,39 @@
 
             let candidates = new Set();
             
+            // 1. 動能差值
             let diff = curr - prev;
             candidates.add(wrapNum(curr + diff, maxNum));
+            
+            // 2. 鏡像反轉
             candidates.add(wrapNum(maxNum - curr + 1, maxNum));
-            candidates.add(wrapNum((curr + prev) / 2, maxNum));
-            candidates.add(wrapNum(curr + 10, maxNum));
+            
+            // 3. 黃金比例雙向投影
             candidates.add(wrapNum(curr * 1.618, maxNum));
+            candidates.add(wrapNum(curr * 0.618, maxNum));
+            
+            // 4. 週期正弦波動
+            let wave = Math.round(Math.sin(currentIndex) * 10);
+            candidates.add(wrapNum(curr + wave, maxNum));
+
+            // 5. 跨位元陣列交集
+            let crossAvg = Math.round((currentNums[0] + currentNums[currentNums.length - 1]) / 2);
+            candidates.add(wrapNum(curr + crossAvg, maxNum));
+
+            // 6. 數字根動能
+            let digitSum = Math.floor(curr / 10) + (curr % 10);
+            candidates.add(wrapNum(curr + digitSum, maxNum));
+
+            // 7. 短期移動均值回歸
+            if (recent5.length > 0) {
+                let sum = 0;
+                recent5.forEach(draw => sum += draw[pos]);
+                let sma = Math.round(sum / recent5.length);
+                candidates.add(wrapNum(sma, maxNum));
+            }
+
+            // 8. 混沌乘數
+            candidates.add(wrapNum((curr * prev), maxNum));
             
             let offset = 1;
             while(candidates.size < selectedBallCount) {
@@ -553,10 +583,10 @@
             
             patterns.push({
                 pos: pos + 1,
-                type: `數學公式 (第${pos + 1}位算式)`,
+                type: `高階數學演算 (第${pos + 1}位矩陣)`,
                 triggerNum: curr,
                 target: bestComb,
-                score: 100,
+                score: 100, 
                 total: 999 
             });
         }
@@ -1101,7 +1131,7 @@
                 let uniqueNums = lp.target.filter(n => !seenNumbers.has(n) && allowedNumbers.has(n));
                 uniqueNums.forEach(n => seenNumbers.add(n));
                 if (uniqueNums.length > 0) {
-                    pillars.push({ title: `第${lp.pos}位運算`, nums: uniqueNums });
+                    pillars.push({ title: `第${lp.pos}位開${fNum(lp.triggerNum)}`, nums: uniqueNums });
                 }
             });
 
