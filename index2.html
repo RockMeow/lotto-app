@@ -3,622 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>智慧全車版路分析系統</title>
-    <link rel="manifest" href="manifest3.json">
+    <title>專業量化報表引擎</title>
     <meta name="theme-color" content="#1e293b">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary: #1e293b;
-            --primary-light: #334155;
-            --accent: #2563eb;
-            --accent-hover: #1d4ed8;
-            --success: #16a34a;
-            --success-light: #f0fdf4;
-            --warning: #ea580c;
-            --danger: #dc2626;
-            --danger-light: #fef2f2;
-            --purple: #9333ea;
-            --purple-light: #faf5ff;
-            --bg: #0f172a;
-            --card: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: #334155;
-            --input-bg: #334155;
-            --radius-md: 12px;
-            --radius-sm: 8px;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.3);
-            --header-bg: #0f172a;
+            --primary: #1e293b; --primary-light: #334155; --accent: #2563eb;
+            --success: #16a34a; --warning: #ea580c; --danger: #dc2626;
+            --purple: #9333ea; --bg: #0f172a; --card: #1e293b;
+            --text-main: #f8fafc; --text-muted: #94a3b8; --border: #334155;
+            --radius-md: 12px; --radius-sm: 8px;
         }
 
         [data-theme="light"] {
-            --primary: #1e293b;
-            --primary-light: #334155;
-            --accent: #2563eb;
-            --accent-hover: #1d4ed8;
-            --success: #16a34a;
-            --success-light: #f0fdf4;
-            --warning: #ea580c;
-            --danger: #dc2626;
-            --danger-light: #fef2f2;
-            --purple: #9333ea;
-            --purple-light: #faf5ff;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --input-bg: #ffffff;
-            --header-bg: #1e293b;
+            --primary: #1e293b; --primary-light: #334155; --accent: #2563eb;
+            --success: #16a34a; --warning: #ea580c; --danger: #dc2626;
+            --purple: #9333ea; --bg: #f8fafc; --card: #ffffff;
+            --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg); color: var(--text-main); padding: 12px; line-height: 1.5; transition: background-color 0.3s, color 0.3s; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: var(--bg); color: var(--text-main); padding: 15px; line-height: 1.5; transition: background-color 0.3s; }
+        .container { max-width: 650px; margin: 0 auto; }
 
-        .container { max-width: 600px; margin: 0 auto; }
+        .header { background: var(--primary); padding: 20px; border-radius: var(--radius-md); text-align: center; position: relative; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        h1 { font-size: 1.3rem; margin-bottom: 5px; color: white; }
+        .subtitle { font-size: 0.85rem; color: #94a3b8; }
+        .theme-toggle { position: absolute; right: 15px; top: 20px; background: transparent; border: 1px solid var(--border); color: white; padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.8rem; }
 
-        /* Header Area */
-        .header { background: var(--header-bg); color: white; padding: 18px; border-radius: var(--radius-md); margin-bottom: 20px; box-shadow: var(--shadow-md); text-align: center; letter-spacing: 0.5px; position: relative;}
-        h1 { font-size: 1.15rem; font-weight: 700; margin: 0; color: white;}
-        .subtitle { font-size: 0.8rem; color: #94a3b8; margin-top: 6px; }
-        .theme-toggle { position: absolute; right: 15px; top: 18px; background: transparent; border: 1px solid var(--border); color: white; padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.8rem; transition: background 0.2s; }
-        .theme-toggle:hover { background: rgba(255,255,255,0.1); }
-
-        /* Controls */
-        .selector-box { background: var(--card); padding: 20px; border-radius: var(--radius-md); margin-bottom: 20px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: background-color 0.3s, border-color 0.3s; }
-        select, input[type="number"] { width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.95rem; background: var(--input-bg); margin-bottom: 10px; outline: none; transition: all 0.2s ease; color: var(--text-main); }
-        select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; padding-right: 30px; cursor: pointer; }
-        select:focus, input[type="number"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
-        input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+        .box { background: var(--card); padding: 20px; border-radius: var(--radius-md); margin-bottom: 20px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        select { width: 100%; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text-main); margin-bottom: 15px; font-size: 1rem; outline: none; }
         
-        .status-bar { font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; padding-bottom: 15px; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
+        /* Sliders */
+        .slider-group { margin-bottom: 15px; }
+        .slider-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; font-weight: 600; }
+        .weight-val { color: var(--accent); font-weight: 800; }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; margin-top: -6px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: var(--border); border-radius: 3px; }
 
-        .config-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .config-label { font-weight: 600; font-size: 0.9rem; color: var(--primary-light); min-width: 90px; }
+        .run-btn { background: var(--success); color: white; border: none; padding: 15px; border-radius: var(--radius-sm); font-size: 1.05rem; font-weight: 700; width: 100%; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: transform 0.1s; }
+        .run-btn:active { transform: translateY(2px); }
 
-        .run-btn { background: var(--success); color: white; border: none; padding: 14px; border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 700; width: 100%; cursor: pointer; margin-top: 10px; transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; letter-spacing: 0.5px; }
-        .run-btn:hover { background: #15803d; box-shadow: var(--shadow-md); }
-        .run-btn:active { transform: translateY(1px); }
-
-        /* Titles and summaries */
-        .section-title { font-size: 1.05rem; font-weight: 700; margin: 24px 0 12px 2px; color: var(--primary); letter-spacing: 0.5px; border-left: 4px solid var(--accent); padding-left: 8px; line-height: 1.2; }
-        .summary { background: var(--card); padding: 18px; border-radius: var(--radius-md); margin-bottom: 24px; font-size: 0.9rem; border: 1px solid var(--border); color: var(--text-main); line-height: 1.6; transition: background-color 0.3s, border-color 0.3s; }
-
-        /* Result List */
-        .result-item { background: var(--card); border-radius: var(--radius-md); padding: 18px; margin-bottom: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); transition: background-color 0.3s, border-color 0.3s; }
-        .res-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .res-date { font-weight: 700; color: var(--primary-light); font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
-        .day-badge { background: var(--input-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; border: 1px solid var(--border); }
-        .day-target { background: var(--accent); color: white; border-color: var(--accent); }
-        .res-actual { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 1.05rem; color: var(--text-main); font-weight: 700; letter-spacing: 1px; }
-
-        .source-box { background: var(--bg); border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 10px; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; }
-        .source-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .source-hl { color: var(--text-main); font-weight: 600; }
-
-        .hit-detail { padding: 12px; border-radius: var(--radius-sm); margin-top: 10px; border: 1px solid var(--success); background: var(--success-light); }
-        [data-theme="dark"] .hit-detail { background: rgba(22, 163, 74, 0.1); }
-        .miss-detail { padding: 12px; border-radius: var(--radius-sm); margin-top: 10px; border: 1px solid var(--border); background: var(--bg); }
-
-        .hit-type { font-size: 0.9rem; font-weight: 700; margin-bottom: 6px; }
-        .hit-badge { background-color: var(--success); color: white; padding: 1px 5px; border-radius: 4px; font-weight: 700; margin: 0 2px; display: inline-block; }
+        .section-title { font-size: 1.1rem; font-weight: 700; margin: 25px 0 10px 0; border-left: 4px solid var(--purple); padding-left: 10px; }
         
-        .pred-card { background: var(--card); padding: 18px; border-radius: var(--radius-md); border-left: 4px solid var(--purple); box-shadow: var(--shadow-sm); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-        .nums-highlight { font-size: 1.6rem; font-weight: 800; color: var(--purple); letter-spacing: 2px; display: block; margin-top: 10px; text-align: center;}
+        .report-area { background: #000; padding: 20px; border-radius: var(--radius-md); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 1.05rem; color: #a855f7; border: 1px solid var(--border); line-height: 1.8; white-space: pre-wrap; word-wrap: break-word; overflow-x: auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        [data-theme="light"] .report-area { background: #fdf4ff; color: #7e22ce; border-color: #e879f9; }
+
+        .debug-list { font-size: 0.8rem; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
+        .debug-item { background: var(--bg); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); }
     </style>
 </head>
 <body data-theme="dark">
 
 <div class="container">
     <div class="header">
-        <h1>智慧全車版路系統</h1>
-        <div class="subtitle">專攻全車下注策略｜動態智能捕捉短期規律</div>
+        <h1>專業預測引擎控制台</h1>
+        <div class="subtitle">自定義統計權重・自動生成分析報表</div>
         <button class="theme-toggle" onclick="toggleTheme()">切換主題</button>
     </div>
-    
-    <div class="selector-box">
+
+    <div class="box">
         <select id="csvSelect" onchange="processData()">
+            <option value="539_history_2026.csv">今彩 539 (歷史資料)</option>
             <option value="Fan_history_2026.csv">天天樂</option>
-            <option value="Ghana_history_2026.csv">迦納彩</option>
-            <option value="539_history_2026.csv">今彩 539</option>
-            <option value="649_history_2026.csv">大樂透</option>
-            <option value="Six_history_2026.csv">六合彩</option>
         </select>
-        <div class="status-bar">
-            <span>資料狀態:</span>
-            <span id="dataStatus" style="font-weight: 600;">讀取中...</span>
+
+        <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+            滑動下方控制桿，調整各項統計指標的得分比重。系統將自動計算 1~39 號的最終得分並產出報告。
         </div>
 
-        <div style="padding-top: 5px; display: flex; flex-direction: column; gap: 4px;">
-            <div class="config-row">
-                <span class="config-label">預測核心：</span>
-                <select id="algoMode" onchange="runAnalysis()" style="margin-bottom: 0; flex: 1;">
-                    <option value="custom">特定版路 (一第3球+2, 日第1球+0, 三第5球-4 ➔ 下四五)</option>
-                    <option value="auto">全自動搜尋 (每天智能尋找最強 3 顆號碼)</option>
-                </select>
-            </div>
-
-            <label class="config-row" style="cursor: pointer; margin-bottom: 15px;">
-                <input type="checkbox" id="sortBalls" checked onchange="runAnalysis()">
-                <span style="font-weight: 600; font-size: 0.9rem;">使用順球排序 (依據號碼大小排列後取位置)</span>
-            </label>
-
-            <div class="config-row" style="flex-wrap: wrap; align-items: flex-start;">
-                <span class="config-label" style="padding-top: 8px;">全車賠率設定：</span>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1;">
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">單車成本 <input type="number" id="costPerCar" value="74" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">單車獎金 <input type="number" id="prizePerCar" value="550" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
-                </div>
-            </div>
-
-            <button class="run-btn" onclick="runAnalysis()">執行全車版路回測</button>
+        <div class="slider-group">
+            <div class="slider-header"><span>🔥 近期動能 (近10期出現率)</span> <span class="weight-val" id="valShort">權重: 2.0</span></div>
+            <input type="range" id="wShort" min="0" max="5" step="0.1" value="2.0" oninput="updateVal('wShort', 'valShort')">
         </div>
+
+        <div class="slider-group">
+            <div class="slider-header"><span>🌊 長期均值 (近30期出現率)</span> <span class="weight-val" id="valLong">權重: 1.0</span></div>
+            <input type="range" id="wLong" min="0" max="5" step="0.1" value="1.0" oninput="updateVal('wLong', 'valLong')">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-header"><span>❄️ 遺漏回補 (距離上次開出期數)</span> <span class="weight-val" id="valOmit">權重: 0.5</span></div>
+            <input type="range" id="wOmit" min="0" max="5" step="0.1" value="0.5" oninput="updateVal('wOmit', 'valOmit')">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-header"><span>🔗 拖牌關聯 (上期號碼連動率)</span> <span class="weight-val" id="valTrail">權重: 1.5</span></div>
+            <input type="range" id="wTrail" min="0" max="5" step="0.1" value="1.5" oninput="updateVal('wTrail', 'valTrail')">
+        </div>
+
+        <button class="run-btn" onclick="generateReport()">⚡ 產出專業預測報表</button>
     </div>
 
-    <div class="section-title">下期預測目標 (全車 3 顆)</div>
-    <div id="predictionArea"></div>
+    <div class="section-title">系統運算結果報告</div>
+    <div id="reportContainer" class="report-area">等待系統執行運算...</div>
     
-    <div class="section-title">累積損益曲線</div>
-    <div class="selector-box" style="padding: 15px; margin-bottom: 24px;">
-        <canvas id="pnlChart" height="150"></canvas>
-    </div>
-
-    <div id="summaryArea" class="summary" style="display:none;"></div>
-
-    <div class="section-title">全車下注紀錄</div>
-    <div id="resultList"></div>
+    <div class="section-title" style="font-size: 0.9rem;">後台權重積分即時監控 (前 15 名)</div>
+    <div id="debugArea" class="debug-list"></div>
 </div>
 
 <script>
     let parsedData = [];
     let maxNum = 39;
-    let pnlChartInstance = null;
-
-    const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
-
-    function fNum(n) { return String(n).padStart(2, '0'); }
-    function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
 
     function toggleTheme() {
         const body = document.body;
-        const currentTheme = body.getAttribute('data-theme');
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        body.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        if(pnlChartInstance) updateChartTheme();
+        body.setAttribute('data-theme', body.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
     }
 
-    function updateChartTheme() {
-        const isDark = document.body.getAttribute('data-theme') === 'dark';
-        const gridColor = isDark ? '#334155' : '#e2e8f0';
-        pnlChartInstance.options.scales.y.grid.color = gridColor;
-        pnlChartInstance.update();
+    function updateVal(sliderId, textId) {
+        document.getElementById(textId).innerText = "權重: " + parseFloat(document.getElementById(sliderId).value).toFixed(1);
     }
 
-    function loadSettings() {
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        document.body.setAttribute('data-theme', savedTheme);
-
-        if (localStorage.getItem('csvSelect')) document.getElementById('csvSelect').value = localStorage.getItem('csvSelect');
-        if (localStorage.getItem('algoMode')) document.getElementById('algoMode').value = localStorage.getItem('algoMode');
-        if (localStorage.getItem('sortBalls') !== null) document.getElementById('sortBalls').checked = localStorage.getItem('sortBalls') === 'true';
-        if (localStorage.getItem('costPerCar')) document.getElementById('costPerCar').value = localStorage.getItem('costPerCar');
-        if (localStorage.getItem('prizePerCar')) document.getElementById('prizePerCar').value = localStorage.getItem('prizePerCar');
-    }
-
-    function saveSettings() {
-        localStorage.setItem('csvSelect', document.getElementById('csvSelect').value);
-        localStorage.setItem('algoMode', document.getElementById('algoMode').value);
-        localStorage.setItem('sortBalls', document.getElementById('sortBalls').checked);
-        localStorage.setItem('costPerCar', document.getElementById('costPerCar').value);
-        localStorage.setItem('prizePerCar', document.getElementById('prizePerCar').value);
-    }
-
-    function wrapNum(n, max) {
-        let v = Math.round(n) % max;
-        if (v <= 0) v += max;
-        return v || 1; 
-    }
-
-    function getDayOfWeek(dateStr) {
-        let dStr = dateStr.includes('/') && dateStr.split('/').length === 2 ? `2026/${dateStr}` : dateStr;
-        let d = new Date(dStr.replace(/\//g, '-'));
-        return d.getDay();
-    }
+    function fNum(n) { return String(n).padStart(2, '0'); }
 
     async function processData() {
-        saveSettings();
-        const fileName = document.getElementById('csvSelect').value;
-        const statusEl = document.getElementById('dataStatus');
-        maxNum = (fileName.includes('649') || fileName.includes('Six')) ? 49 : 39;
-        
-        statusEl.innerText = "讀取中...";
         try {
-            const res = await fetch(fileName);
+            const res = await fetch(document.getElementById('csvSelect').value);
             if(!res.ok) throw new Error();
             const text = await res.text();
-            const lines = text.trim().split('\n');
-            
-            parsedData = [];
-            for(let i = 1; i < lines.length; i++) {
-                let cols = lines[i].split(',').map(s => s.trim());
-                if(cols.length < 6 || isNaN(parseInt(cols[1]))) continue;
-                let nums = [];
-                for(let j = 1; j < cols.length; j++) {
-                    let n = parseInt(cols[j]);
-                    if(!isNaN(n)) nums.push(n);
-                }
-                parsedData.push({ date: cols[0], originalNums: nums });
-            }
-            
-            statusEl.innerText = `載入成功 (共 ${parsedData.length} 期)`;
-            runAnalysis();
-        } catch(e) { 
-            statusEl.innerText = "讀取失敗 (請確保在網頁環境下執行)"; 
+            parsedData = text.trim().split('\n').slice(1).map(line => {
+                let cols = line.split(',');
+                return { date: cols[0], nums: cols.slice(1).map(Number) };
+            });
+            document.getElementById('reportContainer').innerText = "資料載入完成，請點擊「產出專業預測報表」。";
+        } catch(e) {
+            document.getElementById('reportContainer').innerText = "讀取 CSV 失敗，請確認檔案位置。";
         }
     }
 
-    // 模式 A：取得自訂版路目標
-    function getCustomTargetsFromData(dataArray, upToIndex) {
-        let lastMon = null, lastSun = null, lastWed = null;
-        for (let k = upToIndex; k >= Math.max(0, upToIndex - 15); k--) {
-            if (dataArray[k].day === 1 && !lastMon) lastMon = dataArray[k];
-            if (dataArray[k].day === 0 && !lastSun) lastSun = dataArray[k];
-            if (dataArray[k].day === 3 && !lastWed) lastWed = dataArray[k];
-        }
+    // 核心引擎：計算 39 個號碼的分數
+    function calculateScores() {
+        let wShort = parseFloat(document.getElementById('wShort').value);
+        let wLong = parseFloat(document.getElementById('wLong').value);
+        let wOmit = parseFloat(document.getElementById('wOmit').value);
+        let wTrail = parseFloat(document.getElementById('wTrail').value);
 
-        if (lastMon && lastSun && lastWed) {
-            let t1 = wrapNum(lastMon.nums[2] + 2, maxNum); // 星期一第3球+2
-            let t2 = wrapNum(lastSun.nums[0] + 0, maxNum); // 星期日第1球+0
-            let t3 = wrapNum(lastWed.nums[4] - 4, maxNum); // 星期三第5球-4
-            
-            // 使用 Set 排除重複，若不足 3 顆會自動遞補補齊
-            let targets = [...new Set([t1, t2, t3])].sort((a,b)=>a-b);
-            
-            // 如果遇到同樣數字，遞補數字以湊滿 3 顆車
-            let allValid = Array.from({length: maxNum}, (_, i) => i+1).filter(n => !targets.includes(n));
-            while(targets.length < 3 && allValid.length > 0) {
-                targets.push(allValid.shift());
+        let scores = [];
+        let totalDraws = parsedData.length;
+        if (totalDraws === 0) return [];
+
+        let lastDrawNums = parsedData[totalDraws - 1].nums;
+
+        for (let n = 1; n <= maxNum; n++) {
+            let shortHits = 0, longHits = 0, omit = 0;
+            let foundOmit = false;
+
+            // 計算動能、均值與遺漏值
+            for (let i = totalDraws - 1; i >= 0; i--) {
+                let isHit = parsedData[i].nums.includes(n);
+                if (!foundOmit) {
+                    if (isHit) foundOmit = true;
+                    else omit++;
+                }
+                let dist = totalDraws - 1 - i;
+                if (dist < 10 && isHit) shortHits++;
+                if (dist < 30 && isHit) longHits++;
             }
 
-            return { 
-                targets: targets.sort((a,b)=>a-b), 
-                isCustom: true,
-                lastMon, lastSun, lastWed 
-            };
+            // 計算拖牌連動率 (上期開出的號碼，歷史上帶出 n 的機率)
+            let trailHits = 0, trailTrials = 0;
+            for (let i = 0; i < totalDraws - 1; i++) {
+                let currentDraw = parsedData[i].nums;
+                let nextDraw = parsedData[i+1].nums;
+                // 如果歷史某期包含了上一期開出的任何號碼
+                if (currentDraw.some(num => lastDrawNums.includes(num))) {
+                    trailTrials++;
+                    if (nextDraw.includes(n)) trailHits++;
+                }
+            }
+            let trailRate = trailTrials > 0 ? (trailHits / trailTrials) : 0;
+
+            // 基礎歸一化處理 (避免某個變數無限放大)
+            let sScore = shortHits / 10; 
+            let lScore = longHits / 30;
+            let oScore = omit / 20; if (oScore > 1) oScore = 1; // 遺漏超過 20 期以滿分算
+            
+            // 總分計算 = 基礎分數 * 使用者定義權重
+            let finalScore = (sScore * wShort) + (lScore * wLong) + (oScore * wOmit) + (trailRate * wTrail);
+            
+            scores.push({ num: n, score: finalScore });
         }
-        return null;
+
+        // 依據分數由高到低排序
+        return scores.sort((a, b) => b.score - a.score);
     }
 
-    // 模式 B：全自動版路目標搜尋 (動態尋找3顆高勝率全車)
-    function getAutoTargetsFromData(dataArray, upToIndex) {
-        let currentDay = dataArray[upToIndex].day;
-        let rules = [];
+    function generateReport() {
+        if (parsedData.length === 0) return alert("請先載入資料！");
         
-        // 動態計算每一天的前置關聯
-        for(let d=0; d<7; d++) {
-            for(let p=0; p<5; p++) {
-                for(let offset=0; offset<maxNum; offset++) {
-                    let hits = 0, trials = 0;
-                    // 回測這個規律在歷史上的勝率
-                    for(let k=1; k < upToIndex; k++) {
-                        if (dataArray[k].day === currentDay) {
-                            let s_idx = dataArray[k].lastDayIndices[d];
-                            if (s_idx !== -1) {
-                                let tNum = wrapNum(dataArray[s_idx].nums[p] + offset, maxNum);
-                                let checkNums = (maxNum === 49 && dataArray[k].nums.length >= 7) ? dataArray[k].nums.slice(0,6) : dataArray[k].nums;
-                                if (checkNums.includes(tNum)) hits++;
-                                trials++;
-                            }
-                        }
-                    }
-                    if (trials > 0) {
-                        let hitRate = hits/trials;
-                        if (hitRate > 0) rules.push({d, p, offset, hitRate, hits, trials});
-                    }
-                }
-            }
-        }
+        const rankedList = calculateScores();
+        if (rankedList.length === 0) return;
+
+        // 取得前 15 名的號碼，格式化為字串陣列
+        const top = rankedList.map(item => fNum(item.num));
+
+        // 組裝格式化報表
+        let nextDate = "最新一期";
+        let report = `今彩539（${nextDate}）更新使用\n`;
+        report += `最具参考價值近期高機率：\n\n`;
         
-        // 依照勝率與命中次數排序
-        rules.sort((a,b) => b.hitRate - a.hitRate || b.hits - a.hits);
+        // 獨支 (取第1、第2名)
+        report += `壹、獨支 :\n〔${top[0]}〕〔${top[1]}〕\n\n`;
+
+        // 二中一 (特高 & 次高)
+        report += `貳、二中一 或獨碰二中二：\n`;
+        report += `（特高）：\n`;
+        report += `〔${top[0]} ${top[2]}〕高\n`;
+        report += `〔${top[1]} ${top[3]}〕\n`;
+        report += `〔${top[0]} ${top[1]}〕特高\n`;
+        report += `〔${top[2]} ${top[3]}〕\n`;
         
-        let targets = [];
-        let chosenRules = [];
-        let s_idx_current = dataArray[upToIndex].lastDayIndices;
+        report += `（次高）：\n`;
+        report += `〔${top[4]} ${top[6]}〕\n`;
+        report += `〔${top[5]} ${top[7]}〕\n`;
+        report += `〔${top[8]} ${top[9]}〕\n`;
+        report += `〔${top[3]} ${top[5]}〕\n\n`;
+
+        // 三中三 (特高)
+        report += `参、（特高三中三、二、一機率）:\n`;
+        let t1 = [top[0], top[2], top[4]].sort((a,b)=>a-b);
+        let t2 = [top[1], top[3], top[5]].sort((a,b)=>a-b);
+        let t3 = [top[0], top[1], top[3]].sort((a,b)=>a-b);
+        let t4 = [top[6], top[7], top[8]].sort((a,b)=>a-b);
+        let t5 = [top[9], top[10], top[11]].sort((a,b)=>a-b);
         
-        // 挑選最強的 3 顆不重複號碼
-        for(let r of rules) {
-            if (targets.length >= 3) break;
-            let s_idx = s_idx_current[r.d];
-            if (s_idx !== -1) {
-                let tNum = wrapNum(dataArray[s_idx].nums[r.p] + r.offset, maxNum);
-                if (!targets.includes(tNum)) {
-                    targets.push(tNum);
-                    chosenRules.push({
-                        rule: r,
-                        tNum: tNum,
-                        triggerDraw: dataArray[s_idx]
-                    });
-                }
-            }
-        }
-        
-        // 如果不足 3 顆自動補齊
-        let allValid = Array.from({length: maxNum}, (_, i) => i+1).filter(n => !targets.includes(n));
-        while(targets.length < 3 && allValid.length > 0) {
-            targets.push(allValid.shift());
-        }
-        
-        targets.sort((a,b)=>a-b);
+        report += `〔${t1.join(' ')}〕高\n`;
+        report += `〔${t2.join(' ')}〕高\n`;
+        report += `〔${t3.join(' ')}〕高\n`;
+        report += `〔${t4.join(' ')}〕\n`;
+        report += `〔${t5.join(' ')}〕\n\n`;
 
-        return {
-            targets: targets,
-            isCustom: false,
-            chosenRules: chosenRules
-        };
-    }
+        // 三中三 (次高)
+        report += `肆、（次高三中三、二、一機率）：\n`;
+        let s1 = [top[4], top[6], top[10]].sort((a,b)=>a-b);
+        let s2 = [top[5], top[7], top[11]].sort((a,b)=>a-b);
+        let s3 = [top[8], top[9], top[12]].sort((a,b)=>a-b);
+        let s4 = [top[1], top[4], top[9]].sort((a,b)=>a-b);
+        let s5 = [top[2], top[5], top[13]].sort((a,b)=>a-b);
 
-    function runAnalysis() {
-        saveSettings();
-        let algoMode = document.getElementById('algoMode').value;
-        let isSorted = document.getElementById('sortBalls').checked;
-        let costPerCar = parseFloat(document.getElementById('costPerCar').value) || 74;
-        let prizePerCar = parseFloat(document.getElementById('prizePerCar').value) || 550;
+        report += `〔${s1.join(' ')}〕\n`;
+        report += `〔${s2.join(' ')}〕\n`;
+        report += `〔${s3.join(' ')}〕\n`;
+        report += `〔${s4.join(' ')}〕\n`;
+        report += `〔${s5.join(' ')}〕\n\n`;
 
-        // 預處理資料：排序與日期快取
-        let lastDay = [-1, -1, -1, -1, -1, -1, -1];
-        let processedData = parsedData.map((d, index) => {
-            let nums = [...d.originalNums];
-            if (isSorted) {
-                if (maxNum === 49 && nums.length >= 7) {
-                    let main = nums.slice(0, 6).sort((a, b) => a - b);
-                    nums = main.concat(nums.slice(6));
-                } else {
-                    nums.sort((a, b) => a - b);
-                }
-            }
-            let day = getDayOfWeek(d.date);
-            let dObj = { date: d.date, nums: nums, day: day, lastDayIndices: [...lastDay] };
-            lastDay[day] = index;
-            return dObj;
-        });
+        report += `所有資訊都是每天滾動式提供，號碼組合均是可追蹤式，獨支或（二中一）5期內，可能開出85%以上，三中一六期內成功率90%以上，長期穩定機率。\n`;
+        report += `所提供給您預測數據参考，是最佳参考值，請自行規劃下注，這無法百分之百一定開出，請自行小心規劃謹慎使用。`;
 
-        let stats = { bets: 0, hits: 0, cost: 0, win: 0 };
-        let dailyView = [];
-        let chartLabels = [];
-        let chartData = [];
-        let cumulativePnL = 0;
+        // 輸出至畫面
+        document.getElementById('reportContainer').innerText = report;
 
-        for (let i = 0; i < processedData.length; i++) {
-            let currentDraw = processedData[i];
-            let condition = null;
-
-            // 決定是否下注與取得目標
-            if (algoMode === 'custom') {
-                if (currentDraw.day === 4 || currentDraw.day === 5) {
-                    condition = getCustomTargetsFromData(processedData, i - 1);
-                }
-            } else {
-                // 自動模式天天都可下注
-                condition = getAutoTargetsFromData(processedData, i);
-            }
-            
-            if (condition && condition.targets.length > 0) {
-                let targets = condition.targets; // 固定 3 顆
-                let checkNums = (maxNum === 49 && currentDraw.nums.length >= 7) ? currentDraw.nums.slice(0, 6) : currentDraw.nums;
-                
-                let hitNums = intersect(targets, checkNums);
-                let hitCount = hitNums.length; // 中幾台車
-
-                let netCost = targets.length * costPerCar;
-                let winAmount = hitCount * prizePerCar;
-
-                stats.bets += targets.length;
-                stats.cost += netCost;
-                
-                if (winAmount > 0) {
-                    stats.win += winAmount;
-                    stats.hits += hitCount;
-                }
-
-                cumulativePnL += (winAmount - netCost);
-
-                chartLabels.push(currentDraw.date);
-                chartData.push(cumulativePnL);
-
-                dailyView.push({
-                    date: currentDraw.date,
-                    day: currentDraw.day,
-                    nums: currentDraw.nums,
-                    targets: targets,
-                    hitNums: hitNums,
-                    source: condition,
-                    netCost: netCost, 
-                    winAmount: winAmount,
-                    isHit: winAmount > 0
-                });
-            }
-        }
-
-        // Render Chart
-        if (pnlChartInstance) pnlChartInstance.destroy();
-        const ctx = document.getElementById('pnlChart').getContext('2d');
-        const isDark = document.body.getAttribute('data-theme') === 'dark';
-        const gridColor = isDark ? '#334155' : '#e2e8f0';
-
-        pnlChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: chartLabels,
-                datasets: [{
-                    label: '累積全車淨利',
-                    data: chartData,
-                    borderColor: '#9333ea',
-                    backgroundColor: 'rgba(147, 51, 234, 0.1)',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    pointHoverRadius: 5,
-                    fill: true,
-                    tension: 0.2
-                }]
-            },
-            options: {
-                responsive: true,
-                interaction: { intersect: false, mode: 'index' },
-                scales: {
-                    x: { display: true, grid: { display: false } },
-                    y: { display: true, grid: { color: gridColor } }
-                },
-                plugins: { legend: { display: false } }
-            }
-        });
-
-        // Render Prediction (針對未來的最新一期)
-        if (processedData.length > 0) {
-            // 建構虛擬的下一期資料狀態以供搜尋
-            let nextIndex = processedData.length;
-            let lastD = processedData[nextIndex-1];
-            let nextDay = (lastD.day + 1) % 7;
-            
-            let tempLastIndices = [...lastD.lastDayIndices];
-            tempLastIndices[lastD.day] = nextIndex - 1;
-            
-            let virtualNextDraw = { day: nextDay, lastDayIndices: tempLastIndices };
-            processedData.push(virtualNextDraw); 
-
-            let latestCondition = null;
-            if (algoMode === 'custom') {
-                if (nextDay === 4 || nextDay === 5) {
-                    latestCondition = getCustomTargetsFromData(processedData, nextIndex - 1);
-                }
-            } else {
-                latestCondition = getAutoTargetsFromData(processedData, nextIndex);
-            }
-            
-            processedData.pop(); // 移除虛擬資料
-
-            if (latestCondition) {
-                let targetDisplay = latestCondition.targets.map(fNum).join(' , ');
-                let nextPlayText = algoMode === 'custom' ? "預測下期 (週四或週五) 準備下注" : `下期 (週${DAY_NAMES[nextDay]}) 全車推薦目標`;
-                
-                let sourceHtml = "";
-                if (latestCondition.isCustom) {
-                    let s = latestCondition;
-                    sourceHtml = `
-                    週一 (${s.lastMon.date}) 第3球為 ${fNum(s.lastMon.nums[2])} ➔ <span style="color:var(--accent);">+2 = ${fNum(wrapNum(s.lastMon.nums[2]+2, maxNum))}</span><br>
-                    週日 (${s.lastSun.date}) 第1球為 ${fNum(s.lastSun.nums[0])} ➔ <span style="color:var(--accent);">+0 = ${fNum(wrapNum(s.lastSun.nums[0]+0, maxNum))}</span><br>
-                    週三 (${s.lastWed.date}) 第5球為 ${fNum(s.lastWed.nums[4])} ➔ <span style="color:var(--accent);">-4 = ${fNum(wrapNum(s.lastWed.nums[4]-4, maxNum))}</span>`;
-                } else {
-                    sourceHtml = latestCondition.chosenRules.map(r => 
-                        `週${DAY_NAMES[r.rule.d]} (${r.triggerDraw.date}) 第${r.rule.p+1}球: ${fNum(r.triggerDraw.nums[r.rule.p])} ➔ <span style="color:var(--accent);">+${r.rule.offset} = ${fNum(r.tNum)}</span> <span style="font-size:0.75rem; color:var(--text-muted);">(歷史勝率 ${(r.rule.hitRate*100).toFixed(0)}%)</span>`
-                    ).join('<br>');
-                }
-
-                document.getElementById('predictionArea').innerHTML = `
-                <div class="pred-card">
-                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">觸發版路來源：</div>
-                    <div style="font-size: 0.8rem; line-height: 1.6; color: var(--text-main); margin-bottom: 12px; background: var(--bg); padding: 10px; border-radius: 6px; border: 1px dashed var(--border);">
-                        ${sourceHtml}
-                    </div>
-                    <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">${nextPlayText}</div>
-                    <span class="nums-highlight">${targetDisplay}</span>
-                </div>`;
-            } else {
-                let msg = algoMode === 'custom' ? "下期並非週四或週五，目前無需下注。" : "歷史資料不足以形成完整版路條件";
-                document.getElementById('predictionArea').innerHTML = `<div style="padding:20px; color:var(--text-muted); text-align:center; background: var(--card); border-radius: 12px;">${msg}</div>`;
-            }
-        }
-
-        // Render List
-        let listHtml = dailyView.slice().reverse().map(d => {
-            let dayClass = (algoMode === 'custom' && (d.day === 4 || d.day === 5)) || algoMode === 'auto' ? 'day-target' : '';
-            let s = d.source;
-            let actualNumsHtml = d.nums.map(n => {
-                if (d.hitNums.includes(n)) return `<span class="hit-badge">${fNum(n)}</span>`;
-                return `<span style="padding: 0 2px;">${fNum(n)}</span>`;
-            }).join(' ');
-
-            let sourceBoxHtml = '';
-            if (s.isCustom) {
-                sourceBoxHtml = `
-                <div class="source-box">
-                    <div class="source-row"><span>週一 (${s.lastMon.date}) 第3球: <span class="source-hl">${fNum(s.lastMon.nums[2])}</span></span> <span>+2 = <b>${fNum(wrapNum(s.lastMon.nums[2]+2, maxNum))}</b></span></div>
-                    <div class="source-row"><span>週日 (${s.lastSun.date}) 第1球: <span class="source-hl">${fNum(s.lastSun.nums[0])}</span></span> <span>+0 = <b>${fNum(wrapNum(s.lastSun.nums[0]+0, maxNum))}</b></span></div>
-                    <div class="source-row"><span>週三 (${s.lastWed.date}) 第5球: <span class="source-hl">${fNum(s.lastWed.nums[4])}</span></span> <span>-4 = <b>${fNum(wrapNum(s.lastWed.nums[4]-4, maxNum))}</b></span></div>
-                </div>`;
-            } else {
-                let rulesText = s.chosenRules.map(r => 
-                    `<div class="source-row"><span>週${DAY_NAMES[r.rule.d]} (${r.triggerDraw.date}) 第${r.rule.p+1}球: <span class="source-hl">${fNum(r.triggerDraw.nums[r.rule.p])}</span></span> <span>+${r.rule.offset} = <b>${fNum(r.tNum)}</b></span></div>`
-                ).join('');
-                sourceBoxHtml = `<div class="source-box">${rulesText}</div>`;
-            }
-
-            let detailBox = '';
-            if (d.isHit) {
-                detailBox = `
-                <div class="hit-detail">
-                    <div class="hit-type" style="color: var(--success);">版路成功命中！</div>
-                    <div style="font-size: 0.85rem; color: var(--text-main); line-height: 1.6;">
-                        <b>下注球號：</b> ${d.targets.map(fNum).join(', ')}<br>
-                        <b>總買車數：</b> 3 車<br>
-                        <b>實際命中：</b> <span style="color:var(--success); font-weight:700;">${d.hitNums.length} 車</span><br>
-                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--success);">
-                            <span><b>總成本：</b>${d.netCost.toFixed(1)} 元 ｜ <b>中獎獎金：</b><span style="color:var(--success);font-weight:700;">${d.winAmount.toFixed(1)}</span> 元</span>
-                        </div>
-                    </div>
-                </div>`;
-            } else {
-                detailBox = `
-                <div class="miss-detail">
-                    <div class="hit-type" style="color: var(--text-muted);">當期未命中</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
-                        <b>下注球號：</b> ${d.targets.map(fNum).join(', ')}<br>
-                        <b>總買車數：</b> 3 車<br>
-                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                            <span><b>總成本：</b>${d.netCost.toFixed(1)} 元 ｜ <b>中獎獎金：</b>0.0 元</span>
-                        </div>
-                    </div>
-                </div>`;
-            }
-
-            return `
-            <div class="result-item">
-                <div class="res-header">
-                    <div class="res-date">
-                        <span>開獎日: ${d.date}</span>
-                        <span class="day-badge ${dayClass}">週${DAY_NAMES[d.day]}</span>
-                    </div>
-                    <div class="res-actual">${actualNumsHtml}</div>
-                </div>
-                ${sourceBoxHtml}
-                ${detailBox}
-            </div>`;
-        }).join('');
-
-        document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px; color:var(--text-muted);">無符合條件的下注紀錄</div>';
-
-        // Summary View
-        let net = stats.win - stats.cost;
-        let totalPlays = dailyView.length;
-        let winPlays = dailyView.filter(d => d.isHit).length;
-        let winRate = totalPlays > 0 ? ((winPlays / totalPlays) * 100).toFixed(1) : 0;
-
-        document.getElementById('summaryArea').style.display = 'block';
-        document.getElementById('summaryArea').innerHTML = `
-            <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; color: var(--text-main);">全車版路回測總覽</div>
-            <span style="color: var(--text-main);">總計出手下注 <b>${totalPlays}</b> 期，其中獲利 <b>${winPlays}</b> 期 (期數勝率 <b>${winRate}%</b>)<br>
-            總計共買：<b>${stats.bets}</b> 車 ｜ 實際命中：<b>${stats.hits}</b> 車<br>
-            累積總成本：${stats.cost.toFixed(1)} 元 ｜ 累積總派彩：${stats.win.toFixed(1)} 元</span>
-            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 1.1rem;">
-                <span style="color: var(--text-main);"><b>總淨利結算：<span style="color: ${net >= 0 ? 'var(--success)' : 'var(--danger)'}">${net >= 0 ? '+' : ''}${net.toFixed(1)}</span></b></span>
-            </div>`;
+        // 輸出 Debug 積分監控面板 (前 15 名)
+        let debugHtml = rankedList.slice(0, 15).map((item, idx) => 
+            `<div class="debug-item"><b>${fNum(item.num)}</b> <span style="color:var(--accent);">(${item.score.toFixed(3)})</span></div>`
+        ).join('');
+        document.getElementById('debugArea').innerHTML = debugHtml;
     }
 
     window.onload = () => {
-        loadSettings();
         processData();
     };
 </script>
