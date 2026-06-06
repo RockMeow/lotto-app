@@ -257,10 +257,15 @@
                     <option value="4">4 顆</option>
                 </select>
             </div>
-            <div class="config-row">
-                <span class="config-label">每碰金額：</span>
-                <input type="number" id="betMultiplier" value="1" step="1" min="1" onchange="runAnalysis()" style="width: 100px; margin-bottom: 0;">
-                <span style="font-size: 0.9rem; color: var(--text-muted);">元</span>
+            
+            <div class="config-row" style="flex-wrap: wrap; align-items: flex-start; margin-top: 6px;">
+                <span class="config-label" style="padding-top: 8px;">下注倍率：</span>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1;">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">二星 <input type="number" id="mult2S" value="1" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">三星 <input type="number" id="mult3S" value="1" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">四星 <input type="number" id="mult4S" value="1" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">五星 <input type="number" id="mult5S" value="1" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
+                </div>
             </div>
         </div>
     </div>
@@ -338,7 +343,11 @@
         if (localStorage.getItem('bet5S') !== null) document.getElementById('bet5S').checked = localStorage.getItem('bet5S') === 'true';
         
         if (localStorage.getItem('ballCountSelect')) document.getElementById('ballCountSelect').value = localStorage.getItem('ballCountSelect');
-        if (localStorage.getItem('betMultiplier')) document.getElementById('betMultiplier').value = localStorage.getItem('betMultiplier');
+        
+        if (localStorage.getItem('mult2S')) document.getElementById('mult2S').value = localStorage.getItem('mult2S');
+        if (localStorage.getItem('mult3S')) document.getElementById('mult3S').value = localStorage.getItem('mult3S');
+        if (localStorage.getItem('mult4S')) document.getElementById('mult4S').value = localStorage.getItem('mult4S');
+        if (localStorage.getItem('mult5S')) document.getElementById('mult5S').value = localStorage.getItem('mult5S');
     }
 
     function saveSettings() {
@@ -357,7 +366,11 @@
         localStorage.setItem('bet5S', document.getElementById('bet5S').checked);
         
         localStorage.setItem('ballCountSelect', document.getElementById('ballCountSelect').value);
-        localStorage.setItem('betMultiplier', document.getElementById('betMultiplier').value);
+        
+        localStorage.setItem('mult2S', document.getElementById('mult2S').value);
+        localStorage.setItem('mult3S', document.getElementById('mult3S').value);
+        localStorage.setItem('mult4S', document.getElementById('mult4S').value);
+        localStorage.setItem('mult5S', document.getElementById('mult5S').value);
     }
 
     function getOmit(num, currentIndex) {
@@ -715,9 +728,7 @@
 
             let bestScore = -Infinity;
             let bestConfig = null;
-
-            let userMultiplier = parseFloat(document.getElementById('betMultiplier').value);
-            if (isNaN(userMultiplier) || userMultiplier <= 0) userMultiplier = 1;
+            let bestDailySim = []; 
 
             let originalParsedData = JSON.parse(JSON.stringify(parsedData));
 
@@ -765,6 +776,8 @@
                                             let totalCost = 0;
                                             let hitCount = 0;
                                             let totalBets = 0;
+                                            
+                                            let currentDailySim = []; 
 
                                             for (let i = 0; i < parsedData.length; i++) {
                                                 let allPatterns = patternsCache[algo][i];
@@ -836,10 +849,15 @@
                                                         if (stars.use4S) winPairs.c4 = fullWinPairs.c4;
                                                         if (stars.use5S) winPairs.c5 = fullWinPairs.c5;
                                                     }
+                                                    
+                                                    currentDailySim.push({
+                                                        c2: totalPairs.c2, c3: totalPairs.c3, c4: totalPairs.c4, c5: totalPairs.c5,
+                                                        w2: winPairs.c2, w3: winPairs.c3, w4: winPairs.c4, w5: winPairs.c5
+                                                    });
 
-                                                    let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S + totalPairs.c5 * COST_BASE_5S) * userMultiplier;
+                                                    let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S + totalPairs.c5 * COST_BASE_5S);
                                                     let netCost = rawCost * (1 - REBATE_RATE);
-                                                    let winAmount = (winPairs.c2 * MULTIPLIER_2S + winPairs.c3 * MULTIPLIER_3S + winPairs.c4 * MULTIPLIER_4S + winPairs.c5 * MULTIPLIER_5S) * userMultiplier;
+                                                    let winAmount = (winPairs.c2 * MULTIPLIER_2S + winPairs.c3 * MULTIPLIER_3S + winPairs.c4 * MULTIPLIER_4S + winPairs.c5 * MULTIPLIER_5S);
                                                     
                                                     cumulativePnL += (winAmount - netCost);
                                                     
@@ -861,6 +879,7 @@
                                                 if (stabilityScore > bestScore) {
                                                     bestScore = stabilityScore;
                                                     bestConfig = { algo, fMode, isCombo, isSorted, stars, ballCount, onlyPerfect, maxLimit };
+                                                    bestDailySim = currentDailySim; 
                                                 }
                                             }
 
@@ -875,7 +894,54 @@
 
             parsedData = originalParsedData;
 
+            let bestM2 = 1, bestM3 = 1, bestM4 = 1, bestM5 = 1;
+
             if (bestConfig) {
+                // 自動因應損益調整各自倍率 (Kelly-style grid search for the winning configuration)
+                let mOpts = [1, 2, 3, 5, 8, 10];
+                let bestMultScore = -Infinity;
+
+                mOpts.forEach(m2 => {
+                    if (!bestConfig.stars.use2S && m2 > 1) return;
+                    mOpts.forEach(m3 => {
+                        if (!bestConfig.stars.use3S && m3 > 1) return;
+                        mOpts.forEach(m4 => {
+                            if (!bestConfig.stars.use4S && m4 > 1) return;
+                            mOpts.forEach(m5 => {
+                                if (!bestConfig.stars.use5S && m5 > 1) return;
+                                
+                                let pnl = 0, peak = 0, maxDD = 0, cost = 0, hitC = 0, betC = 0;
+                                bestDailySim.forEach(d => {
+                                    let rCost = d.c2 * COST_BASE_2S * m2 + d.c3 * COST_BASE_3S * m3 + d.c4 * COST_BASE_4S * m4 + d.c5 * COST_BASE_5S * m5;
+                                    let nCost = rCost * (1 - REBATE_RATE);
+                                    let wAmt = d.w2 * MULTIPLIER_2S * m2 + d.w3 * MULTIPLIER_3S * m3 + d.w4 * MULTIPLIER_4S * m4 + d.w5 * MULTIPLIER_5S * m5;
+                                    
+                                    pnl += (wAmt - nCost);
+                                    if (pnl > peak) peak = pnl;
+                                    let drawdown = peak > 0 ? (peak - pnl) / peak : 0;
+                                    if (drawdown > maxDD) maxDD = drawdown;
+                                    
+                                    cost += nCost;
+                                    if (wAmt > 0) hitC++;
+                                    if (rCost > 0) betC++;
+                                });
+                                
+                                if (betC > 0 && pnl > 0 && cost > 0) {
+                                    let hr = hitC / betC;
+                                    let roi = pnl / cost;
+                                    let penalty = (m2 + m3 + m4 + m5) * 0.0001; 
+                                    let mScore = (pnl * roi * hr) / (1 + maxDD * 8) - penalty;
+                                    
+                                    if (mScore > bestMultScore) {
+                                        bestMultScore = mScore;
+                                        bestM2 = m2; bestM3 = m3; bestM4 = m4; bestM5 = m5;
+                                    }
+                                }
+                            });
+                        });
+                    });
+                });
+
                 document.getElementById('algoMode').value = bestConfig.algo;
                 document.getElementById('filter8BallsMode').value = bestConfig.fMode;
                 document.getElementById('maxAllowedBalls').value = bestConfig.maxLimit;
@@ -888,6 +954,11 @@
                 document.getElementById('bet3S').checked = bestConfig.stars.use3S;
                 document.getElementById('bet4S').checked = bestConfig.stars.use4S;
                 document.getElementById('bet5S').checked = bestConfig.stars.use5S; 
+                
+                document.getElementById('mult2S').value = bestM2;
+                document.getElementById('mult3S').value = bestM3;
+                document.getElementById('mult4S').value = bestM4;
+                document.getElementById('mult5S').value = bestM5;
 
                 let algoNames = { 
                     'pattern': '版路規律 (定位拖牌)', 
@@ -903,12 +974,12 @@
                 };
                 let filterNames = { 'none': '不過濾', 'removeCold': '移除冷門號', 'removeHot': '移除熱門號', 'removeLeastFrequent': '移除近期出現次數少', 'removeMostFrequent': '移除近期出現次數多', 'smartRemove': '智能移除' };
                 let starText = [];
-                if (bestConfig.stars.use2S) starText.push("二星");
-                if (bestConfig.stars.use3S) starText.push("三星");
-                if (bestConfig.stars.use4S) starText.push("四星");
-                if (bestConfig.stars.use5S) starText.push("五星");
+                if (bestConfig.stars.use2S) starText.push(`二星(${bestM2}倍)`);
+                if (bestConfig.stars.use3S) starText.push(`三星(${bestM3}倍)`);
+                if (bestConfig.stars.use4S) starText.push(`四星(${bestM4}倍)`);
+                if (bestConfig.stars.use5S) starText.push(`五星(${bestM5}倍)`);
 
-                alert(`分析結果：\n已計算出最平穩高獲利成長的完美參數組合：\n\n-預測核心：【${algoNames[bestConfig.algo]}】\n-完美版路：【${bestConfig.onlyPerfect ? '開啟 (100%勝率)' : '關閉 (所有指標)'}】\n-預測球數：【${bestConfig.ballCount} 顆】\n-顆數上限：【${bestConfig.maxLimit} 顆】\n-落球模式：【${bestConfig.isSorted ? '順球' : '落球'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰' : '柱碰'}】\n-過濾模式：【${filterNames[bestConfig.fMode]}】\n-配置星數：【${starText.join(' + ')}】\n\n系統已全自動套用並為您重新繪製圖表。`);
+                alert(`分析結果：\n已計算出最平穩高獲利成長的完美參數與獨立倍率組合：\n\n-預測核心：【${algoNames[bestConfig.algo]}】\n-完美版路：【${bestConfig.onlyPerfect ? '開啟 (100%勝率)' : '關閉 (所有指標)'}】\n-預測球數：【${bestConfig.ballCount} 顆】\n-顆數上限：【${bestConfig.maxLimit} 顆】\n-落球模式：【${bestConfig.isSorted ? '順球' : '落球'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰' : '柱碰'}】\n-過濾模式：【${filterNames[bestConfig.fMode]}】\n-配置星數與倍率：【${starText.join(' + ')}】\n\n系統已全自動套用並為您重新繪製圖表。`);
             } else {
                 alert(`注意：在目前的數據區間與注額條件下，未找到可實現正向穩定成長的配對模型。`);
             }
@@ -933,6 +1004,11 @@
         let use3S = document.getElementById('bet3S').checked;
         let use4S = document.getElementById('bet4S').checked;
         let use5S = document.getElementById('bet5S').checked;
+        
+        let mult2S = parseFloat(document.getElementById('mult2S').value) || 1;
+        let mult3S = parseFloat(document.getElementById('mult3S').value) || 1;
+        let mult4S = parseFloat(document.getElementById('mult4S').value) || 1;
+        let mult5S = parseFloat(document.getElementById('mult5S').value) || 1;
 
         for (let d of parsedData) {
             if (isSorted) {
@@ -960,9 +1036,6 @@
         let stats = { total: 0, hit: 0 };
         let totalStats = { cost: 0, win: 0, bets: 0, hits: 0 };
         let totalWinCount = { c2: 0, c3: 0, c4: 0, c5: 0 };
-
-        let userMultiplier = parseFloat(document.getElementById('betMultiplier').value);
-        if (isNaN(userMultiplier) || userMultiplier <= 0) userMultiplier = 1;
 
         for (let i = 0; i < parsedData.length; i++) {
             let allPatterns = algoMode.startsWith('math') ? getMathPatterns(parsedData, i, undefined, algoMode) : getSmartPatterns(parsedData[i].nums, i);
@@ -1039,9 +1112,9 @@
                     if (use5S) winPairs.c5 = fullWinPairs.c5;
                 }
 
-                let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S + totalPairs.c5 * COST_BASE_5S) * userMultiplier;
+                let rawCost = totalPairs.c2 * COST_BASE_2S * mult2S + totalPairs.c3 * COST_BASE_3S * mult3S + totalPairs.c4 * COST_BASE_4S * mult4S + totalPairs.c5 * COST_BASE_5S * mult5S;
                 let netCost = rawCost * (1 - REBATE_RATE);
-                let winAmount = (winPairs.c2 * MULTIPLIER_2S + winPairs.c3 * MULTIPLIER_3S + winPairs.c4 * MULTIPLIER_4S + winPairs.c5 * MULTIPLIER_5S) * userMultiplier;
+                let winAmount = winPairs.c2 * MULTIPLIER_2S * mult2S + winPairs.c3 * MULTIPLIER_3S * mult3S + winPairs.c4 * MULTIPLIER_4S * mult4S + winPairs.c5 * MULTIPLIER_5S * mult5S;
                 
                 dailyView[playIndex].pnl.bets += (totalPairs.c2 + totalPairs.c3 + totalPairs.c4 + totalPairs.c5); 
                 dailyView[playIndex].pnl.cost += netCost;
