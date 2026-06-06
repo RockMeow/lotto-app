@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>智慧分析系統</title>
+    <title>專屬跨週版路分析系統</title>
     <link rel="manifest" href="manifest3.json">
     <meta name="theme-color" content="#1e293b">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -21,8 +21,6 @@
             --danger-light: #fef2f2;
             --purple: #9333ea;
             --purple-light: #faf5ff;
-            --pink: #e11d48;
-            --pink-light: #fff1f2;
             --bg: #0f172a;
             --card: #1e293b;
             --text-main: #f8fafc;
@@ -33,7 +31,6 @@
             --radius-sm: 8px;
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
             --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.5), 0 2px 4px -1px rgba(0,0,0,0.3);
-            --shadow-hover: 0 10px 15px -3px rgba(0,0,0,0.6), 0 4px 6px -2px rgba(0,0,0,0.4);
             --header-bg: #0f172a;
         }
 
@@ -50,17 +47,12 @@
             --danger-light: #fef2f2;
             --purple: #9333ea;
             --purple-light: #faf5ff;
-            --pink: #e11d48;
-            --pink-light: #fff1f2;
             --bg: #f8fafc;
             --card: #ffffff;
             --text-main: #0f172a;
             --text-muted: #64748b;
             --border: #e2e8f0;
             --input-bg: #ffffff;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-            --shadow-hover: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
             --header-bg: #1e293b;
         }
 
@@ -71,8 +63,9 @@
 
         /* Header Area */
         .header { background: var(--header-bg); color: white; padding: 18px; border-radius: var(--radius-md); margin-bottom: 20px; box-shadow: var(--shadow-md); text-align: center; letter-spacing: 0.5px; position: relative;}
-        h1 { font-size: 1.15rem; font-weight: 700; margin: 0; }
-        .theme-toggle { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background: transparent; border: 1px solid var(--border); color: white; padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.8rem; transition: background 0.2s; }
+        h1 { font-size: 1.15rem; font-weight: 700; margin: 0; color: white;}
+        .subtitle { font-size: 0.8rem; color: #94a3b8; margin-top: 6px; }
+        .theme-toggle { position: absolute; right: 15px; top: 18px; background: transparent; border: 1px solid var(--border); color: white; padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.8rem; transition: background 0.2s; }
         .theme-toggle:hover { background: rgba(255,255,255,0.1); }
 
         /* Controls */
@@ -84,84 +77,47 @@
         
         .status-bar { font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; padding-bottom: 15px; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
 
-        /* Optimize Button */
-        .opt-btn { background: var(--accent); color: white; border: none; padding: 14px; border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 600; width: 100%; cursor: pointer; margin-top: 5px; margin-bottom: 15px; transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; letter-spacing: 0.5px; }
-        .opt-btn:hover { background: var(--accent-hover); box-shadow: var(--shadow-md); }
-        .opt-btn:active { transform: translateY(1px); }
+        .config-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .config-label { font-weight: 600; font-size: 0.9rem; color: var(--primary-light); min-width: 90px; }
 
-        /* Prediction Cards */
+        .run-btn { background: var(--success); color: white; border: none; padding: 14px; border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 700; width: 100%; cursor: pointer; margin-top: 10px; transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; letter-spacing: 0.5px; }
+        .run-btn:hover { background: #15803d; box-shadow: var(--shadow-md); }
+        .run-btn:active { transform: translateY(1px); }
+
+        /* Titles and summaries */
         .section-title { font-size: 1.05rem; font-weight: 700; margin: 24px 0 12px 2px; color: var(--primary); letter-spacing: 0.5px; border-left: 4px solid var(--accent); padding-left: 8px; line-height: 1.2; }
-        #predictionArea { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 24px; }
-        .pred-card { background: var(--card); padding: 18px; border-radius: var(--radius-md); border-left: 4px solid var(--accent); box-shadow: var(--shadow-sm); position: relative; overflow: hidden; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); transition: transform 0.2s ease, background-color 0.3s, border-color 0.3s; }
-        .pred-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
-        .pred-card h3 { font-size: 0.95rem; margin-bottom: 6px; color: var(--primary); font-weight: 700; }
-        .pred-info { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px; }
-        .nums-highlight { font-size: 1.35rem; font-weight: 800; color: var(--accent); letter-spacing: 1.5px; display: block; }
-        .score-tag { position: absolute; top: 0; right: 0; background: var(--border); color: var(--text-main); padding: 5px 12px; border-bottom-left-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; border-left: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-        .score-perfect { background: var(--success); color: white; border-color: var(--success); }
-        .score-high { background: var(--warning); color: white; border-color: var(--warning); }
-
-        /* Summary Area */
         .summary { background: var(--card); padding: 18px; border-radius: var(--radius-md); margin-bottom: 24px; font-size: 0.9rem; border: 1px solid var(--border); color: var(--text-main); line-height: 1.6; transition: background-color 0.3s, border-color 0.3s; }
 
         /* Result List */
         .result-item { background: var(--card); border-radius: var(--radius-md); padding: 18px; margin-bottom: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); transition: background-color 0.3s, border-color 0.3s; }
         .res-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .res-date { font-weight: 600; color: var(--primary-light); font-size: 0.9rem; }
-        .res-actual { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 1.05rem; color: var(--text-main); font-weight: 700; letter-spacing: 1px; }
-        
-        /* Event Details */
-        .hit-detail { padding: 12px; border-radius: var(--radius-sm); margin-top: 10px; border: 1px solid var(--border); background: var(--card); }
+        .res-date { font-weight: 700; color: var(--primary-light); font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+        .day-badge { background: var(--input-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; border: 1px solid var(--border); }
+        .day-target { background: var(--accent); color: white; border-color: var(--accent); }
+        .res-actual { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 1.05rem; color: var(--text-main); font-weight: 700; letter-spacing: 1px; }
+
+        .source-box { background: var(--bg); border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 10px; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; }
+        .source-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .source-hl { color: var(--text-main); font-weight: 600; }
+
+        .hit-detail { padding: 12px; border-radius: var(--radius-sm); margin-top: 10px; border: 1px solid var(--success); background: var(--success-light); }
+        [data-theme="dark"] .hit-detail { background: rgba(22, 163, 74, 0.1); }
         .miss-detail { padding: 12px; border-radius: var(--radius-sm); margin-top: 10px; border: 1px solid var(--border); background: var(--bg); }
 
-        .hit-type { font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; }
-        .hit-nums { font-size: 0.85rem; color: var(--text-main); line-height: 1.6; }
-        .miss-nums { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
-
-        /* Pillar Tags */
-        .pillar-tag { background: var(--input-bg); padding: 2px 8px; border-radius: 4px; margin-right: 6px; display: inline-block; border: 1px solid var(--border); color: var(--text-main); }
+        .hit-type { font-size: 0.9rem; font-weight: 700; margin-bottom: 6px; }
         .hit-badge { background-color: var(--success); color: white; padding: 1px 5px; border-radius: 4px; font-weight: 700; margin: 0 2px; display: inline-block; }
-
-        /* PnL Week Summary */
-        .week-summary { background: var(--bg); border: 1px solid var(--border); padding: 18px; border-radius: var(--radius-md); margin: 24px 0 16px 0; font-size: 0.9rem; transition: background-color 0.3s, border-color 0.3s; }
-        .week-summary .pnl-positive { color: var(--success); font-weight: 700; font-size: 1.05rem; }
-        .week-summary .pnl-negative { color: var(--danger); font-weight: 700; font-size: 1.05rem; }
-        .pnl-row { display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.85rem; color: var(--text-main); }
-
-        /* Month Grouping */
-        .month-group { margin-bottom: 16px; }
-        .month-header { background: var(--card); color: var(--primary-light); padding: 14px 18px; border-radius: var(--radius-md); font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: background-color 0.2s ease, border-color 0.3s; user-select: none; }
-        .month-header:hover { background: var(--bg); }
-        .month-content { padding-top: 16px; }
-
-        /* Config layout tweaks */
-        .config-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .config-label { font-weight: 600; font-size: 0.9rem; color: var(--primary-light); min-width: 90px; }
         
-        .hit-card-bg { transition: background-color 0.3s; }
-        [data-theme="light"] .hit-card-bg-5 { background-color: var(--pink-light); border-color: var(--pink); }
-        [data-theme="dark"] .hit-card-bg-5 { background-color: rgba(225, 29, 72, 0.1); border-color: var(--pink); }
-        
-        [data-theme="light"] .hit-card-bg-4 { background-color: var(--purple-light); border-color: var(--purple); }
-        [data-theme="dark"] .hit-card-bg-4 { background-color: rgba(147, 51, 234, 0.1); border-color: var(--purple); }
-
-        [data-theme="light"] .hit-card-bg-3 { background-color: var(--warning-light); border-color: var(--warning); }
-        [data-theme="dark"] .hit-card-bg-3 { background-color: rgba(234, 88, 12, 0.1); border-color: var(--warning); }
-
-        [data-theme="light"] .hit-card-bg-2 { background-color: #eff6ff; border-color: var(--accent); }
-        [data-theme="dark"] .hit-card-bg-2 { background-color: rgba(37, 99, 235, 0.1); border-color: var(--accent); }
-        
-        .pillar-row-bg { background: var(--bg); padding: 2px 8px; border-radius: 4px; margin-right: 6px; margin-bottom: 6px; display: inline-block; border: 1px solid var(--border); }
+        .pred-card { background: var(--card); padding: 18px; border-radius: var(--radius-md); border-left: 4px solid var(--purple); box-shadow: var(--shadow-sm); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .nums-highlight { font-size: 1.6rem; font-weight: 800; color: var(--purple); letter-spacing: 2px; display: block; margin-top: 10px; text-align: center;}
     </style>
 </head>
 <body data-theme="dark">
 
 <div class="container">
     <div class="header">
-        <div class="header-top">
-            <h1>智慧分析系統</h1>
-            <button class="theme-toggle" onclick="toggleTheme()">切換主題</button>
-        </div>
+        <h1>專屬版路追蹤系統</h1>
+        <div class="subtitle">追蹤條件：週一第3球+2、週日第1球+0、週三第5球-4<br>下注目標：週四、週五</div>
+        <button class="theme-toggle" onclick="toggleTheme()">切換主題</button>
     </div>
     
     <div class="selector-box">
@@ -177,96 +133,26 @@
             <span id="dataStatus" style="font-weight: 600;">讀取中...</span>
         </div>
 
-        <div style="padding-top: 15px; display: flex; flex-direction: column; gap: 6px;">
-            <div class="config-row">
-                <span class="config-label">預測核心：</span>
-                <select id="algoMode" onchange="runAnalysis()" style="margin-bottom: 0; flex: 1;">
-                    <option value="pattern">版路規律 (定位拖牌)</option>
-                    <option value="auto_weekday">跨週規律 (自動搜尋版路)</option>
-                </select>
-            </div>
-
-            <label class="config-row" style="cursor: pointer;">
-                <input type="checkbox" id="onlyPerfectScore" onchange="runAnalysis()">
-                <span style="font-weight: 600; font-size: 0.9rem;">只使用勝率 100% 的版路</span>
+        <div style="padding-top: 5px; display: flex; flex-direction: column; gap: 4px;">
+            <label class="config-row" style="cursor: pointer; margin-bottom: 15px;">
+                <input type="checkbox" id="sortBalls" checked onchange="runAnalysis()">
+                <span style="font-weight: 600; font-size: 0.9rem;">使用順球排序 (依據號碼大小排列後取位置)</span>
             </label>
-            <label class="config-row" style="cursor: pointer;">
-                <input type="checkbox" id="sortBalls" onchange="runAnalysis()">
-                <span style="font-weight: 600; font-size: 0.9rem;">落球轉順球</span>
-            </label>
-            <label class="config-row" style="cursor: pointer;">
-                <input type="checkbox" id="playCombination" onchange="runAnalysis()">
-                <span style="font-weight: 600; font-size: 0.9rem;">柱碰轉連碰</span>
-            </label>
-            
-            <div class="config-row" style="margin-top: 6px;">
-                <span class="config-label">過濾模式：</span>
-                <select id="filter8BallsMode" onchange="runAnalysis()" style="margin-bottom: 0; flex: 1;">
-                    <option value="none">不過濾</option>
-                    <option value="removeCold">移除冷門號</option>
-                    <option value="removeHot">移除熱門號</option>
-                    <option value="removeLeastFrequent">移除近期出現次數少之號碼</option>
-                    <option value="removeMostFrequent">移除近期出現次數多之號碼</option>
-                    <option value="smartRemove">智能移除超過上限之號碼</option>
-                </select>
-            </div>
 
-            <div class="config-row">
-                <span class="config-label">下注顆數上限：</span>
-                <select id="maxAllowedBalls" onchange="runAnalysis()" style="margin-bottom: 0; flex: 1;">
-                    <option value="4">4 顆</option>
-                    <option value="5">5 顆</option>
-                    <option value="6">6 顆</option>
-                    <option value="7">7 顆</option>
-                    <option value="8">8 顆</option>
-                    <option value="9">9 顆</option>
-                    <option value="10">10 顆</option>
-                    <option value="11">11 顆</option>
-                    <option value="12" selected>12 顆</option>
-                </select>
-            </div>
-
-            <button class="opt-btn" onclick="optimizeFilters()">智慧分析穩定獲利設定</button>
-            
-            <label class="config-row" style="cursor: pointer; margin-bottom: 2px;">
-                <input type="checkbox" id="lockStarsForAI" onchange="runAnalysis()">
-                <span style="font-weight: 600; font-size: 0.9rem;">智慧分析僅針對已勾選的星數進行優化</span>
-            </label>
-            <div style="font-weight: 600; font-size: 0.9rem; color: var(--primary-light); margin-top: 4px; margin-bottom: 4px;">下注星數配置：</div>
-            <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; font-size: 0.9rem;">
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" id="bet2S" checked onchange="runAnalysis()"> 二星</label>
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" id="bet3S" checked onchange="runAnalysis()"> 三星</label>
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" id="bet4S" checked onchange="runAnalysis()"> 四星</label>
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;"><input type="checkbox" id="bet5S" checked onchange="runAnalysis()"> 五星</label>
-            </div>
-
-            <div class="config-row">
-                <span class="config-label">預測球數：</span>
-                <select id="ballCountSelect" onchange="runAnalysis()" style="width: 100px; margin-bottom: 0;">
-                    <option value="1">1 顆</option>
-                    <option value="2">2 顆</option>
-                    <option value="3" selected>3 顆</option>
-                    <option value="4">4 顆</option>
-                </select>
-            </div>
-            
-            <div class="config-row" style="flex-wrap: wrap; align-items: flex-start; margin-top: 6px;">
+            <div class="config-row" style="flex-wrap: wrap; align-items: flex-start;">
                 <span class="config-label" style="padding-top: 8px;">下注倍率：</span>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1;">
                     <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">二星 <input type="number" id="mult2S" value="1" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
                     <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">三星 <input type="number" id="mult3S" value="1" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">四星 <input type="number" id="mult4S" value="1" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-main);">五星 <input type="number" id="mult5S" value="1" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
                 </div>
             </div>
+
+            <button class="run-btn" onclick="runAnalysis()">執行專屬版路回測</button>
         </div>
     </div>
 
-    <div class="section-title">最新開獎預測</div>
+    <div class="section-title">下期預測目標 (週四 / 週五)</div>
     <div id="predictionArea"></div>
-
-    <div class="section-title">智慧立柱組合</div>
-    <div id="pillarArea" class="selector-box" style="padding: 18px;"></div>
     
     <div class="section-title">累積損益曲線</div>
     <div class="selector-box" style="padding: 15px; margin-bottom: 24px;">
@@ -275,7 +161,7 @@
 
     <div id="summaryArea" class="summary" style="display:none;"></div>
 
-    <div class="section-title">每日開獎與單期紀錄</div>
+    <div class="section-title">專屬版路觸發紀錄</div>
     <div id="resultList"></div>
 </div>
 
@@ -286,17 +172,22 @@
 
     const COST_BASE_2S = 1;  
     const COST_BASE_3S = 1;  
-    const COST_BASE_4S = 1;  
-    const COST_BASE_5S = 1;  
     const REBATE_RATE = 0.2;
 
     const MULTIPLIER_2S = 53;   
     const MULTIPLIER_3S = 570;  
-    const MULTIPLIER_4S = 8000; 
-    const MULTIPLIER_5S = 30000; 
+
+    const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
 
     function fNum(n) { return String(n).padStart(2, '0'); }
     function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
+
+    function calculateCombination(n, r) {
+        if (n < r) return 0;
+        if (r === 2) return (n * (n - 1)) / 2;
+        if (r === 3) return (n * (n - 1) * (n - 2)) / 6;
+        return 0;
+    }
 
     function toggleTheme() {
         const body = document.body;
@@ -304,9 +195,7 @@
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         body.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
-        if(pnlChartInstance) {
-            updateChartTheme();
-        }
+        if(pnlChartInstance) updateChartTheme();
     }
 
     function updateChartTheme() {
@@ -321,70 +210,16 @@
         document.body.setAttribute('data-theme', savedTheme);
 
         if (localStorage.getItem('csvSelect')) document.getElementById('csvSelect').value = localStorage.getItem('csvSelect');
-        if (localStorage.getItem('algoMode')) document.getElementById('algoMode').value = localStorage.getItem('algoMode');
-        if (localStorage.getItem('onlyPerfectScore') !== null) document.getElementById('onlyPerfectScore').checked = localStorage.getItem('onlyPerfectScore') === 'true';
         if (localStorage.getItem('sortBalls') !== null) document.getElementById('sortBalls').checked = localStorage.getItem('sortBalls') === 'true';
-        if (localStorage.getItem('playCombination') !== null) document.getElementById('playCombination').checked = localStorage.getItem('playCombination') === 'true';
-        if (localStorage.getItem('filter8BallsMode')) document.getElementById('filter8BallsMode').value = localStorage.getItem('filter8BallsMode');
-        if (localStorage.getItem('maxAllowedBalls')) document.getElementById('maxAllowedBalls').value = localStorage.getItem('maxAllowedBalls');
-        if (localStorage.getItem('lockStarsForAI') !== null) document.getElementById('lockStarsForAI').checked = localStorage.getItem('lockStarsForAI') === 'true';
-        
-        if (localStorage.getItem('bet2S') !== null) document.getElementById('bet2S').checked = localStorage.getItem('bet2S') === 'true';
-        if (localStorage.getItem('bet3S') !== null) document.getElementById('bet3S').checked = localStorage.getItem('bet3S') === 'true';
-        if (localStorage.getItem('bet4S') !== null) document.getElementById('bet4S').checked = localStorage.getItem('bet4S') === 'true';
-        if (localStorage.getItem('bet5S') !== null) document.getElementById('bet5S').checked = localStorage.getItem('bet5S') === 'true';
-        
-        if (localStorage.getItem('ballCountSelect')) document.getElementById('ballCountSelect').value = localStorage.getItem('ballCountSelect');
-        
         if (localStorage.getItem('mult2S')) document.getElementById('mult2S').value = localStorage.getItem('mult2S');
         if (localStorage.getItem('mult3S')) document.getElementById('mult3S').value = localStorage.getItem('mult3S');
-        if (localStorage.getItem('mult4S')) document.getElementById('mult4S').value = localStorage.getItem('mult4S');
-        if (localStorage.getItem('mult5S')) document.getElementById('mult5S').value = localStorage.getItem('mult5S');
     }
 
     function saveSettings() {
         localStorage.setItem('csvSelect', document.getElementById('csvSelect').value);
-        localStorage.setItem('algoMode', document.getElementById('algoMode').value);
-        localStorage.setItem('onlyPerfectScore', document.getElementById('onlyPerfectScore').checked);
         localStorage.setItem('sortBalls', document.getElementById('sortBalls').checked);
-        localStorage.setItem('playCombination', document.getElementById('playCombination').checked);
-        localStorage.setItem('filter8BallsMode', document.getElementById('filter8BallsMode').value);
-        localStorage.setItem('maxAllowedBalls', document.getElementById('maxAllowedBalls').value);
-        localStorage.setItem('lockStarsForAI', document.getElementById('lockStarsForAI').checked);
-        
-        localStorage.setItem('bet2S', document.getElementById('bet2S').checked);
-        localStorage.setItem('bet3S', document.getElementById('bet3S').checked);
-        localStorage.setItem('bet4S', document.getElementById('bet4S').checked);
-        localStorage.setItem('bet5S', document.getElementById('bet5S').checked);
-        
-        localStorage.setItem('ballCountSelect', document.getElementById('ballCountSelect').value);
-        
         localStorage.setItem('mult2S', document.getElementById('mult2S').value);
         localStorage.setItem('mult3S', document.getElementById('mult3S').value);
-        localStorage.setItem('mult4S', document.getElementById('mult4S').value);
-        localStorage.setItem('mult5S', document.getElementById('mult5S').value);
-    }
-
-    function getOmit(num, currentIndex) {
-        let omit = 0;
-        for (let k = currentIndex; k >= 0; k--) {
-            if (parsedData[k].nums.includes(num)) {
-                return omit;
-            }
-            omit++;
-        }
-        return omit;
-    }
-
-    function getRecentCount(num, currentIndex) {
-        let count = 0;
-        let start = Math.max(0, currentIndex - 9);
-        for (let k = currentIndex; k >= start; k--) {
-            if (parsedData[k].nums.includes(num)) {
-                count++;
-            }
-        }
-        return count;
     }
 
     function wrapNum(n, max) {
@@ -393,298 +228,10 @@
         return v || 1; 
     }
 
-    function getMonthString(dateStr) {
-        let dateWithYear = dateStr.includes('2026') ? dateStr : `2026/${dateStr}`;
-        let normalized = dateWithYear.replace(/\//g, '-');
-        let d = new Date(normalized);
-        if(isNaN(d)) return "未知月份";
-        let pad = (n) => String(n).padStart(2, '0');
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
-    }
-
-    function getWeekRange(dateStr) {
-        let dateWithYear = dateStr.includes('2026') ? dateStr : `2026/${dateStr}`;
-        let normalized = dateWithYear.replace(/\//g, '-');
-        let d = new Date(normalized);
-        if(isNaN(d)) return "未知週次";
-        let day = d.getDay(); 
-        let diffToMonday = d.getDate() - day + (day === 0 ? -6 : 1); 
-        let mon = new Date(d); mon.setDate(diffToMonday);
-        let pad = (n) => String(n).padStart(2, '0');
-        let fmt = (dateObj) => `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}`;
-        return `${fmt(mon)} ~ ${fmt(new Date(mon.getTime() + 6 * 24 * 60 * 60 * 1000))}`;
-    }
-
-    function toggleMonth(id) {
-        let el = document.getElementById(id);
-        let icon = document.getElementById('icon-' + id);
-        if (el.style.display === 'none') {
-            el.style.display = 'block';
-            icon.innerText = '－';
-        } else {
-            el.style.display = 'none';
-            icon.innerText = '＋';
-        }
-    }
-
-    function getCombinations(array, size) {
-        let result = [];
-        function helper(start, combo) {
-            if (combo.length === size) {
-                result.push([...combo]);
-                return;
-            }
-            for (let i = start; i < array.length; i++) {
-                combo.push(array[i]);
-                helper(i + 1, combo);
-                combo.pop();
-            }
-        }
-        helper(0, []);
-        return result;
-    }
-
-    function getSmartPatterns(nums, currentIndex, optBallCount, optOnlyPerfect) {
-        let patterns = [];
-        let selectedBallCount = optBallCount !== undefined ? optBallCount : (parseInt(document.getElementById('ballCountSelect').value) || 3);
-        let onlyPerfect = optOnlyPerfect !== undefined ? optOnlyPerfect : document.getElementById('onlyPerfectScore').checked;
-
-        for (let pos = 0; pos < 5; pos++) {
-            let triggerNum = nums[pos];
-            let historicalWindows = [];
-
-            for (let k = 0; k < currentIndex; k++) {
-                if (parsedData[k].nums[pos] === triggerNum) {
-                    let windowNums = new Set();
-                    if (k + 1 <= currentIndex) {
-                        let historyNextNums = parsedData[k + 1].nums;
-                        let historyCheckNums = (maxNum === 49 && historyNextNums.length >= 7) ? historyNextNums.slice(0, 6) : historyNextNums;
-                        historyCheckNums.forEach(n => {
-                            windowNums.add(n);
-                        });
-                    }
-                    if (windowNums.size > 0) historicalWindows.push(windowNums);
-                }
-            }
-
-            if (historicalWindows.length === 0) continue;
-
-            let candidatesSet = new Set();
-            let freqMap = {};
-            historicalWindows.forEach(win => {
-                win.forEach(n => {
-                    candidatesSet.add(n);
-                    freqMap[n] = (freqMap[n] || 0) + 1;
-                });
-            });
-            let candidates = Array.from(candidatesSet);
-            let targetSize = Math.min(selectedBallCount, candidates.length);
-            if (targetSize === 0) continue;
-
-            let combos = getCombinations(candidates, targetSize);
-            let bestComb = [];
-            let bestHitRate = -1;
-            let maxSubFreq = -1;
-
-            combos.forEach(combo => {
-                let hits = 0;
-                historicalWindows.forEach(win => {
-                    if (combo.some(n => win.has(n))) hits++;
-                });
-                let hitRate = hits / historicalWindows.length;
-                if (hitRate > bestHitRate) {
-                    bestHitRate = hitRate;
-                    bestComb = combo;
-                    maxSubFreq = combo.reduce((sum, n) => sum + (freqMap[n] || 0), 0);
-                } else if (hitRate === bestHitRate) {
-                    let subFreq = combo.reduce((sum, n) => sum + (freqMap[n] || 0), 0);
-                    if (subFreq > maxSubFreq) {
-                        bestComb = combo;
-                        maxSubFreq = subFreq;
-                    }
-                }
-            });
-
-            bestComb.sort((a, b) => a - b);
-
-            if (bestComb.length < selectedBallCount) {
-                let allValidNums = [];
-                for (let n = 1; n <= maxNum; n++) {
-                    if (!bestComb.includes(n)) allValidNums.push(n);
-                }
-                while (bestComb.length < selectedBallCount && allValidNums.length > 0) {
-                    bestComb.push(allValidNums.shift());
-                }
-                bestComb.sort((a, b) => a - b);
-            }
-
-            let scorePercent = bestHitRate * 100;
-            if (onlyPerfect && scorePercent < 100) continue;
-
-            patterns.push({
-                pos: pos + 1,
-                type: `定位拖牌 (第${pos + 1}位開${fNum(triggerNum)})`,
-                triggerNum: triggerNum,
-                target: bestComb,
-                score: scorePercent,
-                total: historicalWindows.length
-            });
-        }
-
-        return patterns.sort((a, b) => b.score - a.score || b.total - a.total);
-    }
-
-    // 全新的自動跨週版路搜尋演算法
-    function getAutoWeekdayPattern(data, currentIndex, optBallCount, optOnlyPerfect) {
-        let selectedBallCount = optBallCount !== undefined ? optBallCount : (parseInt(document.getElementById('ballCountSelect').value) || 3);
-        let onlyPerfect = optOnlyPerfect !== undefined ? optOnlyPerfect : document.getElementById('onlyPerfectScore').checked;
-
-        // 計算每一期是星期幾
-        let days = data.map(d => {
-            let dStr = d.date.includes('/') && d.date.split('/').length === 2 ? `2026/${d.date}` : d.date;
-            return new Date(dStr.replace(/\//g, '-')).getDay();
-        });
-
-        let bestRules = [];
-        
-        // 遍歷所有可能的：星期(0-6)、位置(0-4)、加減跨距(0-38)
-        for(let d = 0; d < 7; d++) {
-            for(let p = 0; p < 5; p++) {
-                for(let offset = 0; offset < maxNum; offset++) {
-                    let hits = 0;
-                    let trials = 0;
-                    let lastD_idx = -1;
-                    
-                    // 利用歷史回測計算這組跨週規律的準確度
-                    for(let k = 0; k <= currentIndex; k++) {
-                        if (lastD_idx !== -1) {
-                            let targetNum = data[lastD_idx].nums[p] + offset;
-                            if (targetNum > maxNum) targetNum -= maxNum;
-                            if (targetNum === 0) targetNum = maxNum;
-                            
-                            let kNextNums = data[k].nums;
-                            let kCheckNums = (maxNum === 49 && kNextNums.length >= 7) ? kNextNums.slice(0, 6) : kNextNums;
-                            
-                            if (kCheckNums.includes(targetNum)) {
-                                hits++;
-                            }
-                            trials++;
-                        }
-                        if (days[k] === d) {
-                            lastD_idx = k;
-                        }
-                    }
-                    
-                    if (trials > 0) {
-                        let hitRate = hits / trials;
-                        if (onlyPerfect && hitRate < 1) continue;
-                        if (hitRate > 0) {
-                            bestRules.push({ d, p, offset, hitRate, hits, trials });
-                        }
-                    }
-                }
-            }
-        }
-
-        // 依照命中率與命中次數排序，選出最穩定擬合的跨週規律
-        bestRules.sort((a, b) => b.hitRate - a.hitRate || b.hits - a.hits);
-
-        let resultPatterns = [];
-        let currentLastD = [-1, -1, -1, -1, -1, -1, -1];
-        for(let k = 0; k <= currentIndex; k++) {
-            currentLastD[days[k]] = k;
-        }
-
-        let targetComb = [];
-        let ruleIdx = 0;
-        let dayNames = ['日','一','二','三','四','五','六'];
-
-        while(targetComb.length < selectedBallCount && ruleIdx < bestRules.length) {
-            let rule = bestRules[ruleIdx];
-            let triggerIdx = currentLastD[rule.d];
-            
-            if (triggerIdx !== -1) {
-                let triggerDraw = data[triggerIdx];
-                let tNum = triggerDraw.nums[rule.p] + rule.offset;
-                if (tNum > maxNum) tNum -= maxNum;
-                if (tNum === 0) tNum = maxNum;
-
-                if (!targetComb.includes(tNum)) {
-                    targetComb.push(tNum);
-                    resultPatterns.push({
-                        pos: `週${dayNames[rule.d]}第${rule.p+1}球`,
-                        type: `跨週規律 (週${dayNames[rule.d]}第${rule.p+1}球+${rule.offset})`,
-                        triggerNum: `${fNum(triggerDraw.nums[rule.p])}`,
-                        target: [tNum],
-                        score: rule.hitRate * 100,
-                        total: rule.trials
-                    });
-                }
-            }
-            ruleIdx++;
-        }
-
-        // 如果可用的有效跨週球數不足，自動填補數字
-        if (targetComb.length < selectedBallCount) {
-             let allValidNums = [];
-             for (let n = 1; n <= maxNum; n++) {
-                 if (!targetComb.includes(n)) allValidNums.push(n);
-             }
-             while (targetComb.length < selectedBallCount && allValidNums.length > 0) {
-                 let fill = allValidNums.shift();
-                 targetComb.push(fill);
-                 resultPatterns.push({
-                     pos: `補球`,
-                     type: `自動補滿球數`,
-                     triggerNum: `-`,
-                     target: [fill],
-                     score: 0,
-                     total: 0
-                 });
-             }
-        }
-
-        return resultPatterns;
-    }
-
-    function calcPillarCombinations(pillarArrays) {
-        const activePillars = pillarArrays.filter(p => p.length > 0);
-        const n = activePillars.length;
-        let c2 = 0, c3 = 0, c4 = 0, c5 = 0;
-        
-        for (let i = 0; i < n; i++) {
-            for (let j = i + 1; j < n; j++) {
-                c2 += activePillars[i].length * activePillars[j].length;
-            }
-        }
-        for (let i = 0; i < n; i++) {
-            for (let j = i + 1; j < n; j++) {
-                for (let k = j + 1; k < n; k++) {
-                    c3 += activePillars[i].length * activePillars[j].length * activePillars[k].length;
-                }
-            }
-        }
-        for (let i = 0; i < n; i++) {
-            for (let j = i + 1; j < n; j++) {
-                for (let k = j + 1; k < n; k++) {
-                    for (let l = k + 1; l < n; l++) {
-                        c4 += activePillars[i].length * activePillars[j].length * activePillars[k].length * activePillars[l].length;
-                    }
-                }
-            }
-        }
-        for (let i = 0; i < n; i++) {
-            for (let j = i + 1; j < n; j++) {
-                for (let k = j + 1; k < n; k++) {
-                    for (let l = k + 1; l < n; l++) {
-                        for (let m = l + 1; m < n; m++) {
-                            c5 += activePillars[i].length * activePillars[j].length * activePillars[k].length * activePillars[l].length * activePillars[m].length;
-                        }
-                    }
-                }
-            }
-        }
-        return { c2, c3, c4, c5 };
+    function getDayOfWeek(dateStr) {
+        let dStr = dateStr.includes('/') && dateStr.split('/').length === 2 ? `2026/${dateStr}` : dateStr;
+        let d = new Date(dStr.replace(/\//g, '-'));
+        return d.getDay();
     }
 
     async function processData() {
@@ -709,473 +256,119 @@
                     let n = parseInt(cols[j]);
                     if(!isNaN(n)) nums.push(n);
                 }
-                parsedData.push({ date: cols[0], nums: nums });
+                parsedData.push({ date: cols[0], originalNums: nums });
             }
             
             statusEl.innerText = `載入成功 (共 ${parsedData.length} 期)`;
             runAnalysis();
         } catch(e) { 
-            statusEl.innerText = "讀取失敗 (請確保在網頁伺服器環境下執行)"; 
+            statusEl.innerText = "讀取失敗 (請確保在網頁環境下執行)"; 
         }
     }
 
-    function optimizeFilters() {
-        const btn = document.querySelector('.opt-btn');
-        btn.innerText = "運算中...";
-        btn.style.pointerEvents = "none";
+    function getTargetsFromData(dataArray, upToIndex) {
+        let lastMon = null, lastSun = null, lastWed = null;
+        for (let k = upToIndex; k >= Math.max(0, upToIndex - 15); k--) {
+            if (dataArray[k].day === 1 && !lastMon) lastMon = dataArray[k];
+            if (dataArray[k].day === 0 && !lastSun) lastSun = dataArray[k];
+            if (dataArray[k].day === 3 && !lastWed) lastWed = dataArray[k];
+        }
 
-        setTimeout(() => {
-            const algoOptions = ['pattern', 'auto_weekday'];
-            const filterOptions = ['none', 'removeCold', 'removeHot', 'removeLeastFrequent', 'removeMostFrequent', 'smartRemove'];
-            const comboOptions = [false, true];  
-            const sortOptions = [false, true];   
-            const perfectOptions = [false, true];
-            const ballCounts = [1, 2, 3, 4];
-            const allowedMaxBallsList = [4, 5, 6, 7, 8, 9, 10, 11, 12];
+        if (lastMon && lastSun && lastWed) {
+            let t1 = wrapNum(lastMon.nums[2] + 2, maxNum); // 星期一第3球+2
+            let t2 = wrapNum(lastSun.nums[0] + 0, maxNum); // 星期日第1球+0
+            let t3 = wrapNum(lastWed.nums[4] - 4, maxNum); // 星期三第5球-4
             
-            let starCombos = [];
-            if (document.getElementById('lockStarsForAI').checked) {
-                starCombos = [{
-                    use2S: document.getElementById('bet2S').checked,
-                    use3S: document.getElementById('bet3S').checked,
-                    use4S: document.getElementById('bet4S').checked,
-                    use5S: document.getElementById('bet5S').checked
-                }];
-            } else {
-                starCombos = [
-                    { use2S: true,  use3S: false, use4S: false, use5S: false }, 
-                    { use2S: false, use3S: true,  use4S: false, use5S: false }, 
-                    { use2S: false, use3S: false, use4S: true,  use5S: false }, 
-                    { use2S: true,  use3S: true,  use4S: false, use5S: false }, 
-                    { use2S: true,  use3S: false, use4S: true,  use5S: false }, 
-                    { use2S: false, use3S: true,  use4S: true,  use5S: false }, 
-                    { use2S: true,  use3S: true,  use4S: true,  use5S: false }  
-                ];
-            }
-
-            let bestScore = -Infinity;
-            let bestConfig = null;
-            let bestDailySim = []; 
-
-            let originalParsedData = JSON.parse(JSON.stringify(parsedData));
-
-            sortOptions.forEach(isSorted => {
-                for (let d of parsedData) {
-                    if (isSorted) {
-                        if (!d.originalNums) d.originalNums = [...d.nums];
-                        if (maxNum === 49 && d.nums.length >= 7) {
-                            let mainNums = d.nums.slice(0, 6);
-                            mainNums.sort((a, b) => a - b);
-                            d.nums = mainNums.concat(d.nums.slice(6));
-                        } else {
-                            d.nums.sort((a, b) => a - b);
-                        }
-                    } else {
-                        if (d.originalNums) d.nums = [...d.originalNums];
-                    }
-                }
-
-                perfectOptions.forEach(onlyPerfect => {
-                    ballCounts.forEach(ballCount => {
-                        let patternsCache = { 'pattern': [], 'auto_weekday': [] };
-                        for (let i = 0; i < parsedData.length; i++) {
-                            patternsCache['pattern'][i] = getSmartPatterns(parsedData[i].nums, i, ballCount, onlyPerfect);
-                            patternsCache['auto_weekday'][i] = getAutoWeekdayPattern(parsedData, i, ballCount, onlyPerfect);
-                        }
-
-                        algoOptions.forEach(algo => {
-                            filterOptions.forEach(fMode => {
-                                allowedMaxBallsList.forEach(maxLimit => {
-                                    comboOptions.forEach(isCombo => {
-                                        starCombos.forEach(stars => {
-                                            
-                                            let cumulativePnL = 0;
-                                            let maxDrawdown = 0;
-                                            let peak = 0;
-                                            let totalCost = 0;
-                                            let hitCount = 0;
-                                            let totalBets = 0;
-                                            
-                                            let currentDailySim = []; 
-
-                                            for (let i = 0; i < parsedData.length; i++) {
-                                                let allPatterns = patternsCache[algo][i];
-                                                
-                                                let initialSeen = new Set();
-                                                allPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
-                                                let allowedNumbers = initialSeen;
-                                                
-                                                if (fMode !== 'none' && initialSeen.size > maxLimit) {
-                                                    let sortedNums = Array.from(initialSeen).sort((a, b) => {
-                                                        if (fMode === 'removeCold') return getOmit(a, i) - getOmit(b, i) || a - b;
-                                                        if (fMode === 'removeHot') return getOmit(b, i) - getOmit(a, i) || a - b;
-                                                        if (fMode === 'removeLeastFrequent') return getRecentCount(b, i) - getRecentCount(a, i) || a - b;
-                                                        if (fMode === 'removeMostFrequent') return getRecentCount(a, i) - getRecentCount(b, i) || a - b;
-                                                        if (fMode === 'smartRemove') {
-                                                            return (getRecentCount(b, i) * 5 - getOmit(b, i)) - (getRecentCount(a, i) * 5 - getOmit(a, i)) || a - b;
-                                                        }
-                                                    });
-                                                    allowedNumbers = new Set(sortedNums.slice(0, maxLimit));
-                                                }
-
-                                                let seenNumbers = new Set();
-                                                let backtestPillars = [];
-                                                allPatterns.forEach(p => {
-                                                    let uniqueNums = p.target.filter(n => !seenNumbers.has(n) && allowedNumbers.has(n));
-                                                    uniqueNums.forEach(n => seenNumbers.add(n));
-                                                    if (uniqueNums.length > 0) {
-                                                        backtestPillars.push(uniqueNums);
-                                                    }
-                                                });
-
-                                                let totalPairs = { c2: 0, c3: 0, c4: 0, c5: 0 };
-                                                if (isCombo) {
-                                                    let totalUniqueCount = seenNumbers.size;
-                                                    const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (r === 4 ? (n*(n-1)*(n-2)*(n-3))/24 : (n*(n-1)*(n-2)*(n-3)*(n-4))/120)));
-                                                    if (stars.use2S) totalPairs.c2 = nCr(totalUniqueCount, 2);
-                                                    if (stars.use3S) totalPairs.c3 = nCr(totalUniqueCount, 3);
-                                                    if (stars.use4S) totalPairs.c4 = nCr(totalUniqueCount, 4);
-                                                    if (stars.use5S) totalPairs.c5 = nCr(totalUniqueCount, 5);
-                                                } else {
-                                                    let fullPairs = calcPillarCombinations(backtestPillars);
-                                                    if (stars.use2S) totalPairs.c2 = fullPairs.c2;
-                                                    if (stars.use3S) totalPairs.c3 = fullPairs.c3;
-                                                    if (stars.use4S) totalPairs.c4 = fullPairs.c4;
-                                                    if (stars.use5S) totalPairs.c5 = fullPairs.c5;
-                                                }
-
-                                                let playIndex = i + 1; 
-                                                if (playIndex < parsedData.length && (totalPairs.c2 > 0 || totalPairs.c3 > 0 || totalPairs.c4 > 0 || totalPairs.c5 > 0)) {
-                                                    let nextNums = parsedData[playIndex].nums;
-                                                    let checkNums = (maxNum === 49 && nextNums.length >= 7) ? nextNums.slice(0, 6) : nextNums;
-                                                    
-                                                    let winPairs = { c2: 0, c3: 0, c4: 0, c5: 0 };
-                                                    if (isCombo) {
-                                                        let allFlattenedUnique = [];
-                                                        let s = new Set();
-                                                        backtestPillars.forEach(p => p.forEach(n => { if(!s.has(n)){ s.add(n); allFlattenedUnique.push(n); } }));
-                                                        let totalHits = intersect(allFlattenedUnique, checkNums).length;
-                                                        const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (r === 4 ? (n*(n-1)*(n-2)*(n-3))/24 : (n*(n-1)*(n-2)*(n-3)*(n-4))/120)));
-                                                        if (stars.use2S) winPairs.c2 = nCr(totalHits, 2);
-                                                        if (stars.use3S) winPairs.c3 = nCr(totalHits, 3);
-                                                        if (stars.use4S) winPairs.c4 = nCr(totalHits, 4);
-                                                        if (stars.use5S) winPairs.c5 = nCr(totalHits, 5);
-                                                    } else {
-                                                        let pillarHits = backtestPillars.map(pillar => intersect(pillar, checkNums).length);
-                                                        let fullWinPairs = calcPillarCombinations(pillarHits.map(h => Array(h).fill(0)));
-                                                        if (stars.use2S) winPairs.c2 = fullWinPairs.c2;
-                                                        if (stars.use3S) winPairs.c3 = fullWinPairs.c3;
-                                                        if (stars.use4S) winPairs.c4 = fullWinPairs.c4;
-                                                        if (stars.use5S) winPairs.c5 = fullWinPairs.c5;
-                                                    }
-                                                    
-                                                    currentDailySim.push({
-                                                        c2: totalPairs.c2, c3: totalPairs.c3, c4: totalPairs.c4, c5: totalPairs.c5,
-                                                        w2: winPairs.c2, w3: winPairs.c3, w4: winPairs.c4, w5: winPairs.c5
-                                                    });
-
-                                                    let rawCost = (totalPairs.c2 * COST_BASE_2S + totalPairs.c3 * COST_BASE_3S + totalPairs.c4 * COST_BASE_4S + totalPairs.c5 * COST_BASE_5S);
-                                                    let netCost = rawCost * (1 - REBATE_RATE);
-                                                    let winAmount = (winPairs.c2 * MULTIPLIER_2S + winPairs.c3 * MULTIPLIER_3S + winPairs.c4 * MULTIPLIER_4S + winPairs.c5 * MULTIPLIER_5S);
-                                                    
-                                                    cumulativePnL += (winAmount - netCost);
-                                                    
-                                                    if (cumulativePnL > peak) peak = cumulativePnL;
-                                                    let drawdown = peak > 0 ? (peak - cumulativePnL) / peak : 0;
-                                                    if (drawdown > maxDrawdown) maxDrawdown = drawdown;
-
-                                                    totalCost += netCost;
-                                                    if (winAmount > 0) hitCount++;
-                                                    totalBets++;
-                                                }
-                                            }
-                                            
-                                            if (totalBets > 0 && cumulativePnL > 0 && totalCost > 0) {
-                                                let hitRate = hitCount / totalBets;
-                                                let roi = cumulativePnL / totalCost; 
-                                                let stabilityScore = (cumulativePnL * roi * hitRate) / (1 + maxDrawdown * 8);
-
-                                                if (stabilityScore > bestScore) {
-                                                    bestScore = stabilityScore;
-                                                    bestConfig = { algo, fMode, isCombo, isSorted, stars, ballCount, onlyPerfect, maxLimit };
-                                                    bestDailySim = currentDailySim; 
-                                                }
-                                            }
-
-                                        });
-                                    });
-                                });
-                            });
-                        });
-                    });
-                });
-            });
-
-            parsedData = originalParsedData;
-
-            let bestM2 = 1, bestM3 = 1, bestM4 = 1, bestM5 = 1;
-
-            if (bestConfig) {
-                // 自動因應損益調整各自倍率 (Kelly-style grid search for the winning configuration)
-                let mOpts = [1, 2, 3, 5, 8, 10];
-                let bestMultScore = -Infinity;
-
-                mOpts.forEach(m2 => {
-                    if (!bestConfig.stars.use2S && m2 > 1) return;
-                    mOpts.forEach(m3 => {
-                        if (!bestConfig.stars.use3S && m3 > 1) return;
-                        mOpts.forEach(m4 => {
-                            if (!bestConfig.stars.use4S && m4 > 1) return;
-                            mOpts.forEach(m5 => {
-                                if (!bestConfig.stars.use5S && m5 > 1) return;
-                                
-                                let pnl = 0, peak = 0, maxDD = 0, cost = 0, hitC = 0, betC = 0;
-                                bestDailySim.forEach(d => {
-                                    let rCost = d.c2 * COST_BASE_2S * m2 + d.c3 * COST_BASE_3S * m3 + d.c4 * COST_BASE_4S * m4 + d.c5 * COST_BASE_5S * m5;
-                                    let nCost = rCost * (1 - REBATE_RATE);
-                                    let wAmt = d.w2 * MULTIPLIER_2S * m2 + d.w3 * MULTIPLIER_3S * m3 + d.w4 * MULTIPLIER_4S * m4 + d.w5 * MULTIPLIER_5S * m5;
-                                    
-                                    pnl += (wAmt - nCost);
-                                    if (pnl > peak) peak = pnl;
-                                    let drawdown = peak > 0 ? (peak - pnl) / peak : 0;
-                                    if (drawdown > maxDD) maxDD = drawdown;
-                                    
-                                    cost += nCost;
-                                    if (wAmt > 0) hitC++;
-                                    if (rCost > 0) betC++;
-                                });
-                                
-                                if (betC > 0 && pnl > 0 && cost > 0) {
-                                    let hr = hitC / betC;
-                                    let roi = pnl / cost;
-                                    let penalty = (m2 + m3 + m4 + m5) * 0.0001; 
-                                    let mScore = (pnl * roi * hr) / (1 + maxDD * 8) - penalty;
-                                    
-                                    if (mScore > bestMultScore) {
-                                        bestMultScore = mScore;
-                                        bestM2 = m2; bestM3 = m3; bestM4 = m4; bestM5 = m5;
-                                    }
-                                }
-                            });
-                        });
-                    });
-                });
-
-                document.getElementById('algoMode').value = bestConfig.algo;
-                document.getElementById('filter8BallsMode').value = bestConfig.fMode;
-                document.getElementById('maxAllowedBalls').value = bestConfig.maxLimit;
-                document.getElementById('playCombination').checked = bestConfig.isCombo;
-                document.getElementById('sortBalls').checked = bestConfig.isSorted;
-                document.getElementById('onlyPerfectScore').checked = bestConfig.onlyPerfect;
-                document.getElementById('ballCountSelect').value = bestConfig.ballCount;
-                
-                document.getElementById('bet2S').checked = bestConfig.stars.use2S;
-                document.getElementById('bet3S').checked = bestConfig.stars.use3S;
-                document.getElementById('bet4S').checked = bestConfig.stars.use4S;
-                document.getElementById('bet5S').checked = bestConfig.stars.use5S; 
-                
-                document.getElementById('mult2S').value = bestM2;
-                document.getElementById('mult3S').value = bestM3;
-                document.getElementById('mult4S').value = bestM4;
-                document.getElementById('mult5S').value = bestM5;
-
-                let algoNames = { 
-                    'pattern': '版路規律 (定位拖牌)', 
-                    'auto_weekday': '跨週規律 (自動搜尋版路)'
-                };
-                let filterNames = { 'none': '不過濾', 'removeCold': '移除冷門號', 'removeHot': '移除熱門號', 'removeLeastFrequent': '移除近期出現次數少', 'removeMostFrequent': '移除近期出現次數多', 'smartRemove': '智能移除' };
-                let starText = [];
-                if (bestConfig.stars.use2S) starText.push(`二星(${bestM2}倍)`);
-                if (bestConfig.stars.use3S) starText.push(`三星(${bestM3}倍)`);
-                if (bestConfig.stars.use4S) starText.push(`四星(${bestM4}倍)`);
-                if (bestConfig.stars.use5S) starText.push(`五星(${bestM5}倍)`);
-
-                alert(`分析結果：\n已計算出最平穩高獲利成長的完美參數與獨立倍率組合：\n\n-預測核心：【${algoNames[bestConfig.algo]}】\n-完美版路：【${bestConfig.onlyPerfect ? '開啟 (100%勝率)' : '關閉 (所有指標)'}】\n-預測球數：【${bestConfig.ballCount} 顆】\n-顆數上限：【${bestConfig.maxLimit} 顆】\n-落球模式：【${bestConfig.isSorted ? '順球' : '落球'}】\n-配牌玩法：【${bestConfig.isCombo ? '連碰' : '柱碰'}】\n-過濾模式：【${filterNames[bestConfig.fMode]}】\n-配置星數與倍率：【${starText.join(' + ')}】\n\n系統已全自動套用並為您重新繪製圖表。`);
-            } else {
-                alert(`注意：在目前的數據區間與注額條件下，未找到可實現正向穩定成長的配對模型。`);
-            }
-
-            runAnalysis();
-            
-            btn.innerText = "智慧分析穩定獲利設定";
-            btn.style.pointerEvents = "auto";
-        }, 100);
+            // 由於可能算到重複的數字，使用 Set 排除並從小到大排序
+            let targets = [...new Set([t1, t2, t3])].sort((a,b)=>a-b);
+            return { targets, lastMon, lastSun, lastWed };
+        }
+        return null;
     }
 
     function runAnalysis() {
         saveSettings();
-
-        let algoMode = document.getElementById('algoMode').value;
         let isSorted = document.getElementById('sortBalls').checked;
-        let isCombo = document.getElementById('playCombination').checked; 
-        let filter8BallsMode = document.getElementById('filter8BallsMode').value; 
-        let maxAllowedBalls = parseInt(document.getElementById('maxAllowedBalls').value) || 12;
-        
-        let use2S = document.getElementById('bet2S').checked;
-        let use3S = document.getElementById('bet3S').checked;
-        let use4S = document.getElementById('bet4S').checked;
-        let use5S = document.getElementById('bet5S').checked;
-        
         let mult2S = parseFloat(document.getElementById('mult2S').value) || 1;
         let mult3S = parseFloat(document.getElementById('mult3S').value) || 1;
-        let mult4S = parseFloat(document.getElementById('mult4S').value) || 1;
-        let mult5S = parseFloat(document.getElementById('mult5S').value) || 1;
 
-        for (let d of parsedData) {
+        let processedData = parsedData.map(d => {
+            let nums = [...d.originalNums];
             if (isSorted) {
-                if (!d.originalNums) d.originalNums = [...d.nums];
-                if (maxNum === 49 && d.nums.length >= 7) {
-                    let mainNums = d.nums.slice(0, 6);
-                    mainNums.sort((a, b) => a - b);
-                    d.nums = mainNums.concat(d.nums.slice(6));
+                if (maxNum === 49 && nums.length >= 7) {
+                    let main = nums.slice(0, 6).sort((a, b) => a - b);
+                    nums = main.concat(nums.slice(6));
                 } else {
-                    d.nums.sort((a, b) => a - b);
-                }
-            } else {
-                if (d.originalNums) d.nums = [...d.originalNums];
-            }
-        }
-
-        let dailyView = parsedData.map(d => ({ 
-            date: d.date, 
-            nums: d.nums, 
-            events: [], 
-            pnl: { cost: 0, win: 0, bets: 0, hits: 0 } 
-        }));
-        
-        let tracking = [];
-        let stats = { total: 0, hit: 0 };
-        let totalStats = { cost: 0, win: 0, bets: 0, hits: 0 };
-        let totalWinCount = { c2: 0, c3: 0, c4: 0, c5: 0 };
-
-        for (let i = 0; i < parsedData.length; i++) {
-            let allPatterns = algoMode === 'auto_weekday' ? getAutoWeekdayPattern(parsedData, i) : getSmartPatterns(parsedData[i].nums, i);
-            
-            let initialSeen = new Set();
-            allPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
-            let allowedNumbers = initialSeen;
-            
-            if (filter8BallsMode !== 'none' && initialSeen.size > maxAllowedBalls) {
-                let sortedNums = Array.from(initialSeen).sort((a, b) => {
-                    if (filter8BallsMode === 'removeCold') return getOmit(a, i) - getOmit(b, i) || a - b;
-                    if (filter8BallsMode === 'removeHot') return getOmit(b, i) - getOmit(a, i) || a - b;
-                    if (filter8BallsMode === 'removeLeastFrequent') return getRecentCount(b, i) - getRecentCount(a, i) || a - b;
-                    if (filter8BallsMode === 'removeMostFrequent') return getRecentCount(a, i) - getRecentCount(b, i) || a - b;
-                    if (filter8BallsMode === 'smartRemove') {
-                        return (getRecentCount(b, i) * 5 - getOmit(b, i)) - (getRecentCount(a, i) * 5 - getOmit(a, i)) || a - b;
-                    }
-                });
-                allowedNumbers = new Set(sortedNums.slice(0, maxAllowedBalls));
-            }
-
-            let seenNumbers = new Set();
-            let backtestPillars = [];
-            allPatterns.forEach(p => {
-                let uniqueNums = p.target.filter(n => !seenNumbers.has(n) && allowedNumbers.has(n));
-                uniqueNums.forEach(n => seenNumbers.add(n));
-                if (uniqueNums.length > 0) {
-                    backtestPillars.push(uniqueNums);
-                }
-            });
-
-            let totalPairs = { c2: 0, c3: 0, c4: 0, c5: 0 };
-            if (isCombo) {
-                let totalUniqueCount = seenNumbers.size;
-                const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (r === 4 ? (n*(n-1)*(n-2)*(n-3))/24 : (n*(n-1)*(n-2)*(n-3)*(n-4))/120)));
-                if (use2S) totalPairs.c2 = nCr(totalUniqueCount, 2);
-                if (use3S) totalPairs.c3 = nCr(totalUniqueCount, 3);
-                if (use4S) totalPairs.c4 = nCr(totalUniqueCount, 4);
-                if (use5S) totalPairs.c5 = nCr(totalUniqueCount, 5);
-            } else {
-                let fullPairs = calcPillarCombinations(backtestPillars);
-                if (use2S) totalPairs.c2 = fullPairs.c2;
-                if (use3S) totalPairs.c3 = fullPairs.c3;
-                if (use4S) totalPairs.c4 = fullPairs.c4;
-                if (use5S) totalPairs.c5 = fullPairs.c5;
-            }
-
-            if (i === parsedData.length - 1) {
-                tracking = allPatterns;
-            }
-
-            let playIndex = i + 1; 
-            if (playIndex < parsedData.length && (totalPairs.c2 > 0 || totalPairs.c3 > 0 || totalPairs.c4 > 0 || totalPairs.c5 > 0)) {
-                let nextNums = parsedData[playIndex].nums;
-                let checkNums = (maxNum === 49 && nextNums.length >= 7) ? nextNums.slice(0, 6) : nextNums;
-                
-                let winPairs = { c2: 0, c3: 0, c4: 0, c5: 0 };
-                if (isCombo) {
-                    let allFlattenedUnique = [];
-                    let s = new Set();
-                    backtestPillars.forEach(p => p.forEach(n => { if(!s.has(n)){ s.add(n); allFlattenedUnique.push(n); } }));
-                    let totalHits = intersect(allFlattenedUnique, checkNums).length;
-                    const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (r === 4 ? (n*(n-1)*(n-2)*(n-3))/24 : (n*(n-1)*(n-2)*(n-3)*(n-4))/120)));
-                    if (use2S) winPairs.c2 = nCr(totalHits, 2);
-                    if (use3S) winPairs.c3 = nCr(totalHits, 3);
-                    if (use4S) winPairs.c4 = nCr(totalHits, 4);
-                    if (use5S) winPairs.c5 = nCr(totalHits, 5);
-                } else {
-                    let pillarHits = backtestPillars.map(pillar => intersect(pillar, checkNums).length);
-                    let fullWinPairs = calcPillarCombinations(pillarHits.map(h => Array(h).fill(0)));
-                    if (use2S) winPairs.c2 = fullWinPairs.c2;
-                    if (use3S) winPairs.c3 = fullWinPairs.c3;
-                    if (use4S) winPairs.c4 = fullWinPairs.c4;
-                    if (use5S) winPairs.c5 = fullWinPairs.c5;
-                }
-
-                let rawCost = totalPairs.c2 * COST_BASE_2S * mult2S + totalPairs.c3 * COST_BASE_3S * mult3S + totalPairs.c4 * COST_BASE_4S * mult4S + totalPairs.c5 * COST_BASE_5S * mult5S;
-                let netCost = rawCost * (1 - REBATE_RATE);
-                let winAmount = winPairs.c2 * MULTIPLIER_2S * mult2S + winPairs.c3 * MULTIPLIER_3S * mult3S + winPairs.c4 * MULTIPLIER_4S * mult4S + winPairs.c5 * MULTIPLIER_5S * mult5S;
-                
-                dailyView[playIndex].pnl.bets += (totalPairs.c2 + totalPairs.c3 + totalPairs.c4 + totalPairs.c5); 
-                dailyView[playIndex].pnl.cost += netCost;
-                
-                if (winAmount > 0) {
-                    stats.hit++;
-                    dailyView[playIndex].pnl.hits += (winPairs.c2 + winPairs.c3 + winPairs.c4 + winPairs.c5);
-                    dailyView[playIndex].pnl.win += winAmount;
-                    
-                    totalWinCount.c2 += winPairs.c2;
-                    totalWinCount.c3 += winPairs.c3;
-                    totalWinCount.c4 += winPairs.c4;
-                    totalWinCount.c5 += winPairs.c5;
-                }
-                stats.total++;
-
-                if (winAmount > 0) {
-                    dailyView[playIndex].events.push({
-                        type: 'hit',
-                        winPairs: winPairs,
-                        totalPairs: totalPairs,
-                        triggerDate: parsedData[i].date,
-                        netCost: netCost,
-                        winAmount: winAmount,
-                        pillars: backtestPillars.map(p => [...p]),
-                        nextNums: [...nextNums]
-                    });
-                } else {
-                    dailyView[playIndex].events.push({
-                        type: 'miss',
-                        totalPairs: totalPairs,
-                        triggerDate: parsedData[i].date,
-                        netCost: netCost,
-                        pillars: backtestPillars.map(p => [...p]),
-                        nextNums: [...nextNums]
-                    });
+                    nums.sort((a, b) => a - b);
                 }
             }
-        }
+            return { date: d.date, nums: nums, day: getDayOfWeek(d.date) };
+        });
 
+        let stats = { bets: 0, hits: 0, cost: 0, win: 0 };
+        let hitCounts = { c2: 0, c3: 0 };
+        let dailyView = [];
         let chartLabels = [];
         let chartData = [];
         let cumulativePnL = 0;
-        dailyView.forEach(d => {
-            let net = d.pnl.win - d.pnl.cost;
-            cumulativePnL += net;
-            chartLabels.push(d.date);
-            chartData.push(cumulativePnL);
-        });
 
+        for (let i = 0; i < processedData.length; i++) {
+            let currentDraw = processedData[i];
+
+            // 規則要求：下注星期四(4)、星期五(5)
+            if (currentDraw.day === 4 || currentDraw.day === 5) {
+                // 尋找 i 之前的最後一個日、一、三
+                let condition = getTargetsFromData(processedData, i - 1);
+                
+                if (condition && condition.targets.length >= 2) {
+                    let targets = condition.targets;
+                    let checkNums = (maxNum === 49 && currentDraw.nums.length >= 7) ? currentDraw.nums.slice(0, 6) : currentDraw.nums;
+                    
+                    let hitNums = intersect(targets, checkNums);
+                    let hitCount = hitNums.length;
+
+                    let totalC2 = calculateCombination(targets.length, 2);
+                    let totalC3 = calculateCombination(targets.length, 3);
+
+                    let winC2 = calculateCombination(hitCount, 2);
+                    let winC3 = calculateCombination(hitCount, 3);
+
+                    let rawCost = totalC2 * COST_BASE_2S * mult2S + totalC3 * COST_BASE_3S * mult3S;
+                    let netCost = rawCost * (1 - REBATE_RATE);
+                    let winAmount = winC2 * MULTIPLIER_2S * mult2S + winC3 * MULTIPLIER_3S * mult3S;
+
+                    stats.bets += (totalC2 + totalC3);
+                    stats.cost += netCost;
+                    
+                    if (winAmount > 0) {
+                        stats.win += winAmount;
+                        stats.hits += (winC2 + winC3);
+                        hitCounts.c2 += winC2;
+                        hitCounts.c3 += winC3;
+                    }
+
+                    cumulativePnL += (winAmount - netCost);
+
+                    chartLabels.push(currentDraw.date);
+                    chartData.push(cumulativePnL);
+
+                    dailyView.push({
+                        date: currentDraw.date,
+                        day: currentDraw.day,
+                        nums: currentDraw.nums,
+                        targets: targets,
+                        hitNums: hitNums,
+                        source: condition,
+                        c2: totalC2, c3: totalC3,
+                        w2: winC2, w3: winC3,
+                        netCost: netCost, winAmount: winAmount,
+                        isHit: winAmount > 0
+                    });
+                }
+            }
+        }
+
+        // Render Chart
         if (pnlChartInstance) pnlChartInstance.destroy();
         const ctx = document.getElementById('pnlChart').getContext('2d');
         const isDark = document.body.getAttribute('data-theme') === 'dark';
@@ -1188,11 +381,11 @@
                 datasets: [{
                     label: '累積淨損益',
                     data: chartData,
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+                    borderColor: '#9333ea',
+                    backgroundColor: 'rgba(147, 51, 234, 0.1)',
                     borderWidth: 2,
-                    pointRadius: 0,
-                    pointHoverRadius: 4,
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
                     fill: true,
                     tension: 0.2
                 }]
@@ -1208,270 +401,102 @@
             }
         });
 
-        document.getElementById('predictionArea').innerHTML = tracking.length > 0 ? tracking.slice(0,3).map(t => {
-            let scoreClass = t.score === 100 ? 'score-perfect' : (t.score >= 80 ? 'score-high' : '');
-            let targetDisplay = t.target.map(n => `${fNum(n)}(${getOmit(n, parsedData.length-1)}期未開)`);
-            return `
-            <div class="pred-card">
-                <div class="score-tag ${scoreClass}">${t.score.toFixed(1)}% 歷史勝率</div>
-                <h3>${t.type}</h3>
-                <div class="pred-info">開獎日: ${parsedData[parsedData.length-1].date} | 指標: ${t.triggerNum}</div>
-                <span class="nums-highlight">${targetDisplay.join(', ')}</span>
-            </div>`
-        }).join('') : '<div style="padding:20px; color:var(--text-muted); text-align:center; background: var(--card); border-radius: 12px;">無符合篩選條件之指標</div>';
+        // Render Prediction (針對全資料最新的一期算未來目標)
+        if (processedData.length > 0) {
+            let latestCondition = getTargetsFromData(processedData, processedData.length - 1);
+            if (latestCondition) {
+                let s = latestCondition;
+                let targetDisplay = s.targets.map(fNum).join(' , ');
+                let nextPlayText = "下次開獎為週四或週五時即可下注";
 
-        let latestIndex = parsedData.length - 1;
-        if (latestIndex >= 0) {
-            let latestPatterns = algoMode === 'auto_weekday' ? getAutoWeekdayPattern(parsedData, latestIndex) : getSmartPatterns(parsedData[latestIndex].nums, latestIndex);
-            
-            let initialSeen = new Set();
-            latestPatterns.forEach(p => p.target.forEach(n => initialSeen.add(n)));
-            let allowedNumbers = initialSeen;
-            
-            if (filter8BallsMode !== 'none' && initialSeen.size > maxAllowedBalls) {
-                let sortedNums = Array.from(initialSeen).sort((a, b) => {
-                    if (filter8BallsMode === 'removeCold') return getOmit(a, latestIndex) - getOmit(b, latestIndex) || a - b;
-                    if (filter8BallsMode === 'removeHot') return getOmit(b, latestIndex) - getOmit(a, latestIndex) || a - b;
-                    if (filter8BallsMode === 'removeLeastFrequent') return getRecentCount(b, latestIndex) - getRecentCount(a, latestIndex) || a - b;
-                    if (filter8BallsMode === 'removeMostFrequent') return getRecentCount(a, latestIndex) - getRecentCount(b, latestIndex) || a - b;
-                    if (filter8BallsMode === 'smartRemove') {
-                        return (getRecentCount(b, latestIndex) * 5 - getOmit(b, latestIndex)) - (getRecentCount(a, latestIndex) * 5 - getOmit(a, latestIndex)) || a - b;
-                    }
-                });
-                allowedNumbers = new Set(sortedNums.slice(0, maxAllowedBalls));
-            }
-
-            let seenNumbers = new Set();
-            let pillars = [];
-
-            latestPatterns.forEach(lp => {
-                let uniqueNums = lp.target.filter(n => !seenNumbers.has(n) && allowedNumbers.has(n));
-                uniqueNums.forEach(n => seenNumbers.add(n));
-                if (uniqueNums.length > 0) {
-                    pillars.push({ title: `位置: ${lp.pos}`, nums: uniqueNums });
-                }
-            });
-
-            let pillarGridHtml = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 12px;">`;
-            pillars.forEach((p, idx) => {
-                let ballTags = p.nums.map(n => `<span class="pillar-tag">${fNum(n)}</span>`).join('');
-                pillarGridHtml += `
-                <div style="border: 1px solid var(--border); padding: 10px; border-radius: var(--radius-sm); background: var(--bg); text-align: center;">
-                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--accent); margin-bottom: 2px;">第 ${idx + 1} 柱</div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.title}</div>
-                    <div>${ballTags}</div>
+                document.getElementById('predictionArea').innerHTML = `
+                <div class="pred-card">
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">觸發版路來源：</div>
+                    <div style="font-size: 0.8rem; line-height: 1.6; color: var(--text-main); margin-bottom: 12px; background: var(--bg); padding: 10px; border-radius: 6px; border: 1px dashed var(--border);">
+                        週一 (${s.lastMon.date}) 第3球為 ${fNum(s.lastMon.nums[2])} ➔ <span style="color:var(--accent);">+2 = ${fNum(wrapNum(s.lastMon.nums[2]+2, maxNum))}</span><br>
+                        週日 (${s.lastSun.date}) 第1球為 ${fNum(s.lastSun.nums[0])} ➔ <span style="color:var(--accent);">+0 = ${fNum(wrapNum(s.lastSun.nums[0]+0, maxNum))}</span><br>
+                        週三 (${s.lastWed.date}) 第5球為 ${fNum(s.lastWed.nums[4])} ➔ <span style="color:var(--accent);">-4 = ${fNum(wrapNum(s.lastWed.nums[4]-4, maxNum))}</span>
+                    </div>
+                    <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">${nextPlayText}</div>
+                    <span class="nums-highlight">${targetDisplay}</span>
                 </div>`;
-            });
-            pillarGridHtml += `</div>`;
-
-            let currentPairs;
-            if (isCombo) {
-                let totalUniqueCount = seenNumbers.size;
-                const nCr = (n, r) => (n < r) ? 0 : (r === 2 ? (n*(n-1))/2 : (r === 3 ? (n*(n-1)*(n-2))/6 : (r === 4 ? (n*(n-1)*(n-2)*(n-3))/24 : (n*(n-1)*(n-2)*(n-3)*(n-4))/120)));
-                currentPairs = {
-                    c2: use2S ? nCr(totalUniqueCount, 2) : 0,
-                    c3: use3S ? nCr(totalUniqueCount, 3) : 0,
-                    c4: use4S ? nCr(totalUniqueCount, 4) : 0,
-                    c5: use5S ? nCr(totalUniqueCount, 5) : 0
-                };
             } else {
-                let fullPairs = calcPillarCombinations(pillars.map(p => p.nums));
-                currentPairs = {
-                    c2: use2S ? fullPairs.c2 : 0,
-                    c3: use3S ? fullPairs.c3 : 0,
-                    c4: use4S ? fullPairs.c4 : 0,
-                    c5: use5S ? fullPairs.c5 : 0
-                };
+                document.getElementById('predictionArea').innerHTML = `<div style="padding:20px; color:var(--text-muted); text-align:center; background: var(--card); border-radius: 12px;">歷史資料不足以形成完整版路條件</div>`;
             }
-
-            pillarGridHtml += `
-            <div style="font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 12px; display: flex; justify-content: space-between; font-weight: 600; color: var(--text-main); flex-wrap: wrap; gap: 8px;">
-                <span>2星: <span style="color:var(--accent);">${currentPairs.c2}</span> 碰</span>
-                <span>3星: <span style="color:var(--success);">${currentPairs.c3}</span> 碰</span>
-                <span>4星: <span style="color:var(--warning);">${currentPairs.c4}</span> 碰</span>
-                <span>5星: <span style="color:var(--purple);">${currentPairs.c5}</span> 碰</span>
-            </div>`;
-            document.getElementById('pillarArea').innerHTML = pillars.length > 0 ? pillarGridHtml : '<div style="color:var(--text-muted); text-align:center; font-size:0.85rem;">暫無符合篩選之落球數據</div>';
         }
 
-        let reversedData = dailyView.slice().reverse();
-        let chunksHtml = [];
-        let currentWeek = null;
-        let currentMonth = null;
-        let isFirstMonth = true;
-        let weekStats = { cost: 0, win: 0, bets: 0, hits: 0 };
-        let currentWeekDaysHtml = [];
+        // Render List
+        let listHtml = dailyView.slice().reverse().map(d => {
+            let dayClass = d.day === 4 || d.day === 5 ? 'day-target' : '';
+            let s = d.source;
+            let actualNumsHtml = d.nums.map(n => {
+                if (d.hitNums.includes(n)) return `<span class="hit-badge">${fNum(n)}</span>`;
+                return `<span style="padding: 0 2px;">${fNum(n)}</span>`;
+            }).join(' ');
 
-        reversedData.forEach(d => {
-            let week = getWeekRange(d.date);
-            let month = getMonthString(d.date);
-            
-            if (month !== currentMonth) {
-                if (currentWeek) {
-                    chunksHtml.push(renderWeekSummary(currentWeek, weekStats) + currentWeekDaysHtml.join(''));
-                    currentWeek = null;
-                    weekStats = { cost: 0, win: 0, bets: 0, hits: 0 };
-                    currentWeekDaysHtml = [];
-                }
-                if (currentMonth) chunksHtml.push(`</div></div>`); 
-                
-                let displayStyle = isFirstMonth ? 'block' : 'none';
-                let icon = isFirstMonth ? '－' : '＋';
-                let monthId = `month-${month}`;
-                
-                chunksHtml.push(`
-                <div class="month-group">
-                    <div class="month-header" onclick="toggleMonth('${monthId}')">
-                        <span>月份紀錄：${month}</span>
-                        <span id="icon-${monthId}" style="color: var(--text-muted); font-size: 1.2rem; font-weight: 300;">${icon}</span>
+            let detailBox = '';
+            if (d.isHit) {
+                detailBox = `
+                <div class="hit-detail">
+                    <div class="hit-type" style="color: var(--success);">版路成功命中！</div>
+                    <div style="font-size: 0.85rem; color: var(--text-main); line-height: 1.6;">
+                        <b>下注球號：</b> ${d.targets.map(fNum).join(', ')}<br>
+                        <b>總下注數：</b> 2星(${d.c2}碰) 3星(${d.c3}碰)<br>
+                        <b>命中碰數：</b> <span style="color:var(--accent); font-weight:700;">2星(${d.w2})</span> <span style="color:var(--success); font-weight:700;">3星(${d.w3})</span><br>
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--success);">
+                            <span><b>總成本：</b>${d.netCost.toFixed(1)} 元 ｜ <b>中獎獎金：</b><span style="color:var(--success);font-weight:700;">${d.winAmount.toFixed(1)}</span> 元</span>
+                        </div>
                     </div>
-                    <div class="month-content" id="${monthId}" style="display: ${displayStyle};">
-                `);
-                currentMonth = month;
-                isFirstMonth = false;
-            }
-
-            if (week !== currentWeek) {
-                if (currentWeek) chunksHtml.push(renderWeekSummary(currentWeek, weekStats) + currentWeekDaysHtml.join(''));
-                currentWeek = week;
-                weekStats = { cost: 0, win: 0, bets: 0, hits: 0 };
-                currentWeekDaysHtml = [];
-            }
-
-            weekStats.cost += d.pnl.cost;
-            weekStats.win += d.pnl.win;
-            weekStats.bets += d.pnl.bets;
-            weekStats.hits += d.pnl.hits;
-            
-            totalStats.cost += d.pnl.cost;
-            totalStats.win += d.pnl.win;
-
-            let eventsHtml = '';
-            if (d.events.length === 0) {
-                eventsHtml = `<div style="padding: 12px; color: var(--text-muted); font-size: 0.85rem; text-align: center;">本期無觸發訊號</div>`;
+                </div>`;
             } else {
-                eventsHtml = d.events.map(e => {
-                    let pillarDetailsHtml = "";
-                    if (e.pillars && e.pillars.length > 0) {
-                        pillarDetailsHtml = `<div style="margin: 8px 0; font-size: 0.85rem; color: var(--text-main); line-height: 1.8;"><b>下注號碼：</b><br>`;
-                        e.pillars.forEach((p, pIdx) => {
-                            let pStr = p.map(n => {
-                                let validCheckNums = (maxNum === 49 && e.nextNums.length >= 7) ? e.nextNums.slice(0, 6) : e.nextNums;
-                                if (validCheckNums && validCheckNums.includes(n)) {
-                                    return `<span class="hit-badge">${fNum(n)}</span>`;
-                                } else {
-                                    return `<span style="padding: 0 2px;">${fNum(n)}</span>`;
-                                }
-                            }).join(' ');
-                            pillarDetailsHtml += `<span class="pillar-row-bg">柱${pIdx+1}: ${pStr}</span>`;
-                        });
-                        pillarDetailsHtml += `</div>`;
-                    }
-
-                    if (e.type === 'hit') {
-                        let cardClass = "";
-                        let typeColor = "var(--success)";
-                        let hitTitle = "組合獲利中獎！";
-                        
-                        if (e.winPairs.c5 > 0) {
-                            cardClass = "hit-card-bg-5"; 
-                            typeColor = "var(--pink)";
-                            hitTitle = "【五星】";
-                        } else if (e.winPairs.c4 > 0) {
-                            cardClass = "hit-card-bg-4"; 
-                            typeColor = "var(--purple)";
-                            hitTitle = "【四星】";
-                        } else if (e.winPairs.c3 > 0) {
-                            cardClass = "hit-card-bg-3"; 
-                            typeColor = "var(--warning)";
-                            hitTitle = "【三星】";
-                        } else if (e.winPairs.c2 > 0) {
-                            cardClass = "hit-card-bg-2"; 
-                            typeColor = "var(--accent)";
-                            hitTitle = "【二星】";
-                        }
-
-                        return `
-                        <div class="hit-detail hit-card-bg ${cardClass}">
-                            <div class="hit-type" style="color: ${typeColor};">${hitTitle}</div>
-                            <div class="hit-nums">
-                                <b>碰數：</b>2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰) 5星(${e.totalPairs.c5}碰)<br>
-                                ${pillarDetailsHtml}
-                                <b>命中碰數：</b>
-                                <span style="color:var(--accent); font-weight:700;">2星(${e.winPairs.c2})</span> 
-                                <span style="color:var(--success); font-weight:700;">3星(${e.winPairs.c3})</span> 
-                                <span style="color:var(--warning); font-weight:700;">4星(${e.winPairs.c4})</span>
-                                <span style="color:var(--purple); font-weight:700;">5星(${e.winPairs.c5})</span><br>
-                                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                                    <span style="color:var(--text-main); font-size:0.9rem;"><b>總成本：</b>${e.netCost.toFixed(1)} 元 ｜ <b>中獎獎金：</b><span style="color:var(--success);font-weight:700;">${e.winAmount.toFixed(1)}</span> 元</span>
-                                </div>
-                            </div>
-                        </div>`;
-                    } else if (e.type === 'miss') {
-                        return `
-                        <div class="miss-detail">
-                            <div class="hit-type" style="color:var(--text-muted);">當期未命中</div>
-                            <div class="miss-nums">
-                                <b>碰數：</b>2星(${e.totalPairs.c2}碰) 3星(${e.totalPairs.c3}碰) 4星(${e.totalPairs.c4}碰) 5星(${e.totalPairs.c5}碰)<br>
-                                ${pillarDetailsHtml}
-                                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                                    <span style="color:var(--text-muted); font-size:0.9rem;"><b>總成本：</b>${e.netCost.toFixed(1)} 元 ｜ <b>中獎獎金：</b>0.0 元</span>
-                                </div>
-                            </div>
-                        </div>`;
-                    }
-                }).join('');
+                detailBox = `
+                <div class="miss-detail">
+                    <div class="hit-type" style="color: var(--text-muted);">當期未命中</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+                        <b>下注球號：</b> ${d.targets.map(fNum).join(', ')}<br>
+                        <b>總下注數：</b> 2星(${d.c2}碰) 3星(${d.c3}碰)<br>
+                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+                            <span><b>總成本：</b>${d.netCost.toFixed(1)} 元 ｜ <b>中獎獎金：</b>0.0 元</span>
+                        </div>
+                    </div>
+                </div>`;
             }
 
-            currentWeekDaysHtml.push(`
+            return `
             <div class="result-item">
                 <div class="res-header">
-                    <span class="res-date">開獎日: ${d.date}</span>
-                    <span class="res-actual">${d.nums.map(fNum).join(' ')}</span>
+                    <div class="res-date">
+                        <span>開獎日: ${d.date}</span>
+                        <span class="day-badge ${dayClass}">週${DAY_NAMES[d.day]}</span>
+                    </div>
+                    <div class="res-actual">${actualNumsHtml}</div>
                 </div>
-                ${eventsHtml}
-            </div>`);
-        });
+                <div class="source-box">
+                    <div class="source-row"><span>週一 (${s.lastMon.date}) 第3球: <span class="source-hl">${fNum(s.lastMon.nums[2])}</span></span> <span>+2 = <b>${fNum(wrapNum(s.lastMon.nums[2]+2, maxNum))}</b></span></div>
+                    <div class="source-row"><span>週日 (${s.lastSun.date}) 第1球: <span class="source-hl">${fNum(s.lastSun.nums[0])}</span></span> <span>+0 = <b>${fNum(wrapNum(s.lastSun.nums[0]+0, maxNum))}</b></span></div>
+                    <div class="source-row"><span>週三 (${s.lastWed.date}) 第5球: <span class="source-hl">${fNum(s.lastWed.nums[4])}</span></span> <span>-4 = <b>${fNum(wrapNum(s.lastWed.nums[4]-4, maxNum))}</b></span></div>
+                </div>
+                ${detailBox}
+            </div>`;
+        }).join('');
 
-        if (currentWeek) chunksHtml.push(renderWeekSummary(currentWeek, weekStats) + currentWeekDaysHtml.join(''));
-        if (currentMonth) chunksHtml.push(`</div></div>`); 
-        
-        document.getElementById('resultList').innerHTML = chunksHtml.join('') || '<div style="text-align:center;padding:20px; color:var(--text-muted);">尚無紀錄</div>';
+        document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px; color:var(--text-muted);">無符合條件的下注紀錄</div>';
 
-        let totalNet = totalStats.win - totalStats.cost;
-        let hitRate = stats.total > 0 ? (stats.hit / stats.total * 100).toFixed(1) : 0;
+        // Summary View
+        let net = stats.win - stats.cost;
+        let totalPlays = dailyView.length;
+        let winPlays = dailyView.filter(d => d.isHit).length;
+        let winRate = totalPlays > 0 ? ((winPlays / totalPlays) * 100).toFixed(1) : 0;
+
         document.getElementById('summaryArea').style.display = 'block';
         document.getElementById('summaryArea').innerHTML = `
-            <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; color: var(--text-main);">綜合回測總覽</div>
-            <span style="color: var(--text-main);">總計模擬交易 <b>${stats.total}</b> 期，成功獲利 <b>${stats.hit}</b> 期，勝率 <b>${hitRate}%</b><br>
-            歷史共中：二星 <b>${totalWinCount.c2}</b> 次 ｜ 三星 <b>${totalWinCount.c3}</b> 次 ｜ 四星 <b>${totalWinCount.c4}</b> 次 ｜ 五星 <b>${totalWinCount.c5}</b> 次</span><br>
-            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 1rem;">
-                <span style="color: var(--text-main);"><b>當前配置累積總淨利：<span style="color: ${totalNet >= 0 ? 'var(--success)' : 'var(--danger)'}">${totalNet >= 0 ? '+' : ''}${totalNet.toFixed(1)}</span></b></span>
+            <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; color: var(--text-main);">專屬版路回測總覽</div>
+            <span style="color: var(--text-main);">總計出手下注 <b>${totalPlays}</b> 期，其中獲利 <b>${winPlays}</b> 期 (期數勝率 <b>${winRate}%</b>)<br>
+            總計命中：二星 <b>${hitCounts.c2}</b> 碰 ｜ 三星 <b>${hitCounts.c3}</b> 碰<br>
+            累積總成本：${stats.cost.toFixed(1)} 元 ｜ 累積總派彩：${stats.win.toFixed(1)} 元</span>
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 1.1rem;">
+                <span style="color: var(--text-main);"><b>總淨利結算：<span style="color: ${net >= 0 ? 'var(--success)' : 'var(--danger)'}">${net >= 0 ? '+' : ''}${net.toFixed(1)}</span></b></span>
             </div>`;
-    }
-
-    function renderWeekSummary(weekStr, stats) {
-        let net = stats.win - stats.cost;
-        let netClass = net >= 0 ? 'pnl-positive' : 'pnl-negative';
-        let netSign = net >= 0 ? '+' : '';
-        return `
-        <div class="week-summary">
-            <div style="color: var(--primary-light); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; font-weight: 700; font-size: 0.95rem;">
-                結算週次：${weekStr}
-            </div>
-            <div class="pnl-row">
-                <span>下注總碰數: ${stats.bets} 碰</span>
-                <span>總計中獎: ${stats.hits} 碰</span>
-            </div>
-            <div class="pnl-row">
-                <span>總成本 (扣退水): ${stats.cost.toFixed(1)}</span>
-                <span>總派彩獎金: ${stats.win.toFixed(1)}</span>
-            </div>
-            <div class="pnl-row" style="margin-top: 12px; font-size: 1.05rem; border-top: 1px solid var(--border); padding-top: 12px;">
-                <span>週淨損益:</span>
-                <span class="${netClass}">${netSign}${net.toFixed(1)}</span>
-            </div>
-        </div>`;
     }
 
     window.onload = () => {
