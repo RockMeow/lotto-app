@@ -1,6 +1,6 @@
 {
-  "name": "定位拖牌",
-  "short_name": "定位拖牌",
+  "name": "智慧分析",
+  "short_name": "智慧分析",
   "start_url": "./index2.html",
   "display": "standalone",
   "background_color": "#f1f5f9",
