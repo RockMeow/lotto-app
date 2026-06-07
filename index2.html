@@ -14,7 +14,7 @@
     <meta http-equiv="Cache-Control" content="max-age=600">
     <meta charset="UTF-8">
     <meta name="description" content="">
-    <title>加州天天樂 開獎單</title>
+    <title>開獎單</title>
     
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -391,6 +391,8 @@
             cursor: pointer;
             border: none;
             transition: all 0.2s;
+            white-space: nowrap; /* 防止手機擠壓 */
+            flex-shrink: 0;
         }
 
         .btn-clear {
@@ -455,8 +457,8 @@
             font-weight: 900;
             letter-spacing: 0.23em;
             margin: 0;
-            white-space: nowrap; /* 防止標題被擠壓換行 */
-            flex-shrink: 0;      /* 防止標題縮小 */
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .btn-print {
@@ -474,6 +476,8 @@
             cursor: pointer;
             border: none;
             text-decoration: none;
+            white-space: nowrap; /* 防止手機擠壓 */
+            flex-shrink: 0;
         }
 
         .btn-print:hover {
@@ -499,6 +503,8 @@
             transition: all 0.2s;
             cursor: pointer;
             border: 1px solid #e2e8f0;
+            white-space: nowrap; /* 防止手機擠壓 */
+            flex-shrink: 0;
         }
 
         .btn-info:hover {
@@ -639,6 +645,7 @@
             transition: all 0.2s;
             margin-top: 5px;
             box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+            white-space: nowrap;
         }
         .btn-analyze:hover { background: #4338ca; transform: translateY(-1px); }
 
@@ -1336,8 +1343,8 @@
                     const item = document.createElement('div');
                     item.className = 'pattern-result-item';
                     
-                    // 判斷是否為預測中版路 (最新的觸發號碼還沒開出結果)
-                    const isPredicting = pat.allTriggerIndices.some(i => i + pat.offset >= pat.dbLength);
+                    // 修正邏輯：必須確切在「即將開獎的這一期 (idx + offset === dbLength)」才會顯示為預測中紅色警告
+                    const isPredicting = pat.allTriggerIndices.some(i => i + pat.offset === pat.dbLength);
                     if (isPredicting) {
                         item.classList.add('pattern-predicting');
                     }
@@ -1392,8 +1399,8 @@
                 if (tr) {
                     const cell = tr.querySelector(`.num-cell[data-val-sort="${pattern.triggerVal}"]`);
                     if (cell) {
-                        // 修正盲點：如果目標期數還沒開出來 (超過或等於資料庫長度)
-                        if (idx + pattern.offset >= pattern.dbLength) {
+                        // 修正邏輯：必須確切在「即將開獎的這一期」才會顯示紅色預測
+                        if (idx + pattern.offset === pattern.dbLength) {
                             cell.classList.add('hl-pattern-predict');
                         } else {
                             cell.classList.add('hl-pattern-trigger');
