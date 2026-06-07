@@ -14,7 +14,7 @@
     <meta http-equiv="Cache-Control" content="max-age=600">
     <meta charset="UTF-8">
     <meta name="description" content="">
-    <title>加州天天樂 開獎單</title>
+    <title>開獎單</title>
     
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -784,12 +784,12 @@
         <div class="page-container " style="margin-bottom: 60px;">
             <div class="title-section" >
                 <h1 class="header-title">
-                    加州天天樂 開獎單
+                    開獎單
                 </h1>
                 
                 <div class="flex items-center gap-3 no-print" style="flex-shrink: 0;">
                     <a href="admin.html" class="btn-print" style="background-color: #10b981;">
-                        <i data-lucide="database" style="width: 16px; height: 16px;"></i> 後台管理
+                        <i data-lucide="database" style="width: 16px; height: 16px;"></i> 數據管理
                     </a>
                     <button onclick="window.print()" class="btn-print">
                         <i data-lucide="printer" style="width: 16px; height: 16px;"></i> 直接列印
@@ -827,8 +827,8 @@
                 <div>
                     <label>版路分類</label>
                     <select id="patternType">
-                        <option value="any">不定位 (全車拖牌)</option>
-                        <option value="fixed">固定位置 (順球第幾顆)</option>
+                        <option value="any">不定位</option>
+                        <option value="fixed">定位</option>
                     </select>
                 </div>
                 <div style="display: flex; gap: 12px;">
@@ -848,7 +848,7 @@
                     </div>
                 </div>
                 <button class="btn-analyze" onclick="analyzePatterns()">
-                    <i data-lucide="zap" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i> 開始深度分析
+                    <i data-lucide="zap" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i> 開始分析
                 </button>
             </div>
             <div id="patternResults">
