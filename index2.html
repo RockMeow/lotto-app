@@ -815,10 +815,12 @@
                             <option value="1">下一期</option>
                             <option value="2">下二期</option>
                             <option value="3">下三期</option>
+                            <option value="4">下四期</option>
+                            <option value="5">下五期</option>
                         </select>
                     </div>
                     <div style="flex: 1;">
-                        <label>最少觸發次數</label>
+                        <label>最少命中次數</label>
                         <input type="number" id="patternMinHits" value="5" min="2" max="50">
                     </div>
                 </div>
@@ -897,7 +899,7 @@
             document.getElementById('linesGroup').innerHTML = '';
             window.drawnLines = [];
             firstBall = null;
-            clearPatternHighlights(); // 清除版路高亮
+            clearPatternHighlights(); 
             document.querySelectorAll('.pattern-result-item').forEach(el => el.classList.remove('active'));
             updateHighlights();
         }
@@ -1173,61 +1175,64 @@
 
             setTimeout(() => {
                 if (type === 'any') {
-                    // 不定位分析: X 拖 Y
                     for (let x = 1; x <= 39; x++) {
-                        let targetCounts = {};
+                        let triggerIndices = [];
                         for (let i = 0; i < db.length - offset; i++) {
-                            if (db[i].nums.includes(x)) {
-                                db[i + offset].nums.forEach(y => {
-                                    targetCounts[y] = (targetCounts[y] || 0) + 1;
-                                });
-                            }
+                            if (db[i].nums.includes(x)) triggerIndices.push(i);
                         }
+                        if (triggerIndices.length === 0) continue;
+
+                        let targetCounts = {};
+                        let targetHitIndicesMap = {};
+                        triggerIndices.forEach(i => {
+                            db[i + offset].nums.forEach(y => {
+                                targetCounts[y] = (targetCounts[y] || 0) + 1;
+                                if (!targetHitIndicesMap[y]) targetHitIndicesMap[y] = [];
+                                targetHitIndicesMap[y].push(i + offset);
+                            });
+                        });
                         for (let y in targetCounts) {
                             if (targetCounts[y] >= minHits) {
-                                let specificTriggers = [];
-                                let specificTargets = [];
-                                for (let i = 0; i < db.length - offset; i++) {
-                                    if (db[i].nums.includes(x) && db[i + offset].nums.includes(parseInt(y))) {
-                                        specificTriggers.push(i);
-                                        specificTargets.push(i + offset);
-                                    }
-                                }
                                 currentPatterns.push({
-                                    type: 'any', triggerVal: x, targetVal: parseInt(y), hits: targetCounts[y],
-                                    offset: offset, triggerIndices: specificTriggers, targetIndices: specificTargets,
+                                    type: 'any', triggerVal: x, targetVal: parseInt(y),
+                                    triggerCount: triggerIndices.length,
+                                    hits: targetCounts[y],
+                                    offset: offset,
+                                    allTriggerIndices: triggerIndices,
+                                    targetIndices: targetHitIndicesMap[y],
                                     desc: `【全車不定位】 <span style="color: #f59e0b;">${x}</span> 拖 <span style="color: #10b981;">${y}</span>`
                                 });
                             }
                         }
                     }
                 } else if (type === 'fixed') {
-                    // 固定位置: 順球第P顆 X 拖 Y
                     for (let p = 0; p < 5; p++) {
                         for (let x = 1; x <= 39; x++) {
-                            let targetCounts = {};
+                            let triggerIndices = [];
                             for (let i = 0; i < db.length - offset; i++) {
                                 const sortedNums = [...db[i].nums].sort((a,b)=>a-b);
-                                if (sortedNums[p] === x) {
-                                    db[i + offset].nums.forEach(y => {
-                                        targetCounts[y] = (targetCounts[y] || 0) + 1;
-                                    });
-                                }
+                                if (sortedNums[p] === x) triggerIndices.push(i);
                             }
+                            if (triggerIndices.length === 0) continue;
+
+                            let targetCounts = {};
+                            let targetHitIndicesMap = {};
+                            triggerIndices.forEach(i => {
+                                db[i + offset].nums.forEach(y => {
+                                    targetCounts[y] = (targetCounts[y] || 0) + 1;
+                                    if (!targetHitIndicesMap[y]) targetHitIndicesMap[y] = [];
+                                    targetHitIndicesMap[y].push(i + offset);
+                                });
+                            });
                             for (let y in targetCounts) {
                                 if (targetCounts[y] >= minHits) {
-                                    let specificTriggers = [];
-                                    let specificTargets = [];
-                                    for (let i = 0; i < db.length - offset; i++) {
-                                        const sortedNums = [...db[i].nums].sort((a,b)=>a-b);
-                                        if (sortedNums[p] === x && db[i + offset].nums.includes(parseInt(y))) {
-                                            specificTriggers.push(i);
-                                            specificTargets.push(i + offset);
-                                        }
-                                    }
                                     currentPatterns.push({
-                                        type: 'fixed', pos: p, triggerVal: x, targetVal: parseInt(y), hits: targetCounts[y],
-                                        offset: offset, triggerIndices: specificTriggers, targetIndices: specificTargets,
+                                        type: 'fixed', pos: p, triggerVal: x, targetVal: parseInt(y),
+                                        triggerCount: triggerIndices.length,
+                                        hits: targetCounts[y],
+                                        offset: offset,
+                                        allTriggerIndices: triggerIndices,
+                                        targetIndices: targetHitIndicesMap[y],
                                         desc: `【順球第${p+1}顆】 <span style="color: #f59e0b;">${x}</span> 拖 <span style="color: #10b981;">${y}</span>`
                                     });
                                 }
@@ -1236,7 +1241,7 @@
                     }
                 }
 
-                currentPatterns.sort((a, b) => b.hits - a.hits); // 依命中次數排序
+                currentPatterns.sort((a, b) => b.hits - a.hits); 
 
                 if (currentPatterns.length === 0) {
                     resultsDiv.innerHTML = `
@@ -1259,13 +1264,18 @@
                         highlightPattern(pat);
                     };
 
-                    let offsetStr = offset === 1 ? '下一期' : `下${offset}期`;
+                    let offsetStr = `下${offset}期`;
+                    if(offset === 1) offsetStr = '下一期';
+                    else if(offset === 2) offsetStr = '下二期';
+                    else if(offset === 3) offsetStr = '下三期';
+                    else if(offset === 4) offsetStr = '下四期';
+                    else if(offset === 5) offsetStr = '下五期';
 
                     item.innerHTML = `
                         <div style="display: flex; align-items: center; justify-content: space-between;">
                             <span class="pattern-badge">${offsetStr}</span>
                             <span style="color: #f43f5e; font-weight: 900; font-size: 13px; display: flex; align-items: center; gap: 4px;">
-                                <i data-lucide="target" style="width: 14px; height: 14px;"></i> 命中 ${pat.hits} 次
+                                <i data-lucide="target" style="width: 14px; height: 14px;"></i> 觸發 ${pat.triggerCount} / 命中 ${pat.hits}
                             </span>
                         </div>
                         <div class="pattern-text">${pat.desc}</div>
@@ -1279,27 +1289,42 @@
         function clearPatternHighlights() {
             document.querySelectorAll('.hl-pattern-trigger').forEach(el => el.classList.remove('hl-pattern-trigger'));
             document.querySelectorAll('.hl-pattern-target').forEach(el => el.classList.remove('hl-pattern-target'));
+            document.getElementById('linesGroup').innerHTML = '';
+            window.drawnLines = [];
         }
 
         function highlightPattern(pattern) {
             clearPatternHighlights();
 
-            // 標記觸發號碼 (橘/黃色)
-            pattern.triggerIndices.forEach(idx => {
+            // 標記所有觸發號碼 (橘/黃色) - 包含未命中的
+            pattern.allTriggerIndices.forEach(idx => {
                 const tr = document.querySelector(`tr[data-draw-idx="${idx}"]`);
                 if (tr) {
-                    // 無論定位與否，皆以號碼的固定值 (data-val-sort) 來標記最穩定
                     const cell = tr.querySelector(`.num-cell[data-val-sort="${pattern.triggerVal}"]`);
                     if (cell) cell.classList.add('hl-pattern-trigger');
                 }
             });
 
-            // 標記拖出號碼 (綠色)
-            pattern.targetIndices.forEach(idx => {
-                const tr = document.querySelector(`tr[data-draw-idx="${idx}"]`);
-                if (tr) {
-                    const cell = tr.querySelector(`.num-cell[data-val-sort="${pattern.targetVal}"]`);
-                    if (cell) cell.classList.add('hl-pattern-target');
+            // 標記命中拖出號碼 (綠色) 並自動畫線連接
+            pattern.targetIndices.forEach(targetIdx => {
+                const targetTr = document.querySelector(`tr[data-draw-idx="${targetIdx}"]`);
+                const triggerIdx = targetIdx - pattern.offset;
+                const triggerTr = document.querySelector(`tr[data-draw-idx="${triggerIdx}"]`);
+                
+                if (targetTr) {
+                    const targetCell = targetTr.querySelector(`.num-cell[data-val-sort="${pattern.targetVal}"]`);
+                    if (targetCell) {
+                        targetCell.classList.add('hl-pattern-target');
+                        
+                        // 畫箭頭線
+                        if (triggerTr) {
+                            const triggerCell = triggerTr.querySelector(`.num-cell[data-val-sort="${pattern.triggerVal}"]`);
+                            if (triggerCell) {
+                                drawLineBetween(triggerCell, targetCell, 'rose');
+                                window.drawnLines.push({ b1: triggerCell, b2: targetCell, color: 'rose' });
+                            }
+                        }
+                    }
                 }
             });
         }
