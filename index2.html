@@ -14,7 +14,7 @@
     <meta http-equiv="Cache-Control" content="max-age=600">
     <meta charset="UTF-8">
     <meta name="description" content="">
-    <title>開獎單</title>
+    <title>加州天天樂 開獎單</title>
     
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -94,7 +94,7 @@
             body.dark-mode .num-cell.hl-4 { color: white !important; }
             body.dark-mode .num-cell.hl-5 { color: white !important; }
             
-            .hl-pattern-trigger, .hl-pattern-target { box-shadow: none !important; transform: none !important; }
+            .hl-pattern-trigger, .hl-pattern-target, .hl-pattern-predict { box-shadow: none !important; transform: none !important; animation: none !important; }
         }
 
         .global-nav {
@@ -153,7 +153,7 @@
         }
 
         .page-container::after {
-            content: "開獎單";
+            content: "加州天天樂開獎單";
             position: absolute;
             bottom: -20px;
             right: 0;
@@ -294,11 +294,29 @@
             z-index: 10;
             transform: scale(1.1);
         }
+        /* 最新期數尚未開出的預測觸發號碼 */
+        .hl-pattern-predict {
+            background: linear-gradient(135deg, #ef4444, #b91c1c) !important;
+            color: white !important;
+            box-shadow: inset 0 0 0 2px #fff, 0 0 15px rgba(239, 68, 68, 1) !important;
+            z-index: 20;
+            transform: scale(1.15);
+            animation: pulse-predict 1.5s infinite;
+        }
+        @keyframes pulse-predict {
+            0% { box-shadow: inset 0 0 0 2px #fff, 0 0 10px rgba(239, 68, 68, 0.8); }
+            50% { box-shadow: inset 0 0 0 2px #fff, 0 0 20px rgba(239, 68, 68, 1); }
+            100% { box-shadow: inset 0 0 0 2px #fff, 0 0 10px rgba(239, 68, 68, 0.8); }
+        }
+
         body.dark-mode .hl-pattern-trigger {
             box-shadow: inset 0 0 0 2px #0f172a, 0 0 10px rgba(245, 158, 11, 1) !important;
         }
         body.dark-mode .hl-pattern-target {
             box-shadow: inset 0 0 0 2px #0f172a, 0 0 10px rgba(16, 185, 129, 1) !important;
+        }
+        body.dark-mode .hl-pattern-predict {
+            box-shadow: inset 0 0 0 2px #0f172a, 0 0 15px rgba(239, 68, 68, 1) !important;
         }
 
         /* Tool Bar Styles */
@@ -766,7 +784,7 @@
         <div class="page-container " style="margin-bottom: 60px;">
             <div class="title-section" >
                 <h1 class="header-title">
-                    開獎單
+                    加州天天樂 開獎單
                 </h1>
                 
                 <div class="flex items-center gap-3 no-print" style="flex-shrink: 0;">
@@ -809,8 +827,8 @@
                 <div>
                     <label>版路分類</label>
                     <select id="patternType">
-                        <option value="any">不定位</option>
-                        <option value="fixed">定位</option>
+                        <option value="any">不定位 (全車拖牌)</option>
+                        <option value="fixed">固定位置 (順球第幾顆)</option>
                     </select>
                 </div>
                 <div style="display: flex; gap: 12px;">
@@ -830,7 +848,7 @@
                     </div>
                 </div>
                 <button class="btn-analyze" onclick="analyzePatterns()">
-                    <i data-lucide="zap" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i> 開始分析
+                    <i data-lucide="zap" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i> 開始深度分析
                 </button>
             </div>
             <div id="patternResults">
@@ -1181,27 +1199,35 @@
                 if (type === 'any') {
                     for (let x = 1; x <= 39; x++) {
                         let triggerIndices = [];
-                        for (let i = 0; i < db.length - offset; i++) {
+                        // 修正盲點：包含最新的未結算觸發期數
+                        for (let i = 0; i < db.length; i++) {
                             if (db[i].nums.includes(x)) triggerIndices.push(i);
                         }
                         if (triggerIndices.length === 0) continue;
 
                         let targetCounts = {};
                         let targetHitIndicesMap = {};
+                        let completedCount = 0;
+                        
                         triggerIndices.forEach(i => {
-                            db[i + offset].nums.forEach(y => {
-                                targetCounts[y] = (targetCounts[y] || 0) + 1;
-                                if (!targetHitIndicesMap[y]) targetHitIndicesMap[y] = [];
-                                targetHitIndicesMap[y].push(i + offset);
-                            });
+                            if (i + offset < db.length) {
+                                completedCount++;
+                                db[i + offset].nums.forEach(y => {
+                                    targetCounts[y] = (targetCounts[y] || 0) + 1;
+                                    if (!targetHitIndicesMap[y]) targetHitIndicesMap[y] = [];
+                                    targetHitIndicesMap[y].push(i + offset);
+                                });
+                            }
                         });
+                        
                         for (let y in targetCounts) {
                             if (targetCounts[y] >= minHits) {
                                 currentPatterns.push({
                                     type: 'any', triggerVal: x, targetVal: parseInt(y),
-                                    triggerCount: triggerIndices.length,
+                                    triggerCount: completedCount,
                                     hits: targetCounts[y],
                                     offset: offset,
+                                    dbLength: db.length, // 記錄資料庫長度供高亮判斷
                                     allTriggerIndices: triggerIndices,
                                     targetIndices: targetHitIndicesMap[y],
                                     desc: `【全車不定位】 <span style="color: #f59e0b;">${x}</span> 拖 <span style="color: #10b981;">${y}</span>`
@@ -1213,7 +1239,8 @@
                     for (let p = 0; p < 5; p++) {
                         for (let x = 1; x <= 39; x++) {
                             let triggerIndices = [];
-                            for (let i = 0; i < db.length - offset; i++) {
+                            // 修正盲點：包含最新的未結算觸發期數
+                            for (let i = 0; i < db.length; i++) {
                                 const sortedNums = [...db[i].nums].sort((a,b)=>a-b);
                                 if (sortedNums[p] === x) triggerIndices.push(i);
                             }
@@ -1221,20 +1248,27 @@
 
                             let targetCounts = {};
                             let targetHitIndicesMap = {};
+                            let completedCount = 0;
+                            
                             triggerIndices.forEach(i => {
-                                db[i + offset].nums.forEach(y => {
-                                    targetCounts[y] = (targetCounts[y] || 0) + 1;
-                                    if (!targetHitIndicesMap[y]) targetHitIndicesMap[y] = [];
-                                    targetHitIndicesMap[y].push(i + offset);
-                                });
+                                if (i + offset < db.length) {
+                                    completedCount++;
+                                    db[i + offset].nums.forEach(y => {
+                                        targetCounts[y] = (targetCounts[y] || 0) + 1;
+                                        if (!targetHitIndicesMap[y]) targetHitIndicesMap[y] = [];
+                                        targetHitIndicesMap[y].push(i + offset);
+                                    });
+                                }
                             });
+                            
                             for (let y in targetCounts) {
                                 if (targetCounts[y] >= minHits) {
                                     currentPatterns.push({
                                         type: 'fixed', pos: p, triggerVal: x, targetVal: parseInt(y),
-                                        triggerCount: triggerIndices.length,
+                                        triggerCount: completedCount,
                                         hits: targetCounts[y],
                                         offset: offset,
+                                        dbLength: db.length, // 記錄資料庫長度供高亮判斷
                                         allTriggerIndices: triggerIndices,
                                         targetIndices: targetHitIndicesMap[y],
                                         desc: `【順球第${p+1}顆】 <span style="color: #f59e0b;">${x}</span> 拖 <span style="color: #10b981;">${y}</span>`
@@ -1308,6 +1342,7 @@
         function clearPatternHighlights() {
             document.querySelectorAll('.hl-pattern-trigger').forEach(el => el.classList.remove('hl-pattern-trigger'));
             document.querySelectorAll('.hl-pattern-target').forEach(el => el.classList.remove('hl-pattern-target'));
+            document.querySelectorAll('.hl-pattern-predict').forEach(el => el.classList.remove('hl-pattern-predict'));
             document.getElementById('linesGroup').innerHTML = '';
             window.drawnLines = [];
         }
@@ -1315,12 +1350,21 @@
         function highlightPattern(pattern) {
             clearPatternHighlights();
 
-            // 標記所有觸發號碼 (橘/黃色) - 包含未命中的
+            // 標記所有觸發號碼 (包含歷史與最新的未結算號碼)
             pattern.allTriggerIndices.forEach(idx => {
                 const tr = document.querySelector(`tr[data-draw-idx="${idx}"]`);
                 if (tr) {
                     const cell = tr.querySelector(`.num-cell[data-val-sort="${pattern.triggerVal}"]`);
-                    if (cell) cell.classList.add('hl-pattern-trigger');
+                    if (cell) {
+                        // 如果該觸發號碼的「目標期數」還沒開出來 (超過或等於目前資料庫最新一期)
+                        if (idx + pattern.offset >= pattern.dbLength) {
+                            // 標記為預測中的定位閃爍紅燈！
+                            cell.classList.add('hl-pattern-predict');
+                        } else {
+                            // 歷史觸發標記橘燈
+                            cell.classList.add('hl-pattern-trigger');
+                        }
+                    }
                 }
             });
 
