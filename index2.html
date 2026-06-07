@@ -14,7 +14,7 @@
     <meta http-equiv="Cache-Control" content="max-age=600">
     <meta charset="UTF-8">
     <meta name="description" content="">
-    <title>開獎單</title>
+    <title>加州天天樂 開獎單</title>
     
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -680,6 +680,22 @@
             margin-top: 8px;
         }
         
+        /* 預測中版路的工具列高亮樣式 */
+        .pattern-result-item.pattern-predicting {
+            border-color: #ef4444;
+            background: #fff1f2;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
+        }
+        .pattern-result-item.pattern-predicting .pattern-badge {
+            background: #ffe4e6;
+            color: #e11d48;
+        }
+        .pattern-result-item.pattern-predicting.active {
+            border-color: #e11d48;
+            background: #ffe4e6;
+            box-shadow: 0 4px 15px rgba(225, 29, 72, 0.3);
+        }
+
         body.dark-mode #patternPanel { background: #0f172a; border-left: 1px solid #334155; }
         body.dark-mode .pattern-controls label { color: #cbd5e1; }
         body.dark-mode .pattern-controls select, body.dark-mode .pattern-controls input { background: #1e293b; border-color: #475569; color: white; }
@@ -690,6 +706,20 @@
         body.dark-mode .pattern-result-item.active { border-color: #818cf8; background: #2e3856; }
         body.dark-mode .pattern-badge { background: #312e81; color: #a5b4fc; }
         body.dark-mode .pattern-text { color: #f1f5f9; }
+
+        body.dark-mode .pattern-result-item.pattern-predicting {
+            border-color: #b91c1c;
+            background: #450a0a;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+        }
+        body.dark-mode .pattern-result-item.pattern-predicting .pattern-badge {
+            background: #7f1d1d;
+            color: #fecdd3;
+        }
+        body.dark-mode .pattern-result-item.pattern-predicting.active {
+            border-color: #ef4444;
+            background: #7f1d1d;
+        }
 
     </style>
 </head>
@@ -1199,7 +1229,7 @@
                 if (type === 'any') {
                     for (let x = 1; x <= 39; x++) {
                         let triggerIndices = [];
-                        // 修正盲點：包含最新的未結算觸發期數
+                        // 包含最新的未結算觸發期數
                         for (let i = 0; i < db.length; i++) {
                             if (db[i].nums.includes(x)) triggerIndices.push(i);
                         }
@@ -1239,7 +1269,7 @@
                     for (let p = 0; p < 5; p++) {
                         for (let x = 1; x <= 39; x++) {
                             let triggerIndices = [];
-                            // 修正盲點：包含最新的未結算觸發期數
+                            // 包含最新的未結算觸發期數
                             for (let i = 0; i < db.length; i++) {
                                 const sortedNums = [...db[i].nums].sort((a,b)=>a-b);
                                 if (sortedNums[p] === x) triggerIndices.push(i);
@@ -1305,6 +1335,13 @@
                 currentPatterns.forEach((pat, idx) => {
                     const item = document.createElement('div');
                     item.className = 'pattern-result-item';
+                    
+                    // 判斷是否為預測中版路 (最新的觸發號碼還沒開出結果)
+                    const isPredicting = pat.allTriggerIndices.some(i => i + pat.offset >= pat.dbLength);
+                    if (isPredicting) {
+                        item.classList.add('pattern-predicting');
+                    }
+
                     item.onclick = () => {
                         document.querySelectorAll('.pattern-result-item').forEach(el => el.classList.remove('active'));
                         item.classList.add('active');
@@ -1350,25 +1387,21 @@
         function highlightPattern(pattern) {
             clearPatternHighlights();
 
-            // 標記所有觸發號碼 (包含歷史與最新的未結算號碼)
             pattern.allTriggerIndices.forEach(idx => {
                 const tr = document.querySelector(`tr[data-draw-idx="${idx}"]`);
                 if (tr) {
                     const cell = tr.querySelector(`.num-cell[data-val-sort="${pattern.triggerVal}"]`);
                     if (cell) {
-                        // 如果該觸發號碼的「目標期數」還沒開出來 (超過或等於目前資料庫最新一期)
+                        // 修正盲點：如果目標期數還沒開出來 (超過或等於資料庫長度)
                         if (idx + pattern.offset >= pattern.dbLength) {
-                            // 標記為預測中的定位閃爍紅燈！
                             cell.classList.add('hl-pattern-predict');
                         } else {
-                            // 歷史觸發標記橘燈
                             cell.classList.add('hl-pattern-trigger');
                         }
                     }
                 }
             });
 
-            // 標記命中拖出號碼 (綠色) 並自動畫線連接
             pattern.targetIndices.forEach(targetIdx => {
                 const targetTr = document.querySelector(`tr[data-draw-idx="${targetIdx}"]`);
                 const triggerIdx = targetIdx - pattern.offset;
@@ -1379,7 +1412,6 @@
                     if (targetCell) {
                         targetCell.classList.add('hl-pattern-target');
                         
-                        // 畫箭頭線
                         if (triggerTr) {
                             const triggerCell = triggerTr.querySelector(`.num-cell[data-val-sort="${pattern.triggerVal}"]`);
                             if (triggerCell) {
