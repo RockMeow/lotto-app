@@ -87,29 +87,14 @@
             }
 
             /* Ensure highlights print correctly even in dark mode */
-            body.dark-mode .num-cell.hl-0 {
-                color: white !important;
-            }
-
-            body.dark-mode .num-cell.hl-1 {
-                color: white !important;
-            }
-
-            body.dark-mode .num-cell.hl-2 {
-                color: #92400e !important;
-            }
-
-            body.dark-mode .num-cell.hl-3 {
-                color: white !important;
-            }
-
-            body.dark-mode .num-cell.hl-4 {
-                color: white !important;
-            }
-
-            body.dark-mode .num-cell.hl-5 {
-                color: white !important;
-            }
+            body.dark-mode .num-cell.hl-0 { color: white !important; }
+            body.dark-mode .num-cell.hl-1 { color: white !important; }
+            body.dark-mode .num-cell.hl-2 { color: #92400e !important; }
+            body.dark-mode .num-cell.hl-3 { color: white !important; }
+            body.dark-mode .num-cell.hl-4 { color: white !important; }
+            body.dark-mode .num-cell.hl-5 { color: white !important; }
+            
+            .hl-pattern-trigger, .hl-pattern-target { box-shadow: none !important; transform: none !important; }
         }
 
         .global-nav {
@@ -190,30 +175,11 @@
         }
 
         /* Marker Colors & Glow Effects */
-        .marker-indigo {
-            stroke: #6366f1;
-            filter: drop-shadow(0 0 3px rgba(99, 102, 241, 0.4));
-        }
-
-        .marker-rose {
-            stroke: #f43f5e;
-            filter: drop-shadow(0 0 3px rgba(244, 63, 94, 0.4));
-        }
-
-        .marker-emerald {
-            stroke: #10b981;
-            filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.4));
-        }
-
-        .marker-amber {
-            stroke: #f59e0b;
-            filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.4));
-        }
-
-        .marker-sky {
-            stroke: #0ea5e9;
-            filter: drop-shadow(0 0 3px rgba(14, 165, 233, 0.4));
-        }
+        .marker-indigo { stroke: #6366f1; filter: drop-shadow(0 0 3px rgba(99, 102, 241, 0.4)); }
+        .marker-rose { stroke: #f43f5e; filter: drop-shadow(0 0 3px rgba(244, 63, 94, 0.4)); }
+        .marker-emerald { stroke: #10b981; filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.4)); }
+        .marker-amber { stroke: #f59e0b; filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.4)); }
+        .marker-sky { stroke: #0ea5e9; filter: drop-shadow(0 0 3px rgba(14, 165, 233, 0.4)); }
 
         .grid-container {
             display: flex;
@@ -260,29 +226,12 @@
         }
 
         /* Dynamic Header Colors */
-        .header-tw539 th {
-            background-color: #f59e0b !important;
-        }
-
-        .header-lotto649 th {
-            background-color: #ef4444 !important;
-        }
-
-        .header-super_lotto th {
-            background-color: #10b981 !important;
-        }
-
-        .header-mark_six th {
-            background-color: #6366f1 !important;
-        }
-
-        .header-us539 th {
-            background-color: #0ea5e9 !important;
-        }
-
-        .header-default th {
-            background-color: #fca510 !important;
-        }
+        .header-tw539 th { background-color: #f59e0b !important; }
+        .header-lotto649 th { background-color: #ef4444 !important; }
+        .header-super_lotto th { background-color: #10b981 !important; }
+        .header-mark_six th { background-color: #6366f1 !important; }
+        .header-us539 th { background-color: #0ea5e9 !important; }
+        .header-default th { background-color: #fca510 !important; }
 
         .month-cell {
             font-size: 18px;
@@ -317,40 +266,39 @@
         }
 
         /* --- Interactive Marking Styles --- */
-        .num-cell.hl-0 {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
-            color: white !important;
-        }
-
-        .num-cell.hl-1 {
-            background: linear-gradient(135deg, #10b981, #059669) !important;
-            color: white !important;
-        }
-
-        .num-cell.hl-2 {
-            background: linear-gradient(135deg, #ffff00, #fbbf24) !important;
-            color: #92400e !important;
-        }
-
-        .num-cell.hl-3 {
-            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-            color: white !important;
-        }
-
-        .num-cell.hl-4 {
-            background: linear-gradient(135deg, #8b5cf6, #6d28d9) !important;
-            color: white !important;
-        }
-
-        .num-cell.hl-5 {
-            background: linear-gradient(135deg, #f43f5e, #e11d48) !important;
-            color: white !important;
-        }
+        .num-cell.hl-0 { background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important; color: white !important; }
+        .num-cell.hl-1 { background: linear-gradient(135deg, #10b981, #059669) !important; color: white !important; }
+        .num-cell.hl-2 { background: linear-gradient(135deg, #ffff00, #fbbf24) !important; color: #92400e !important; }
+        .num-cell.hl-3 { background: linear-gradient(135deg, #f59e0b, #d97706) !important; color: white !important; }
+        .num-cell.hl-4 { background: linear-gradient(135deg, #8b5cf6, #6d28d9) !important; color: white !important; }
+        .num-cell.hl-5 { background: linear-gradient(135deg, #f43f5e, #e11d48) !important; color: white !important; }
 
         .num-cell.is-dimmed {
             background: #1e293b !important;
             color: white !important;
             opacity: 0.9 !important;
+        }
+
+        /* 版路專屬高亮樣式 */
+        .hl-pattern-trigger {
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+            color: white !important;
+            box-shadow: inset 0 0 0 2px #fff, 0 0 10px rgba(245, 158, 11, 0.8) !important;
+            z-index: 10;
+            transform: scale(1.1);
+        }
+        .hl-pattern-target {
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+            color: white !important;
+            box-shadow: inset 0 0 0 2px #fff, 0 0 10px rgba(16, 185, 129, 0.8) !important;
+            z-index: 10;
+            transform: scale(1.1);
+        }
+        body.dark-mode .hl-pattern-trigger {
+            box-shadow: inset 0 0 0 2px #0f172a, 0 0 10px rgba(245, 158, 11, 1) !important;
+        }
+        body.dark-mode .hl-pattern-target {
+            box-shadow: inset 0 0 0 2px #0f172a, 0 0 10px rgba(16, 185, 129, 1) !important;
         }
 
         /* Tool Bar Styles */
@@ -407,45 +355,12 @@
             border-style: solid;
         }
 
-        /* Input Tints for better color mapping */
-        .check-input[data-color="0"] {
-            border-color: #3b82f6;
-            background-color: #eff6ff;
-        }
-
-        .check-input[data-color="1"] {
-            border-color: #10b981;
-            background-color: #ecfdf5;
-        }
-
-        .check-input[data-color="2"] {
-            border-color: #eab308;
-            background-color: #fefce8;
-        }
-
-        .check-input[data-color="3"] {
-            border-color: #f59e0b;
-            background-color: #fffbeb;
-        }
-
-        .check-input[data-color="4"] {
-            border-color: #8b5cf6;
-            background-color: #f5f3ff;
-        }
-
-        .check-input[data-color="5"] {
-            border-color: #f43f5e;
-            background-color: #fff1f2;
-        }
-
-        .toolbar-label {
-            font-size: 12.5px;
-            font-weight: 800;
-            color: #475569;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+        .check-input[data-color="0"] { border-color: #3b82f6; background-color: #eff6ff; }
+        .check-input[data-color="1"] { border-color: #10b981; background-color: #ecfdf5; }
+        .check-input[data-color="2"] { border-color: #eab308; background-color: #fefce8; }
+        .check-input[data-color="3"] { border-color: #f59e0b; background-color: #fffbeb; }
+        .check-input[data-color="4"] { border-color: #8b5cf6; background-color: #f5f3ff; }
+        .check-input[data-color="5"] { border-color: #f43f5e; background-color: #fff1f2; }
 
         .btn-action {
             padding: 6px 14px;
@@ -545,7 +460,6 @@
             transform: scale(1.05);
         }
 
-        /* Tooltip Styles */
         .tooltip-container {
             position: relative;
             display: inline-block;
@@ -610,437 +524,161 @@
         }
 
         /* --- Dark Mode Styles --- */
-        body.dark-mode {
-            background-color: #0f172a;
-            color: #f1f5f9;
-        }
+        body.dark-mode { background-color: #0f172a; color: #f1f5f9; }
+        body.dark-mode .marking-toolbar { background-color: #1e293b; border-color: #334155; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
+        body.dark-mode .check-input { background-color: #334155; border-color: #475569; color: white; }
+        body.dark-mode .btn-mode { background-color: #334155; color: #cbd5e1; border-color: #475569; }
+        body.dark-mode .btn-mode.active { background-color: #4f46e5; color: white; border-color: #4338ca; }
+        body.dark-mode .btn-clear { background-color: #450a0a; color: #fca5a5; border-color: #7f1d1d; }
+        body.dark-mode .btn-clear:hover { background-color: #7f1d1d; }
+        body.dark-mode .joined-table, body.dark-mode th, body.dark-mode td { border-color: #475569; }
+        body.dark-mode td.weekday-cell { background-color: #1e293b !important; color: #94a3b8; }
+        body.dark-mode .num-cell { color: #e2e8f0; }
+        body.dark-mode .num-cell.is-dimmed { background-color: #64748b !important; color: white !important; }
+        
+        body.dark-mode .num-cell.hl-0 { color: white !important; }
+        body.dark-mode .num-cell.hl-1 { color: white !important; }
+        body.dark-mode .num-cell.hl-2 { color: #422006 !important; }
+        body.dark-mode .num-cell.hl-3 { color: white !important; }
+        body.dark-mode .num-cell.hl-4 { color: white !important; }
+        body.dark-mode .num-cell.hl-5 { color: white !important; }
 
-        body.dark-mode .global-nav {
-            background-color: #1e293b;
-            border-bottom: 1px solid #334155;
-        }
-
-        body.dark-mode .marking-toolbar {
-            background-color: #1e293b;
-            border-color: #334155;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        body.dark-mode .toolbar-label {
-            color: #cbd5e1;
-        }
-
-        body.dark-mode .check-input {
-            background-color: #334155;
-            border-color: #475569;
-            color: white;
-        }
-
-        body.dark-mode .check-input::placeholder {
-            color: #94a3b8;
-        }
-
-        body.dark-mode .btn-mode {
-            background-color: #334155;
-            color: #cbd5e1;
-            border-color: #475569;
-        }
-
-        body.dark-mode .btn-mode.active {
-            background-color: #4f46e5;
-            color: white;
-            border-color: #4338ca;
-        }
-
-        body.dark-mode .btn-clear {
-            background-color: #450a0a;
-            color: #fca5a5;
-            border-color: #7f1d1d;
-        }
-
-        body.dark-mode .btn-clear:hover {
-            background-color: #7f1d1d;
-        }
-
-        body.dark-mode .joined-table {
-            border-color: #475569;
-        }
-
-        body.dark-mode th,
-        body.dark-mode td {
-            border-color: #475569;
-        }
-
-        body.dark-mode td.weekday-cell {
-            background-color: #1e293b !important;
-            color: #94a3b8;
-        }
-
-        body.dark-mode .num-cell {
-            color: #e2e8f0;
-        }
-
-        body.dark-mode .num-cell.is-dimmed {
-            background-color: #64748b !important;
-            /* Slate-500, visible grey */
-            color: white !important;
-        }
-
-        /* Adjust highlight colors for dark mode */
-        body.dark-mode .num-cell.hl-0 {
-            color: white !important;
-        }
-
-        body.dark-mode .num-cell.hl-1 {
-            color: white !important;
-        }
-
-        body.dark-mode .num-cell.hl-2 {
-            color: #422006 !important;
-        }
-
-        body.dark-mode .num-cell.hl-3 {
-            color: white !important;
-        }
-
-        body.dark-mode .num-cell.hl-4 {
-            color: white !important;
-        }
-
-        body.dark-mode .num-cell.hl-5 {
-            color: white !important;
-        }
-
-        body.dark-mode .special-num-cell {
-            background-color: #3f1828 !important;
-            /* Darker pink */
-            color: #f8fafc !important;
-        }
-
-        @media print {
-
-            /* Force Light Mode Colors on Print - Specificity Override */
-            body.dark-mode {
-                background-color: white !important;
-                color: black !important;
-            }
-
-            body.dark-mode .joined-table,
-            body.dark-mode th,
-            body.dark-mode td {
-                border-color: black !important;
-            }
-
-            body.dark-mode td.weekday-cell {
-                background-color: #f5f5f5 !important;
-                color: black !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            body.dark-mode .num-cell {
-                color: black !important;
-            }
-
-            body.dark-mode .special-num-cell {
-                background-color: #fce4ec !important;
-                color: black !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            /* Ensure highlights print correctly even in dark mode */
-            body.dark-mode .num-cell.hl-0 {
-                color: white !important;
-            }
-
-            body.dark-mode .num-cell.hl-1 {
-                color: white !important;
-            }
-
-            body.dark-mode .num-cell.hl-2 {
-                color: #92400e !important;
-            }
-
-            body.dark-mode .num-cell.hl-3 {
-                color: white !important;
-            }
-
-            body.dark-mode .num-cell.hl-4 {
-                color: white !important;
-            }
-
-            body.dark-mode .num-cell.hl-5 {
-                color: white !important;
-            }
-        }
-
-        /* --- Fix for Dark Mode Printing --- */
-        @media print {
-
-            /* Force Light Mode Color Scheme */
-            body.dark-mode {
-                background-color: white !important;
-                color: black !important;
-            }
-
-            body.dark-mode .joined-table,
-            body.dark-mode th,
-            body.dark-mode td {
-                border-color: black !important;
-            }
-
-            body.dark-mode td.weekday-cell {
-                background-color: #f5f5f5 !important;
-                color: black !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            body.dark-mode .num-cell {
-                color: black !important;
-            }
-
-            body.dark-mode .special-num-cell {
-                background-color: #fce4ec !important;
-                color: black !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            /* Ensure highlights print correctly even in dark mode */
-            body.dark-mode .num-cell.hl-0 {
-                color: white !important;
-            }
-
-            body.dark-mode .num-cell.hl-1 {
-                color: white !important;
-            }
-
-            body.dark-mode .num-cell.hl-2 {
-                color: #92400e !important;
-            }
-
-            body.dark-mode .num-cell.hl-3 {
-                color: white !important;
-            }
-
-            body.dark-mode .num-cell.hl-4 {
-                color: white !important;
-            }
-
-            body.dark-mode .num-cell.hl-5 {
-                color: white !important;
-            }
-        }
-
-        /* Modern Global Navigation Hub */
-        .gns-hub {
-            position: relative;
-            z-index: 1000;
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            padding: 0.25rem 1rem;
-        }
-
-        .gns-container {
-            max-width: 1100px;
-            margin: 0 auto;
+        /* Pattern Panel Styles */
+        #patternPanel {
+            position: fixed;
+            right: -360px;
+            top: 0;
+            width: 360px;
+            height: 100vh;
+            background: #fff;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.15);
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 2000;
             display: flex;
             flex-direction: column;
-            gap: 0.35rem;
         }
-
-        .gns-top-row {
+        #patternPanel.open {
+            right: 0;
+        }
+        .pattern-header {
+            padding: 16px 20px;
+            background: #1e293b;
+            color: white;
             display: flex;
-            align-items: center;
             justify-content: space-between;
-        }
-
-        .gns-brand {
-            display: flex;
             align-items: center;
-            gap: 0.75rem;
-            text-decoration: none;
-            color: white;
-            transition: transform 0.2s;
-        }
-
-        .gns-brand:hover {
-            transform: scale(1.02);
-        }
-
-        .gns-logo-box {
-            width: 26px;
-            height: 26px;
-            background: linear-gradient(135deg, #6366f1, #a855f7);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .gns-brand-text {
             font-weight: 800;
-            font-size: 0.95rem;
-            letter-spacing: -0.02em;
-            background: linear-gradient(to right, #fff, #cbd5e1);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 16px;
         }
-
-        .gns-game-switcher {
+        .pattern-body {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .pattern-controls {
             display: flex;
-            gap: 0.15rem;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 0.15rem;
-            border-radius: 9999px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
         }
-
-        .gns-game-switcher::-webkit-scrollbar {
-            display: none;
+        .pattern-controls label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+            display: block;
         }
-
-        .game-btn-nav {
-            color: rgba(255, 255, 255, 0.6);
-            text-decoration: none;
-            font-size: 0.8rem;
-            font-weight: 600;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            white-space: nowrap;
-            transition: all 0.2s;
-        }
-
-        .game-btn-nav:hover {
-            color: white;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .game-btn-nav.active.tw539 {
-            background: #fbbf24;
-            color: #92400e;
-            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4);
-        }
-
-        .gns-context-bar {
-            display: flex;
-            align-items: center;
-            padding-top: 0.25rem;
-            border-top: 1px dashed rgba(255, 255, 255, 0.1);
-        }
-
-        .tw539-context .gns-link:hover {
-            color: #fbbf24;
-            background: rgba(251, 191, 36, 0.1);
-        }
-
-        .tw539-context .gns-link.active::after {
-            background: #fbbf24;
-        }
-
-        .gns-links {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+        .pattern-controls select, .pattern-controls input {
             width: 100%;
-            padding-bottom: 0.25rem;
-        }
-
-        .gns-links::-webkit-scrollbar {
-            display: none;
-        }
-
-        .gns-link {
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
-            font-size: 0.8rem;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            background: #f8fafc;
             font-weight: 500;
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
-            transition: all 0.2s;
-            white-space: nowrap;
-            display: inline-flex;
-            align-items: center;
         }
-
-        .gns-link.active {
+        .pattern-controls select:focus, .pattern-controls input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+            background: white;
+        }
+        .btn-analyze {
+            background: #4f46e5;
             color: white;
-            position: relative;
+            font-weight: 800;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            transition: all 0.2s;
+            margin-top: 5px;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
         }
+        .btn-analyze:hover { background: #4338ca; transform: translateY(-1px); }
 
-        .gns-link.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0.75rem;
-            right: 0.75rem;
-            height: 2px;
-            border-radius: 2px;
+        .pattern-result-item {
+            background: #f8fafc;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-
-        .gns-link i {
-            width: 14px;
-            height: 14px;
+        .pattern-result-item:hover {
+            border-color: #cbd5e1;
+            background: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+        .pattern-result-item.active {
+            border-color: #6366f1;
+            background: #eff6ff;
+            box-shadow: 0 4px 15px rgba(99,102,241,0.2);
+        }
+        .pattern-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 800;
             margin-right: 6px;
-            opacity: 0.8;
+            background: #e0e7ff;
+            color: #4338ca;
         }
-
-        .desktop-only-flex {
-            display: none;
+        .pattern-text {
+            font-size: 15px;
+            font-weight: 800;
+            color: #1e293b;
+            margin-top: 8px;
         }
+        
+        body.dark-mode #patternPanel { background: #0f172a; border-left: 1px solid #334155; }
+        body.dark-mode .pattern-controls label { color: #cbd5e1; }
+        body.dark-mode .pattern-controls select, body.dark-mode .pattern-controls input { background: #1e293b; border-color: #475569; color: white; }
+        body.dark-mode .pattern-controls select:focus, body.dark-mode .pattern-controls input:focus { background: #0f172a; }
+        body.dark-mode .pattern-controls { border-color: #334155; }
+        body.dark-mode .pattern-result-item { background: #1e293b; box-shadow: none; border-color: #334155; }
+        body.dark-mode .pattern-result-item:hover { border-color: #64748b; background: #2a3449; }
+        body.dark-mode .pattern-result-item.active { border-color: #818cf8; background: #2e3856; }
+        body.dark-mode .pattern-badge { background: #312e81; color: #a5b4fc; }
+        body.dark-mode .pattern-text { color: #f1f5f9; }
 
-        @media (min-width: 769px) {
-            .desktop-only-flex {
-                display: flex !important;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .gns-top-row {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-
-            .gns-game-switcher {
-                width: 100%;
-                justify-content: flex-start;
-            }
-        }
     </style>
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebPage",
-      "name": "加州天天樂開獎單",
-      "description": "",
-      "publisher": {
-        "@type": "Organization",
-        "name": "",
-        "url": "../../index.html"
-      }
-    }
-    </script>
 </head>
 
 <body class="pb-6">
     
     <div class="marking-toolbar no-print">
         <div class="flex items-center gap-2 mr-4">
-            
             <button id="toggleSort" onclick="switchOrder()" class="btn-action btn-mode active"><i
                     data-lucide="arrow-down-0-1" style="width: 14px; height: 14px;"></i> 順球</button>
-            
         </div>
         <div class="h-8 w-px bg-slate-200 mx-3"></div>
 
@@ -1062,6 +700,10 @@
         <button id="toggleDrawMode" class="btn-action btn-mode" onclick="toggleDrawingMode()">
             <i data-lucide="pen-tool" style="width: 14px; height: 14px;"></i> 畫直線
         </button>
+        
+        <button id="togglePatternPanelBtn" class="btn-action btn-mode" onclick="togglePatternPanel()">
+            <i data-lucide="search" style="width: 14px; height: 14px;"></i> 找版路
+        </button>
 
         <div id="drawColorPalette" class="hidden items-center gap-3">
             <div class="color-palette">
@@ -1073,7 +715,7 @@
             </div>
         </div>
 
-        <div class="search-inputs">
+        <div class="search-inputs ml-4">
             <input type="number" class="check-input" data-color="0" placeholder="1">
             <input type="number" class="check-input" data-color="1" placeholder="2">
             <input type="number" class="check-input" data-color="2" placeholder="3">
@@ -1147,6 +789,52 @@
         
     </div>
 
+    <div id="patternPanel" class="no-print">
+        <div class="pattern-header">
+            <div>
+                <i data-lucide="search" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 6px;"></i> 
+                <span>版路分析系統</span>
+            </div>
+            <button onclick="togglePatternPanel()" style="background: none; border: none; color: white; cursor: pointer; padding: 0;">
+                <i data-lucide="x" style="width: 22px; height: 22px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'"></i>
+            </button>
+        </div>
+        <div class="pattern-body">
+            <div class="pattern-controls">
+                <div>
+                    <label>版路分類</label>
+                    <select id="patternType">
+                        <option value="any">不定位 (全車拖牌)</option>
+                        <option value="fixed">固定位置 (順球第幾顆)</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <div style="flex: 1;">
+                        <label>目標期數</label>
+                        <select id="patternOffset">
+                            <option value="1">下一期</option>
+                            <option value="2">下二期</option>
+                            <option value="3">下三期</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>最少觸發次數</label>
+                        <input type="number" id="patternMinHits" value="5" min="2" max="50">
+                    </div>
+                </div>
+                <button class="btn-analyze" onclick="analyzePatterns()">
+                    <i data-lucide="zap" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i> 開始深度分析
+                </button>
+            </div>
+            <div id="patternResults">
+                <div style="text-align: center; color: #94a3b8; font-size: 13px; margin-top: 40px;">
+                    <i data-lucide="mouse-pointer-click" style="width: 32px; height: 32px; margin: 0 auto 10px auto; opacity: 0.5;"></i>
+                    請設定條件並點擊「開始分析」
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer class="mt-6 text-center text-xs text-black font-bold">
     </footer>
 
@@ -1161,6 +849,7 @@
         let currentClickMode = 'color';
         window.drawnLines = [];
         window.currentOrder = 'sort';
+        let currentPatterns = [];
 
         function setClickMode(mode) {
             currentClickMode = mode;
@@ -1208,6 +897,8 @@
             document.getElementById('linesGroup').innerHTML = '';
             window.drawnLines = [];
             firstBall = null;
+            clearPatternHighlights(); // 清除版路高亮
+            document.querySelectorAll('.pattern-result-item').forEach(el => el.classList.remove('active'));
             updateHighlights();
         }
 
@@ -1217,7 +908,7 @@
             const container = document.getElementById('dynamicGridContainer');
             container.innerHTML = '';
 
-            const ROWS_PER_COLUMN = 48; // 每直欄固定 48 行，維持精美排版
+            const ROWS_PER_COLUMN = 48;
             const TOTAL_COLUMNS = 4;
             const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
 
@@ -1260,8 +951,9 @@
                         const displayMonth = (monthText === lastMonthText) ? "" : monthText;
                         lastMonthText = monthText;
 
+                        // 加入 data-draw-idx 用於定位期數
                         tableHtml += `
-                            <tr>
+                            <tr data-draw-idx="${dataIndex}">
                                 <td class="month-cell">${displayMonth}</td>
                                 <td class="day-cell">${dayText}</td>
                                 <td class="weekday-cell">${dayOfWeek}</td>
@@ -1275,7 +967,6 @@
                         `;
                         dataIndex++;
                     } else {
-                        // 補足空行以維持高度
                         tableHtml += `
                             <tr>
                                 <td style="border-top: hidden !important;"></td><td></td><td></td>
@@ -1293,13 +984,10 @@
 
         // --- Order Switch Logic ---
         function switchOrder() {
-            // 切換狀態
             window.currentOrder = (window.currentOrder === 'sort') ? 'draw' : 'sort';
             const order = window.currentOrder;
-
             const btnSort = document.getElementById('toggleSort');
             
-            // 重新渲染表格
             loadAndRenderTable();
 
             if (order === 'sort') {
@@ -1314,6 +1002,14 @@
 
             rebindBallEvents();
             updateHighlights();
+            
+            // 如果版路面板有開啟中的項目，重新綁定高亮
+            const activePatternNode = document.querySelector('.pattern-result-item.active');
+            if (activePatternNode && currentPatterns.length > 0) {
+                const activeIndex = Array.from(activePatternNode.parentNode.children).indexOf(activePatternNode);
+                if(currentPatterns[activeIndex]) highlightPattern(currentPatterns[activeIndex]);
+            }
+            
             lucide.createIcons();
         }
 
@@ -1395,7 +1091,6 @@
             }
         }
 
-        // --- Handling Ball Click Event ---
         function handleBallClick(cell) {
             const val = cell.getAttribute('data-ball-val');
             if (!val) return;
@@ -1408,7 +1103,6 @@
             const numStr = parseInt(val, 10).toString();
             const inputs = document.querySelectorAll('.check-input');
 
-            // 1. Check if already marked
             let existingInput = null;
             inputs.forEach(input => {
                 if (input.value.trim() !== '' && parseInt(input.value, 10).toString() === numStr) {
@@ -1419,7 +1113,6 @@
             if (existingInput) {
                 existingInput.value = '';
             } else {
-                // 2. Find first empty slot
                 let emptyInput = null;
                 for (let input of inputs) {
                     if (input.value.trim() === '') {
@@ -1448,24 +1141,175 @@
             });
         }
 
-        // --- Init ---
-        document.addEventListener('DOMContentLoaded', () => {
-            window.currentOrder = 'sort'; // 預設順球
-            
-            // 1. 從 LocalStorage 載入並渲染表格
-            loadAndRenderTable();
+        // --- Pattern Analysis Logic (版路分析系統) ---
+        function togglePatternPanel() {
+            const panel = document.getElementById('patternPanel');
+            const btn = document.getElementById('togglePatternPanelBtn');
+            panel.classList.toggle('open');
+            btn.classList.toggle('active');
+            if (!panel.classList.contains('open')) {
+                clearPatternHighlights();
+                document.querySelectorAll('.pattern-result-item').forEach(el => el.classList.remove('active'));
+            }
+        }
 
-            // 2. 綁定搜尋框事件
-            document.querySelectorAll('.check-input').forEach(input => {
-                input.addEventListener('input', () => {
-                    input.value = input.value.replace(/[^0-9]/g, '').slice(0, 2);
-                    updateHighlights();
+        function analyzePatterns() {
+            const db = JSON.parse(localStorage.getItem('ttLottoDb')) || [];
+            if (db.length === 0) return alert('目前沒有足夠的開獎數據可供分析');
+
+            const type = document.getElementById('patternType').value;
+            const offset = parseInt(document.getElementById('patternOffset').value, 10);
+            const minHits = parseInt(document.getElementById('patternMinHits').value, 10);
+
+            currentPatterns = [];
+            const resultsDiv = document.getElementById('patternResults');
+            resultsDiv.innerHTML = `
+                <div style="text-align: center; padding: 30px; color: #64748b;">
+                    <i data-lucide="loader-2" class="animate-spin" style="width: 24px; height: 24px; margin: 0 auto 10px auto;"></i>
+                    <p style="font-weight: 700;">超級電腦運算中...</p>
+                </div>
+            `;
+            lucide.createIcons();
+
+            setTimeout(() => {
+                if (type === 'any') {
+                    // 不定位分析: X 拖 Y
+                    for (let x = 1; x <= 39; x++) {
+                        let targetCounts = {};
+                        for (let i = 0; i < db.length - offset; i++) {
+                            if (db[i].nums.includes(x)) {
+                                db[i + offset].nums.forEach(y => {
+                                    targetCounts[y] = (targetCounts[y] || 0) + 1;
+                                });
+                            }
+                        }
+                        for (let y in targetCounts) {
+                            if (targetCounts[y] >= minHits) {
+                                let specificTriggers = [];
+                                let specificTargets = [];
+                                for (let i = 0; i < db.length - offset; i++) {
+                                    if (db[i].nums.includes(x) && db[i + offset].nums.includes(parseInt(y))) {
+                                        specificTriggers.push(i);
+                                        specificTargets.push(i + offset);
+                                    }
+                                }
+                                currentPatterns.push({
+                                    type: 'any', triggerVal: x, targetVal: parseInt(y), hits: targetCounts[y],
+                                    offset: offset, triggerIndices: specificTriggers, targetIndices: specificTargets,
+                                    desc: `【全車不定位】 <span style="color: #f59e0b;">${x}</span> 拖 <span style="color: #10b981;">${y}</span>`
+                                });
+                            }
+                        }
+                    }
+                } else if (type === 'fixed') {
+                    // 固定位置: 順球第P顆 X 拖 Y
+                    for (let p = 0; p < 5; p++) {
+                        for (let x = 1; x <= 39; x++) {
+                            let targetCounts = {};
+                            for (let i = 0; i < db.length - offset; i++) {
+                                const sortedNums = [...db[i].nums].sort((a,b)=>a-b);
+                                if (sortedNums[p] === x) {
+                                    db[i + offset].nums.forEach(y => {
+                                        targetCounts[y] = (targetCounts[y] || 0) + 1;
+                                    });
+                                }
+                            }
+                            for (let y in targetCounts) {
+                                if (targetCounts[y] >= minHits) {
+                                    let specificTriggers = [];
+                                    let specificTargets = [];
+                                    for (let i = 0; i < db.length - offset; i++) {
+                                        const sortedNums = [...db[i].nums].sort((a,b)=>a-b);
+                                        if (sortedNums[p] === x && db[i + offset].nums.includes(parseInt(y))) {
+                                            specificTriggers.push(i);
+                                            specificTargets.push(i + offset);
+                                        }
+                                    }
+                                    currentPatterns.push({
+                                        type: 'fixed', pos: p, triggerVal: x, targetVal: parseInt(y), hits: targetCounts[y],
+                                        offset: offset, triggerIndices: specificTriggers, targetIndices: specificTargets,
+                                        desc: `【順球第${p+1}顆】 <span style="color: #f59e0b;">${x}</span> 拖 <span style="color: #10b981;">${y}</span>`
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                currentPatterns.sort((a, b) => b.hits - a.hits); // 依命中次數排序
+
+                if (currentPatterns.length === 0) {
+                    resultsDiv.innerHTML = `
+                        <div style="text-align: center; padding: 30px; color: #94a3b8;">
+                            <i data-lucide="ghost" style="width: 32px; height: 32px; margin: 0 auto 10px auto; opacity: 0.5;"></i>
+                            <p>在此條件下找不到任何版路規律</p>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    return;
+                }
+
+                resultsDiv.innerHTML = '';
+                currentPatterns.forEach((pat, idx) => {
+                    const item = document.createElement('div');
+                    item.className = 'pattern-result-item';
+                    item.onclick = () => {
+                        document.querySelectorAll('.pattern-result-item').forEach(el => el.classList.remove('active'));
+                        item.classList.add('active');
+                        highlightPattern(pat);
+                    };
+
+                    let offsetStr = offset === 1 ? '下一期' : `下${offset}期`;
+
+                    item.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span class="pattern-badge">${offsetStr}</span>
+                            <span style="color: #f43f5e; font-weight: 900; font-size: 13px; display: flex; align-items: center; gap: 4px;">
+                                <i data-lucide="target" style="width: 14px; height: 14px;"></i> 命中 ${pat.hits} 次
+                            </span>
+                        </div>
+                        <div class="pattern-text">${pat.desc}</div>
+                    `;
+                    resultsDiv.appendChild(item);
                 });
+                lucide.createIcons();
+            }, 150);
+        }
+
+        function clearPatternHighlights() {
+            document.querySelectorAll('.hl-pattern-trigger').forEach(el => el.classList.remove('hl-pattern-trigger'));
+            document.querySelectorAll('.hl-pattern-target').forEach(el => el.classList.remove('hl-pattern-target'));
+        }
+
+        function highlightPattern(pattern) {
+            clearPatternHighlights();
+
+            // 標記觸發號碼 (橘/黃色)
+            pattern.triggerIndices.forEach(idx => {
+                const tr = document.querySelector(`tr[data-draw-idx="${idx}"]`);
+                if (tr) {
+                    // 無論定位與否，皆以號碼的固定值 (data-val-sort) 來標記最穩定
+                    const cell = tr.querySelector(`.num-cell[data-val-sort="${pattern.triggerVal}"]`);
+                    if (cell) cell.classList.add('hl-pattern-trigger');
+                }
             });
 
-            // 3. 綁定號碼球點擊事件
-            rebindBallEvents();
+            // 標記拖出號碼 (綠色)
+            pattern.targetIndices.forEach(idx => {
+                const tr = document.querySelector(`tr[data-draw-idx="${idx}"]`);
+                if (tr) {
+                    const cell = tr.querySelector(`.num-cell[data-val-sort="${pattern.targetVal}"]`);
+                    if (cell) cell.classList.add('hl-pattern-target');
+                }
+            });
+        }
 
+        // --- Init ---
+        document.addEventListener('DOMContentLoaded', () => {
+            window.currentOrder = 'sort';
+            
+            loadAndRenderTable();
+            rebindBallEvents();
             window.addEventListener('resize', redrawLines);
 
             // Init Dark Mode
