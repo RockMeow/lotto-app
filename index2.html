@@ -1,483 +1,1501 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
+
 <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-JVPRVVSRE3"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-JVPRVVSRE3');
+    </script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4962199729129108"
+        crossorigin="anonymous"></script>
+    <meta http-equiv="Cache-Control" content="max-age=600">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>智慧全車版路分析系統</title>
-    <link rel="manifest" href="manifest3.json">
-    <meta name="theme-color" content="#1e293b">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="description" content="">
+    <title>加州天天樂 開獎單</title>
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --primary: #1e293b; --primary-light: #334155; --accent: #2563eb;
-            --success: #16a34a; --warning: #ea580c; --danger: #dc2626;
-            --purple: #9333ea; --bg: #0f172a; --card: #1e293b;
-            --text-main: #f8fafc; --text-muted: #94a3b8; --border: #334155;
-            --input-bg: #334155; --radius-md: 12px; --radius-sm: 8px;
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+        * {
+            box-sizing: border-box;
         }
 
-        [data-theme="light"] {
-            --primary: #1e293b; --primary-light: #334155; --accent: #2563eb;
-            --success: #16a34a; --warning: #ea580c; --danger: #dc2626;
-            --purple: #9333ea; --bg: #f8fafc; --card: #ffffff;
-            --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
-            --input-bg: #ffffff;
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: white;
+            color: black;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            min-width: 1150px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text-main); padding: 12px; line-height: 1.5; transition: background-color 0.3s, color 0.3s; }
+        @media print {
+            @page {
+                size: A3 portrait;
+                margin: 5mm;
+            }
 
-        .container { max-width: 600px; margin: 0 auto; }
-        .header { background: var(--primary); color: white; padding: 18px; border-radius: var(--radius-md); margin-bottom: 20px; text-align: center; position: relative;}
-        h1 { font-size: 1.15rem; font-weight: 700; margin: 0; }
-        .subtitle { font-size: 0.8rem; color: #94a3b8; margin-top: 6px; }
-        .theme-toggle { position: absolute; right: 15px; top: 18px; background: transparent; border: 1px solid var(--border); color: white; padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.8rem; }
+            .no-print {
+                display: none !important;
+            }
 
-        .selector-box { background: var(--card); padding: 20px; border-radius: var(--radius-md); margin-bottom: 20px; border: 1px solid var(--border); }
-        select, input[type="number"] { width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.95rem; background: var(--input-bg); margin-bottom: 10px; color: var(--text-main); outline: none; }
-        .config-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .config-label { font-weight: 600; font-size: 0.9rem; color: var(--primary-light); min-width: 90px; }
+            .page-break {
+                page-break-after: always;
+                break-after: page;
+            }
 
-        .run-btn { background: var(--success); color: white; border: none; padding: 14px; border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 700; width: 100%; cursor: pointer; margin-top: 10px; display: flex; justify-content: center; }
-        .section-title { font-size: 1.05rem; font-weight: 700; margin: 24px 0 12px 2px; border-left: 4px solid var(--accent); padding-left: 8px; }
-        .summary { background: var(--card); padding: 18px; border-radius: var(--radius-md); margin-bottom: 24px; font-size: 0.9rem; border: 1px solid var(--border); line-height: 1.6; }
+            body {
+                min-width: auto;
+                padding-top: 0 !important;
+                background-color: white !important;
+                color: black !important;
+            }
 
-        .result-item { background: var(--card); border-radius: var(--radius-md); padding: 18px; margin-bottom: 12px; border: 1px solid var(--border); }
-        .res-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .res-date { font-weight: 700; color: var(--primary-light); font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
-        .day-badge { background: var(--input-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; border: 1px solid var(--border); }
-        .day-target { background: var(--accent); color: white; border-color: var(--accent); }
-        .res-actual { font-family: monospace; font-size: 1.05rem; font-weight: 700; letter-spacing: 1px; }
+            /* Force Light Mode Colors on Print */
+            body.dark-mode {
+                background-color: white !important;
+                color: black !important;
+            }
 
-        .source-box { background: var(--bg); border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 10px; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; }
-        .source-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .source-hl { color: var(--text-main); font-weight: 600; }
+            body.dark-mode .joined-table,
+            body.dark-mode th,
+            body.dark-mode td {
+                border-color: black !important;
+            }
 
-        .hit-detail { padding: 12px; border-radius: var(--radius-sm); margin-top: 10px; border: 1px solid var(--success); background: rgba(22, 163, 74, 0.1); }
-        .miss-detail { padding: 12px; border-radius: var(--radius-sm); margin-top: 10px; border: 1px solid var(--border); background: var(--bg); }
-        .hit-badge { background-color: var(--success); color: white; padding: 1px 5px; border-radius: 4px; font-weight: 700; margin: 0 2px; display: inline-block; }
-        
-        .pred-card { background: var(--card); padding: 18px; border-radius: var(--radius-md); border-left: 4px solid var(--purple); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-        .nums-highlight { font-size: 1.6rem; font-weight: 800; color: var(--purple); letter-spacing: 2px; display: block; margin-top: 10px; text-align: center;}
+            body.dark-mode td.weekday-cell {
+                background-color: #f5f5f5 !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            body.dark-mode .num-cell {
+                color: black !important;
+            }
+
+            body.dark-mode .special-num-cell {
+                background-color: #fce4ec !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* Ensure highlights print correctly even in dark mode */
+            body.dark-mode .num-cell.hl-0 {
+                color: white !important;
+            }
+
+            body.dark-mode .num-cell.hl-1 {
+                color: white !important;
+            }
+
+            body.dark-mode .num-cell.hl-2 {
+                color: #92400e !important;
+            }
+
+            body.dark-mode .num-cell.hl-3 {
+                color: white !important;
+            }
+
+            body.dark-mode .num-cell.hl-4 {
+                color: white !important;
+            }
+
+            body.dark-mode .num-cell.hl-5 {
+                color: white !important;
+            }
+        }
+
+        .global-nav {
+            background-color: #1e293b;
+            color: white;
+            padding: 10px 0;
+            margin-bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .nav-content {
+            width: 1100px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+            transition: opacity 0.2s;
+        }
+
+        .nav-link:hover {
+            opacity: 0.8;
+        }
+
+        /* SVG Canvas Overlay */
+        #drawingWrapper {
+            position: relative;
+            width: 1100px;
+            margin: 0 auto;
+        }
+
+        #drawingCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Watermark Styles */
+        .page-container {
+            position: relative;
+        }
+
+        .page-container::after {
+            content: "加州天天樂開獎單";
+            position: absolute;
+            bottom: -20px;
+            right: 0;
+            font-size: 12px;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.3);
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 10;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .draw-line {
+            stroke-width: 3.5;
+            stroke-linecap: round;
+            opacity: 0.7;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        /* Marker Colors & Glow Effects */
+        .marker-indigo {
+            stroke: #6366f1;
+            filter: drop-shadow(0 0 3px rgba(99, 102, 241, 0.4));
+        }
+
+        .marker-rose {
+            stroke: #f43f5e;
+            filter: drop-shadow(0 0 3px rgba(244, 63, 94, 0.4));
+        }
+
+        .marker-emerald {
+            stroke: #10b981;
+            filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.4));
+        }
+
+        .marker-amber {
+            stroke: #f59e0b;
+            filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.4));
+        }
+
+        .marker-sky {
+            stroke: #0ea5e9;
+            filter: drop-shadow(0 0 3px rgba(14, 165, 233, 0.4));
+        }
+
+        .grid-container {
+            display: flex;
+            gap: 0;
+            padding: 0;
+            width: 1100px;
+            margin: 0 auto;
+            border: none;
+        }
+
+        .joined-table {
+            border-collapse: collapse;
+            width: 100%;
+            table-layout: fixed;
+            border-top: 2px solid black;
+            border-bottom: 2px solid black;
+            border-left: 2px solid black;
+        }
+
+        .column-box {
+            flex-shrink: 0;
+        }
+
+        .column-box:last-child .joined-table {
+            border-right: 2px solid black;
+        }
+
+        th,
+        td {
+            border: 1px solid black;
+            text-align: center;
+            padding: 3.5px 0;
+            line-height: 1.25;
+            height: 31px;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        th {
+            font-weight: 900;
+            font-size: 14px;
+            height: 35px;
+            color: white;
+        }
+
+        /* Dynamic Header Colors */
+        .header-tw539 th {
+            background-color: #f59e0b !important;
+        }
+
+        .header-lotto649 th {
+            background-color: #ef4444 !important;
+        }
+
+        .header-super_lotto th {
+            background-color: #10b981 !important;
+        }
+
+        .header-mark_six th {
+            background-color: #6366f1 !important;
+        }
+
+        .header-us539 th {
+            background-color: #0ea5e9 !important;
+        }
+
+        .header-default th {
+            background-color: #fca510 !important;
+        }
+
+        .month-cell {
+            font-size: 18px;
+            font-weight: 900;
+            vertical-align: middle;
+        }
+
+        .day-cell {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .weekday-cell {
+            font-size: 13px;
+        }
+
+        td.weekday-cell {
+            background-color: #f5f5f5 !important;
+        }
+
+        .num-cell {
+            font-size: 17px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .special-num-cell {
+            background-color: #fce4ec !important;
+        }
+
+        /* --- Interactive Marking Styles --- */
+        .num-cell.hl-0 {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+            color: white !important;
+        }
+
+        .num-cell.hl-1 {
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+            color: white !important;
+        }
+
+        .num-cell.hl-2 {
+            background: linear-gradient(135deg, #ffff00, #fbbf24) !important;
+            color: #92400e !important;
+        }
+
+        .num-cell.hl-3 {
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+            color: white !important;
+        }
+
+        .num-cell.hl-4 {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9) !important;
+            color: white !important;
+        }
+
+        .num-cell.hl-5 {
+            background: linear-gradient(135deg, #f43f5e, #e11d48) !important;
+            color: white !important;
+        }
+
+        .num-cell.is-dimmed {
+            background: #1e293b !important;
+            color: white !important;
+            opacity: 0.9 !important;
+        }
+
+        /* Tool Bar Styles */
+        .marking-toolbar {
+            width: 1100px;
+            margin: 0 auto 15px auto;
+            background: #fafafa;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .check-input {
+            width: 42px;
+            height: 42px;
+            text-align: center;
+            border-radius: 50%;
+            background: white;
+            border: 2px dashed #cbd5e1;
+            color: black;
+            font-weight: 900;
+            outline: none;
+            font-size: 18px;
+            transition: all 0.2s;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            line-height: normal;
+            appearance: textfield;
+            -moz-appearance: textfield;
+        }
+
+        .check-input::-webkit-outer-spin-button,
+        .check-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .check-input:focus {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+            border-style: solid;
+        }
+
+        /* Input Tints for better color mapping */
+        .check-input[data-color="0"] {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .check-input[data-color="1"] {
+            border-color: #10b981;
+            background-color: #ecfdf5;
+        }
+
+        .check-input[data-color="2"] {
+            border-color: #eab308;
+            background-color: #fefce8;
+        }
+
+        .check-input[data-color="3"] {
+            border-color: #f59e0b;
+            background-color: #fffbeb;
+        }
+
+        .check-input[data-color="4"] {
+            border-color: #8b5cf6;
+            background-color: #f5f3ff;
+        }
+
+        .check-input[data-color="5"] {
+            border-color: #f43f5e;
+            background-color: #fff1f2;
+        }
+
+        .toolbar-label {
+            font-size: 12.5px;
+            font-weight: 800;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-action {
+            padding: 6px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-clear {
+            background: #fee2e2;
+            color: #ef4444;
+            border: 1px solid #fecaca;
+        }
+
+        .btn-clear:hover {
+            background: #fecaca;
+            transform: translateY(-1px);
+        }
+
+        .btn-mode {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-mode.active {
+            background: #4f46e5;
+            color: white;
+            border-color: #4338ca;
+            box-shadow: 0 0 10px rgba(79, 70, 229, 0.3);
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 8px;
+        }
+
+        .color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            transition: all 0.2s;
+            box-shadow: 0 0 0 1px #e2e8f0;
+        }
+
+        .color-dot:hover {
+            transform: scale(1.2);
+        }
+
+        .color-dot.active {
+            box-shadow: 0 0 0 2px #334155;
+            transform: scale(1.3);
+        }
+
+        .title-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            width: 1100px;
+            margin: 0 auto 15px auto;
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 0.23em;
+            margin: 0;
+        }
+
+        .btn-print {
+            background-color: #4f46e5;
+            color: white;
+            padding: 6px 18px;
+            border-radius: 9999px;
+            font-weight: 800;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-print:hover {
+            background-color: #4338ca;
+            transform: scale(1.05);
+        }
+
+        /* Tooltip Styles */
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .btn-info {
+            background-color: #f1f5f9;
+            color: #475569;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-weight: 800;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-info:hover {
+            background-color: #e2e8f0;
+            transform: scale(1.05);
+        }
+
+        .tooltip-content {
+            visibility: hidden;
+            width: 280px;
+            background-color: #1e293b;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 10px;
+            position: absolute;
+            z-index: 100;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -140px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 13px;
+            font-weight: 500;
+            pointer-events: none;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            letter-spacing: 0.05em;
+        }
+
+        .tooltip-content::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1e293b transparent transparent transparent;
+        }
+
+        .tooltip-container:hover .tooltip-content {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* --- Dark Mode Styles --- */
+        body.dark-mode {
+            background-color: #0f172a;
+            color: #f1f5f9;
+        }
+
+        body.dark-mode .global-nav {
+            background-color: #1e293b;
+            border-bottom: 1px solid #334155;
+        }
+
+        body.dark-mode .marking-toolbar {
+            background-color: #1e293b;
+            border-color: #334155;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-mode .toolbar-label {
+            color: #cbd5e1;
+        }
+
+        body.dark-mode .check-input {
+            background-color: #334155;
+            border-color: #475569;
+            color: white;
+        }
+
+        body.dark-mode .check-input::placeholder {
+            color: #94a3b8;
+        }
+
+        body.dark-mode .btn-mode {
+            background-color: #334155;
+            color: #cbd5e1;
+            border-color: #475569;
+        }
+
+        body.dark-mode .btn-mode.active {
+            background-color: #4f46e5;
+            color: white;
+            border-color: #4338ca;
+        }
+
+        body.dark-mode .btn-clear {
+            background-color: #450a0a;
+            color: #fca5a5;
+            border-color: #7f1d1d;
+        }
+
+        body.dark-mode .btn-clear:hover {
+            background-color: #7f1d1d;
+        }
+
+        body.dark-mode .joined-table {
+            border-color: #475569;
+        }
+
+        body.dark-mode th,
+        body.dark-mode td {
+            border-color: #475569;
+        }
+
+        body.dark-mode td.weekday-cell {
+            background-color: #1e293b !important;
+            color: #94a3b8;
+        }
+
+        body.dark-mode .num-cell {
+            color: #e2e8f0;
+        }
+
+        body.dark-mode .num-cell.is-dimmed {
+            background-color: #64748b !important;
+            /* Slate-500, visible grey */
+            color: white !important;
+        }
+
+        /* Adjust highlight colors for dark mode */
+        body.dark-mode .num-cell.hl-0 {
+            color: white !important;
+        }
+
+        body.dark-mode .num-cell.hl-1 {
+            color: white !important;
+        }
+
+        body.dark-mode .num-cell.hl-2 {
+            color: #422006 !important;
+        }
+
+        body.dark-mode .num-cell.hl-3 {
+            color: white !important;
+        }
+
+        body.dark-mode .num-cell.hl-4 {
+            color: white !important;
+        }
+
+        body.dark-mode .num-cell.hl-5 {
+            color: white !important;
+        }
+
+        body.dark-mode .special-num-cell {
+            background-color: #3f1828 !important;
+            /* Darker pink */
+            color: #f8fafc !important;
+        }
+
+        @media print {
+
+            /* Force Light Mode Colors on Print - Specificity Override */
+            body.dark-mode {
+                background-color: white !important;
+                color: black !important;
+            }
+
+            body.dark-mode .joined-table,
+            body.dark-mode th,
+            body.dark-mode td {
+                border-color: black !important;
+            }
+
+            body.dark-mode td.weekday-cell {
+                background-color: #f5f5f5 !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            body.dark-mode .num-cell {
+                color: black !important;
+            }
+
+            body.dark-mode .special-num-cell {
+                background-color: #fce4ec !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* Ensure highlights print correctly even in dark mode */
+            body.dark-mode .num-cell.hl-0 {
+                color: white !important;
+            }
+
+            body.dark-mode .num-cell.hl-1 {
+                color: white !important;
+            }
+
+            body.dark-mode .num-cell.hl-2 {
+                color: #92400e !important;
+            }
+
+            body.dark-mode .num-cell.hl-3 {
+                color: white !important;
+            }
+
+            body.dark-mode .num-cell.hl-4 {
+                color: white !important;
+            }
+
+            body.dark-mode .num-cell.hl-5 {
+                color: white !important;
+            }
+        }
+
+        /* --- Fix for Dark Mode Printing --- */
+        @media print {
+
+            /* Force Light Mode Color Scheme */
+            body.dark-mode {
+                background-color: white !important;
+                color: black !important;
+            }
+
+            body.dark-mode .joined-table,
+            body.dark-mode th,
+            body.dark-mode td {
+                border-color: black !important;
+            }
+
+            body.dark-mode td.weekday-cell {
+                background-color: #f5f5f5 !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            body.dark-mode .num-cell {
+                color: black !important;
+            }
+
+            body.dark-mode .special-num-cell {
+                background-color: #fce4ec !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* Ensure highlights print correctly even in dark mode */
+            body.dark-mode .num-cell.hl-0 {
+                color: white !important;
+            }
+
+            body.dark-mode .num-cell.hl-1 {
+                color: white !important;
+            }
+
+            body.dark-mode .num-cell.hl-2 {
+                color: #92400e !important;
+            }
+
+            body.dark-mode .num-cell.hl-3 {
+                color: white !important;
+            }
+
+            body.dark-mode .num-cell.hl-4 {
+                color: white !important;
+            }
+
+            body.dark-mode .num-cell.hl-5 {
+                color: white !important;
+            }
+        }
+
+        /* Modern Global Navigation Hub */
+        .gns-hub {
+            position: relative;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.25rem 1rem;
+        }
+
+        .gns-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .gns-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .gns-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: white;
+            transition: transform 0.2s;
+        }
+
+        .gns-brand:hover {
+            transform: scale(1.02);
+        }
+
+        .gns-logo-box {
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .gns-brand-text {
+            font-weight: 800;
+            font-size: 0.95rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gns-game-switcher {
+            display: flex;
+            gap: 0.15rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.15rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .gns-game-switcher::-webkit-scrollbar {
+            display: none;
+        }
+
+        .game-btn-nav {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .game-btn-nav:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .game-btn-nav.active.tw539 {
+            background: #fbbf24;
+            color: #92400e;
+            box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4);
+        }
+
+        .gns-context-bar {
+            display: flex;
+            align-items: center;
+            padding-top: 0.25rem;
+            border-top: 1px dashed rgba(255, 255, 255, 0.1);
+        }
+
+        .tw539-context .gns-link:hover {
+            color: #fbbf24;
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        .tw539-context .gns-link.active::after {
+            background: #fbbf24;
+        }
+
+        .gns-links {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+            padding-bottom: 0.25rem;
+        }
+
+        .gns-links::-webkit-scrollbar {
+            display: none;
+        }
+
+        .gns-link {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .gns-link.active {
+            color: white;
+            position: relative;
+        }
+
+        .gns-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0.75rem;
+            right: 0.75rem;
+            height: 2px;
+            border-radius: 2px;
+        }
+
+        .gns-link i {
+            width: 14px;
+            height: 14px;
+            margin-right: 6px;
+            opacity: 0.8;
+        }
+
+        .desktop-only-flex {
+            display: none;
+        }
+
+        @media (min-width: 769px) {
+            .desktop-only-flex {
+                display: flex !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .gns-top-row {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .gns-game-switcher {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
     </style>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "加州天天樂開獎單",
+      "description": "",
+      "publisher": {
+        "@type": "Organization",
+        "name": "",
+        "url": "../../index.html"
+      }
+    }
+    </script>
 </head>
-<body data-theme="dark">
 
-<div class="container">
-    <div class="header">
-        <h1>智慧全車版路系統</h1>
-        <div class="subtitle">專攻全車下注策略｜動態智能捕捉「追兩期」連準規律</div>
-        <button class="theme-toggle" onclick="toggleTheme()">切換主題</button>
-    </div>
+<body class="pb-6">
     
-    <div class="selector-box">
-        <select id="csvSelect" onchange="processData()">
-            <option value="539_history_2026.csv">今彩 539 (歷史資料)</option>
-            <option value="Fan_history_2026.csv">天天樂</option>
-        </select>
-
-        <div style="padding-top: 5px; display: flex; flex-direction: column; gap: 4px;">
-            <div class="config-row">
-                <span class="config-label">預測核心：</span>
-                <select id="algoMode" onchange="runAnalysis()" style="margin-bottom: 0; flex: 1;">
-                    <option value="custom">特定版路 (一第3球+2, 日第1球+0, 三第5球-4 ➔ 下四五)</option>
-                    <option value="auto">全自動搜尋 (±4範圍，智能尋找「追兩期」最強 3 顆)</option>
-                </select>
-            </div>
-
-            <label class="config-row" style="cursor: pointer; margin-bottom: 15px; margin-top: 5px;">
-                <input type="checkbox" id="sortBalls" checked onchange="runAnalysis()">
-                <span style="font-weight: 600; font-size: 0.9rem;">使用順球排序 (依據號碼大小排列後取位置)</span>
-            </label>
-
-            <div class="config-row" style="flex-wrap: wrap; align-items: flex-start;">
-                <span class="config-label" style="padding-top: 8px;">全車賠率設定：</span>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1;">
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem;">單車成本 <input type="number" id="costPerCar" value="74" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem;">單車獎金 <input type="number" id="prizePerCar" value="550" step="1" min="1" onchange="runAnalysis()" style="width: 100%; margin-bottom: 0; padding: 6px 10px;"></label>
-                </div>
-            </div>
-
-            <button class="run-btn" onclick="runAnalysis()">執行全車版路回測</button>
+    <div class="marking-toolbar no-print">
+        <div class="flex items-center gap-2 mr-4">
+            
+            <button id="toggleSort" onclick="switchOrder()" class="btn-action btn-mode active"><i
+                    data-lucide="arrow-down-0-1" style="width: 14px; height: 14px;"></i> 順球</button>
+            
         </div>
+        <div class="h-8 w-px bg-slate-200 mx-3"></div>
+
+        <div class="flex items-center gap-2">
+            <button id="clickModeColor" onclick="setClickMode('color')" class="btn-action btn-mode active">
+                <i data-lucide="palette" style="width: 14px; height: 14px;"></i> 上色
+            </button>
+            <button id="clickModeDim" onclick="setClickMode('dim')" class="btn-action btn-mode">
+                <i data-lucide="layers" style="width: 14px; height: 14px;"></i> 單色
+            </button>
+        </div>
+
+        <div class="h-8 w-px bg-slate-200 mx-3"></div>
+
+        <button id="toggleDarkMode" class="btn-action btn-mode" onclick="toggleDarkMode()">
+            <i data-lucide="moon" style="width: 14px; height: 14px;"></i> 護眼
+        </button>
+
+        <button id="toggleDrawMode" class="btn-action btn-mode" onclick="toggleDrawingMode()">
+            <i data-lucide="pen-tool" style="width: 14px; height: 14px;"></i> 畫直線
+        </button>
+
+        <div id="drawColorPalette" class="hidden items-center gap-3">
+            <div class="color-palette">
+                <div class="color-dot active bg-[#6366f1]" onclick="setDrawColor('indigo', '#6366f1')" title="靛藍"></div>
+                <div class="color-dot bg-[#f43f5e]" onclick="setDrawColor('rose', '#f43f5e')" title="玫瑰紅"></div>
+                <div class="color-dot bg-[#10b981]" onclick="setDrawColor('emerald', '#10b981')" title="翡翠綠"></div>
+                <div class="color-dot bg-[#f59e0b]" onclick="setDrawColor('amber', '#f59e0b')" title="琥珀黃"></div>
+                <div class="color-dot bg-[#0ea5e9]" onclick="setDrawColor('sky', '#0ea5e9')" title="天空藍"></div>
+            </div>
+        </div>
+
+        <div class="search-inputs">
+            <input type="number" class="check-input" data-color="0" placeholder="1">
+            <input type="number" class="check-input" data-color="1" placeholder="2">
+            <input type="number" class="check-input" data-color="2" placeholder="3">
+            <input type="number" class="check-input" data-color="3" placeholder="4">
+            <input type="number" class="check-input" data-color="4" placeholder="5">
+            <input type="number" class="check-input" data-color="5" placeholder="6">
+        </div>
+
+        <button class="btn-action btn-clear ml-auto" onclick="clearAllMarkers()">
+            <i data-lucide="eraser" style="width: 14px; height: 14px;"></i> 清除
+        </button>
     </div>
 
-    <div class="section-title">下期預測目標 (全車 3 顆)</div>
-    <div id="predictionArea"></div>
-    
-    <div class="section-title">累積全車損益曲線</div>
-    <div class="selector-box" style="padding: 15px; margin-bottom: 24px;">
-        <canvas id="pnlChart" height="150"></canvas>
+    <div class="no-print" style="width: 1100px; margin: 16px auto; height: 90px; text-align: center;">
+        <ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px"
+            data-ad-client="ca-pub-4962199729129108" data-ad-slot="7220148183"></ins>
+        <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
     </div>
 
-    <div id="summaryArea" class="summary" style="display:none;"></div>
+    <div id="drawingWrapper">
+        <svg id="drawingCanvas">
+            <defs>
+                <marker id="arrowhead-indigo" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+                    <polygon points="0 0, 6 2, 0 4" fill="#6366f1" />
+                </marker>
+                <marker id="arrowhead-rose" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+                    <polygon points="0 0, 6 2, 0 4" fill="#f43f5e" />
+                </marker>
+                <marker id="arrowhead-emerald" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+                    <polygon points="0 0, 6 2, 0 4" fill="#10b981" />
+                </marker>
+                <marker id="arrowhead-amber" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+                    <polygon points="0 0, 6 2, 0 4" fill="#f59e0b" />
+                </marker>
+                <marker id="arrowhead-sky" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+                    <polygon points="0 0, 6 2, 0 4" fill="#0ea5e9" />
+                </marker>
+            </defs>
+            <g id="linesGroup"></g>
+        </svg>
 
-    <div class="section-title">全車下注紀錄</div>
-    <div id="resultList"></div>
-</div>
-
-<script>
-    let parsedData = [];
-    let maxNum = 39;
-    let pnlChartInstance = null;
-
-    const DAY_NAMES = ['日', '一', '二', '三', '四', '五', '六'];
-
-    function fNum(n) { return String(n).padStart(2, '0'); }
-    function intersect(arr1, arr2) { return arr1.filter(value => arr2.includes(value)); }
-    function wrapNum(n, max) { let v = Math.round(n) % max; if (v <= 0) v += max; return v || 1; }
-    function getDayOfWeek(dateStr) {
-        let dStr = dateStr.includes('/') && dateStr.split('/').length === 2 ? `2026/${dateStr}` : dateStr;
-        return new Date(dStr.replace(/\//g, '-')).getDay();
-    }
-
-    function toggleTheme() {
-        const body = document.body;
-        body.setAttribute('data-theme', body.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
-        if(pnlChartInstance) {
-            pnlChartInstance.options.scales.y.grid.color = body.getAttribute('data-theme') === 'dark' ? '#334155' : '#e2e8f0';
-            pnlChartInstance.update();
-        }
-    }
-
-    async function processData() {
-        const fileName = document.getElementById('csvSelect').value;
-        maxNum = (fileName.includes('649') || fileName.includes('Six')) ? 49 : 39;
-        try {
-            const res = await fetch(fileName);
-            const text = await res.text();
-            const lines = text.trim().split('\n');
-            parsedData = [];
-            for(let i = 1; i < lines.length; i++) {
-                let cols = lines[i].split(',').map(s => s.trim());
-                if(cols.length < 6 || isNaN(parseInt(cols[1]))) continue;
-                parsedData.push({ date: cols[0], originalNums: cols.slice(1).map(Number) });
-            }
-            runAnalysis();
-        } catch(e) { 
-            alert("讀取失敗，請確認檔案位置。"); 
-        }
-    }
-
-    // 模式 A：特定版路 (週一第3球+2, 日第1球+0, 三第5球-4 ➔ 下四五)
-    function getCustomTargetsFromData(dataArray, upToIndex) {
-        let lastMon = null, lastSun = null, lastWed = null;
-        for (let k = upToIndex; k >= Math.max(0, upToIndex - 15); k--) {
-            if (dataArray[k].day === 1 && !lastMon) lastMon = dataArray[k];
-            if (dataArray[k].day === 0 && !lastSun) lastSun = dataArray[k];
-            if (dataArray[k].day === 3 && !lastWed) lastWed = dataArray[k];
-        }
-
-        if (lastMon && lastSun && lastWed) {
-            let t1 = wrapNum(lastMon.nums[2] + 2, maxNum); 
-            let t2 = wrapNum(lastSun.nums[0] + 0, maxNum); 
-            let t3 = wrapNum(lastWed.nums[4] - 4, maxNum); 
-            
-            let targets = [...new Set([t1, t2, t3])].sort((a,b)=>a-b);
-            
-            let allValid = Array.from({length: maxNum}, (_, i) => i+1).filter(n => !targets.includes(n));
-            while(targets.length < 3 && allValid.length > 0) {
-                targets.push(allValid.shift());
-            }
-
-            return { targets: targets.sort((a,b)=>a-b), isCustom: true, lastMon, lastSun, lastWed };
-        }
-        return null;
-    }
-
-    // 模式 B：全自動版路目標搜尋 (±4範圍，追兩期連準)
-    function getAutoTargetsFromData(dataArray, upToIndex) {
-        let rules = [];
         
-        for(let d=0; d<7; d++) {
-            let last_d_idx = dataArray[upToIndex].lastDayIndices[d];
-            if (last_d_idx === -1) continue;
-            
-            let distance = upToIndex - last_d_idx;
-            if (distance !== 1 && distance !== 2) continue; // 只追兩期
-
-            for(let p=0; p<5; p++) {
-                for(let offset=-4; offset<=4; offset++) {
-                    let tNum = wrapNum(dataArray[last_d_idx].nums[p] + offset, maxNum);
+        <div class="page-container " style="margin-bottom: 60px;">
+            <div class="title-section" >
+                <h1 class="header-title">
+                    加州天天樂 開獎單
                     
-                    // 實戰邏輯：如果距離是第2天，且第1天已經命中，就自動放棄不追了
-                    if (distance === 2) {
-                        let check1 = (maxNum === 49 && dataArray[last_d_idx+1].nums.length >= 7) ? dataArray[last_d_idx+1].nums.slice(0,6) : dataArray[last_d_idx+1].nums;
-                        if (check1.includes(tNum)) continue; 
-                    }
-
-                    let hits=0, trials=0, streak=0, maxStreak=0;
-                    
-                    // 回測這個規律過去的「追兩期」表現
-                    for(let k=0; k < last_d_idx; k++) {
-                        if (dataArray[k].day === d) {
-                            let pastTNum = wrapNum(dataArray[k].nums[p] + offset, maxNum);
-                            let isHit = false;
-                            
-                            if (k + 1 < upToIndex) {
-                                let c1 = (maxNum === 49 && dataArray[k+1].nums.length >= 7) ? dataArray[k+1].nums.slice(0,6) : dataArray[k+1].nums;
-                                if (c1.includes(pastTNum)) isHit = true;
-                            }
-                            if (!isHit && k + 2 < upToIndex) {
-                                let c2 = (maxNum === 49 && dataArray[k+2].nums.length >= 7) ? dataArray[k+2].nums.slice(0,6) : dataArray[k+2].nums;
-                                if (c2.includes(pastTNum)) isHit = true;
-                            }
-                            
-                            if (isHit) {
-                                hits++; streak++;
-                                if(streak > maxStreak) maxStreak = streak;
-                            } else {
-                                streak = 0;
-                            }
-                            trials++;
-                        }
-                    }
-                    
-                    // 必須經過一定歷史驗證
-                    if (trials > 5 && hits/trials > 0) {
-                        rules.push({d, p, offset, hitRate: hits/trials, maxStreak, hits, tNum, triggerDraw: dataArray[last_d_idx], distance});
-                    }
-                }
-            }
-        }
-        
-        // 核心排序：連準數最優先
-        rules.sort((a,b) => b.maxStreak - a.maxStreak || b.hitRate - a.hitRate);
-        
-        let targets = [];
-        let chosenRules = [];
-        
-        for(let r of rules) {
-            if (targets.length >= 3) break;
-            if (!targets.includes(r.tNum)) {
-                targets.push(r.tNum);
-                chosenRules.push({ rule: r, tNum: r.tNum, triggerDraw: r.triggerDraw });
-            }
-        }
-        
-        let allValid = Array.from({length: maxNum}, (_, i) => i+1).filter(n => !targets.includes(n));
-        while(targets.length < 3 && allValid.length > 0) targets.push(allValid.shift());
-
-        return { targets: targets.sort((a,b)=>a-b), isCustom: false, chosenRules: chosenRules };
-    }
-
-    function runAnalysis() {
-        let algoMode = document.getElementById('algoMode').value;
-        let isSorted = document.getElementById('sortBalls').checked;
-        let costPerCar = parseFloat(document.getElementById('costPerCar').value) || 74;
-        let prizePerCar = parseFloat(document.getElementById('prizePerCar').value) || 550;
-
-        // 預處理
-        let lastDay = [-1, -1, -1, -1, -1, -1, -1];
-        let processedData = parsedData.map((d, index) => {
-            let nums = [...d.originalNums];
-            if (isSorted) {
-                if (maxNum === 49 && nums.length >= 7) {
-                    nums = nums.slice(0, 6).sort((a, b) => a - b).concat(nums.slice(6));
-                } else {
-                    nums.sort((a, b) => a - b);
-                }
-            }
-            let day = getDayOfWeek(d.date);
-            let dObj = { date: d.date, nums: nums, day: day, lastDayIndices: [...lastDay] };
-            lastDay[day] = index;
-            return dObj;
-        });
-
-        let stats = { bets: 0, hits: 0, cost: 0, win: 0 };
-        let dailyView = [];
-        let chartLabels = [], chartData = [], cumulativePnL = 0;
-
-        for (let i = 0; i < processedData.length; i++) {
-            let currentDraw = processedData[i];
-            let condition = null;
-
-            if (algoMode === 'custom') {
-                if (currentDraw.day === 4 || currentDraw.day === 5) {
-                    condition = getCustomTargetsFromData(processedData, i - 1);
-                }
-            } else {
-                condition = getAutoTargetsFromData(processedData, i);
-            }
-            
-            if (condition && condition.targets.length > 0) {
-                let targets = condition.targets;
-                let checkNums = (maxNum === 49 && currentDraw.nums.length >= 7) ? currentDraw.nums.slice(0, 6) : currentDraw.nums;
+                </h1>
                 
-                let hitNums = intersect(targets, checkNums);
-                let hitCount = hitNums.length;
-
-                let netCost = targets.length * costPerCar;
-                let winAmount = hitCount * prizePerCar;
-
-                stats.bets += targets.length;
-                stats.cost += netCost;
-                
-                if (winAmount > 0) {
-                    stats.win += winAmount;
-                    stats.hits += hitCount;
-                }
-
-                cumulativePnL += (winAmount - netCost);
-
-                chartLabels.push(currentDraw.date);
-                chartData.push(cumulativePnL);
-
-                dailyView.push({
-                    date: currentDraw.date, day: currentDraw.day, nums: currentDraw.nums,
-                    targets: targets, hitNums: hitNums, source: condition,
-                    netCost: netCost, winAmount: winAmount, isHit: winAmount > 0
-                });
-            }
-        }
-
-        // 繪製圖表
-        if (pnlChartInstance) pnlChartInstance.destroy();
-        const ctx = document.getElementById('pnlChart').getContext('2d');
-        const gridColor = document.body.getAttribute('data-theme') === 'dark' ? '#334155' : '#e2e8f0';
-
-        pnlChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: chartLabels,
-                datasets: [{
-                    label: '累積全車淨利',
-                    data: chartData,
-                    borderColor: '#9333ea',
-                    backgroundColor: 'rgba(147, 51, 234, 0.1)',
-                    borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, fill: true, tension: 0.2
-                }]
-            },
-            options: {
-                responsive: true,
-                interaction: { intersect: false, mode: 'index' },
-                scales: { x: { display: true, grid: { display: false } }, y: { display: true, grid: { color: gridColor } } },
-                plugins: { legend: { display: false } }
-            }
-        });
-
-        // 預測最新一期
-        if (processedData.length > 0) {
-            let nextIndex = processedData.length;
-            let lastD = processedData[nextIndex-1];
-            let nextDay = (lastD.day + 1) % 7;
-            
-            let tempLastIndices = [...lastD.lastDayIndices];
-            tempLastIndices[lastD.day] = nextIndex - 1;
-            processedData.push({ day: nextDay, lastDayIndices: tempLastIndices }); 
-
-            let latestCondition = algoMode === 'custom' 
-                ? ((nextDay === 4 || nextDay === 5) ? getCustomTargetsFromData(processedData, nextIndex - 1) : null)
-                : getAutoTargetsFromData(processedData, nextIndex);
-            
-            processedData.pop(); 
-
-            if (latestCondition && (!latestCondition.isCustom ? latestCondition.chosenRules.length > 0 : true)) {
-                let targetDisplay = latestCondition.targets.map(fNum).join(' , ');
-                let nextPlayText = algoMode === 'custom' ? "預測下期 (週四或週五) 準備下注" : `下期 (週${DAY_NAMES[nextDay]}) 全車推薦目標`;
-                
-                let sourceHtml = "";
-                if (latestCondition.isCustom) {
-                    let s = latestCondition;
-                    sourceHtml = `週一 (${s.lastMon.date}) 第3球為 ${fNum(s.lastMon.nums[2])} ➔ <span style="color:var(--accent);">+2 = ${fNum(wrapNum(s.lastMon.nums[2]+2, maxNum))}</span><br>
-                    週日 (${s.lastSun.date}) 第1球為 ${fNum(s.lastSun.nums[0])} ➔ <span style="color:var(--accent);">+0 = ${fNum(wrapNum(s.lastSun.nums[0]+0, maxNum))}</span><br>
-                    週三 (${s.lastWed.date}) 第5球為 ${fNum(s.lastWed.nums[4])} ➔ <span style="color:var(--accent);">-4 = ${fNum(wrapNum(s.lastWed.nums[4]-4, maxNum))}</span>`;
-                } else {
-                    sourceHtml = latestCondition.chosenRules.map(r => {
-                        let sign = r.rule.offset >= 0 ? '+' : '';
-                        let dayCount = r.rule.distance === 1 ? "第 1 天追牌" : "第 2 天追牌";
-                        return `週${DAY_NAMES[r.rule.d]} (${r.triggerDraw.date}) 第${r.rule.p+1}球: ${fNum(r.triggerDraw.nums[r.rule.p])} ➔ <span style="color:var(--accent);">${sign}${r.rule.offset} = ${fNum(r.tNum)}</span> <span style="font-size:0.75rem; color:var(--text-muted);">(歷史最高連準: ${r.rule.maxStreak} 期 | ${dayCount})</span>`;
-                    }).join('<br>');
-                }
-
-                document.getElementById('predictionArea').innerHTML = `
-                <div class="pred-card">
-                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">觸發版路來源：</div>
-                    <div style="font-size: 0.8rem; line-height: 1.6; margin-bottom: 12px; background: var(--bg); padding: 10px; border-radius: 6px; border: 1px dashed var(--border);">
-                        ${sourceHtml}
-                    </div>
-                    <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">${nextPlayText}</div>
-                    <span class="nums-highlight">${targetDisplay}</span>
-                </div>`;
-            } else {
-                let msg = algoMode === 'custom' ? "下期並非週四或週五，目前無需下注。" : "歷史資料不足或版路已中斷，目前空手觀望。";
-                document.getElementById('predictionArea').innerHTML = `<div style="padding:20px; color:var(--text-muted); text-align:center; background: var(--card); border-radius: 12px;">${msg}</div>`;
-            }
-        }
-
-        // 渲染列表
-        let listHtml = dailyView.slice().reverse().map(d => {
-            let dayClass = (algoMode === 'custom' && (d.day === 4 || d.day === 5)) || algoMode === 'auto' ? 'day-target' : '';
-            let s = d.source;
-            let actualNumsHtml = d.nums.map(n => d.hitNums.includes(n) ? `<span class="hit-badge">${fNum(n)}</span>` : `<span style="padding: 0 2px;">${fNum(n)}</span>`).join(' ');
-
-            let sourceBoxHtml = '';
-            if (s.isCustom) {
-                sourceBoxHtml = `<div class="source-box">
-                    <div class="source-row"><span>週一 (${s.lastMon.date}) 第3球: <span class="source-hl">${fNum(s.lastMon.nums[2])}</span></span> <span>+2 = <b>${fNum(wrapNum(s.lastMon.nums[2]+2, maxNum))}</b></span></div>
-                    <div class="source-row"><span>週日 (${s.lastSun.date}) 第1球: <span class="source-hl">${fNum(s.lastSun.nums[0])}</span></span> <span>+0 = <b>${fNum(wrapNum(s.lastSun.nums[0]+0, maxNum))}</b></span></div>
-                    <div class="source-row"><span>週三 (${s.lastWed.date}) 第5球: <span class="source-hl">${fNum(s.lastWed.nums[4])}</span></span> <span>-4 = <b>${fNum(wrapNum(s.lastWed.nums[4]-4, maxNum))}</b></span></div>
-                </div>`;
-            } else {
-                let rulesText = s.chosenRules.map(r => {
-                    let sign = r.rule.offset >= 0 ? '+' : '';
-                    let dayCount = r.rule.distance === 1 ? "第 1 天追牌" : "第 2 天追牌";
-                    return `<div class="source-row"><span>週${DAY_NAMES[r.rule.d]} (${r.triggerDraw.date}) 第${r.rule.p+1}球: <span class="source-hl">${fNum(r.triggerDraw.nums[r.rule.p])}</span></span> <span>${sign}${r.rule.offset} = <b>${fNum(r.tNum)}</b> <span style="color:var(--text-muted); font-size:0.75rem;">(${dayCount})</span></span></div>`;
-                }).join('');
-                sourceBoxHtml = `<div class="source-box">${rulesText}</div>`;
-            }
-
-            let detailBox = d.isHit ? `
-                <div class="hit-detail">
-                    <div style="font-weight: 700; color: var(--success); margin-bottom: 6px;">版路成功命中！</div>
-                    <div style="font-size: 0.85rem; line-height: 1.6;">
-                        <b>下注球號：</b> ${d.targets.map(fNum).join(', ')}<br>
-                        <b>總買車數：</b> ${d.targets.length} 車 ｜ <b>實際命中：</b> <span style="color:var(--success); font-weight:700;">${d.hitNums.length} 車</span><br>
-                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--success);">
-                            <span><b>總成本：</b>${d.netCost.toFixed(0)} 元 ｜ <b>中獎獎金：</b><span style="color:var(--success);font-weight:700;">${d.winAmount.toFixed(0)}</span> 元</span>
+                <div class="flex items-center gap-3 no-print">
+                    <button onclick="window.print()" class="btn-print">
+                        <i data-lucide="printer" style="width: 16px; height: 16px;"></i> 直接列印
+                    </button>
+                    <div class="tooltip-container">
+                        <button class="btn-info">
+                            <i data-lucide="help-circle" style="width: 16px; height: 16px;"></i> 使用說明
+                        </button>
+                        <div class="tooltip-content">
+                            開獎單可以使用滑鼠直接點號碼上色
                         </div>
                     </div>
-                </div>` : `
-                <div class="miss-detail">
-                    <div style="font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">當期未命中</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
-                        <b>下注球號：</b> ${d.targets.map(fNum).join(', ')}<br>
-                        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                            <span><b>總成本：</b>${d.netCost.toFixed(0)} 元 ｜ <b>中獎獎金：</b>0 元</span>
-                        </div>
-                    </div>
-                </div>`;
-
-            return `<div class="result-item">
-                <div class="res-header">
-                    <div class="res-date"><span>開獎日: ${d.date}</span> <span class="day-badge ${dayClass}">週${DAY_NAMES[d.day]}</span></div>
-                    <div class="res-actual">${actualNumsHtml}</div>
                 </div>
-                ${sourceBoxHtml}
-                ${detailBox}
-            </div>`;
-        }).join('');
+                
+            </div>
 
-        document.getElementById('resultList').innerHTML = listHtml || '<div style="text-align:center;padding:20px; color:var(--text-muted);">無符合條件的下注紀錄</div>';
+            <div id="dynamicGridContainer" class="grid-container header-us539">
+            </div>
+        </div>
+        
+    </div>
 
-        // 結算
-        let net = stats.win - stats.cost;
-        let totalPlays = dailyView.length;
-        let winPlays = dailyView.filter(d => d.isHit).length;
-        let winRate = totalPlays > 0 ? ((winPlays / totalPlays) * 100).toFixed(1) : 0;
+    <footer class="mt-6 text-center text-xs text-black font-bold">
+    </footer>
 
-        document.getElementById('summaryArea').style.display = 'block';
-        document.getElementById('summaryArea').innerHTML = `
-            <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 8px;">全車版路回測總覽</div>
-            <span>總計出手下注 <b>${totalPlays}</b> 期，其中獲利 <b>${winPlays}</b> 期 (期數勝率 <b>${winRate}%</b>)<br>
-            總計共買：<b>${stats.bets}</b> 車 ｜ 實際命中：<b>${stats.hits}</b> 車<br>
-            累積總成本：${stats.cost.toFixed(0)} 元 ｜ 累積總派彩：${stats.win.toFixed(0)} 元</span>
-            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 1.1rem;">
-                <b>總淨利結算：<span style="color: ${net >= 0 ? 'var(--success)' : 'var(--danger)'}">${net >= 0 ? '+' : ''}${net.toFixed(0)}</span></b>
-            </div>`;
-    }
+    <script>
+        lucide.createIcons();
 
-    window.onload = () => { processData(); };
-</script>
+        // --- State ---
+        let isDrawingMode = false;
+        let firstBall = null;
+        let currentDrawColor = 'indigo';
+        let currentDrawColorHex = '#6366f1';
+        let currentClickMode = 'color';
+        window.drawnLines = [];
+        window.currentOrder = 'sort';
+
+        function setClickMode(mode) {
+            currentClickMode = mode;
+            document.getElementById('clickModeColor').classList.toggle('active', mode === 'color');
+            document.getElementById('clickModeDim').classList.toggle('active', mode === 'dim');
+        }
+
+        // --- Search Logic ---
+        document.querySelectorAll('.check-input').forEach(input => {
+            input.addEventListener('input', () => {
+                updateHighlights();
+            });
+        });
+
+        function updateHighlights() {
+            const inputs = document.querySelectorAll('.check-input');
+            const highlightsMap = {};
+            inputs.forEach((input, index) => {
+                const val = input.value.trim();
+                if (val !== '') {
+                    const numVal = parseInt(val, 10).toString();
+                    if (!(numVal in highlightsMap)) highlightsMap[numVal] = index;
+                }
+            });
+            const cells = document.querySelectorAll('.num-cell');
+            cells.forEach(cell => {
+                for (let i = 0; i <= 5; i++) cell.classList.remove(`hl-${i}`);
+                const ballVal = cell.getAttribute('data-ball-val');
+                if (ballVal) {
+                    const normalizedBallVal = parseInt(ballVal, 10).toString();
+                    if (normalizedBallVal in highlightsMap) {
+                        cell.classList.add(`hl-${highlightsMap[normalizedBallVal]}`);
+                    }
+                }
+            });
+        }
+
+        function clearAllMarkers() {
+            document.querySelectorAll('.check-input').forEach(input => input.value = '');
+            document.querySelectorAll('.num-cell').forEach(cell => {
+                for (let i = 0; i <= 5; i++) cell.classList.remove(`hl-${i}`);
+                cell.classList.remove('is-dimmed');
+                cell.style.boxShadow = '';
+            });
+            document.getElementById('linesGroup').innerHTML = '';
+            window.drawnLines = [];
+            firstBall = null;
+            updateHighlights();
+        }
+
+        // --- 核心：從後台資料庫撈取數據並渲染成 4 欄排版 ---
+        function loadAndRenderTable() {
+            const db = JSON.parse(localStorage.getItem('ttLottoDb')) || [];
+            const container = document.getElementById('dynamicGridContainer');
+            container.innerHTML = '';
+
+            const ROWS_PER_COLUMN = 48; // 每直欄固定 48 行，維持精美排版
+            const TOTAL_COLUMNS = 4;
+            const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+
+            let dataIndex = 0;
+
+            for (let c = 0; c < TOTAL_COLUMNS; c++) {
+                const columnBox = document.createElement('div');
+                columnBox.className = 'column-box';
+                columnBox.style.width = '275px';
+
+                let tableHtml = `
+                    <table class="joined-table">
+                        <colgroup>
+                            <col style="width: 30px;"><col style="width: 30px;"><col style="width: 35px;">
+                            <col style="width: 36.0px;"><col style="width: 36.0px;"><col style="width: 36.0px;"><col style="width: 36.0px;"><col style="width: 36.0px;">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th class="month-cell">月</th><th class="day-cell">日</th><th class="weekday-cell">星期</th>
+                                <th colspan="5" class="header-order-text-dynamic">順球</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                let lastMonthText = "";
+
+                for (let r = 0; r < ROWS_PER_COLUMN; r++) {
+                    const item = db[dataIndex];
+                    
+                    if (item) {
+                        const dateParts = item.twDate.split('-');
+                        const monthText = parseInt(dateParts[1], 10).toString();
+                        const dayText = dateParts[2];
+                        const dayOfWeek = weekDays[new Date(item.twDate).getDay()];
+
+                        const sortNums = [...item.nums].sort((a,b)=>a-b);
+                        const drawNums = item.nums;
+
+                        const displayMonth = (monthText === lastMonthText) ? "" : monthText;
+                        lastMonthText = monthText;
+
+                        tableHtml += `
+                            <tr>
+                                <td class="month-cell">${displayMonth}</td>
+                                <td class="day-cell">${dayText}</td>
+                                <td class="weekday-cell">${dayOfWeek}</td>
+                                ${sortNums.map((num, i) => `
+                                    <td class="num-cell" 
+                                        data-ball-val="${window.currentOrder === 'sort' ? num : drawNums[i]}" 
+                                        data-val-sort="${num}" 
+                                        data-val-draw="${drawNums[i]}">${window.currentOrder === 'sort' ? num : drawNums[i]}</td>
+                                `).join('')}
+                            </tr>
+                        `;
+                        dataIndex++;
+                    } else {
+                        // 補足空行以維持高度
+                        tableHtml += `
+                            <tr>
+                                <td style="border-top: hidden !important;"></td><td></td><td></td>
+                                <td></td><td></td><td></td><td></td><td></td>
+                            </tr>
+                        `;
+                    }
+                }
+
+                tableHtml += `</tbody></table>`;
+                columnBox.innerHTML = tableHtml;
+                container.appendChild(columnBox);
+            }
+        }
+
+        // --- Order Switch Logic ---
+        function switchOrder() {
+            // 切換狀態
+            window.currentOrder = (window.currentOrder === 'sort') ? 'draw' : 'sort';
+            const order = window.currentOrder;
+
+            const btnSort = document.getElementById('toggleSort');
+            
+            // 重新渲染表格
+            loadAndRenderTable();
+
+            if (order === 'sort') {
+                btnSort.innerHTML = '<i data-lucide="arrow-down-0-1" style="width: 14px; height: 14px;"></i> 順球';
+            } else {
+                btnSort.innerHTML = '<i data-lucide="shuffle" style="width: 14px; height: 14px;"></i> 落球';
+            }
+
+            document.querySelectorAll('.header-order-text-dynamic').forEach(el => {
+                el.textContent = order === 'sort' ? '順球' : '落球';
+            });
+
+            rebindBallEvents();
+            updateHighlights();
+            lucide.createIcons();
+        }
+
+        // --- Drawing Logic ---
+        function toggleDrawingMode() {
+            isDrawingMode = !isDrawingMode;
+            const btn = document.getElementById('toggleDrawMode');
+            const palette = document.getElementById('drawColorPalette');
+            if (isDrawingMode) {
+                btn.classList.add('active');
+                palette.classList.remove('hidden');
+                palette.classList.add('flex');
+            } else {
+                btn.classList.remove('active');
+                palette.classList.add('hidden');
+                palette.classList.remove('flex');
+                if (firstBall) firstBall.style.boxShadow = '';
+                firstBall = null;
+            }
+        }
+
+        function setDrawColor(colorName, colorHex) {
+            currentDrawColor = colorName;
+            currentDrawColorHex = colorHex;
+            document.querySelectorAll('.color-dot').forEach(dot => {
+                dot.classList.toggle('active', dot.getAttribute('onclick').includes(colorName));
+            });
+        }
+
+        function drawLineBetween(b1, b2, colorName = 'indigo') {
+            const wrapper = document.getElementById('drawingWrapper');
+            const wrapRect = wrapper.getBoundingClientRect();
+            const r1 = b1.getBoundingClientRect();
+            const r2 = b2.getBoundingClientRect();
+
+            const x1 = (r1.left + r1.width / 2) - wrapRect.left;
+            const y1 = (r1.top + r1.height / 2) - wrapRect.top + 10;
+            const x2 = (r2.left + r2.width / 2) - wrapRect.left;
+            const y2 = (r2.top + r2.height / 2) - wrapRect.top + 10;
+
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const len = Math.sqrt(dx * dx + dy * dy);
+
+            let actualX2 = x2, actualY2 = y2;
+            if (len > 15) {
+                const offset = 12;
+                actualX2 = x2 - (dx / len) * offset;
+                actualY2 = y2 - (dy / len) * offset;
+            }
+
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+            line.setAttribute('x2', actualX2); line.setAttribute('y2', actualY2);
+            line.setAttribute('class', `draw-line marker-${colorName}`);
+            line.setAttribute('marker-end', `url(#arrowhead-${colorName})`);
+            document.getElementById('linesGroup').appendChild(line);
+        }
+
+        function redrawLines() {
+            document.getElementById('linesGroup').innerHTML = '';
+            window.drawnLines.forEach(l => drawLineBetween(l.b1, l.b2, l.color));
+        }
+
+        function handleBallDrawingClick(cell) {
+            if (!firstBall) {
+                firstBall = cell;
+                cell.style.boxShadow = `inset 0 0 0 3px ${currentDrawColorHex}`;
+            } else {
+                if (firstBall === cell) {
+                    cell.style.boxShadow = '';
+                    firstBall = null;
+                    return;
+                }
+                drawLineBetween(firstBall, cell, currentDrawColor);
+                window.drawnLines.push({ b1: firstBall, b2: cell, color: currentDrawColor });
+                firstBall.style.boxShadow = '';
+                firstBall = null;
+            }
+        }
+
+        // --- Handling Ball Click Event ---
+        function handleBallClick(cell) {
+            const val = cell.getAttribute('data-ball-val');
+            if (!val) return;
+
+            if (currentClickMode === 'dim') {
+                cell.classList.toggle('is-dimmed');
+                return;
+            }
+
+            const numStr = parseInt(val, 10).toString();
+            const inputs = document.querySelectorAll('.check-input');
+
+            // 1. Check if already marked
+            let existingInput = null;
+            inputs.forEach(input => {
+                if (input.value.trim() !== '' && parseInt(input.value, 10).toString() === numStr) {
+                    existingInput = input;
+                }
+            });
+
+            if (existingInput) {
+                existingInput.value = '';
+            } else {
+                // 2. Find first empty slot
+                let emptyInput = null;
+                for (let input of inputs) {
+                    if (input.value.trim() === '') {
+                        emptyInput = input;
+                        break;
+                    }
+                }
+                if (emptyInput) {
+                    const num = parseInt(val, 10);
+                    emptyInput.value = (num < 10 ? '0' : '') + num;
+                }
+            }
+            updateHighlights();
+        }
+
+        function rebindBallEvents() {
+            document.querySelectorAll('.num-cell').forEach(cell => {
+                cell.addEventListener('mousedown', (e) => {
+                    if (isDrawingMode) {
+                        handleBallDrawingClick(cell);
+                    } else {
+                        handleBallClick(cell);
+                    }
+                    e.preventDefault();
+                });
+            });
+        }
+
+        // --- Init ---
+        document.addEventListener('DOMContentLoaded', () => {
+            window.currentOrder = 'sort'; // 預設順球
+            
+            // 1. 從 LocalStorage 載入並渲染表格
+            loadAndRenderTable();
+
+            // 2. 綁定搜尋框事件
+            document.querySelectorAll('.check-input').forEach(input => {
+                input.addEventListener('input', () => {
+                    input.value = input.value.replace(/[^0-9]/g, '').slice(0, 2);
+                    updateHighlights();
+                });
+            });
+
+            // 3. 綁定號碼球點擊事件
+            rebindBallEvents();
+
+            window.addEventListener('resize', redrawLines);
+
+            // Init Dark Mode
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                updateDarkModeButton();
+            }
+        });
+
+        // --- Dark Mode Logic ---
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+            updateDarkModeButton();
+        }
+
+        function updateDarkModeButton() {
+            const btn = document.getElementById('toggleDarkMode');
+            const isDark = document.body.classList.contains('dark-mode');
+            if (isDark) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i data-lucide="sun" style="width: 14px; height: 14px;"></i> 日間';
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i data-lucide="moon" style="width: 14px; height: 14px;"></i> 護眼';
+            }
+            lucide.createIcons();
+        }
+    </script>
 </body>
+
 </html>
