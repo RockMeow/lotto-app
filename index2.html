@@ -1199,7 +1199,6 @@
                 if (type === 'any') {
                     for (let x = 1; x <= 39; x++) {
                         let triggerIndices = [];
-                        // 修正盲點：包含最新的未結算觸發期數
                         for (let i = 0; i < db.length; i++) {
                             if (db[i].nums.includes(x)) triggerIndices.push(i);
                         }
@@ -1227,7 +1226,7 @@
                                     triggerCount: completedCount,
                                     hits: targetCounts[y],
                                     offset: offset,
-                                    dbLength: db.length, // 記錄資料庫長度供高亮判斷
+                                    dbLength: db.length,
                                     allTriggerIndices: triggerIndices,
                                     targetIndices: targetHitIndicesMap[y],
                                     desc: `【全車不定位】 <span style="color: #f59e0b;">${x}</span> 拖 <span style="color: #10b981;">${y}</span>`
@@ -1239,7 +1238,6 @@
                     for (let p = 0; p < 5; p++) {
                         for (let x = 1; x <= 39; x++) {
                             let triggerIndices = [];
-                            // 修正盲點：包含最新的未結算觸發期數
                             for (let i = 0; i < db.length; i++) {
                                 const sortedNums = [...db[i].nums].sort((a,b)=>a-b);
                                 if (sortedNums[p] === x) triggerIndices.push(i);
@@ -1268,7 +1266,7 @@
                                         triggerCount: completedCount,
                                         hits: targetCounts[y],
                                         offset: offset,
-                                        dbLength: db.length, // 記錄資料庫長度供高亮判斷
+                                        dbLength: db.length,
                                         allTriggerIndices: triggerIndices,
                                         targetIndices: targetHitIndicesMap[y],
                                         desc: `【順球第${p+1}顆】 <span style="color: #f59e0b;">${x}</span> 拖 <span style="color: #10b981;">${y}</span>`
@@ -1310,7 +1308,6 @@
                         item.classList.add('active');
                         highlightPattern(pat);
                         
-                        // 點擊版路後自動縮回右側面板
                         const panel = document.getElementById('patternPanel');
                         const btn = document.getElementById('togglePatternPanelBtn');
                         panel.classList.remove('open');
@@ -1350,25 +1347,21 @@
         function highlightPattern(pattern) {
             clearPatternHighlights();
 
-            // 標記所有觸發號碼 (包含歷史與最新的未結算號碼)
             pattern.allTriggerIndices.forEach(idx => {
                 const tr = document.querySelector(`tr[data-draw-idx="${idx}"]`);
                 if (tr) {
                     const cell = tr.querySelector(`.num-cell[data-val-sort="${pattern.triggerVal}"]`);
                     if (cell) {
-                        // 如果該觸發號碼的「目標期數」還沒開出來 (超過或等於目前資料庫最新一期)
+                        // 修正盲點：如果目標期數還沒開出來 (超過資料庫長度)
                         if (idx + pattern.offset >= pattern.dbLength) {
-                            // 標記為預測中的定位閃爍紅燈！
                             cell.classList.add('hl-pattern-predict');
                         } else {
-                            // 歷史觸發標記橘燈
                             cell.classList.add('hl-pattern-trigger');
                         }
                     }
                 }
             });
 
-            // 標記命中拖出號碼 (綠色) 並自動畫線連接
             pattern.targetIndices.forEach(targetIdx => {
                 const targetTr = document.querySelector(`tr[data-draw-idx="${targetIdx}"]`);
                 const triggerIdx = targetIdx - pattern.offset;
@@ -1379,7 +1372,6 @@
                     if (targetCell) {
                         targetCell.classList.add('hl-pattern-target');
                         
-                        // 畫箭頭線
                         if (triggerTr) {
                             const triggerCell = triggerTr.querySelector(`.num-cell[data-val-sort="${pattern.triggerVal}"]`);
                             if (triggerCell) {
