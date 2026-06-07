@@ -14,7 +14,7 @@
     <meta http-equiv="Cache-Control" content="max-age=600">
     <meta charset="UTF-8">
     <meta name="description" content="">
-    <title>開獎單</title>
+    <title>加州天天樂 開獎單</title>
     
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -153,7 +153,7 @@
         }
 
         .page-container::after {
-            content: "開獎單";
+            content: "加州天天樂開獎單";
             position: absolute;
             bottom: -20px;
             right: 0;
@@ -704,7 +704,6 @@
             <i data-lucide="pen-tool" style="width: 14px; height: 14px;"></i> 畫直線
         </button>
         
-        <!-- 找版路按鈕 -->
         <button id="togglePatternPanelBtn" class="btn-action btn-mode" onclick="togglePatternPanel()">
             <i data-lucide="search" style="width: 14px; height: 14px;"></i> 找版路
         </button>
@@ -767,11 +766,10 @@
         <div class="page-container " style="margin-bottom: 60px;">
             <div class="title-section" >
                 <h1 class="header-title">
-                    開獎單
+                    加州天天樂 開獎單
                 </h1>
                 
                 <div class="flex items-center gap-3 no-print" style="flex-shrink: 0;">
-                    <!-- 切換到後台按鈕 -->
                     <a href="admin.html" class="btn-print" style="background-color: #10b981;">
                         <i data-lucide="database" style="width: 16px; height: 16px;"></i> 後台管理
                     </a>
@@ -796,7 +794,6 @@
         
     </div>
 
-    <!-- 版路分析側邊面板 -->
     <div id="patternPanel" class="no-print">
         <div class="pattern-header">
             <div>
@@ -812,8 +809,8 @@
                 <div>
                     <label>版路分類</label>
                     <select id="patternType">
-                        <option value="any">不定位</option>
-                        <option value="fixed">定位</option>
+                        <option value="any">不定位 (全車拖牌)</option>
+                        <option value="fixed">固定位置 (順球第幾顆)</option>
                     </select>
                 </div>
                 <div style="display: flex; gap: 12px;">
@@ -833,7 +830,7 @@
                     </div>
                 </div>
                 <button class="btn-analyze" onclick="analyzePatterns()">
-                    <i data-lucide="zap" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i> 開始分析
+                    <i data-lucide="zap" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i> 開始深度分析
                 </button>
             </div>
             <div id="patternResults">
@@ -1248,7 +1245,16 @@
                     }
                 }
 
-                currentPatterns.sort((a, b) => b.hits - a.hits); 
+                // 排序邏輯：優先按位置，接著觸發號碼小到大，最後拖出號碼小到大
+                currentPatterns.sort((a, b) => {
+                    if (a.type === 'fixed' && b.type === 'fixed' && a.pos !== b.pos) {
+                        return a.pos - b.pos;
+                    }
+                    if (a.triggerVal !== b.triggerVal) {
+                        return a.triggerVal - b.triggerVal;
+                    }
+                    return a.targetVal - b.targetVal;
+                });
 
                 if (currentPatterns.length === 0) {
                     resultsDiv.innerHTML = `
