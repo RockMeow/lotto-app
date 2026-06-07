@@ -437,6 +437,8 @@
             font-weight: 900;
             letter-spacing: 0.23em;
             margin: 0;
+            white-space: nowrap; /* 防止標題被擠壓換行 */
+            flex-shrink: 0;      /* 防止標題縮小 */
         }
 
         .btn-print {
@@ -453,6 +455,7 @@
             transition: all 0.2s;
             cursor: pointer;
             border: none;
+            text-decoration: none;
         }
 
         .btn-print:hover {
@@ -701,6 +704,7 @@
             <i data-lucide="pen-tool" style="width: 14px; height: 14px;"></i> 畫直線
         </button>
         
+        <!-- 找版路按鈕 -->
         <button id="togglePatternPanelBtn" class="btn-action btn-mode" onclick="togglePatternPanel()">
             <i data-lucide="search" style="width: 14px; height: 14px;"></i> 找版路
         </button>
@@ -764,10 +768,13 @@
             <div class="title-section" >
                 <h1 class="header-title">
                     加州天天樂 開獎單
-                    
                 </h1>
                 
-                <div class="flex items-center gap-3 no-print">
+                <div class="flex items-center gap-3 no-print" style="flex-shrink: 0;">
+                    <!-- 切換到後台按鈕 -->
+                    <a href="admin.html" class="btn-print" style="background-color: #10b981;">
+                        <i data-lucide="database" style="width: 16px; height: 16px;"></i> 後台管理
+                    </a>
                     <button onclick="window.print()" class="btn-print">
                         <i data-lucide="printer" style="width: 16px; height: 16px;"></i> 直接列印
                     </button>
@@ -789,6 +796,7 @@
         
     </div>
 
+    <!-- 版路分析側邊面板 -->
     <div id="patternPanel" class="no-print">
         <div class="pattern-header">
             <div>
@@ -1150,8 +1158,7 @@
             panel.classList.toggle('open');
             btn.classList.toggle('active');
             if (!panel.classList.contains('open')) {
-                clearPatternHighlights();
-                document.querySelectorAll('.pattern-result-item').forEach(el => el.classList.remove('active'));
+                // 不自動清除 highlight，讓使用者可以保留看圖
             }
         }
 
@@ -1262,6 +1269,12 @@
                         document.querySelectorAll('.pattern-result-item').forEach(el => el.classList.remove('active'));
                         item.classList.add('active');
                         highlightPattern(pat);
+                        
+                        // 點擊版路後自動縮回右側面板
+                        const panel = document.getElementById('patternPanel');
+                        const btn = document.getElementById('togglePatternPanelBtn');
+                        panel.classList.remove('open');
+                        btn.classList.remove('active');
                     };
 
                     let offsetStr = `下${offset}期`;
