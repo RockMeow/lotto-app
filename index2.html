@@ -1190,7 +1190,7 @@
             resultsDiv.innerHTML = `
                 <div style="text-align: center; padding: 30px; color: #64748b;">
                     <i data-lucide="loader-2" class="animate-spin" style="width: 24px; height: 24px; margin: 0 auto 10px auto;"></i>
-                    <p style="font-weight: 700;">超級電腦運算中...</p>
+                    <p style="font-weight: 700;">運算中...</p>
                 </div>
             `;
             lucide.createIcons();
@@ -1230,7 +1230,7 @@
                                     dbLength: db.length, // 記錄資料庫長度供高亮判斷
                                     allTriggerIndices: triggerIndices,
                                     targetIndices: targetHitIndicesMap[y],
-                                    desc: `【全車不定位】 <span style="color: #f59e0b;">${x}</span> 拖 <span style="color: #10b981;">${y}</span>`
+                                    desc: `【不定位】 <span style="color: #f59e0b;">${x}</span> 拖 <span style="color: #10b981;">${y}</span>`
                                 });
                             }
                         }
