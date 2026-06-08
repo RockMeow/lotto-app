@@ -11,72 +11,78 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8fafc; }
     </style>
 </head>
-<body class="p-6">
+<body class="p-4 md:p-6">
 
     <div class="max-w-5xl mx-auto">
-        <h1 class="text-3xl font-black text-slate-800 mb-6 flex items-center gap-3">
-            <i data-lucide="database" class="w-8 h-8 text-blue-600"></i> 開獎數據管理後台
+        <h1 class="text-2xl md:text-3xl font-black text-slate-800 mb-4 flex items-center gap-3">
+            <i data-lucide="database" class="w-8 h-8 text-blue-600 flex-shrink-0"></i> 
+            <span id="mainTitle">天天樂 開獎數據管理</span>
         </h1>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+        <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+            <button onclick="switchGame('ttLottoDb')" id="btn-ttLottoDb" class="whitespace-nowrap px-4 py-2 rounded-lg font-bold transition bg-blue-600 text-white shadow-sm">加州天天樂</button>
+            <button onclick="switchGame('tw539LottoDb')" id="btn-tw539LottoDb" class="whitespace-nowrap px-4 py-2 rounded-lg font-bold transition bg-slate-200 text-slate-700 hover:bg-slate-300">今彩 539</button>
+        </div>
+
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
             <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800"><i data-lucide="hard-drive" class="text-indigo-500"></i> 數據備份與讀取</h2>
-            <div class="flex flex-wrap gap-4 items-center">
-                <button onclick="exportData()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-sm">
-                    <i data-lucide="download" class="w-4 h-4"></i> 匯出數據 (儲存為檔案)
+            <div class="flex flex-col md:flex-row gap-4 items-stretch md:items-center">
+                <button onclick="exportData()" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                    <i data-lucide="download" class="w-4 h-4"></i> 匯出數據
                 </button>
                 
-                <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1">
-                    <input type="file" id="fileInput" accept=".json" class="text-sm text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
-                    <button onclick="importData()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg font-bold transition flex items-center gap-2 shadow-sm">
-                        <i data-lucide="upload" class="w-4 h-4"></i> 讀取數據檔案
+                <div class="w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 md:py-1">
+                    <input type="file" id="fileInput" accept=".json" class="w-full sm:w-auto text-sm text-slate-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                    <button onclick="importData()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 md:py-1.5 rounded-lg font-bold transition flex items-center justify-center gap-2 shadow-sm">
+                        <i data-lucide="upload" class="w-4 h-4"></i> 讀取檔案
                     </button>
                 </div>
 
-                <button onclick="clearData()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-2 rounded-lg font-bold transition flex items-center gap-2 ml-auto">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i> 清空所有資料
+                <button onclick="clearData()" class="w-full md:w-auto bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 md:ml-auto">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i> 清空資料
                 </button>
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
             <h2 id="formTitle" class="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800"><i data-lucide="plus-circle" class="text-blue-500"></i> 新增開獎數據</h2>
-            <form id="recordForm" class="grid grid-cols-1 md:grid-cols-7 gap-4 items-end" onsubmit="saveRecord(event)">
+            <form id="recordForm" class="grid grid-cols-5 md:grid-cols-7 gap-2 md:gap-4 items-end" onsubmit="saveRecord(event)">
                 <input type="hidden" id="recordId">
-                <div class="col-span-2">
+                <div class="col-span-5 md:col-span-2 mb-2 md:mb-0">
                     <label class="block text-sm font-bold text-slate-700 mb-1">開獎日期</label>
                     <input type="date" id="twDate" required class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
                 </div>
-                <div>
+                <div class="col-span-1">
                     <label class="block text-sm font-bold text-slate-700 mb-1 text-center">號碼 1</label>
                     <input type="number" id="num1" min="1" max="39" required class="w-full p-2 border rounded-lg text-center focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
                 </div>
-                <div>
+                <div class="col-span-1">
                     <label class="block text-sm font-bold text-slate-700 mb-1 text-center">號碼 2</label>
                     <input type="number" id="num2" min="1" max="39" required class="w-full p-2 border rounded-lg text-center focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
                 </div>
-                <div>
+                <div class="col-span-1">
                     <label class="block text-sm font-bold text-slate-700 mb-1 text-center">號碼 3</label>
                     <input type="number" id="num3" min="1" max="39" required class="w-full p-2 border rounded-lg text-center focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
                 </div>
-                <div>
+                <div class="col-span-1">
                     <label class="block text-sm font-bold text-slate-700 mb-1 text-center">號碼 4</label>
                     <input type="number" id="num4" min="1" max="39" required class="w-full p-2 border rounded-lg text-center focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
                 </div>
-                <div>
+                <div class="col-span-1">
                     <label class="block text-sm font-bold text-slate-700 mb-1 text-center">號碼 5</label>
                     <input type="number" id="num5" min="1" max="39" required class="w-full p-2 border rounded-lg text-center focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50">
                 </div>
-                <div class="col-span-1 md:col-span-7 flex justify-end gap-2 mt-2">
-                    <button type="button" onclick="resetForm()" class="px-4 py-2 border rounded-lg font-bold text-slate-600 hover:bg-slate-50 transition">取消</button>
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold transition flex items-center gap-2 shadow-sm">
+                <div class="col-span-5 md:col-span-7 flex flex-col sm:flex-row justify-end gap-2 mt-4 md:mt-2">
+                    <button type="button" onclick="resetForm()" class="w-full sm:w-auto px-4 py-2 border rounded-lg font-bold text-slate-600 hover:bg-slate-50 transition">取消</button>
+                    <button type="submit" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold transition flex items-center justify-center gap-2 shadow-sm">
                         <i data-lucide="save" class="w-4 h-4"></i> 儲存數據
                     </button>
                 </div>
             </form>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <table class="w-full text-center border-collapse">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+            <table class="w-full text-center border-collapse min-w-[500px]">
                 <thead class="bg-slate-800 text-white">
                     <tr>
                         <th class="py-3 px-4 font-bold border-b border-slate-700 w-1/3">開獎日期</th>
@@ -94,12 +100,35 @@
         // 初始化 Lucide 圖標
         lucide.createIcons();
 
-        // 狀態管理：預設從瀏覽器儲存空間讀取
-        let db = JSON.parse(localStorage.getItem('ttLottoDb')) || [];
+        // 狀態管理：預設彩種與數據
+        let currentGame = 'ttLottoDb'; 
+        let db = [];
 
-        // 啟動時排序一次並渲染
-        sortDatabase();
-        renderTable();
+        // 啟動初始化
+        switchGame('ttLottoDb');
+
+        // --- 遊戲切換功能 ---
+        function switchGame(gameKey) {
+            currentGame = gameKey;
+            db = JSON.parse(localStorage.getItem(currentGame)) || [];
+            
+            // 更新按鈕樣式
+            document.getElementById('btn-ttLottoDb').className = gameKey === 'ttLottoDb' 
+                ? 'whitespace-nowrap px-4 py-2 rounded-lg font-bold transition bg-blue-600 text-white shadow-sm'
+                : 'whitespace-nowrap px-4 py-2 rounded-lg font-bold transition bg-slate-200 text-slate-700 hover:bg-slate-300';
+                
+            document.getElementById('btn-tw539LottoDb').className = gameKey === 'tw539LottoDb' 
+                ? 'whitespace-nowrap px-4 py-2 rounded-lg font-bold transition bg-blue-600 text-white shadow-sm'
+                : 'whitespace-nowrap px-4 py-2 rounded-lg font-bold transition bg-slate-200 text-slate-700 hover:bg-slate-300';
+
+            // 更新大標題
+            const gameName = gameKey === 'ttLottoDb' ? '天天樂' : '今彩 539';
+            document.getElementById('mainTitle').innerText = `${gameName} 開獎數據管理`;
+            
+            sortDatabase();
+            renderTable();
+            resetForm();
+        }
 
         // --- 排序邏輯 (日期由小到大) ---
         function sortDatabase() {
@@ -114,7 +143,9 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `天天樂數據備份_${new Date().toISOString().split('T')[0]}.json`;
+            
+            const gameName = currentGame === 'ttLottoDb' ? '天天樂' : '今彩539';
+            a.download = `${gameName}數據備份_${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
@@ -133,7 +164,8 @@
                         sortDatabase();
                         saveDb();
                         renderTable();
-                        alert(`成功讀取 ${db.length} 筆開獎數據！`);
+                        const gameName = currentGame === 'ttLottoDb' ? '天天樂' : '今彩539';
+                        alert(`成功讀取 ${db.length} 筆【${gameName}】開獎數據！`);
                         fileInput.value = ''; // 清空選擇器
                     } else {
                         alert("檔案格式不正確！");
@@ -207,7 +239,7 @@
         }
 
         function clearData() {
-            if (confirm("警告：這將清空所有開獎數據，確定執行？")) {
+            if (confirm("警告：這將清空當前彩種的所有數據，確定執行？")) {
                 db = [];
                 saveDb();
                 renderTable();
@@ -240,12 +272,14 @@
                     <td class="py-4 px-4 font-bold text-slate-800 text-lg">${item.twDate}</td>
                     <td class="py-4 px-4">${ballsHtml}</td>
                     <td class="py-4 px-4">
-                        <button onclick="editRecord('${item.id}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg mx-1 transition" title="編輯">
-                            <i data-lucide="edit-2" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="deleteRecord('${item.id}')" class="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 p-2 rounded-lg mx-1 transition" title="刪除">
-                            <i data-lucide="trash" class="w-4 h-4"></i>
-                        </button>
+                        <div class="flex justify-center gap-1">
+                            <button onclick="editRecord('${item.id}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition" title="編輯">
+                                <i data-lucide="edit-2" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="deleteRecord('${item.id}')" class="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 p-2 rounded-lg transition" title="刪除">
+                                <i data-lucide="trash" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -261,7 +295,7 @@
         }
 
         function saveDb() {
-            localStorage.setItem('ttLottoDb', JSON.stringify(db));
+            localStorage.setItem(currentGame, JSON.stringify(db));
         }
     </script>
 </body>
