@@ -122,7 +122,7 @@
                 : 'whitespace-nowrap px-4 py-2 rounded-lg font-bold transition bg-slate-200 text-slate-700 hover:bg-slate-300';
 
             // 更新大標題
-            const gameName = gameKey === 'ttLottoDb' ? '天天樂' : '今彩 539';
+            const gameName = gameKey === 'ttLottoDb' ? '加州天天樂' : '今彩 539';
             document.getElementById('mainTitle').innerText = `${gameName} 開獎數據管理`;
             
             sortDatabase();
@@ -164,7 +164,7 @@
                         sortDatabase();
                         saveDb();
                         renderTable();
-                        const gameName = currentGame === 'ttLottoDb' ? '天天樂' : '今彩539';
+                        const gameName = currentGame === 'ttLottoDb' ? '加州天天樂' : '今彩539';
                         alert(`成功讀取 ${db.length} 筆【${gameName}】開獎數據！`);
                         fileInput.value = ''; // 清空選擇器
                     } else {
@@ -239,7 +239,7 @@
         }
 
         function clearData() {
-            if (confirm("警告：這將清空當前彩種的所有數據，確定執行？")) {
+            if (confirm("警告：這將清空當前彩球的所有數據，確定執行？")) {
                 db = [];
                 saveDb();
                 renderTable();
