@@ -134,7 +134,7 @@
         }
         .option-btn:nth-child(1) { animation-delay: 0.05s; } .option-btn:nth-child(2) { animation-delay: 0.1s; }
         .option-btn:nth-child(3) { animation-delay: 0.15s; } .option-btn:nth-child(4) { animation-delay: 0.2s; }
-        .option-btn:active { transform: translateY(5px); border-bottom-width: 2px; background-color: #e0f7fa; }
+        .option-btn:active { transform: translateY(5px); border-bottom-width: 2px; }
 
         .feedback-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; flex-direction: column;
@@ -144,6 +144,37 @@
         .feedback-text { font-size: 28px; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); transform: scale(0.5); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .correct-bg { background-color: rgba(76, 175, 80, 0.85); backdrop-filter: blur(2px); }
         .wrong-bg { background-color: rgba(244, 67, 54, 0.85); backdrop-filter: blur(2px); }
+
+        /* 新增：解析說明框與繼續按鈕 */
+        .explanation-box {
+            display: none;
+            background: #fff3e0;
+            border: 4px dashed #ffb300;
+            border-radius: 20px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: clamp(16px, 4.5vw, 20px);
+            color: #5d4037;
+            text-align: left;
+            animation: slideDown 0.4s ease-out;
+            line-height: 1.5;
+        }
+        .next-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-bottom: 5px solid #388e3c;
+            border-radius: 15px;
+            padding: 12px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.1s;
+        }
+        .next-btn:active { transform: translateY(4px); border-bottom-width: 1px; }
 
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -264,6 +295,11 @@
             <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
             <div class="question-box" id="questionDisplay"></div>
             <div class="options-container" id="optionsContainer"></div>
+            
+            <div class="explanation-box" id="explanationBox">
+                <div id="explanationText"></div>
+                <button class="next-btn" onclick="nextQuestion()">我知道了，下一題 ➡</button>
+            </div>
         </div>
 
         <div id="summaryView">
@@ -361,7 +397,7 @@
         }
 
         // ==========================================
-        //  AI 動態題庫生成引擎 (上千種隨機變化)
+        //  AI 動態題庫生成引擎
         // ==========================================
         function rand(max) { return Math.floor(Math.random() * max); }
         function getWrongOptions(correct, array, count=3) {
@@ -382,41 +418,53 @@
             return opts;
         }
 
+        // 【大幅增加難度的數學題庫】
         function generateMath() {
             let type = rand(5); 
-            let q, ans, opts;
-            if (type === 0) { // 加法
-                let a = rand(50)+1, b = rand(49)+1; ans = (a+b).toString();
+            let q, ans, opts, exp;
+            if (type === 0) { // 二位數進位加法
+                let a = rand(79) + 10, b = rand(89) + 10; 
+                ans = (a + b).toString();
                 q = `<span style="color:#1976d2">${a}</span> + <span style="color:#d32f2f">${b}</span> = <span style="color:#ff9800">?</span>`;
                 opts = getWrongNumbers(ans);
-            } else if (type === 1) { // 減法
-                let a = rand(80)+20, b = rand(a-5)+1; ans = (a-b).toString();
+                exp = `${a} 加上 ${b} 等於 ${ans}。`;
+            } else if (type === 1) { // 二位數退位減法
+                let a = rand(70) + 30, b = rand(a - 10) + 10; 
+                ans = (a - b).toString();
                 q = `<span style="color:#1976d2">${a}</span> - <span style="color:#d32f2f">${b}</span> = <span style="color:#ff9800">?</span>`;
                 opts = getWrongNumbers(ans);
-            } else if (type === 2) { // 比較大小
-                let a = rand(90)+10, b = rand(90)+10; while(a===b) b = rand(90)+10;
+                exp = `${a} 減去 ${b} 等於 ${ans}。`;
+            } else if (type === 2) { // 算式比較大小
+                let a1 = rand(40) + 10, a2 = rand(40) + 10, sumA = a1 + a2;
+                let b1 = rand(40) + 10, b2 = rand(40) + 10, sumB = b1 + b2;
+                while (sumA === sumB) { b2 = rand(40) + 10; sumB = b1 + b2; }
                 let isBigger = Math.random() > 0.5;
-                ans = isBigger ? Math.max(a,b).toString() : Math.min(a,b).toString();
-                q = `<span style="color:#1976d2">${a}</span> 和 <span style="color:#d32f2f">${b}</span><br>哪一個數字比較<span style="color:#ff5252; font-size:1.2em;">${isBigger?'大':'小'}</span>？`;
-                opts = [a.toString(), b.toString(), "一樣大", "無法比較"];
-            } else if (type === 3) { // 時鐘
-                let h = rand(12)+1; let isHalf = Math.random() > 0.5;
-                ans = h + (isHalf ? "點半" : "點");
-                q = `長針指著 <span style="color:#ff5252">${isHalf?'6':'12'}</span><br>短針指著 <span style="color:#1976d2">${isHalf? h+'和'+(h===12?1:h+1)+'中間' : h}</span><br>是幾點？`;
-                opts = getWrongOptions(ans, ["1點","2點","3點","4點","5點","6點","7點","8點","9點","10點","11點","12點","1點半","2點半","3點半","4點半","5點半","6點半","7點半","8點半","9點半","10點半","11點半","12點半"]);
-            } else { // 應用題
-                let a = rand(15)+5, b = rand(10)+1; let isAdd = Math.random() > 0.5;
-                ans = isAdd ? (a+b).toString() : (a-b).toString();
-                if(isAdd) {
-                    let temps = [`小明有 ${a} 顆蘋果，媽媽又給他 ${b} 顆，現在有幾顆？`, `停車場有 ${a} 輛車，又開進來 ${b} 輛，共有幾輛？`, `草地上有 ${a} 朵紅花，${b} 朵黃花，共有幾朵？`, `哥哥有 ${a} 張貼紙，弟弟有 ${b} 張，兩人共有幾張？`, `教室裡有 ${a} 個男生，${b} 個女生，共有幾個學生？`, `圖書館有 ${a} 本童話書，${b} 本繪本，共有幾本書？`];
-                    q = temps[rand(temps.length)];
+                q = `算式 <span style="color:#1976d2">${a1}+${a2}</span> 和 <span style="color:#d32f2f">${b1}+${b2}</span><br>哪一個結果比較<span style="color:#ff5252; font-size:1.2em;">${isBigger?'大':'小'}</span>？`;
+                ans = isBigger ? (sumA > sumB ? `${a1}+${a2}` : `${b1}+${b2}`) : (sumA < sumB ? `${a1}+${a2}` : `${b1}+${b2}`);
+                opts = [`${a1}+${a2}`, `${b1}+${b2}`, "一樣大", "無法比較"];
+                exp = `因為 ${a1}+${a2} = ${sumA}，而 ${b1}+${b2} = ${sumB}。<br>${sumA} 和 ${sumB} 相比，結果是 ${ans} 比較${isBigger?'大':'小'}。`;
+            } else if (type === 3) { // 時間推算
+                let h = rand(10) + 1; let add = rand(4) + 1;
+                let finalH = (h + add) > 12 ? (h + add - 12) : (h + add);
+                ans = `${finalH}點`;
+                q = `現在是 <span style="color:#1976d2">${h}點鐘</span><br>經過 <span style="color:#d32f2f">${add}小時</span>後是幾點？`;
+                opts = getWrongOptions(ans, ["1點","2點","3點","4點","5點","6點","7點","8點","9點","10點","11點","12點"]);
+                exp = `從 ${h} 點鐘往後數 ${add} 個小時，就會是 ${finalH} 點鐘。`;
+            } else { // 兩步驟應用題
+                let a = rand(40) + 20, b = rand(20) + 10, c = rand(20) + 10; 
+                let typeWord = rand(2);
+                if(typeWord === 0) {
+                    q = `公車上原有 ${a} 人，下車 ${b} 人後，又上車 ${c} 人，現在車上共有幾人？`;
+                    ans = (a - b + c).toString();
+                    exp = `步驟一：先下車減去 ${b} 人 (${a} - ${b} = ${a-b})。<br>步驟二：再上車加上 ${c} 人 (${a-b} + ${c} = ${ans})。`;
                 } else {
-                    let temps = [`樹上有 ${a} 隻小鳥，飛走了 ${b} 隻，還剩幾隻？`, `姐姐有 ${a} 元，買橡皮擦花了 ${b} 元，還剩幾元？`, `池塘裡有 ${a} 隻青蛙，跳走了 ${b} 隻，還剩幾隻？`, `一盒餅乾有 ${a} 片，妹妹吃了 ${b} 片，還剩幾片？`, `樹上有 ${a} 顆蘋果，掉下來 ${b} 顆，還剩幾顆？`, `公車上有 ${a} 個人，下車了 ${b} 個人，還剩幾個人？`];
-                    q = temps[rand(temps.length)];
+                    q = `哥哥有 ${a} 元，買筆記本花了 ${b} 元，買橡皮擦花了 ${c} 元，還剩下幾元？`;
+                    ans = (a - b - c).toString();
+                    exp = `步驟一：先算出總共花了多少錢 (${b} + ${c} = ${b+c})。<br>步驟二：再用原有的錢減去花掉的錢 (${a} - ${b+c} = ${ans})。`;
                 }
                 opts = getWrongNumbers(ans);
             }
-            return {q, ans, options: opts.sort(()=>Math.random()-0.5)};
+            return {q, ans, options: opts.sort(()=>Math.random()-0.5), exp};
         }
 
         const chAntonyms = [['大','小'],['多','少'],['高','矮'],['長','短'],['胖','瘦'],['黑','白'],['上','下'],['左','右'],['前','後'],['冷','熱'],['快','慢'],['好','壞'],['新','舊'],['重','輕'],['粗','細'],['深','淺'],['遠','近'],['裡','外'],['早','晚'],['開','關'],['進','出'],['來','去'],['哭','笑'],['香','臭'],['明','暗'],['乾','濕'],['厚','薄'],['軟','硬'],['動','靜'],['起','伏'],['吞','吐'],['買','賣']];
@@ -430,14 +478,14 @@
                 opts = getWrongOptions(ans, chAntonyms.flat());
             } else if (type === 1) {
                 let pair = chClassifiers[rand(chClassifiers.length)];
-                ans = pair[1]; q = `填空：一（　）<span style="color:#0288d1">${pair[0]}</span>`;
+                ans = pair[1]; q = `填空：一（ ）<span style="color:#0288d1">${pair[0]}</span>`;
                 opts = getWrongOptions(ans, chClassifiers.map(x=>x[1]));
             } else {
                 let pair = chPinyin[rand(chPinyin.length)];
                 ans = pair[1]; q = `「<span style="color:#d32f2f">${pair[0]}</span>」的注音是什麼？`;
                 opts = getWrongOptions(ans, chPinyin.map(x=>x[1]));
             }
-            return {q, ans, options: opts.sort(()=>Math.random()-0.5)};
+            return {q, ans, options: opts.sort(()=>Math.random()-0.5), exp: `正確答案為：「${ans}」`};
         }
 
         const engDict = [['蘋果','Apple'],['香蕉','Banana'],['狗','Dog'],['貓','Cat'],['鳥','Bird'],['魚','Fish'],['豬','Pig'],['牛','Cow'],['紅色','Red'],['藍色','Blue'],['黃色','Yellow'],['綠色','Green'],['黑色','Black'],['白色','White'],['一','One'],['二','Two'],['三','Three'],['四','Four'],['五','Five'],['六','Six'],['七','Seven'],['八','Eight'],['九','Nine'],['十','Ten'],['你好','Hello'],['再見','Goodbye'],['謝謝','Thank you'],['對不起','Sorry'],['爸爸','Father'],['媽媽','Mother'],['哥哥/弟弟','Brother'],['姐姐/妹妹','Sister'],['男孩','Boy'],['女孩','Girl'],['老師','Teacher'],['學生','Student'],['學校','School'],['書本','Book'],['筆','Pen'],['鉛筆','Pencil'],['桌子','Desk'],['椅子','Chair'],['太陽','Sun'],['月亮','Moon'],['星星','Star'],['樹','Tree'],['花','Flower'],['水','Water'],['火','Fire'],['眼睛','Eye'],['耳朵','Ear'],['鼻子','Nose'],['嘴巴','Mouth'],['手','Hand'],['腳','Foot'],['頭','Head'],['頭髮','Hair'],['臉','Face'],['腿','Leg'],['手臂','Arm']];
@@ -446,7 +494,7 @@
             let q = isEngToCh ? `「<span style="color:#1976d2">${pair[1]}</span>」是什麼意思？` : `「<span style="color:#d32f2f">${pair[0]}</span>」的英文怎麼說？`;
             let ans = isEngToCh ? pair[0] : pair[1];
             let opts = getWrongOptions(ans, engDict.map(x => isEngToCh ? x[0] : x[1])).sort(()=>Math.random()-0.5);
-            return {q, ans, options: opts};
+            return {q, ans, options: opts, exp: `正確答案為：「${ans}」`};
         }
 
         const amisDict = [['你好',"Nga'ay ho"],['謝謝','Aray'],['狗','wacu'],['貓','posi'],['豬','fafoy'],['鳥','ayam'],['一','cecay'],['二','tosa'],['三','telu'],['四','sepat'],['五','lima'],['六','enem'],['七','pito'],['八','falu'],['九','siwa'],['十',"mo^tep"],['太陽','cidal'],['月亮','folad'],['星星',"fo'is"],['水','nanom'],['土地','sra'],['樹','kilang'],['葉子','papah'],['花','hana'],['山','lutuk'],['風','fali'],['天空','kakarayan'],['爸爸','mama'],['媽媽','ina'],['伯父','faki'],['阿姨','fayi'],['小孩','wawa'],['女生','fafahiyan'],['男生',"fa'inayan"],['眼睛','mata'],['頭','tangal'],['皮膚','fanges'],['手','kamay'],['腳',"wa'ay"]];
@@ -455,7 +503,7 @@
             let q = isAmisToCh ? `阿美語「<span style="color:#7b1fa2">${pair[1]}</span>」是什麼意思？` : `「<span style="color:#e65100">${pair[0]}</span>」的阿美語怎麼說？`;
             let ans = isAmisToCh ? pair[0] : pair[1];
             let opts = getWrongOptions(ans, amisDict.map(x => isAmisToCh ? x[0] : x[1])).sort(()=>Math.random()-0.5);
-            return {q, ans, options: opts};
+            return {q, ans, options: opts, exp: `正確答案為：「${ans}」`};
         }
 
         const lifeBank = [
@@ -465,12 +513,12 @@
             let item = lifeBank[rand(lifeBank.length)];
             let opts = getWrongOptions(item.ans, lifeBank.map(x=>x.ans)).concat(item.opts).slice(0,4).sort(()=>Math.random()-0.5);
             if(!opts.includes(item.ans)) { opts.pop(); opts.push(item.ans); opts.sort(()=>Math.random()-0.5); }
-            return {q: item.q, ans: item.ans, options: opts};
+            return {q: item.q, ans: item.ans, options: opts, exp: `正確答案為：「${item.ans}」`};
         }
 
         // --- 核心遊戲流程 ---
         let currentGlobalMode = 'practice'; let currentSubject = ''; let currentQuestionIdx = 1; const totalQuestions = 5;
-        let score = 0; let correctAnswer = ""; let hasMistakeInCurrentRound = false; let isWaitingForNext = false;
+        let score = 0; let correctAnswer = ""; let currentExplanation = ""; let hasMistakeInCurrentRound = false; let isWaitingForNext = false;
 
         function selectMode(mode) {
             playSound('click'); currentGlobalMode = mode;
@@ -499,13 +547,14 @@
                 case 'amis': badgeColor = "#7b1fa2"; title = "⛰️ 本土語小教室"; desc = "來學阿美語的單字吧！"; break;
                 case 'english': badgeColor = "#c2185b"; title = "🔤 英語小教室"; desc = "認識生活中的基礎英文單字！"; break;
             }
-            tutArea.innerHTML = `<div class="tutorial-badge" style="background:${badgeColor};">${title}</div><div style="font-size:16px; color:#5d4037; font-weight:bold;">${desc}</div><div style="color:#00796b; font-size:14px; margin-top:5px;">💡 導師小提醒：慢慢想，答錯可以重選喔！</div>`;
+            tutArea.innerHTML = `<div class="tutorial-badge" style="background:${badgeColor};">${title}</div><div style="font-size:16px; color:#5d4037; font-weight:bold;">${desc}</div><div style="color:#00796b; font-size:14px; margin-top:5px;">💡 導師小提醒：慢慢想，答錯會立刻告訴你正解喔！</div>`;
         }
 
         function startGame(subject) {
             playSound('click'); currentSubject = subject;
             currentQuestionIdx = 1; score = 0; isWaitingForNext = false; hasMistakeInCurrentRound = false;
             document.getElementById('homeView').style.display = 'none'; document.getElementById('summaryView').style.display = 'none'; document.getElementById('quizView').style.display = 'block';
+            document.getElementById('explanationBox').style.display = 'none';
             updateTutorialArea();
             const mascot = document.getElementById('mascot'); mascot.innerText = "🐶✨"; mascot.style.animation = 'happyJump 0.5s ease';
             setTimeout(() => { mascot.style.animation = 'float 3s ease-in-out infinite'; mascot.innerText = "🐶"; }, 500);
@@ -527,6 +576,7 @@
             else qData = generateLife();
 
             correctAnswer = qData.ans;
+            currentExplanation = qData.exp;
             document.getElementById('questionDisplay').innerHTML = qData.q;
             
             const container = document.getElementById('optionsContainer'); container.innerHTML = '';
@@ -539,12 +589,14 @@
 
         function checkAnswer(selected, btn) {
             if (isWaitingForNext) return;
+            isWaitingForNext = true; // 鎖定點擊，不允許重新嘗試
+
             const overlay = document.getElementById('feedbackOverlay'); const emoji = document.getElementById('feedbackEmoji');
             const text = document.getElementById('feedbackText'); const windowEl = document.getElementById('gameWindow');
             const mascot = document.getElementById('mascot');
 
             if (selected === correctAnswer) {
-                isWaitingForNext = true; playSound('correct'); score++;
+                playSound('correct'); score++;
                 mascot.innerText = "🐶✨"; windowEl.style.animation = "happyJump 0.3s ease";
                 overlay.className = "feedback-overlay correct-bg"; emoji.innerText = ["🐰", "🐵", "🦁", "🐸"][Math.floor(Math.random()*4)]; text.innerText = "太棒了！";
                 overlay.style.opacity = 1; emoji.style.transform = "scale(1)"; text.style.transform = "scale(1)";
@@ -552,19 +604,46 @@
             } else {
                 playSound('wrong'); mascot.innerText = "🐶💦";
                 if (currentGlobalMode === 'exam') hasMistakeInCurrentRound = true;
-                overlay.className = "feedback-overlay wrong-bg"; emoji.innerText = "💪"; text.innerText = "再試一次喔！";
+                overlay.className = "feedback-overlay wrong-bg"; emoji.innerText = "💪"; text.innerText = "答錯了！";
                 overlay.style.opacity = 1; emoji.style.transform = "scale(1)"; text.style.transform = "scale(1)";
-                windowEl.classList.add('shake'); btn.style.borderColor = '#ffcdd2'; btn.style.backgroundColor = '#ffebee'; btn.style.color = '#e53935';
-                isWaitingForNext = true;
+                windowEl.classList.add('shake'); 
+                
+                // 將選錯的按鈕標示為紅色
+                btn.style.borderColor = '#ffcdd2'; btn.style.backgroundColor = '#ffebee'; btn.style.color = '#e53935';
+                
+                // 自動找到並高亮正確答案的按鈕
+                const options = document.getElementById('optionsContainer').children;
+                for(let i = 0; i < options.length; i++) {
+                    if(options[i].innerText === correctAnswer) {
+                        options[i].style.borderColor = '#81c784';
+                        options[i].style.backgroundColor = '#e8f5e9';
+                        options[i].style.color = '#2e7d32';
+                        options[i].style.transform = 'scale(1.02)';
+                        options[i].style.boxShadow = '0 0 10px rgba(76, 175, 80, 0.4)';
+                    }
+                }
+
+                // 顯示解析說明框
+                const expBox = document.getElementById('explanationBox');
+                const expText = document.getElementById('explanationText');
+                expText.innerHTML = `正確答案是：<span style="color:#d32f2f; font-weight:bold; font-size:1.2em;">${correctAnswer}</span><br><br>💡 <b>解析：</b><br>${currentExplanation}`;
+                expBox.style.display = "block";
+
                 setTimeout(() => {
                     overlay.style.opacity = 0; emoji.style.transform = "scale(0.5)"; text.style.transform = "scale(0.5)";
-                    windowEl.classList.remove('shake'); mascot.innerText = "🐶"; isWaitingForNext = false;
+                    windowEl.classList.remove('shake'); mascot.innerText = "🐶"; 
+                    // 等待使用者點擊「我知道了，下一題」按鈕
                 }, 1200); 
             }
         }
 
         function nextQuestion() {
-            document.getElementById('feedbackOverlay').style.opacity = 0; document.getElementById('feedbackEmoji').style.transform = "scale(0.5)"; document.getElementById('feedbackText').style.transform = "scale(0.5)"; document.getElementById('mascot').innerText = "🐶";
+            document.getElementById('explanationBox').style.display = 'none'; // 隱藏解析框
+            document.getElementById('feedbackOverlay').style.opacity = 0; 
+            document.getElementById('feedbackEmoji').style.transform = "scale(0.5)"; 
+            document.getElementById('feedbackText').style.transform = "scale(0.5)"; 
+            document.getElementById('mascot').innerText = "🐶";
+            
             if (currentQuestionIdx < totalQuestions) {
                 currentQuestionIdx++; updateStatusBar(); isWaitingForNext = false; generateQuestion();
             } else {
