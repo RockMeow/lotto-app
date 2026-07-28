@@ -11,25 +11,21 @@
         .edit-cell { cursor: pointer; transition: background-color 0.2s; }
         .edit-cell:hover { background-color: #e2e8f0; }
         .edit-cell:focus { background-color: #fff; outline: 2px solid #3b82f6; }
-        .hit-bar { display: inline-flex; letter-spacing: 2px; font-family: monospace; }
+        .hit-bar { display: inline-block; letter-spacing: 2px; font-family: monospace; }
         .hit { color: #10b981; }
         .miss { color: #d1d5db; }
         table th { position: sticky; top: 0; background-color: #f3f4f6; }
-        
-        /* 隱藏捲軸但保留滑動功能 */
-        .hide-scroll::-webkit-scrollbar { height: 6px; }
-        .hide-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 p-6 min-h-screen">
 
 <div class="max-w-7xl mx-auto space-y-6">
-    <h1 class="text-3xl font-bold text-center text-blue-700">🎰 版路掃描與回測系統 (橫式排版 + 雲端同步版)</h1>
+    <h1 class="text-3xl font-bold text-center text-blue-700">版路掃描與回測系統 (雲端同步版)</h1>
 
     <!-- 雲端同步設定區 -->
     <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded shadow-sm flex flex-col md:flex-row md:items-end md:space-x-4">
         <div class="flex-1">
-            <h3 class="font-bold text-indigo-800 mb-2">☁️ GitHub 雲端自動同步設定</h3>
+            <h3 class="font-bold text-indigo-800 mb-2">GitHub 雲端自動同步設定</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-gray-600">儲存庫名稱 (例: user/repo)</label>
@@ -43,17 +39,17 @@
         </div>
         <div class="mt-4 md:mt-0 flex space-x-2">
             <button onclick="saveSettings()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm font-semibold shadow transition">
-                💾 記憶設定
+                記憶設定
             </button>
             <button onclick="syncToGitHub()" id="syncBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold shadow transition flex items-center">
-                ☁️ 寫入更新至 GitHub
+                寫入更新至 GitHub
             </button>
         </div>
     </div>
 
     <!-- 控制面板 -->
     <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-bold mb-4 border-b pb-2">⚙️ 系統設定與回測</h2>
+        <h2 class="text-xl font-bold mb-4 border-b pb-2">系統設定與回測</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             <div class="space-y-4 border-r pr-4">
@@ -94,7 +90,7 @@
         
         <div class="mt-6 text-center">
             <button onclick="runScan()" id="runBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-2 px-10 rounded-full shadow-lg transition w-full md:w-auto cursor-not-allowed opacity-50" disabled>
-                🚀 開始運算
+                開始運算
             </button>
         </div>
     </div>
@@ -103,7 +99,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="bg-white rounded-lg shadow p-4 lg:col-span-1 h-[700px] flex flex-col">
             <div class="flex justify-between items-center mb-2">
-                <h2 class="text-lg font-bold">📝 開獎數據編輯區</h2>
+                <h2 class="text-lg font-bold">開獎數據編輯區</h2>
                 <button onclick="addNewDraw()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1 rounded text-xs font-semibold shadow">
                     + 新增一期
                 </button>
@@ -123,7 +119,7 @@
         </div>
 
         <div class="bg-white rounded-lg shadow p-6 lg:col-span-2 h-[700px] overflow-y-auto" id="resultsArea">
-            <h2 class="text-xl font-bold mb-4 border-b pb-2">📊 分析結果與回測驗證</h2>
+            <h2 class="text-xl font-bold mb-4 border-b pb-2">分析結果與回測驗證</h2>
             <div id="resultsContent" class="text-gray-600 flex justify-center items-center h-full">
                 <p>等待載入數據與運算...</p>
             </div>
@@ -157,7 +153,7 @@
         localStorage.setItem('ghRepo', document.getElementById('ghRepo').value.trim());
         localStorage.setItem('ghToken', document.getElementById('ghToken').value.trim());
         alert('設定已記憶在瀏覽器中！');
-        loadSelectedLottery(); // 設定完重新載入
+        loadSelectedLottery();
     }
 
     async function loadSelectedLottery() {
@@ -166,7 +162,7 @@
         currentLotteryName = document.getElementById('lotteryType').options[document.getElementById('lotteryType').selectedIndex].text;
         
         const statusEl = document.getElementById('fileStatus');
-        statusEl.innerHTML = `⏳ 正在載入 <strong>${filename}</strong> ...`;
+        statusEl.innerHTML = `正在載入 <strong>${filename}</strong> ...`;
         document.getElementById('runBtn').disabled = true;
         document.getElementById('runBtn').classList.add('cursor-not-allowed', 'opacity-50');
 
@@ -182,7 +178,6 @@
                 if(!response.ok) throw new Error("API 讀取失敗，請確認 Repo 或 Token 正確");
                 const data = await response.json();
                 currentFileSHA = data.sha;
-                // 更安全的 Base64 解碼 (支援 UTF-8 中文)
                 const binaryStr = window.atob(data.content);
                 const bytes = new Uint8Array(binaryStr.length);
                 for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
@@ -202,12 +197,11 @@
             });
         } catch (error) {
             console.error(error);
-            // 讀取失敗時的「本地檔案備用方案」
             statusEl.innerHTML = `
-                <span class="text-red-500 font-bold">❌ 讀取失敗</span>
+                <span class="text-red-500 font-bold">讀取失敗</span>
                 <p class="text-xs text-gray-500 mt-1">${error.message}</p>
                 <div class="mt-2 bg-yellow-50 border border-yellow-200 p-2 rounded text-xs">
-                    ⚠️ 如果您在電腦上直接打開，請先設定 GitHub Token，或使用手動上傳檔案：
+                    如果您在電腦上直接打開，請先設定 GitHub Token，或使用手動上傳檔案：
                     <input type="file" accept=".csv" class="mt-2 block w-full text-xs" onchange="handleLocalFile(event)">
                 </div>`;
             globalDraws = [];
@@ -215,7 +209,6 @@
         }
     }
 
-    // 本地檔案上傳備案
     function handleLocalFile(e) {
         const file = e.target.files[0];
         if(!file) return;
@@ -240,7 +233,7 @@
             if (nums.some(isNaN)) continue;
             globalDraws.push({ date: dateStr, nums: nums, wd: new Date(dateStr).getDay() });
         }
-        document.getElementById('fileStatus').innerHTML = `✅ <strong>${currentLotteryName}</strong> 已載入<br><span class="text-xs text-gray-500">共 ${globalDraws.length} 期 (${globalDraws[0].date} ~ ${globalDraws[globalDraws.length-1].date})</span>`;
+        document.getElementById('fileStatus').innerHTML = `<strong>${currentLotteryName}</strong> 已載入<br><span class="text-xs text-gray-500">共 ${globalDraws.length} 期 (${globalDraws[0].date} ~ ${globalDraws[globalDraws.length-1].date})</span>`;
         document.getElementById('backtestDate').value = globalDraws[globalDraws.length-1].date;
         document.getElementById('runBtn').disabled = false;
         document.getElementById('runBtn').classList.remove('cursor-not-allowed', 'opacity-50');
@@ -258,7 +251,7 @@
         if (globalDraws.length === 0) return alert('無數據可同步');
 
         btn.disabled = true;
-        btn.innerHTML = "⏳ 同步中...";
+        btn.innerHTML = "同步中...";
         let csvContent = '\uFEFF' + originalHeaders.join(',') + '\n';
         globalDraws.forEach(d => { csvContent += `${d.date},${d.nums.join(',')}\n`; });
         const base64Content = window.btoa(unescape(encodeURIComponent(csvContent)));
@@ -280,13 +273,13 @@
             }
             const data = await response.json();
             currentFileSHA = data.content.sha; 
-            alert("✅ 同步成功！檔案已經自動更新至 GitHub。");
+            alert("同步成功！檔案已經自動更新至 GitHub。");
         } catch (error) {
             console.error(error);
-            alert("❌ 同步失敗: " + error.message);
+            alert("同步失敗: " + error.message);
         } finally {
             btn.disabled = false;
-            btn.innerHTML = "☁️ 寫入更新至 GitHub";
+            btn.innerHTML = "寫入更新至 GitHub";
         }
     }
 
@@ -414,10 +407,9 @@
         return results.sort((a, b) => b.streak !== a.streak ? b.streak - a.streak : b.hitRate - a.hitRate);
     }
 
-    // 更新為單行橫式排版
     function runScan() {
         const out = document.getElementById('resultsContent');
-        out.innerHTML = '<div class="flex flex-col items-center justify-center h-full"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div><p class="text-blue-600 font-bold">⚙️ 正在運算數千條版路，請稍候...</p></div>';
+        out.innerHTML = '<div class="flex flex-col items-center justify-center h-full"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div><p class="text-blue-600 font-bold">正在運算數千條版路，請稍候...</p></div>';
         
         setTimeout(() => {
             const mode = document.querySelector('input[name="scanMode"]:checked').value;
@@ -426,31 +418,32 @@
             
             let filteredDraws = globalDraws.filter(d => d.date <= backtestDateStr);
             let validationDraws = globalDraws.filter(d => d.date > backtestDateStr);
-            if (filteredDraws.length < 20) return out.innerHTML = '<p class="text-red-500">❌ 錯誤：回測日期前的數據過少，無法運算。</p>';
+            if (filteredDraws.length < 20) return out.innerHTML = '<p class="text-red-500">錯誤：回測日期前的數據過少，無法運算。</p>';
             
             const pairsConfig = lotType === '539' ? PAIRS_539 : PAIRS_DAILY;
+            
+            // 摘要區塊 (無圖示)
             let finalHtml = `<div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800 flex justify-between items-center">
-                <div><strong>📌 ${currentLotteryName} 執行摘要</strong><br>參與運算期數：${filteredDraws.length} 期</div>
+                <div><strong>${currentLotteryName} 執行摘要</strong><br>參與運算期數：${filteredDraws.length} 期</div>
                 <div class="text-right">未來驗證期數：<br><span class="font-bold text-lg">${validationDraws.length} 期</span></div></div>`;
 
             if (mode === 'all') {
                 for (let pair of pairsConfig) {
                     let res = scanPairAll(filteredDraws, pair[0], pair[1]);
                     if(res.length > 0) {
-                        finalHtml += `<h3 class="text-lg font-bold text-gray-800 mt-6 mb-2 border-b-2 border-blue-100 pb-1">🧩 週${pair[0][0]}週${pair[0][1]}：命中 ${res.length} 條</h3>`;
+                        finalHtml += `<h3 class="text-lg font-bold text-gray-800 mt-6 mb-2 border-b-2 border-blue-100 pb-1">週${pair[0][0]}週${pair[0][1]}：命中 ${res.length} 條</h3>`;
                         for (let i = 0; i < Math.min(res.length, 10); i++) {
-                            let r = res[i], barHtml = `<span class="hit-bar">${r.resultsBool.slice(-20).map(x => x ? '<span class="hit">█</span>' : '<span class="miss">·</span>').join('')}</span>`;
-                            finalHtml += `
-                            <div class="mb-2 text-sm bg-gray-50 p-2.5 rounded border-l-4 border-blue-500 hover:shadow-md transition flex items-center justify-between gap-4 overflow-x-auto whitespace-nowrap hide-scroll">
-                                <div class="flex items-center space-x-2">
-                                    <strong class="text-base text-gray-500 w-5">${i+1}.</strong>
-                                    <strong class="text-base text-gray-800">週${WD_LABELS[r.srcWd]}P${r.srcPos} 合${pad(r.heTarget)}</strong> 
-                                    <span class="text-gray-400">→</span> 
-                                    <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">機率{${r.probNums.map(n=>pad(n)).join(', ')}}</span> 
-                                    <span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-bold">合${pad(r.latestHe)}</span>
-                                </div>
-                                <div class="flex items-center space-x-4">
-                                    <span class="text-gray-600 font-mono bg-white border border-gray-200 px-2 py-0.5 rounded">${r.hits}/${r.tests} (${r.hitRate}%) 連${r.streak}</span>
+                            let r = res[i];
+                            let barHtml = `<span class="hit-bar">${r.resultsBool.slice(-20).map(x => x ? '<span class="hit">█</span>' : '<span class="miss">·</span>').join('')}</span>`;
+                            
+                            // 恢復為上下分層顯示
+                            finalHtml += `<div class="mb-2 text-sm bg-gray-50 p-3 rounded border-l-4 border-blue-500 hover:shadow-md transition">
+                                <strong class="text-base">${i+1}. 週${WD_LABELS[r.srcWd]}P${r.srcPos} 合${pad(r.heTarget)}</strong> 
+                                <span class="text-gray-500 mx-2">→</span> 
+                                <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">機率{${r.probNums.map(n=>pad(n)).join(', ')}}</span> 
+                                <span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">合數${pad(r.latestHe)}</span>
+                                <span class="float-right text-gray-500 font-mono">${r.hits}/${r.tests} (${r.hitRate}%) 連${r.streak}</span>
+                                <div class="mt-2 pt-2 border-t border-gray-200 flex items-center justify-between">
                                     ${barHtml} 
                                     ${checkValidation(r, validationDraws, pair[1])}
                                 </div>
@@ -460,24 +453,26 @@
                 }
             } else {
                 let allowedNums = document.getElementById('fixedNumbersInput').value.trim().split(/\s+/).map(n => parseInt(n)).filter(n => !isNaN(n));
-                if(allowedNums.length < 2) return out.innerHTML = '<p class="text-red-500">❌ 至少需輸入 2 個數字。</p>';
-                finalHtml += `<div class="font-bold text-green-700 mb-4 bg-green-50 p-2 rounded border border-green-200">🎯 鎖定機率號碼: ${allowedNums.map(pad).join(' ')}</div>`;
+                if(allowedNums.length < 2) return out.innerHTML = '<p class="text-red-500">至少需輸入 2 個數字。</p>';
+                
+                finalHtml += `<div class="font-bold text-green-700 mb-4 bg-green-50 p-2 rounded border border-green-200">鎖定機率號碼: ${allowedNums.map(pad).join(' ')}</div>`;
+                
                 for (let pair of pairsConfig) {
                     let res = scanFixedProb(filteredDraws, pair[1], allowedNums);
                     if(res.length > 0) {
-                        finalHtml += `<h3 class="text-lg font-bold text-gray-800 mt-6 mb-2 border-b-2 border-green-100 pb-1">🧩 週${pair[0][0]}週${pair[0][1]}：命中 ${res.length} 條</h3>`;
+                        finalHtml += `<h3 class="text-lg font-bold text-gray-800 mt-6 mb-2 border-b-2 border-green-100 pb-1">週${pair[0][0]}週${pair[0][1]}：命中 ${res.length} 條</h3>`;
                         for (let i = 0; i < Math.min(res.length, 5); i++) {
-                            let r = res[i], barHtml = `<span class="hit-bar">${r.resultsBool.slice(-20).map(x => x ? '<span class="hit">█</span>' : '<span class="miss">·</span>').join('')}</span>`;
-                            finalHtml += `
-                            <div class="mb-2 text-sm bg-gray-50 p-2.5 rounded border-l-4 border-green-500 hover:shadow-md transition flex items-center justify-between gap-4 overflow-x-auto whitespace-nowrap hide-scroll">
-                                <div class="flex items-center space-x-2">
-                                    <strong class="text-base text-gray-800">週${WD_LABELS[r.srcWd]}P${r.srcPos} 合${pad(r.heTarget)}</strong> 
-                                    <span class="text-gray-400">→</span> 
-                                    <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded font-bold">機率{${r.probNums.map(n=>pad(n)).join(', ')}}</span> 
-                                    <span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-bold">合${pad(r.latestHe)}</span>
-                                </div>
-                                <div class="flex items-center space-x-4">
-                                    <span class="text-gray-600 font-mono bg-white border border-gray-200 px-2 py-0.5 rounded">${r.hits}/${r.tests} (${r.hitRate}%) 連${r.streak}</span>
+                            let r = res[i];
+                            let barHtml = `<span class="hit-bar">${r.resultsBool.slice(-20).map(x => x ? '<span class="hit">█</span>' : '<span class="miss">·</span>').join('')}</span>`;
+                            
+                            // 恢復為上下分層顯示
+                            finalHtml += `<div class="mb-2 text-sm bg-gray-50 p-3 rounded border-l-4 border-green-500 hover:shadow-md transition">
+                                <strong class="text-base">週${WD_LABELS[r.srcWd]}P${r.srcPos} 合${pad(r.heTarget)}</strong> 
+                                <span class="text-gray-500 mx-2">→</span> 
+                                <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded">機率{${r.probNums.map(n=>pad(n)).join(', ')}}</span> 
+                                <span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">合${pad(r.latestHe)}</span>
+                                <span class="float-right text-gray-500 font-mono">${r.hits}/${r.tests} (${r.hitRate}%) 連${r.streak}</span>
+                                <div class="mt-2 pt-2 border-t border-gray-200 flex items-center justify-between">
                                     ${barHtml} 
                                     ${checkValidation(r, validationDraws, pair[1])}
                                 </div>
@@ -490,16 +485,18 @@
         }, 100);
     }
 
+    // 驗證功能 (移除圖示)
     function checkValidation(r, vDraws, tgWds) {
         if (vDraws.length === 0) return `<span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">等待開獎</span>`;
         let tDraw = vDraws.find(d => tgWds.includes(d.wd));
         if (!tDraw) return `<span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">尚無對應資料</span>`;
         let hp = r.probNums.some(n => tDraw.nums.includes(n)), hh = (r.latestHe >= 1 && r.latestHe <= 39 && tDraw.nums.includes(r.latestHe));
+        
         if (hp || hh) {
             let det = []; if(hp) det.push("機率"); if(hh) det.push("合數");
-            return `<span class="text-xs bg-green-100 text-green-700 font-bold px-2 py-1 rounded border border-green-300 w-32 text-center">🎯 ${tDraw.date.slice(5)} (${det.join('+')})</span>`;
+            return `<span class="text-xs bg-green-100 text-green-700 font-bold px-2 py-1 rounded border border-green-300 text-center">驗證命中: ${tDraw.date} (${det.join('+')})</span>`;
         }
-        return `<span class="text-xs bg-red-50 text-red-500 px-2 py-1 rounded border border-red-200 w-32 text-center">❌ ${tDraw.date.slice(5)} 未中</span>`;
+        return `<span class="text-xs bg-red-50 text-red-500 px-2 py-1 rounded border border-red-200 text-center">驗證未中: ${tDraw.date}</span>`;
     }
 </script>
 </body>
