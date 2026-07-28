@@ -411,7 +411,7 @@
     function runScan() {
         const out = document.getElementById('resultsContent');
         // 運算時的顯示也改成置中的標準容器，不綁死外層 flex
-        out.innerHTML = '<div class="flex flex-col items-center justify-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div><p class="text-blue-600 font-bold">正在運算數千條版路，請稍候...</p></div>';
+        out.innerHTML = '<div class="flex flex-col items-center justify-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div><p class="text-blue-600 font-bold">正在運算版路，請稍候...</p></div>';
         
         setTimeout(() => {
             const mode = document.querySelector('input[name="scanMode"]:checked').value;
