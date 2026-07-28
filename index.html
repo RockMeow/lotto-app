@@ -120,8 +120,9 @@
 
         <div class="bg-white rounded-lg shadow p-6 lg:col-span-2 h-[700px] overflow-y-auto" id="resultsArea">
             <h2 class="text-xl font-bold mb-4 border-b pb-2">分析結果與回測驗證</h2>
-            <div id="resultsContent" class="text-gray-600 flex justify-center items-center h-full">
-                <p>等待載入數據與運算...</p>
+            <!-- 修復這裡：移除了 flex 相關屬性，恢復一般區塊排版 -->
+            <div id="resultsContent" class="text-gray-600">
+                <div class="text-center mt-20">等待載入數據與運算...</div>
             </div>
         </div>
     </div>
@@ -238,7 +239,7 @@
         document.getElementById('runBtn').disabled = false;
         document.getElementById('runBtn').classList.remove('cursor-not-allowed', 'opacity-50');
         renderTable();
-        document.getElementById('resultsContent').innerHTML = '<p>準備就緒，請點擊「開始運算」</p>';
+        document.getElementById('resultsContent').innerHTML = '<div class="text-center mt-20">準備就緒，請點擊「開始運算」</div>';
     }
 
     async function syncToGitHub() {
@@ -409,7 +410,8 @@
 
     function runScan() {
         const out = document.getElementById('resultsContent');
-        out.innerHTML = '<div class="flex flex-col items-center justify-center h-full"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div><p class="text-blue-600 font-bold">正在運算數千條版路，請稍候...</p></div>';
+        // 運算時的顯示也改成置中的標準容器，不綁死外層 flex
+        out.innerHTML = '<div class="flex flex-col items-center justify-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div><p class="text-blue-600 font-bold">正在運算數千條版路，請稍候...</p></div>';
         
         setTimeout(() => {
             const mode = document.querySelector('input[name="scanMode"]:checked').value;
@@ -418,11 +420,10 @@
             
             let filteredDraws = globalDraws.filter(d => d.date <= backtestDateStr);
             let validationDraws = globalDraws.filter(d => d.date > backtestDateStr);
-            if (filteredDraws.length < 20) return out.innerHTML = '<p class="text-red-500">錯誤：回測日期前的數據過少，無法運算。</p>';
+            if (filteredDraws.length < 20) return out.innerHTML = '<p class="text-red-500 mt-10 text-center">錯誤：回測日期前的數據過少，無法運算。</p>';
             
             const pairsConfig = lotType === '539' ? PAIRS_539 : PAIRS_DAILY;
             
-            // 摘要區塊 (無圖示)
             let finalHtml = `<div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800 flex justify-between items-center">
                 <div><strong>${currentLotteryName} 執行摘要</strong><br>參與運算期數：${filteredDraws.length} 期</div>
                 <div class="text-right">未來驗證期數：<br><span class="font-bold text-lg">${validationDraws.length} 期</span></div></div>`;
@@ -436,7 +437,6 @@
                             let r = res[i];
                             let barHtml = `<span class="hit-bar">${r.resultsBool.slice(-20).map(x => x ? '<span class="hit">█</span>' : '<span class="miss">·</span>').join('')}</span>`;
                             
-                            // 恢復為上下分層顯示
                             finalHtml += `<div class="mb-2 text-sm bg-gray-50 p-3 rounded border-l-4 border-blue-500 hover:shadow-md transition">
                                 <strong class="text-base">${i+1}. 週${WD_LABELS[r.srcWd]}P${r.srcPos} 合${pad(r.heTarget)}</strong> 
                                 <span class="text-gray-500 mx-2">→</span> 
@@ -453,7 +453,7 @@
                 }
             } else {
                 let allowedNums = document.getElementById('fixedNumbersInput').value.trim().split(/\s+/).map(n => parseInt(n)).filter(n => !isNaN(n));
-                if(allowedNums.length < 2) return out.innerHTML = '<p class="text-red-500">至少需輸入 2 個數字。</p>';
+                if(allowedNums.length < 2) return out.innerHTML = '<p class="text-red-500 mt-10 text-center">至少需輸入 2 個數字。</p>';
                 
                 finalHtml += `<div class="font-bold text-green-700 mb-4 bg-green-50 p-2 rounded border border-green-200">鎖定機率號碼: ${allowedNums.map(pad).join(' ')}</div>`;
                 
@@ -465,7 +465,6 @@
                             let r = res[i];
                             let barHtml = `<span class="hit-bar">${r.resultsBool.slice(-20).map(x => x ? '<span class="hit">█</span>' : '<span class="miss">·</span>').join('')}</span>`;
                             
-                            // 恢復為上下分層顯示
                             finalHtml += `<div class="mb-2 text-sm bg-gray-50 p-3 rounded border-l-4 border-green-500 hover:shadow-md transition">
                                 <strong class="text-base">週${WD_LABELS[r.srcWd]}P${r.srcPos} 合${pad(r.heTarget)}</strong> 
                                 <span class="text-gray-500 mx-2">→</span> 
@@ -485,7 +484,6 @@
         }, 100);
     }
 
-    // 驗證功能 (移除圖示)
     function checkValidation(r, vDraws, tgWds) {
         if (vDraws.length === 0) return `<span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">等待開獎</span>`;
         let tDraw = vDraws.find(d => tgWds.includes(d.wd));
